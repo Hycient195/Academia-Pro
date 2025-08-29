@@ -1,0 +1,48 @@
+{
+  "name": "@academia-pro/common",
+  "version": "1.0.0",
+  "description": "Shared TypeScript types and interfaces for Academia Pro",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "test": "jest",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix"
+  },
+  "keywords": [
+    "typescript",
+    "types",
+    "interfaces",
+    "academia-pro",
+    "school-management"
+  ],
+  "author": "Academia Pro Team",
+  "license": "MIT",
+  "dependencies": {
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "jest": "^29.0.0",
+    "ts-jest": "^29.0.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/academia-pro/common.git"
+  },
+  "bugs": {
+    "url": "https://github.com/academia-pro/common/issues"
+  },
+  "homepage": "https://github.com/academia-pro/common#readme"
+}

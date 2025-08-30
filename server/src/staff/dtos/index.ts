@@ -1,19 +1,24 @@
-// Academia Pro - Staff DTOs Index
-// Export all staff management DTOs
+// Academia Pro - Staff DTOs
+// Export all staff-related Data Transfer Objects
 
-export { CreateStaffDto } from './create-staff.dto';
-export { UpdateStaffDto } from './update-staff.dto';
-export { StaffResponseDto, StaffListResponseDto, StaffStatisticsResponseDto } from './staff-response.dto';
+export {
+  CreateStaffDto,
+  UpdateStaffDto,
+  AddressDto,
+  QualificationDto,
+  CertificationDto,
+  PreviousExperienceDto,
+  MedicalInfoDto,
+  CommunicationPreferencesDto,
+} from './create-staff.dto';
 
-// Re-export for convenience
+// Re-export types for convenience
 export type {
-  ICreateStaffRequest,
-  IUpdateStaffRequest,
-  IStaffResponse,
-  IStaffListResponse,
-  IStaffStatisticsResponse,
-  IStaffFilters,
-  ILeaveFilters,
-  IPerformanceReviewFilters,
-  IHRStatistics,
-} from '../../../../common/src/types/staff/staff.types';
+  StaffType,
+  StaffStatus,
+  EmploymentType,
+  Gender,
+  MaritalStatus,
+  BloodGroup,
+  QualificationLevel,
+} from '../entities/staff.entity';

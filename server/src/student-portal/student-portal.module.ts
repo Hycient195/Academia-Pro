@@ -6,28 +6,46 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 // Controllers
 import { StudentPortalDashboardController } from './controllers/dashboard.controller';
 import { StudentPortalAcademicController } from './controllers/academic.controller';
-// Note: Other controllers will be implemented in future phases
+import { StudentPortalCommunicationController } from './controllers/communication.controller';
+import { StudentPortalSelfServiceController } from './controllers/self-service.controller';
+import { StudentPortalExtracurricularController } from './controllers/extracurricular.controller';
+import { StudentPortalWellnessController } from './controllers/wellness.controller';
+import { StudentPortalCareerController } from './controllers/career.controller';
 
 // Services
 import { StudentPortalDashboardService } from './services/dashboard.service';
 import { StudentPortalAcademicService } from './services/academic.service';
-// Note: Other services will be implemented in future phases
+import { StudentPortalCommunicationService } from './services/communication.service';
+import { StudentPortalSelfServiceService } from './services/self-service.service';
+import { StudentPortalExtracurricularService } from './services/extracurricular.service';
+import { StudentPortalWellnessService } from './services/wellness.service';
+import { StudentPortalCareerService } from './services/career.service';
 
 // Entities
 import { StudentPortalAccess } from './entities/student-portal-access.entity';
-import { StudentProfile } from './entities/student-profile.entity';
-// Note: Other entities will be implemented in future phases
+import { StudentActivityLog } from './entities/student-activity-log.entity';
+import { StudentResourceAccess } from './entities/student-resource-access.entity';
+import { StudentCommunicationRecord } from './entities/student-communication-record.entity';
+import { StudentSelfServiceRequest } from './entities/student-self-service-request.entity';
+import { StudentExtracurricularActivity } from './entities/student-extracurricular-activity.entity';
+import { StudentWellnessRecord } from './entities/student-wellness-record.entity';
+import { StudentCareerProfile } from './entities/student-career-profile.entity';
 
-// Guards (commented out until implemented)
-// import { StudentPortalGuard } from './guards/student-portal.guard';
-// import { AgeAppropriateGuard } from './guards/age-appropriate.guard';
+// Guards
+import { StudentPortalGuard } from './guards/student-portal.guard';
+import { StudentAccessGuard } from './guards/student-access.guard';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       StudentPortalAccess,
-      StudentProfile,
-      // Note: Other entities will be added as they are implemented
+      StudentActivityLog,
+      StudentResourceAccess,
+      StudentCommunicationRecord,
+      StudentSelfServiceRequest,
+      StudentExtracurricularActivity,
+      StudentWellnessRecord,
+      StudentCareerProfile,
     ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -43,17 +61,31 @@ import { StudentProfile } from './entities/student-profile.entity';
   controllers: [
     StudentPortalDashboardController,
     StudentPortalAcademicController,
-    // Note: Other controllers will be added as they are implemented
+    StudentPortalCommunicationController,
+    StudentPortalSelfServiceController,
+    StudentPortalExtracurricularController,
+    StudentPortalWellnessController,
+    StudentPortalCareerController,
   ],
   providers: [
     StudentPortalDashboardService,
     StudentPortalAcademicService,
-    // Note: Other services and guards will be added as they are implemented
+    StudentPortalCommunicationService,
+    StudentPortalSelfServiceService,
+    StudentPortalExtracurricularService,
+    StudentPortalWellnessService,
+    StudentPortalCareerService,
+    StudentPortalGuard,
+    StudentAccessGuard,
   ],
   exports: [
     StudentPortalDashboardService,
     StudentPortalAcademicService,
-    // Note: Other services will be exported as they are implemented
+    StudentPortalCommunicationService,
+    StudentPortalSelfServiceService,
+    StudentPortalExtracurricularService,
+    StudentPortalWellnessService,
+    StudentPortalCareerService,
   ],
 })
 export class StudentPortalModule {}

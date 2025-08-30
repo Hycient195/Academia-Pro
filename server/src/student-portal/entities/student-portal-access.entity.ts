@@ -1,33 +1,25 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany, Index } from 'typeorm';
 import { Student } from '../../students/student.entity';
-import { StudentProfile } from './student-profile.entity';
+import { StudentActivityLog } from './student-activity-log.entity';
 
 export enum StudentPortalAccessLevel {
-  BASIC = 'basic',           // Basic access with parental supervision
-  STANDARD = 'standard',     // Standard student access
-  ADVANCED = 'advanced',     // Advanced features for older students
-  FULL = 'full',            // Full access for mature students
+  BASIC = 'basic',           // Basic access to essential features
+  STANDARD = 'standard',     // Standard access with most features
+  PREMIUM = 'premium',       // Full access to all features
+  RESTRICTED = 'restricted', // Limited access for disciplinary reasons
 }
 
 export enum StudentPortalStatus {
-  PENDING = 'pending',       // Awaiting parental approval
+  PENDING = 'pending',       // Awaiting activation
   ACTIVE = 'active',         // Fully active
-  RESTRICTED = 'restricted', // Limited access due to behavior/grades
   SUSPENDED = 'suspended',   // Temporarily suspended
   BLOCKED = 'blocked',       // Permanently blocked
-}
-
-export enum ContentRating {
-  G = 'G',                   // General audience
-  PG = 'PG',                 // Parental guidance suggested
-  PG13 = 'PG13',            // Parents strongly cautioned
-  R = 'R',                   // Restricted
+  GRADUATED = 'graduated',   // Student has graduated
 }
 
 @Entity('student_portal_access')
 @Index(['studentId', 'schoolId'])
 @Index(['status', 'schoolId'])
-@Index(['accessLevel', 'schoolId'])
 export class StudentPortalAccess {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -53,66 +45,17 @@ export class StudentPortalAccess {
   })
   status: StudentPortalStatus;
 
-  @Column({
-    name: 'content_rating',
-    type: 'enum',
-    enum: ContentRating,
-    default: ContentRating.PG,
-  })
-  contentRating: ContentRating;
+  @Column({ name: 'is_parent_approved', type: 'boolean', default: false })
+  isParentApproved: boolean;
 
-  @Column({ name: 'parental_controls_enabled', type: 'boolean', default: true })
-  parentalControlsEnabled: boolean;
-
-  @Column({ name: 'parent_approval_required', type: 'boolean', default: true })
-  parentApprovalRequired: boolean;
-
-  @Column({ name: 'screen_time_limits', type: 'jsonb', nullable: true })
-  screenTimeLimits: {
-    dailyLimit: number;        // minutes per day
-    sessionLimit: number;      // minutes per session
-    breakRequired: number;     // minutes of break required
-    restrictedHours: string[]; // time ranges when access is blocked
-  };
-
-  @Column({ name: 'feature_permissions', type: 'jsonb', nullable: true })
-  featurePermissions: {
-    messaging: boolean;
-    socialFeatures: boolean;
-    externalLinks: boolean;
-    fileUploads: boolean;
-    videoCalls: boolean;
-    onlinePurchases: boolean;
-    locationSharing: boolean;
-    cameraAccess: boolean;
-    microphoneAccess: boolean;
-  };
-
-  @Column({ name: 'privacy_settings', type: 'jsonb', nullable: true })
-  privacySettings: {
-    profileVisibility: 'private' | 'school_only' | 'public';
-    activitySharing: boolean;
-    locationTracking: boolean;
-    dataCollection: boolean;
-    thirdPartySharing: boolean;
-  };
-
-  @Column({ name: 'device_restrictions', type: 'jsonb', nullable: true })
-  deviceRestrictions: {
-    allowedDevices: string[];    // device IDs or types
-    requireApproval: boolean;
-    geoFencing: boolean;
-    networkRestrictions: string[]; // allowed networks
-  };
+  @Column({ name: 'parent_approval_date', type: 'timestamp', nullable: true })
+  parentApprovalDate: Date;
 
   @Column({ name: 'last_login_at', type: 'timestamp', nullable: true })
   lastLoginAt: Date;
 
   @Column({ name: 'login_count', type: 'int', default: 0 })
   loginCount: number;
-
-  @Column({ name: 'total_session_time', type: 'int', default: 0 }) // minutes
-  totalSessionTime: number;
 
   @Column({ name: 'failed_login_attempts', type: 'int', default: 0 })
   failedLoginAttempts: number;
@@ -132,20 +75,65 @@ export class StudentPortalAccess {
   @Column({ name: 'two_factor_secret', type: 'varchar', nullable: true })
   twoFactorSecret: string;
 
-  @Column({ name: 'emergency_access_granted', type: 'boolean', default: false })
-  emergencyAccessGranted: boolean;
+  @Column({ name: 'biometric_enabled', type: 'boolean', default: false })
+  biometricEnabled: boolean;
 
-  @Column({ name: 'emergency_access_expires', type: 'timestamp', nullable: true })
-  emergencyAccessExpires: Date;
+  @Column({ name: 'biometric_data', type: 'jsonb', nullable: true })
+  biometricData: {
+    fingerprintHash?: string;
+    facialData?: string;
+    voicePrint?: string;
+  };
 
-  @Column({ name: 'behavior_score', type: 'decimal', precision: 3, scale: 2, default: 5.0 })
-  behaviorScore: number; // 1.0 to 10.0 scale
+  @Column({ name: 'device_fingerprint', type: 'jsonb', nullable: true })
+  deviceFingerprint: {
+    userAgent: string;
+    ipAddress: string;
+    deviceId: string;
+    lastUsed: Date;
+  };
 
-  @Column({ name: 'academic_performance_score', type: 'decimal', precision: 3, scale: 2, default: 5.0 })
-  academicPerformanceScore: number; // 1.0 to 10.0 scale
+  @Column({ name: 'portal_preferences', type: 'jsonb', nullable: true })
+  portalPreferences: {
+    theme: 'light' | 'dark' | 'auto';
+    language: string;
+    timezone: string;
+    notifications: {
+      email: boolean;
+      push: boolean;
+      sms: boolean;
+    };
+    dashboardLayout: string[];
+    accessibility: {
+      fontSize: 'small' | 'medium' | 'large';
+      highContrast: boolean;
+      screenReader: boolean;
+    };
+  };
 
-  @Column({ name: 'trust_level', type: 'decimal', precision: 3, scale: 2, default: 5.0 })
-  trustLevel: number; // 1.0 to 10.0 scale
+  @Column({ name: 'privacy_settings', type: 'jsonb', nullable: true })
+  privacySettings: {
+    profileVisibility: 'public' | 'school' | 'private';
+    shareAchievements: boolean;
+    shareAttendance: boolean;
+    shareGrades: boolean;
+    dataRetentionPeriod: number; // days
+  };
+
+  @Column({ name: 'academic_year', type: 'varchar', length: 20 })
+  academicYear: string;
+
+  @Column({ name: 'grade_level', type: 'varchar', length: 20 })
+  gradeLevel: string;
+
+  @Column({ name: 'section', type: 'varchar', length: 10, nullable: true })
+  section: string;
+
+  @Column({ name: 'roll_number', type: 'varchar', length: 20, nullable: true })
+  rollNumber: string;
+
+  @Column({ name: 'graduation_date', type: 'timestamp', nullable: true })
+  graduationDate: Date;
 
   @Column({ name: 'created_by', type: 'varchar', length: 100 })
   createdBy: string;
@@ -161,6 +149,6 @@ export class StudentPortalAccess {
   @JoinColumn({ name: 'student_id' })
   student: Student;
 
-  @OneToMany(() => StudentProfile, profile => profile.portalAccess)
-  profiles: StudentProfile[];
+  @OneToMany(() => StudentActivityLog, log => log.studentPortalAccess)
+  activityLogs: StudentActivityLog[];
 }

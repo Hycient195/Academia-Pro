@@ -14,6 +14,11 @@ import { SchoolsModule } from './schools/schools.module';
 import { StudentsModule } from './students/students.module';
 import { AcademicModule } from './academic/academic.module';
 import { AttendanceModule } from './attendance/attendance.module';
+import { ExaminationModule } from './examination/examination.module';
+import { TimetableModule } from './timetable/timetable.module';
+import { StaffModule } from './staff/staff.module';
+import { LibraryModule } from './library/library.module';
+import { HostelModule } from './hostel/hostel.module';
 import { CommunicationModule } from './communication/communication.module';
 import { ParentPortalModule } from './parent-portal/parent-portal.module';
 
@@ -55,6 +60,11 @@ import { databaseConfig } from './database.config';
     StudentsModule,
     AcademicModule,
     AttendanceModule,
+    ExaminationModule,
+    TimetableModule,
+    StaffModule,
+    LibraryModule,
+    HostelModule,
     CommunicationModule,
     ParentPortalModule,
 

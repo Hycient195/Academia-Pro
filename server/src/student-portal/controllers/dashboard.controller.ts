@@ -1,138 +1,80 @@
-import { Controller, Get, Param, Query, Logger } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { Controller, Get, UseGuards, Request, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { StudentPortalGuard } from '../guards/student-portal.guard';
+import { StudentAccessGuard } from '../guards/student-access.guard';
 import { StudentPortalDashboardService } from '../services/dashboard.service';
 
 @ApiTags('Student Portal - Dashboard')
+@ApiBearerAuth()
 @Controller('student-portal/dashboard')
-// @UseGuards(StudentPortalGuard, AgeAppropriateGuard) // Guards will be implemented later
+@UseGuards(StudentPortalGuard, StudentAccessGuard)
 export class StudentPortalDashboardController {
-  private readonly logger = new Logger(StudentPortalDashboardController.name);
-
   constructor(
     private readonly dashboardService: StudentPortalDashboardService,
   ) {}
 
-  @Get()
-  @ApiOperation({
-    summary: 'Get complete student dashboard',
-    description: 'Returns a comprehensive dashboard overview for the authenticated student including profile, activities, stats, and alerts.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Dashboard data retrieved successfully',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Invalid authentication',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Insufficient access level or parental controls',
-  })
-  async getDashboard(@Param('studentId') studentId: string) {
-    this.logger.log(`Getting dashboard for student ${studentId}`);
-    return this.dashboardService.getDashboard(studentId);
-  }
-
   @Get('overview')
-  @ApiOperation({
-    summary: 'Get dashboard overview',
-    description: 'Returns the main dashboard overview with welcome message, schedule, tasks, and achievements.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Dashboard overview retrieved successfully',
-  })
-  async getDashboardOverview(@Param('studentId') studentId: string) {
-    this.logger.log(`Getting dashboard overview for student ${studentId}`);
-    return this.dashboardService.getDashboardOverview(studentId);
-  }
-
-  @Get('quick-stats')
-  @ApiOperation({
-    summary: 'Get quick statistics',
-    description: 'Returns key performance indicators and statistics for the student dashboard.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Quick stats retrieved successfully',
-  })
-  async getQuickStats(@Param('studentId') studentId: string) {
-    this.logger.log(`Getting quick stats for student ${studentId}`);
-    return this.dashboardService.getQuickStatsPublic(studentId);
-  }
-
-  @Get('recent-activity')
-  @ApiOperation({
-    summary: 'Get recent activity',
-    description: 'Returns recent activities and achievements for the student.',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Number of activities to return (default: 20, max: 50)',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Recent activity retrieved successfully',
-  })
-  async getRecentActivity(
-    @Param('studentId') studentId: string,
-    @Query('limit') limit?: number,
-  ) {
-    this.logger.log(`Getting recent activity for student ${studentId}, limit: ${limit}`);
-    return this.dashboardService.getRecentActivityPublic(studentId, limit);
+  @ApiOperation({ summary: 'Get student dashboard overview' })
+  @ApiResponse({ status: 200, description: 'Dashboard overview retrieved successfully' })
+  async getDashboardOverview(@Request() req: any) {
+    const { studentId, schoolId } = req;
+    return this.dashboardService.getDashboardOverview(studentId, schoolId);
   }
 
   @Get('upcoming-events')
-  @ApiOperation({
-    summary: 'Get upcoming events',
-    description: 'Returns upcoming events, deadlines, and appointments for the student.',
-  })
-  @ApiQuery({
-    name: 'days',
-    required: false,
-    type: Number,
-    description: 'Number of days to look ahead (default: 30, max: 90)',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Upcoming events retrieved successfully',
-  })
+  @ApiOperation({ summary: 'Get upcoming events and deadlines' })
+  @ApiResponse({ status: 200, description: 'Upcoming events retrieved successfully' })
   async getUpcomingEvents(
-    @Param('studentId') studentId: string,
-    @Query('days') days?: number,
+    @Request() req: any,
+    @Query('limit') limit?: number,
   ) {
-    this.logger.log(`Getting upcoming events for student ${studentId}, days: ${days}`);
-    return this.dashboardService.getUpcomingEventsPublic(studentId, days);
+    const { studentId, schoolId } = req;
+    return this.dashboardService.getUpcomingEvents(studentId, schoolId, limit);
   }
 
-  @Get('alerts')
-  @ApiOperation({
-    summary: 'Get alerts and notifications',
-    description: 'Returns active alerts, notifications, and reminders for the student.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Alerts retrieved successfully',
-  })
-  async getAlerts(@Param('studentId') studentId: string) {
-    this.logger.log(`Getting alerts for student ${studentId}`);
-    return this.dashboardService.getAlerts(studentId);
+  @Get('recent-activity')
+  @ApiOperation({ summary: 'Get recent student activity' })
+  @ApiResponse({ status: 200, description: 'Recent activity retrieved successfully' })
+  async getRecentActivity(
+    @Request() req: any,
+    @Query('limit') limit?: number,
+  ) {
+    const { studentId } = req;
+    return this.dashboardService.getRecentActivity(studentId, limit);
   }
 
-  @Get('children')
-  @ApiOperation({
-    summary: 'Get children overview',
-    description: 'Returns overview information for the student (used for parental access).',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Children overview retrieved successfully',
-  })
-  async getChildrenOverview(@Param('studentId') studentId: string) {
-    this.logger.log(`Getting children overview for student ${studentId}`);
-    return this.dashboardService.getChildrenOverview(studentId);
+  @Get('quick-stats')
+  @ApiOperation({ summary: 'Get quick statistics for dashboard' })
+  @ApiResponse({ status: 200, description: 'Quick stats retrieved successfully' })
+  async getQuickStats(@Request() req: any) {
+    const { studentId, schoolId } = req;
+    return this.dashboardService.getQuickStats(studentId, schoolId);
+  }
+
+  @Get('notifications')
+  @ApiOperation({ summary: 'Get unread notifications' })
+  @ApiResponse({ status: 200, description: 'Notifications retrieved successfully' })
+  async getNotifications(
+    @Request() req: any,
+    @Query('limit') limit?: number,
+  ) {
+    const { studentId } = req;
+    return this.dashboardService.getNotifications(studentId, limit);
+  }
+
+  @Get('academic-summary')
+  @ApiOperation({ summary: 'Get academic performance summary' })
+  @ApiResponse({ status: 200, description: 'Academic summary retrieved successfully' })
+  async getAcademicSummary(@Request() req: any) {
+    const { studentId, schoolId } = req;
+    return this.dashboardService.getAcademicSummary(studentId, schoolId);
+  }
+
+  @Get('wellness-summary')
+  @ApiOperation({ summary: 'Get wellness status summary' })
+  @ApiResponse({ status: 200, description: 'Wellness summary retrieved successfully' })
+  async getWellnessSummary(@Request() req: any) {
+    const { studentId } = req;
+    return this.dashboardService.getWellnessSummary(studentId);
   }
 }

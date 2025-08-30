@@ -1,32 +1,104 @@
 // Academia Pro - Students Module
-// Manages student lifecycle from enrollment to graduation
+// Comprehensive student lifecycle management from enrollment to graduation
 
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 // Controllers
 import { StudentsController } from './students.controller';
+import { StudentEnrollmentController } from './controllers/enrollment.controller';
+import { StudentProfileController } from './controllers/profile.controller';
+import { StudentTransferController } from './controllers/transfer.controller';
+import { StudentHealthController } from './controllers/health.controller';
+import { StudentAchievementController } from './controllers/achievement.controller';
+import { StudentDisciplineController } from './controllers/discipline.controller';
+import { StudentDocumentController } from './controllers/document.controller';
+import { StudentAlumniController } from './controllers/alumni.controller';
 
 // Services
 import { StudentsService } from './students.service';
+import { StudentEnrollmentService } from './services/enrollment.service';
+import { StudentProfileService } from './services/profile.service';
+import { StudentTransferService } from './services/transfer.service';
+import { StudentHealthService } from './services/health.service';
+import { StudentAchievementService } from './services/achievement.service';
+import { StudentDisciplineService } from './services/discipline.service';
+import { StudentDocumentService } from './services/document.service';
+import { StudentAlumniService } from './services/alumni.service';
 
 // Entities
 import { Student } from './student.entity';
+import { StudentTransfer } from './entities/student-transfer.entity';
+import { StudentDocument } from './entities/student-document.entity';
+import { StudentAchievement } from './entities/student-achievement.entity';
+import { StudentDiscipline } from './entities/student-discipline.entity';
+import { StudentMedicalRecord } from './entities/student-medical-record.entity';
+import { StudentAlumni } from './entities/student-alumni.entity';
+import { StudentAuditLog } from './entities/student-audit-log.entity';
 
 // Guards
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { StudentManagementGuard } from './guards/student-management.guard';
+import { DocumentAccessGuard } from './guards/document-access.guard';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Student]),
+    TypeOrmModule.forFeature([
+      Student,
+      StudentTransfer,
+      StudentDocument,
+      StudentAchievement,
+      StudentDiscipline,
+      StudentMedicalRecord,
+      StudentAlumni,
+      StudentAuditLog,
+    ]),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: {
+          expiresIn: configService.get<string>('JWT_EXPIRES_IN', '24h'),
+        },
+      }),
+      inject: [ConfigService],
+    }),
   ],
-  controllers: [StudentsController],
+  controllers: [
+    StudentsController,
+    StudentEnrollmentController,
+    StudentProfileController,
+    StudentTransferController,
+    StudentHealthController,
+    StudentAchievementController,
+    StudentDisciplineController,
+    StudentDocumentController,
+    StudentAlumniController,
+  ],
   providers: [
     StudentsService,
-    JwtAuthGuard,
-    RolesGuard,
+    StudentEnrollmentService,
+    StudentProfileService,
+    StudentTransferService,
+    StudentHealthService,
+    StudentAchievementService,
+    StudentDisciplineService,
+    StudentDocumentService,
+    StudentAlumniService,
+    StudentManagementGuard,
+    DocumentAccessGuard,
   ],
-  exports: [StudentsService],
+  exports: [
+    StudentsService,
+    StudentEnrollmentService,
+    StudentProfileService,
+    StudentTransferService,
+    StudentHealthService,
+    StudentAchievementService,
+    StudentDisciplineService,
+    StudentDocumentService,
+    StudentAlumniService,
+  ],
 })
 export class StudentsModule {}

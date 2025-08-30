@@ -1,16 +1,50 @@
 // Academia Pro - Staff Module
-// Module configuration for staff and HR management
+// Comprehensive staff management and HR operations system
 
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { StaffService } from './staff.service';
-import { StaffController } from './staff.controller';
-import { Staff } from './staff.entity';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+
+// Controllers
+import { StaffController } from './controllers/staff.controller';
+
+// Services
+import { StaffService } from './services/staff.service';
+
+// Entities
+import { Staff } from './entities/staff.entity';
+
+// Guards
+import { StaffGuard } from './guards/staff.guard';
+
+// Interceptors
+import { StaffInterceptor } from './interceptors/staff.interceptor';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Staff])],
+  imports: [
+    TypeOrmModule.forFeature([Staff]),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: {
+          expiresIn: configService.get<string>('JWT_EXPIRES_IN', '24h'),
+        },
+      }),
+      inject: [ConfigService],
+    }),
+  ],
   controllers: [StaffController],
-  providers: [StaffService],
-  exports: [StaffService],
+  providers: [
+    StaffService,
+    StaffGuard,
+    StaffInterceptor,
+  ],
+  exports: [
+    StaffService,
+    StaffGuard,
+    StaffInterceptor,
+  ],
 })
 export class StaffModule {}

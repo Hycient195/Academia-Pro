@@ -107,9 +107,18 @@ export class ParentPortalApiGatewayService {
           ],
         },
         responses: {
-          '200': { description: 'Grades retrieved successfully' },
-          '401': { description: 'Unauthorized' },
-          '403': { description: 'Forbidden' },
+          '200': {
+            description: 'Grades retrieved successfully',
+            schema: { type: 'array', items: { type: 'object' } }
+          },
+          '401': {
+            description: 'Unauthorized',
+            schema: { $ref: '#/components/schemas/ErrorResponse' }
+          },
+          '403': {
+            description: 'Forbidden',
+            schema: { $ref: '#/components/schemas/ErrorResponse' }
+          },
         },
         authentication: { required: true, scopes: ['academic:read'] },
         rateLimit: { requests: 100, period: '1 hour' },
@@ -132,8 +141,14 @@ export class ParentPortalApiGatewayService {
           ],
         },
         responses: {
-          '200': { description: 'Messages retrieved successfully' },
-          '401': { description: 'Unauthorized' },
+          '200': {
+            description: 'Messages retrieved successfully',
+            schema: { type: 'array', items: { type: 'object' } }
+          },
+          '401': {
+            description: 'Unauthorized',
+            schema: { $ref: '#/components/schemas/ErrorResponse' }
+          },
         },
         authentication: { required: true, scopes: ['communication:read'] },
         rateLimit: { requests: 50, period: '1 hour' },
@@ -156,8 +171,14 @@ export class ParentPortalApiGatewayService {
           ],
         },
         responses: {
-          '200': { description: 'Payments retrieved successfully' },
-          '401': { description: 'Unauthorized' },
+          '200': {
+            description: 'Payments retrieved successfully',
+            schema: { type: 'array', items: { type: 'object' } }
+          },
+          '401': {
+            description: 'Unauthorized',
+            schema: { $ref: '#/components/schemas/ErrorResponse' }
+          },
         },
         authentication: { required: true, scopes: ['fee:read'] },
         rateLimit: { requests: 30, period: '1 hour' },
@@ -180,8 +201,14 @@ export class ParentPortalApiGatewayService {
           ],
         },
         responses: {
-          '200': { description: 'Schedule retrieved successfully' },
-          '401': { description: 'Unauthorized' },
+          '200': {
+            description: 'Schedule retrieved successfully',
+            schema: { type: 'array', items: { type: 'object' } }
+          },
+          '401': {
+            description: 'Unauthorized',
+            schema: { $ref: '#/components/schemas/ErrorResponse' }
+          },
         },
         authentication: { required: true, scopes: ['transportation:read'] },
         rateLimit: { requests: 20, period: '1 hour' },
@@ -205,8 +232,14 @@ export class ParentPortalApiGatewayService {
           ],
         },
         responses: {
-          '200': { description: 'Resources retrieved successfully' },
-          '401': { description: 'Unauthorized' },
+          '200': {
+            description: 'Resources retrieved successfully',
+            schema: { type: 'array', items: { type: 'object' } }
+          },
+          '401': {
+            description: 'Unauthorized',
+            schema: { $ref: '#/components/schemas/ErrorResponse' }
+          },
         },
         authentication: { required: true, scopes: ['resource:read'] },
         rateLimit: { requests: 100, period: '1 hour' },
@@ -341,12 +374,30 @@ export class ParentPortalApiGatewayService {
         },
       },
       errors: {
-        '400': { description: 'Bad Request - Invalid input parameters' },
-        '401': { description: 'Unauthorized - Invalid or missing authentication' },
-        '403': { description: 'Forbidden - Insufficient permissions' },
-        '404': { description: 'Not Found - Resource not found' },
-        '429': { description: 'Too Many Requests - Rate limit exceeded' },
-        '500': { description: 'Internal Server Error - Server error' },
+        '400': {
+          description: 'Bad Request - Invalid input parameters',
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+        },
+        '401': {
+          description: 'Unauthorized - Invalid or missing authentication',
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+        },
+        '403': {
+          description: 'Forbidden - Insufficient permissions',
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+        },
+        '404': {
+          description: 'Not Found - Resource not found',
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+        },
+        '429': {
+          description: 'Too Many Requests - Rate limit exceeded',
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+        },
+        '500': {
+          description: 'Internal Server Error - Server error',
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+        },
       },
       rateLimiting: {
         global: { requests: 1000, period: '1 hour' },
@@ -1371,15 +1422,121 @@ export class ParentPortalApiGatewayService {
     timeRange: string = 'month',
   ): Promise<ApiAnalyticsDto> {
     this.logger.log(`Getting API analytics for parent: ${parentPortalAccessId}, timeRange: ${timeRange}`);
-
-    // Mock analytics data
-    const analytics: ApiAnalyticsDto = {
-      timeRange,
-      overview: {
-        totalRequests: 2500,
-        uniqueUsers: 1,
-        averageRequestsPerUser: 2500,
-        peakRequestsPerHour: 150,
-        totalDataTransfer: 10485760, // 10MB
+// Mock analytics data
+const analytics: ApiAnalyticsDto = {
+  timeRange,
+  overview: {
+    totalRequests: 2500,
+    uniqueUsers: 1,
+    averageRequestsPerUser: 2500,
+    peakRequestsPerHour: 150,
+    totalDataTransfer: 10485760, // 10MB
+  },
+  trends: {
+    requestsOverTime: [
+      {
+        date: new Date().toISOString().split('T')[0],
+        requests: 2500,
+        errors: 25,
+        averageResponseTime: 150,
       },
+    ],
+    topEndpoints: [
+      { endpoint: '/api/academic/grades', requests: 800, percentage: 32 },
+      { endpoint: '/api/communication/messages', requests: 600, percentage: 24 },
+      { endpoint: '/api/fee/payments', requests: 400, percentage: 16 },
+      { endpoint: '/api/transportation/schedule', requests: 300, percentage: 12 },
+      { endpoint: '/api/resource/materials', requests: 400, percentage: 16 },
+    ],
+    userActivity: [
+      {
+        userId: parentPortalAccessId,
+        requests: 2500,
+        lastActivity: new Date(),
+      },
+    ],
+  },
+  performance: {
+    averageResponseTime: 150,
+    p95ResponseTime: 300,
+    errorRate: 0.01,
+    cacheHitRate: 0.85,
+    throughput: 42, // requests per second
+  },
+  geography: {
+    topCountries: [
+      { country: 'United States', requests: 1500, percentage: 60 },
+      { country: 'Canada', requests: 500, percentage: 20 },
+      { country: 'United Kingdom', requests: 300, percentage: 12 },
+      { country: 'Australia', requests: 200, percentage: 8 },
+    ],
+    topRegions: [
+      { region: 'California', requests: 800, percentage: 32 },
+      { region: 'New York', requests: 400, percentage: 16 },
+      { region: 'Texas', requests: 300, percentage: 12 },
+    ],
+  },
+  devices: {
+    topPlatforms: [
+      { platform: 'iOS', requests: 1200, percentage: 48 },
+      { platform: 'Android', requests: 1000, percentage: 40 },
+      { platform: 'Web', requests: 300, percentage: 12 },
+    ],
+    topDevices: [
+      { device: 'iPhone', requests: 800, percentage: 32 },
+      { device: 'Android Phone', requests: 600, percentage: 24 },
+      { device: 'Desktop', requests: 300, percentage: 12 },
+    ],
+    appVersions: [
+      { version: '2.1.0', users: 1500, percentage: 60 },
+      { version: '2.0.5', users: 800, percentage: 32 },
+      { version: '1.9.8', users: 200, percentage: 8 },
+    ],
+  },
+  errors: {
+    topErrorCodes: [
+      { statusCode: 400, count: 15, percentage: 60 },
+      { statusCode: 401, count: 6, percentage: 24 },
+      { statusCode: 403, count: 3, percentage: 12 },
+      { statusCode: 500, count: 1, percentage: 4 },
+    ],
+    topErrorEndpoints: [
+      { endpoint: '/api/academic/grades', errors: 10, errorRate: 0.0125 },
+      { endpoint: '/api/communication/messages', errors: 8, errorRate: 0.0133 },
+      { endpoint: '/api/fee/payments', errors: 5, errorRate: 0.0125 },
+    ],
+    errorTrends: [
+      {
+        date: new Date().toISOString().split('T')[0],
+        errors: 25,
+        errorRate: 0.01,
+      },
+    ],
+  },
+  integrations: {
+    topIntegrations: [
+      { integration: 'Stripe', requests: 400, successRate: 0.98 },
+      { integration: 'Twilio', requests: 300, successRate: 0.95 },
+      { integration: 'SendGrid', requests: 200, successRate: 0.97 },
+    ],
+    integrationHealth: [
+      { integration: 'Stripe', status: ServiceHealthStatus.HEALTHY, uptime: 99.9 },
+      { integration: 'Twilio', status: ServiceHealthStatus.HEALTHY, uptime: 99.8 },
+      { integration: 'SendGrid', status: ServiceHealthStatus.DEGRADED, uptime: 99.5 },
+    ],
+  },
+  security: {
+    rateLimitHits: 25,
+    blockedRequests: 5,
+    suspiciousActivities: 3,
+    authenticationFailures: 8,
+  },
+  generatedAt: new Date(),
+};
+
+this.logger.log(`API analytics retrieved for parent: ${parentPortalAccessId}`);
+
+return analytics;
+}
+}
      

@@ -21,8 +21,8 @@ export class StudentsService {
   ) {}
 
   /**
-   * Create a new student
-   */
+    * Create a new student
+    */
   async create(createStudentDto: CreateStudentDto): Promise<StudentResponseDto> {
     const { admissionNumber, email, schoolId, ...studentData } = createStudentDto;
 
@@ -50,14 +50,31 @@ export class StudentsService {
 
     // Create student
     const student = this.studentsRepository.create({
-      ...studentData,
+      firstName: createStudentDto.firstName,
+      lastName: createStudentDto.lastName,
+      middleName: createStudentDto.middleName,
+      dateOfBirth: new Date(createStudentDto.dateOfBirth),
+      gender: createStudentDto.gender,
+      ...(createStudentDto.bloodGroup && { bloodGroup: createStudentDto.bloodGroup as unknown as BloodGroup }),
+      email: createStudentDto.email,
+      phone: createStudentDto.phone,
+      address: createStudentDto.address,
       admissionNumber: finalAdmissionNumber,
-      email,
-      schoolId,
+      currentGrade: createStudentDto.currentGrade,
+      currentSection: createStudentDto.currentSection,
+      admissionDate: new Date(createStudentDto.admissionDate),
+      ...(createStudentDto.enrollmentType && { enrollmentType: createStudentDto.enrollmentType as unknown as EnrollmentType }),
+      schoolId: createStudentDto.schoolId,
+      userId: createStudentDto.userId,
+      parents: createStudentDto.parents,
+      medicalInfo: createStudentDto.medicalInfo,
+      transportation: createStudentDto.transportation,
+      hostel: createStudentDto.hostel,
       status: StudentStatus.ACTIVE,
     });
 
-    return this.studentsRepository.save(student);
+    const savedStudent = await this.studentsRepository.save(student);
+    return StudentResponseDto.fromEntity(savedStudent);
   }
 
   /**
@@ -124,8 +141,8 @@ export class StudentsService {
   }
 
   /**
-   * Get student by ID
-   */
+    * Get student by ID
+    */
   async findOne(id: string): Promise<StudentResponseDto> {
     const student = await this.studentsRepository.findOne({
       where: { id },
@@ -135,13 +152,13 @@ export class StudentsService {
       throw new NotFoundException('Student not found');
     }
 
-    return student;
+    return StudentResponseDto.fromEntity(student);
   }
 
   /**
-   * Get student by admission number
-   */
-  async findByAdmissionNumber(admissionNumber: string): Promise<Student> {
+    * Get student by admission number
+    */
+  async findByAdmissionNumber(admissionNumber: string): Promise<StudentResponseDto> {
     const student = await this.studentsRepository.findOne({
       where: { admissionNumber },
     });
@@ -154,10 +171,10 @@ export class StudentsService {
   }
 
   /**
-   * Update student information
-   */
-  async update(id: string, updateStudentDto: UpdateStudentDto): Promise<Student> {
-    const student = await this.findOne(id);
+    * Update student information
+    */
+  async update(id: string, updateStudentDto: UpdateStudentDto): Promise<StudentResponseDto> {
+    const student = await this.findStudentEntity(id);
 
     // Check for unique constraints if updating admission number or email
     if ((updateStudentDto as any).admissionNumber && (updateStudentDto as any).admissionNumber !== student.admissionNumber) {
@@ -181,14 +198,15 @@ export class StudentsService {
     // Update student
     Object.assign(student, updateStudentDto);
 
-    return this.studentsRepository.save(student);
+    const savedStudent = await this.studentsRepository.save(student);
+    return StudentResponseDto.fromEntity(savedStudent);
   }
 
   /**
-   * Update student status
-   */
-  async updateStatus(id: string, status: StudentStatus, reason?: string): Promise<Student> {
-    const student = await this.findOne(id);
+    * Update student status
+    */
+  async updateStatus(id: string, status: StudentStatus, reason?: string): Promise<StudentResponseDto> {
+    const student = await this.findStudentEntity(id);
 
     if (student.status === status) {
       throw new BadRequestException(`Student is already ${status}`);
@@ -202,14 +220,15 @@ export class StudentsService {
       console.log(`Student ${student.admissionNumber} status changed to ${status}: ${reason}`);
     }
 
-    return this.studentsRepository.save(student);
+    const savedStudent = await this.studentsRepository.save(student);
+    return StudentResponseDto.fromEntity(savedStudent);
   }
 
   /**
-   * Transfer student to different grade/section
-   */
-  async transferStudent(id: string, newGrade: string, newSection: string): Promise<Student> {
-    const student = await this.findOne(id);
+    * Transfer student to different grade/section
+    */
+  async transferStudent(id: string, newGrade: string, newSection: string): Promise<StudentResponseDto> {
+    const student = await this.findStudentEntity(id);
 
     if (student.currentGrade === newGrade && student.currentSection === newSection) {
       throw new BadRequestException('Student is already in the specified grade and section');
@@ -218,14 +237,15 @@ export class StudentsService {
     student.currentGrade = newGrade;
     student.currentSection = newSection;
 
-    return this.studentsRepository.save(student);
+    const savedStudent = await this.studentsRepository.save(student);
+    return StudentResponseDto.fromEntity(savedStudent);
   }
 
   /**
-   * Graduate student
-   */
-  async graduateStudent(id: string, graduationDate?: Date): Promise<Student> {
-    const student = await this.findOne(id);
+    * Graduate student
+    */
+  async graduateStudent(id: string, graduationDate?: Date): Promise<StudentResponseDto> {
+    const student = await this.findStudentEntity(id);
 
     if (student.status === StudentStatus.GRADUATED) {
       throw new BadRequestException('Student is already graduated');
@@ -234,14 +254,14 @@ export class StudentsService {
     student.status = StudentStatus.GRADUATED;
 
     const savedStudent = await this.studentsRepository.save(student);
-    return savedStudent;
+    return StudentResponseDto.fromEntity(savedStudent);
   }
 
   /**
-   * Update student medical information
-   */
-  async updateMedicalInfo(id: string, medicalInfo: any): Promise<Student> {
-    const student = await this.findOne(id);
+    * Update student medical information
+    */
+  async updateMedicalInfo(id: string, medicalInfo: any): Promise<StudentResponseDto> {
+    const student = await this.findStudentEntity(id);
 
     student.updateMedicalInfo(medicalInfo);
 
@@ -250,21 +270,22 @@ export class StudentsService {
   }
 
   /**
-   * Update student financial information
-   */
-  async updateFinancialInfo(id: string, financialInfo: any): Promise<Student> {
-    const student = await this.findOne(id);
+    * Update student financial information
+    */
+  async updateFinancialInfo(id: string, financialInfo: any): Promise<StudentResponseDto> {
+    const student = await this.findStudentEntity(id);
 
     student.updateFinancialInfo(financialInfo);
 
-    return this.studentsRepository.save(student);
+    const savedStudent = await this.studentsRepository.save(student);
+    return StudentResponseDto.fromEntity(savedStudent);
   }
 
   /**
-   * Add document to student record
-   */
-  async addDocument(id: string, document: any): Promise<Student> {
-    const student = await this.findOne(id);
+    * Add document to student record
+    */
+  async addDocument(id: string, document: any): Promise<StudentResponseDto> {
+    const student = await this.findStudentEntity(id);
 
     student.addDocument({
       ...document,
@@ -272,7 +293,8 @@ export class StudentsService {
       verified: false,
     });
 
-    return this.studentsRepository.save(student);
+    const savedStudent = await this.studentsRepository.save(student);
+    return StudentResponseDto.fromEntity(savedStudent);
   }
 
   /**
@@ -427,10 +449,10 @@ export class StudentsService {
   }
 
   /**
-   * Remove student (soft delete by changing status)
-   */
+    * Remove student (soft delete by changing status)
+    */
   async remove(id: string): Promise<void> {
-    const student = await this.findOne(id);
+    const student = await this.findStudentEntity(id);
 
     // Instead of hard delete, change status to inactive
     student.status = StudentStatus.INACTIVE;
@@ -439,6 +461,18 @@ export class StudentsService {
   }
 
   // Private helper methods
+  private async findStudentEntity(id: string): Promise<Student> {
+    const student = await this.studentsRepository.findOne({
+      where: { id },
+    });
+
+    if (!student) {
+      throw new NotFoundException('Student not found');
+    }
+
+    return student;
+  }
+
   private async generateAdmissionNumber(schoolId: string): Promise<string> {
     const currentYear = new Date().getFullYear();
     const schoolCode = schoolId.substring(0, 3).toUpperCase();

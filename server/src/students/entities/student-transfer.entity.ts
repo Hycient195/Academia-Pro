@@ -178,6 +178,19 @@ export class StudentTransfer {
   @Column({ name: 'rejection_reason', type: 'text', nullable: true })
   rejectionReason: string;
 
+  // Appeal Information
+  @Column({ name: 'appeal_submitted', type: 'boolean', default: false })
+  appealSubmitted: boolean;
+
+  @Column({ name: 'appeal_decision', type: 'varchar', length: 50, nullable: true })
+  appealDecision: string;
+
+  @Column({ name: 'appeal_decision_date', type: 'timestamp', nullable: true })
+  appealDecisionDate: Date;
+
+  @Column({ name: 'appeal_notes', type: 'text', nullable: true })
+  appealNotes: string;
+
   // Communication and Follow-up
   @Column({ name: 'parent_notified', type: 'boolean', default: false })
   parentNotified: boolean;
@@ -221,6 +234,9 @@ export class StudentTransfer {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  @Column({ name: 'updated_by', type: 'uuid', nullable: true })
+  updatedBy: string;
 
   // Relations
   @ManyToOne(() => Student)

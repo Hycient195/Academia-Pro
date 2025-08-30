@@ -3,7 +3,7 @@
 
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { UserRole } from '@academia/common';
+import { UserRole } from '@academia-pro/common';
 
 @Injectable()
 export class RolesGuard implements CanActivate {

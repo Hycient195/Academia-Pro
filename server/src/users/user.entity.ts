@@ -1,9 +1,10 @@
 // Academia Pro - User Entity
 // Database entity for user management
 
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Index, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Index, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
+import { School } from '../schools/school.entity';
 
-// Define enums locally since @academia/common may not be available during development
+// Define enums locally since @academia-pro/common may not be available during development
 export enum UserRole {
   SUPER_ADMIN = 'super-admin',
   SCHOOL_ADMIN = 'school-admin',
@@ -77,6 +78,10 @@ export class User {
 
   @Column({ type: 'uuid', nullable: true })
   schoolId: string;
+
+  @ManyToOne(() => School, { nullable: true })
+  @JoinColumn({ name: 'schoolId' })
+  school: School;
 
   @Column({ type: 'boolean', default: false })
   isEmailVerified: boolean;

@@ -12,6 +12,12 @@ export {
   CommunicationPreferencesDto,
 } from './create-staff.dto';
 
+export {
+  StaffResponseDto,
+  StaffListResponseDto,
+  StaffStatisticsResponseDto,
+} from './staff-response.dto';
+
 // Re-export types for convenience
 export type {
   StaffType,

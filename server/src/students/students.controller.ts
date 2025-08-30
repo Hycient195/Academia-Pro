@@ -42,7 +42,7 @@ export class StudentsController {
   constructor(private readonly studentsService: StudentsService) {}
 
   @Post()
-  @Roles('super-admin', 'school-admin')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new student' })
@@ -59,7 +59,7 @@ export class StudentsController {
   }
 
   @Get()
-  @Roles('super-admin', 'school-admin', 'teacher')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all students with pagination and filtering' })
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -97,7 +97,7 @@ export class StudentsController {
   }
 
   @Get('search')
-  @Roles('super-admin', 'school-admin', 'teacher')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Search students' })
   @ApiQuery({ name: 'query', required: true, type: String })
@@ -239,7 +239,7 @@ export class StudentsController {
   }
 
   @Patch(':id/graduate')
-  @Roles('super-admin', 'school-admin')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Graduate student' })
@@ -257,7 +257,7 @@ export class StudentsController {
   }
 
   @Patch(':id/medical-info')
-  @Roles('super-admin', 'school-admin')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update student medical information' })
@@ -271,7 +271,7 @@ export class StudentsController {
   }
 
   @Patch(':id/financial-info')
-  @Roles('super-admin', 'school-admin')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update student financial information' })
@@ -285,7 +285,7 @@ export class StudentsController {
   }
 
   @Post(':id/documents')
-  @Roles('super-admin', 'school-admin')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Add document to student record' })

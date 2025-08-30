@@ -2,6 +2,7 @@
 // Database entity for student management and academic records
 
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Index, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
+import { School } from '../schools/school.entity';
 
 export enum StudentStatus {
   ACTIVE = 'active',
@@ -323,10 +324,10 @@ export class Student {
     };
   }
 
-  // Relations (to be added as needed)
-  // @ManyToOne(() => School, school => school.students)
-  // @JoinColumn({ name: 'schoolId' })
-  // school: School;
+  // Relations
+  @ManyToOne(() => School, school => school.students)
+  @JoinColumn({ name: 'schoolId' })
+  school: School;
 
   // @ManyToOne(() => User, user => user.student)
   // @JoinColumn({ name: 'userId' })

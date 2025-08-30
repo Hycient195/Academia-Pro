@@ -26,6 +26,7 @@ import { CreateSchoolDto, UpdateSchoolDto } from './dtos';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../common/decorators';
+import { UserRole } from '../users/user.entity';
 
 @ApiTags('schools')
 @Controller('schools')
@@ -34,7 +35,7 @@ export class SchoolsController {
   constructor(private readonly schoolsService: SchoolsService) {}
 
   @Post()
-  @Roles('super-admin')
+  @Roles(UserRole.SUPER_ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new school' })
@@ -51,7 +52,7 @@ export class SchoolsController {
   }
 
   @Get()
-  @Roles('super-admin', 'school-admin')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all schools with pagination and filtering' })
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -80,7 +81,7 @@ export class SchoolsController {
   }
 
   @Get('active')
-  @Roles('super-admin', 'school-admin', 'teacher', 'student', 'parent')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER, UserRole.STUDENT, UserRole.PARENT)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all active schools' })
   @ApiResponse({
@@ -92,7 +93,7 @@ export class SchoolsController {
   }
 
   @Get('search')
-  @Roles('super-admin', 'school-admin')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Search schools' })
   @ApiQuery({ name: 'query', required: true, type: String })
@@ -114,7 +115,7 @@ export class SchoolsController {
   }
 
   @Get(':id')
-  @Roles('super-admin', 'school-admin')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get school by ID' })
   @ApiResponse({
@@ -127,7 +128,7 @@ export class SchoolsController {
   }
 
   @Get('code/:code')
-  @Roles('super-admin', 'school-admin', 'teacher', 'student', 'parent')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER, UserRole.STUDENT, UserRole.PARENT)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get school by code' })
   @ApiResponse({
@@ -140,7 +141,7 @@ export class SchoolsController {
   }
 
   @Patch(':id')
-  @Roles('super-admin', 'school-admin')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update school information' })
@@ -156,7 +157,7 @@ export class SchoolsController {
   }
 
   @Patch(':id/activate')
-  @Roles('super-admin')
+  @Roles(UserRole.SUPER_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Activate a school' })
@@ -171,7 +172,7 @@ export class SchoolsController {
   }
 
   @Patch(':id/deactivate')
-  @Roles('super-admin')
+  @Roles(UserRole.SUPER_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Deactivate a school' })
@@ -186,7 +187,7 @@ export class SchoolsController {
   }
 
   @Patch(':id/settings')
-  @Roles('super-admin', 'school-admin')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update school settings' })
@@ -200,7 +201,7 @@ export class SchoolsController {
   }
 
   @Get(':id/statistics')
-  @Roles('super-admin', 'school-admin')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get school statistics' })
   @ApiResponse({
@@ -213,7 +214,7 @@ export class SchoolsController {
   }
 
   @Delete(':id')
-  @Roles('super-admin')
+  @Roles(UserRole.SUPER_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete school (soft delete)' })

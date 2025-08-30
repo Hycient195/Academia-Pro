@@ -1,7 +1,7 @@
 // Academia Pro - Academic Service
 // Business logic for academic management (subjects, curricula, classes, objectives)
 
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Subject } from './subject.entity';
@@ -11,10 +11,10 @@ import { LearningObjective } from './learning-objective.entity';
 import { CurriculumSubject } from './curriculum-subject.entity';
 import { ClassSubject } from './class-subject.entity';
 import { CurriculumStandard } from './entities/curriculum-standard.entity';
-import { StudentClass } from './entities/student-class.entity';
-import { SubstituteTeacher } from './entities/substitute-teacher.entity';
-import { TeacherWorkload } from './entities/teacher-workload.entity';
-import { Syllabus } from './entities/syllabus.entity';
+import { StudentClass, EnrollmentStatus } from './entities/student-class.entity';
+import { SubstituteTeacher, SubstituteRequestStatus } from './entities/substitute-teacher.entity';
+import { TeacherWorkload, WorkloadStatus } from './entities/teacher-workload.entity';
+import { Syllabus, SyllabusStatus } from './entities/syllabus.entity';
 import { SectionAssignment } from './entities/section-assignment.entity';
 import {
   CreateSubjectDto,
@@ -60,7 +60,7 @@ export class AcademicService {
   ) {}
 
   // Subject Management
-  async createSubject(createSubjectDto: CreateSubjectDto): Promise<SubjectResponseDto> {
+  async createSubject(createSubjectDto: CreateSubjectDto): Promise<Subject> {
     const { code, schoolId, ...subjectData } = createSubjectDto;
 
     // Check if subject code already exists in the school
@@ -69,7 +69,7 @@ export class AcademicService {
     });
 
     if (existingSubject) {
-      throw new ConflictException('Subject with this code already exists in this school');
+      throw new HttpException('Subject with this code already exists in this school', HttpStatus.CONFLICT);
     }
 
     const subject = this.subjectsRepository.create({
@@ -143,13 +143,12 @@ export class AcademicService {
       });
 
       if (existingSubject) {
-        throw new ConflictException('Subject with this code already exists in this school');
+        throw new HttpException('Subject with this code already exists in this school', HttpStatus.CONFLICT);
       }
     }
 
     Object.assign(subject, updateSubjectDto);
-    const savedSubject = await this.subjectsRepository.save(subject);
-    return SubjectResponseDto.fromEntity(savedSubject);
+    return this.subjectsRepository.save(subject);
   }
 
   async deleteSubject(id: string): Promise<void> {
@@ -434,7 +433,7 @@ export class AcademicService {
     });
 
     if (existing) {
-      throw new ConflictException('Subject is already assigned to this curriculum');
+      throw new HttpException('Subject is already assigned to this curriculum', HttpStatus.CONFLICT);
     }
 
     const curriculumSubject = this.curriculumSubjectsRepository.create({
@@ -460,7 +459,7 @@ export class AcademicService {
     });
 
     if (existing) {
-      throw new ConflictException('Subject is already assigned to this class');
+      throw new HttpException('Subject is already assigned to this class', HttpStatus.CONFLICT);
     }
 
     const classSubject = this.classSubjectsRepository.create({
@@ -539,7 +538,7 @@ export class AcademicService {
     const [standards, total] = await queryBuilder
       .orderBy('standard.gradeLevel', 'ASC')
       .addOrderBy('standard.sequenceOrder', 'ASC')
-      .skip((options?.page || 1 - 1) * (options?.limit || 10))
+      .skip((options?.page - 1 || 0) * (options?.limit || 10))
       .take(options?.limit || 10)
       .getManyAndCount();
 
@@ -572,7 +571,7 @@ export class AcademicService {
     const enrollment = this.studentClassRepository.create({
       ...enrollmentDto,
       rollNumber: enrollmentDto.rollNumber?.toString(),
-      enrollmentStatus: 'enrolled' as any,
+      enrollmentStatus: EnrollmentStatus.ENROLLED,
       enrollmentDate: new Date(),
     });
     return this.studentClassRepository.save(enrollment);
@@ -654,7 +653,7 @@ export class AcademicService {
     await this.studentClassRepository.update(
       { studentId, classId },
       {
-        enrollmentStatus: 'withdrawn' as any,
+        enrollmentStatus: EnrollmentStatus.WITHDRAWN,
         withdrawalReason: withdrawDto.reason,
         withdrawalDate: withdrawDto.withdrawalDate || new Date(),
         finalGrade: withdrawDto.finalGrade,
@@ -802,10 +801,10 @@ export class AcademicService {
   async assignSubstituteTeacher(id: string, assignDto: any): Promise<any> {
     await this.substituteTeacherRepository.update(id, {
       substituteTeacherId: assignDto.substituteTeacherId,
-      status: 'assigned' as any,
+      status: SubstituteRequestStatus.APPROVED,
       assignedBy: assignDto.assignedBy,
       assignedAt: new Date(),
-      assignmentNotes: assignDto.assignmentNotes,
+      adminNotes: assignDto.assignmentNotes,
       updatedAt: new Date(),
     });
     return this.substituteTeacherRepository.findOne({
@@ -816,8 +815,8 @@ export class AcademicService {
 
   async submitSubstituteFeedback(id: string, feedbackDto: any): Promise<any> {
     await this.substituteTeacherRepository.update(id, {
-      feedback: feedbackDto,
-      status: 'completed' as any,
+      substituteFeedback: feedbackDto,
+      status: SubstituteRequestStatus.COMPLETED,
       completedAt: new Date(),
       updatedAt: new Date(),
     });
@@ -967,15 +966,15 @@ export class AcademicService {
 
     // Determine workload status
     if (workload.utilizationRate >= 120) {
-      workload.workloadStatus = 'critical' as any;
+      workload.workloadStatus = WorkloadStatus.CRITICAL;
     } else if (workload.utilizationRate >= 100) {
-      workload.workloadStatus = 'over_loaded' as any;
+      workload.workloadStatus = WorkloadStatus.OVER_LOADED;
     } else if (workload.utilizationRate >= 80) {
-      workload.workloadStatus = 'optimal' as any;
+      workload.workloadStatus = WorkloadStatus.OPTIMAL;
     } else if (workload.utilizationRate >= 60) {
-      workload.workloadStatus = 'under_loaded' as any;
+      workload.workloadStatus = WorkloadStatus.UNDER_LOADED;
     } else {
-      workload.workloadStatus = 'under_loaded' as any;
+      workload.workloadStatus = WorkloadStatus.UNDER_LOADED;
     }
 
     workload.isOverloaded = workload.workloadStatus === 'over_loaded' || workload.workloadStatus === 'critical';
@@ -995,10 +994,10 @@ export class AcademicService {
     });
 
     const totalTeachers = workloads.length;
-    const optimalWorkload = workloads.filter(w => w.workloadStatus === 'optimal' as any).length;
+    const optimalWorkload = workloads.filter(w => w.workloadStatus === WorkloadStatus.OPTIMAL).length;
     const overLoaded = workloads.filter(w => w.isOverloaded).length;
     const underLoaded = workloads.filter(w => w.isUnderloaded).length;
-    const criticalLoad = workloads.filter(w => w.workloadStatus === 'critical' as any).length;
+    const criticalLoad = workloads.filter(w => w.workloadStatus === WorkloadStatus.CRITICAL).length;
     const averageUtilization = workloads.length > 0
       ? workloads.reduce((sum, w) => sum + w.utilizationRate, 0) / workloads.length
       : 0;
@@ -1031,7 +1030,7 @@ export class AcademicService {
       this.curriculaRepository.count({ where: { schoolId } }),
       this.classesRepository.count({ where: { schoolId } }),
       this.studentClassRepository.count({
-        where: { schoolId, enrollmentStatus: 'enrolled' as any }
+        where: { schoolId, enrollmentStatus: EnrollmentStatus.ENROLLED }
       }),
       this.teacherWorkloadRepository.count({
         where: { schoolId, academicYear: academicYear || new Date().getFullYear().toString() }
@@ -1113,11 +1112,11 @@ export class AcademicService {
       this.classesRepository.count({ where: { schoolId, academicYear: year } }),
       this.studentClassRepository.count({ where: { schoolId, academicYear: year } }),
       this.studentClassRepository.count({
-        where: { schoolId, academicYear: year, enrollmentStatus: 'enrolled' as any }
+        where: { schoolId, academicYear: year, enrollmentStatus: EnrollmentStatus.ENROLLED }
       }),
       this.substituteTeacherRepository.count({ where: { schoolId } }),
       this.substituteTeacherRepository.count({
-        where: { schoolId, status: 'pending' as any }
+        where: { schoolId, status: SubstituteRequestStatus.PENDING }
       }),
     ]);
 
@@ -1216,9 +1215,9 @@ export class AcademicService {
     syllabus.status = status;
     syllabus.updatedAt = new Date();
 
-    if (status === 'approved' as any) {
+    if (status === SyllabusStatus.APPROVED) {
       syllabus.approve(updatedBy);
-    } else if (status === 'published' as any) {
+    } else if (status === SyllabusStatus.PUBLISHED) {
       syllabus.publish();
     }
 
@@ -1450,7 +1449,7 @@ export class AcademicService {
       workloadAnalytics,
     ] = await Promise.all([
       this.studentClassRepository.count({
-        where: { schoolId, academicYear, enrollmentStatus: 'enrolled' as any }
+        where: { schoolId, academicYear, enrollmentStatus: EnrollmentStatus.ENROLLED }
       }),
       this.subjectsRepository.count({ where: { schoolId } }),
       this.classesRepository.count({ where: { schoolId, academicYear } }),
@@ -1494,7 +1493,7 @@ export class AcademicService {
       },
       enrollment: {
         totalEnrollments: studentEnrollments.length,
-        activeEnrollments: studentEnrollments.filter(e => e.enrollmentStatus === 'enrolled' as any).length,
+        activeEnrollments: studentEnrollments.filter(e => e.enrollmentStatus === EnrollmentStatus.ENROLLED).length,
         distributionByGrade: enrollmentByGrade,
         distributionBySection: enrollmentBySection,
       },
@@ -1609,5 +1608,4 @@ export class AcademicService {
       syllabi,
     };
   }
-
 }

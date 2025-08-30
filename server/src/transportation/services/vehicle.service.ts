@@ -1,7 +1,7 @@
 // Academia Pro - Vehicle Service
 // Service for managing transportation vehicles
 
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException, } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Vehicle, VehicleType, VehicleStatus, FuelType } from '../entities/vehicle.entity';

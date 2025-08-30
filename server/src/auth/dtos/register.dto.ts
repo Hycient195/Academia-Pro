@@ -3,7 +3,7 @@
 
 import { IsEmail, IsString, IsNotEmpty, IsOptional, IsEnum, IsDateString, MinLength, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { UserRole } from '@academia/common';
+import { UserRole } from '@academia-pro/common';
 
 export class RegisterDto {
   @ApiProperty({

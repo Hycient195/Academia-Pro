@@ -133,10 +133,17 @@ export class StudentProfileService {
       phone: student.phone,
     };
 
-    await this.studentRepository.update(studentId, {
+    const updatePayload: any = {
       ...updateData,
       updatedBy: userId,
-    });
+    };
+
+    // Handle enum conversions
+    if (updateData.bloodGroup) {
+      updatePayload.bloodGroup = updateData.bloodGroup as BloodGroup;
+    }
+
+    await this.studentRepository.update(studentId, updatePayload);
 
     // Log audit event
     await this.logAuditEvent(
@@ -319,11 +326,6 @@ export class StudentProfileService {
       ...updateData,
       updatedBy: userId,
     };
-
-    // Handle enum conversions for personal info updates
-    if ((updateData as ProfileUpdateDto).bloodGroup) {
-      updatePayload.bloodGroup = (updateData as ProfileUpdateDto).bloodGroup as BloodGroup;
-    }
 
     await this.studentRepository.update(studentId, updatePayload);
 

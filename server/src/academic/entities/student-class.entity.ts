@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index, Unique } from 'typeorm';
-import { Class } from './class.entity';
+import { Class } from '../class.entity';
 
 export enum EnrollmentStatus {
   ENROLLED = 'enrolled',
@@ -184,6 +184,15 @@ export class StudentClass {
   @Column({ name: 'withdrawn_by', type: 'uuid', nullable: true })
   withdrawnBy: string;
 
+  @Column({ name: 'withdrawal_reason', type: 'varchar', length: 500, nullable: true })
+  withdrawalReason: string;
+
+  @Column({ name: 'final_grade', type: 'varchar', length: 10, nullable: true })
+  finalGrade: string;
+
+  @Column({ name: 'exit_notes', type: 'text', nullable: true })
+  exitNotes: string;
+
   @Column({ name: 'transfer_destination', type: 'varchar', length: 200, nullable: true })
   transferDestination: string;
 
@@ -233,12 +242,18 @@ export class StudentClass {
     this.updatedAt = new Date();
   }
 
-  withdraw(withdrawnBy: string, reason?: string): void {
+  withdraw(withdrawnBy: string, reason?: string, finalGrade?: string, exitNotes?: string): void {
     this.enrollmentStatus = EnrollmentStatus.WITHDRAWN;
     this.withdrawnBy = withdrawnBy;
     this.withdrawalDate = new Date();
     if (reason) {
-      this.notes = reason;
+      this.withdrawalReason = reason;
+    }
+    if (finalGrade) {
+      this.finalGrade = finalGrade;
+    }
+    if (exitNotes) {
+      this.exitNotes = exitNotes;
     }
     this.updatedAt = new Date();
   }

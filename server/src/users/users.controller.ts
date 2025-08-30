@@ -26,7 +26,7 @@ import { CreateUserDto, UpdateUserDto } from './dtos';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../common/decorators';
-import { UserRole, UserStatus } from './user.entity';
+import { UserRole, UserStatus, User } from './user.entity';
 
 @ApiTags('users')
 @Controller('users')
@@ -35,7 +35,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  @Roles('super-admin', 'school-admin')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new user' })
@@ -52,13 +52,13 @@ export class UsersController {
   }
 
   @Get()
-  @Roles('super-admin', 'school-admin')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all users with pagination and filtering' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'role', required: false, enum: ['super-admin', 'school-admin', 'teacher', 'student', 'parent'] })
-  @ApiQuery({ name: 'status', required: false, enum: ['active', 'inactive', 'suspended', 'pending'] })
+  @ApiQuery({ name: 'role', required: false, enum: UserRole })
+  @ApiQuery({ name: 'status', required: false, enum: UserStatus })
   @ApiQuery({ name: 'schoolId', required: false, type: String })
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiResponse({
@@ -84,11 +84,11 @@ export class UsersController {
   }
 
   @Get('search')
-  @Roles('super-admin', 'school-admin')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Search users' })
   @ApiQuery({ name: 'query', required: true, type: String })
-  @ApiQuery({ name: 'role', required: false, enum: ['super-admin', 'school-admin', 'teacher', 'student', 'parent'] })
+  @ApiQuery({ name: 'role', required: false, enum: UserRole })
   @ApiQuery({ name: 'schoolId', required: false, type: String })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({
@@ -105,7 +105,7 @@ export class UsersController {
   }
 
   @Get('by-role/:role')
-  @Roles('super-admin', 'school-admin')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get users by role' })
   @ApiResponse({
@@ -117,7 +117,7 @@ export class UsersController {
   }
 
   @Get('by-school/:schoolId')
-  @Roles('super-admin', 'school-admin')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get users by school' })
   @ApiResponse({
@@ -129,7 +129,7 @@ export class UsersController {
   }
 
   @Get('statistics')
-  @Roles('super-admin')
+  @Roles(UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get user statistics' })
   @ApiResponse({
@@ -141,7 +141,7 @@ export class UsersController {
   }
 
   @Get(':id')
-  @Roles('super-admin', 'school-admin')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get user by ID' })
   @ApiResponse({
@@ -154,7 +154,7 @@ export class UsersController {
   }
 
   @Patch(':id')
-  @Roles('super-admin', 'school-admin')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update user information' })
@@ -170,7 +170,7 @@ export class UsersController {
   }
 
   @Patch(':id/activate')
-  @Roles('super-admin', 'school-admin')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Activate user account' })
@@ -185,7 +185,7 @@ export class UsersController {
   }
 
   @Patch(':id/deactivate')
-  @Roles('super-admin', 'school-admin')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Deactivate user account' })
@@ -200,7 +200,7 @@ export class UsersController {
   }
 
   @Patch(':id/suspend')
-  @Roles('super-admin')
+  @Roles(UserRole.SUPER_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Suspend user account' })
@@ -215,7 +215,7 @@ export class UsersController {
   }
 
   @Patch(':id/preferences')
-  @Roles('super-admin', 'school-admin')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update user preferences' })
@@ -224,12 +224,12 @@ export class UsersController {
     description: 'Preferences updated successfully',
   })
   @ApiResponse({ status: 404, description: 'User not found' })
-  updatePreferences(@Param('id') id: string, @Body() preferences: any) {
+  updatePreferences(@Param('id') id: string, @Body() preferences: User['preferences']) {
     return this.usersService.updatePreferences(id, preferences);
   }
 
   @Patch(':id/change-password')
-  @Roles('super-admin', 'school-admin')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Change user password (admin function)' })
@@ -247,7 +247,7 @@ export class UsersController {
   }
 
   @Patch(':id/reset-password')
-  @Roles('super-admin')
+  @Roles(UserRole.SUPER_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Reset user password (admin function)' })
@@ -261,7 +261,7 @@ export class UsersController {
   }
 
   @Patch(':id/verify-email')
-  @Roles('super-admin', 'school-admin')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Verify user email (admin function)' })
@@ -276,7 +276,7 @@ export class UsersController {
   }
 
   @Delete(':id')
-  @Roles('super-admin')
+  @Roles(UserRole.SUPER_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete user (soft delete)' })

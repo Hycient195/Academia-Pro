@@ -275,7 +275,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {}
 // server/src/common/guards/roles.guard.ts
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { UserRole } from '@academia/common';
+import { UserRole } from '@academia-pro/common';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -415,7 +415,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { User } from '../users/user.entity';
-import { LoginCredentials, AuthTokens } from '@academia/common';
+import { LoginCredentials, AuthTokens } from '@academia-pro/common';
 
 @Injectable()
 export class AuthService {

@@ -27,7 +27,7 @@ import {
   ResetPasswordDto,
   VerifyEmailDto,
 } from './dtos';
-import { AuthTokens } from '@academia/common';
+import { AuthTokens } from '@academia-pro/common';
 
 @ApiTags('authentication')
 @Controller('auth')

@@ -28,21 +28,18 @@ export * from './types/academic/academic.types';
 // export * from './modules/mobile-applications/types';
 
 // Export API types
-export * from './api/types';
+// export * from './api/types'; // TODO: Create API types
 
 // Export validation schemas
-export * from './validation/schemas';
+// export * from './validation/schemas'; // TODO: Create validation schemas
 
 // Export utility types
-export * from './utils/types';
+// export * from './utils/types'; // TODO: Create utility types
 
 // Re-export commonly used types for convenience
 export type {
   User,
   School,
-  Student,
-  Teacher,
-  Parent,
   Grade,
   Section,
   Subject,

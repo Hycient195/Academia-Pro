@@ -75,6 +75,24 @@ export enum ServiceHealthStatus {
   UNKNOWN = 'unknown',
 }
 
+export enum PortalActivityType {
+  LOGIN = 'login',
+  LOGOUT = 'logout',
+  API_ACCESS = 'api_access',
+  WEBHOOK_DELIVERY = 'webhook_delivery',
+  INTEGRATION_TEST = 'integration_test',
+  NOTIFICATION_SENT = 'notification_sent',
+  FILE_DOWNLOAD = 'file_download',
+  SETTINGS_UPDATE = 'settings_update',
+}
+
+export enum PortalActivitySeverity {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  CRITICAL = 'critical',
+}
+
 // Response DTOs
 export class ApiResponseDto {
   @ApiProperty({
@@ -1082,7 +1100,6 @@ export class NotificationSettingsDto {
         enabled: boolean;
         start: string;
         end: string;
-        end: string;
       };
     };
     fees: {
@@ -1287,6 +1304,7 @@ export class ApiKeyDto {
 
 export class ApiLogDto {
   @ApiProperty({
+    
     description: 'Log ID',
     example: 'log-001',
   })

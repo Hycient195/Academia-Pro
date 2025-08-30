@@ -3,7 +3,7 @@
 
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThanOrEqual } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { User, UserRole, UserStatus } from './user.entity';
 import { CreateUserDto, UpdateUserDto } from './dtos';
@@ -37,9 +37,16 @@ export class UsersService {
       passwordHash = await bcrypt.hash(password, saltRounds);
     }
 
+    // Prepare user data with correct types
+    const userDataPrepared = {
+      ...userData,
+      role: userData.role as UserRole | undefined,
+      dateOfBirth: userData.dateOfBirth ? new Date(userData.dateOfBirth) : undefined,
+    };
+
     // Create user
     const user = this.usersRepository.create({
-      ...userData,
+      ...userDataPrepared,
       email,
       passwordHash,
       status: password ? UserStatus.ACTIVE : UserStatus.PENDING, // Active if password provided, pending otherwise
@@ -127,9 +134,9 @@ export class UsersService {
     const user = await this.findOne(id);
 
     // Check for unique constraints if updating email
-    if ((updateUserDto as any).email && (updateUserDto as any).email !== user.email) {
+    if (updateUserDto.email && updateUserDto.email !== user.email) {
       const existingUser = await this.usersRepository.findOne({
-        where: { email: (updateUserDto as any).email },
+        where: { email: updateUserDto.email },
       });
       if (existingUser) {
         throw new ConflictException('User with this email already exists');
@@ -137,13 +144,23 @@ export class UsersService {
     }
 
     // Hash new password if provided
-    if ((updateUserDto as any).password) {
+    if (updateUserDto.password) {
       const saltRounds = 12;
-      (updateUserDto as any).password = await bcrypt.hash((updateUserDto as any).password, saltRounds);
+      user.passwordHash = await bcrypt.hash(updateUserDto.password, saltRounds);
     }
 
+    // Prepare update data, excluding password
+    const { password, ...updateData } = updateUserDto;
+
+    // Handle dateOfBirth conversion if provided
+    const updateDataPrepared = {
+      ...updateData,
+      role: updateData.role as UserRole | undefined,
+      dateOfBirth: updateData.dateOfBirth ? new Date(updateData.dateOfBirth) : updateData.dateOfBirth,
+    };
+
     // Update user
-    Object.assign(user, updateUserDto);
+    Object.assign(user, updateDataPrepared);
 
     return this.usersRepository.save(user);
   }
@@ -373,7 +390,7 @@ export class UsersService {
 
     const recentRegistrations = await this.usersRepository.count({
       where: {
-        createdAt: new Date(thirtyDaysAgo.toISOString()),
+        createdAt: MoreThanOrEqual(thirtyDaysAgo),
       },
     });
 

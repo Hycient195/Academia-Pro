@@ -45,8 +45,8 @@ import { Curriculum } from './curriculum.entity';
 import { Class } from './class.entity';
 import { LearningObjective } from './learning-objective.entity';
 import { ISubjectFilters, ICurriculumFilters, IClassFilters, IAcademicStatistics } from '../../../common/src/types/academic/academic.types';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { UserRole } from '../../../common/src/types/shared/user.types';
+import { Roles } from '../common/decorators';
+import { UserRole } from 'src/users/user.entity';
 
 @ApiTags('Academic Management')
 @ApiBearerAuth()

@@ -11,7 +11,7 @@ import { DriverService } from '../services/driver.service';
 import { StudentTransportService } from '../services/student-transport.service';
 
 // DTOs
-import { Route, RouteType, RouteStatus } from '../entities/route.entity';
+import { TransportRoute, RouteType, RouteStatus } from '../entities/route.entity';
 import { Vehicle, VehicleStatus, FuelType } from '../entities/vehicle.entity';
 import { Driver, DriverStatus, LicenseType } from '../entities/driver.entity';
 import { StudentTransport, TransportStatus, TransportType } from '../entities/student-transport.entity';
@@ -46,13 +46,10 @@ export class TransportationController {
       routeAnalytics,
       vehicleAnalytics,
     ] = await Promise.all([
-      this.routeService.getRoutesBySchool(schoolId),
-      this.vehicleService.getVehiclesBySchool(schoolId),
-      this.driverService.getDriversBySchool(schoolId),
-      this.studentTransportService.getTransportsByDateRange(
-        new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
-        new Date()
-      ),
+      this.routeService.getRoutes(schoolId),
+      this.vehicleService.getVehicles(schoolId),
+      this.driverService.getDrivers(schoolId),
+      this.studentTransportService.getStudentTransports(schoolId, undefined, { status: TransportStatus.ACTIVE }),
       this.getRouteAnalytics(schoolId),
       this.getVehicleAnalytics(schoolId),
     ]);
@@ -106,8 +103,8 @@ export class TransportationController {
     status: 201,
     description: 'Route created successfully',
   })
-  async createRoute(@Body() routeData: Partial<Route>) {
-    return this.routeService.createRoute(routeData);
+  async createRoute(@Body() routeData: Partial<TransportRoute>) {
+    return this.routeService.createRoute(routeData.schoolId!, routeData);
   }
 
   @Get('routes')
@@ -127,7 +124,7 @@ export class TransportationController {
     @Query('routeType') routeType?: RouteType,
     @Query('status') status?: RouteStatus,
   ) {
-    return this.routeService.getRoutesBySchool(schoolId, { routeType, status });
+    return this.routeService.getRoutes(schoolId, { type: routeType, status });
   }
 
   @Get('routes/:routeId/analytics')
@@ -136,12 +133,13 @@ export class TransportationController {
     description: 'Returns detailed analytics for a specific route.',
   })
   @ApiParam({ name: 'routeId', description: 'Route ID' })
+  @ApiQuery({ name: 'schoolId', required: true })
   @ApiResponse({
     status: 200,
     description: 'Route analytics retrieved successfully',
   })
-  async getRouteAnalyticsById(@Param('routeId') routeId: string) {
-    return this.routeService.getRouteAnalytics(routeId);
+  async getRouteAnalyticsById(@Param('routeId') routeId: string, @Query('schoolId') schoolId: string) {
+    return this.routeService.getRouteAnalytics(schoolId, routeId);
   }
 
   // ==================== VEHICLE MANAGEMENT ====================
@@ -172,7 +170,7 @@ export class TransportationController {
     description: 'Vehicle created successfully',
   })
   async createVehicle(@Body() vehicleData: Partial<Vehicle>) {
-    return this.vehicleService.createVehicle(vehicleData);
+    return this.vehicleService.createVehicle(vehicleData.schoolId!, vehicleData);
   }
 
   @Get('vehicles')
@@ -190,7 +188,7 @@ export class TransportationController {
     @Query('schoolId') schoolId: string,
     @Query('status') status?: VehicleStatus,
   ) {
-    return this.vehicleService.getVehiclesBySchool(schoolId, { status });
+    return this.vehicleService.getVehicles(schoolId, { status });
   }
 
   @Put('vehicles/:vehicleId/status')
@@ -199,6 +197,7 @@ export class TransportationController {
     description: 'Updates the status of a vehicle (active, maintenance, etc.).',
   })
   @ApiParam({ name: 'vehicleId', description: 'Vehicle ID' })
+  @ApiQuery({ name: 'schoolId', required: true })
   @ApiBody({
     description: 'Status update data',
     schema: {
@@ -216,9 +215,10 @@ export class TransportationController {
   })
   async updateVehicleStatus(
     @Param('vehicleId') vehicleId: string,
+    @Query('schoolId') schoolId: string,
     @Body() statusData: { status: VehicleStatus; reason?: string },
   ) {
-    return this.vehicleService.updateVehicleStatus(vehicleId, statusData.status, statusData.reason);
+    return this.vehicleService.updateVehicle(schoolId, vehicleId, { status: statusData.status });
   }
 
   // ==================== DRIVER MANAGEMENT ====================
@@ -249,7 +249,7 @@ export class TransportationController {
     description: 'Driver created successfully',
   })
   async createDriver(@Body() driverData: Partial<Driver>) {
-    return this.driverService.createDriver(driverData);
+    return this.driverService.createDriver(driverData.schoolId, driverData);
   }
 
   @Get('drivers')
@@ -267,7 +267,7 @@ export class TransportationController {
     @Query('schoolId') schoolId: string,
     @Query('status') status?: DriverStatus,
   ) {
-    return this.driverService.getDriversBySchool(schoolId, { status });
+    return this.driverService.getDrivers(schoolId, { status });
   }
 
   // ==================== STUDENT TRANSPORT MANAGEMENT ====================
@@ -281,8 +281,9 @@ export class TransportationController {
     description: 'Student transport assignment data',
     schema: {
       type: 'object',
-      required: ['studentId', 'routeId', 'pickupStopId', 'dropoffStopId'],
+      required: ['schoolId', 'studentId', 'routeId', 'pickupStopId', 'dropoffStopId'],
       properties: {
+        schoolId: { type: 'string' },
         studentId: { type: 'string' },
         routeId: { type: 'string' },
         pickupStopId: { type: 'string' },
@@ -308,7 +309,7 @@ export class TransportationController {
     description: 'Student transport assigned successfully',
   })
   async assignStudentTransport(@Body() transportData: any) {
-    return this.studentTransportService.assignStudentTransport(transportData);
+    return this.studentTransportService.assignTransport(transportData.schoolId, transportData);
   }
 
   @Get('student-transports')
@@ -316,6 +317,7 @@ export class TransportationController {
     summary: 'Get student transports',
     description: 'Returns transportation assignments for students.',
   })
+  @ApiQuery({ name: 'schoolId', required: true })
   @ApiQuery({ name: 'studentId', required: false })
   @ApiQuery({ name: 'routeId', required: false })
   @ApiQuery({ name: 'status', required: false, enum: Object.values(TransportStatus) })
@@ -324,20 +326,18 @@ export class TransportationController {
     description: 'Student transports retrieved successfully',
   })
   async getStudentTransports(
+    @Query('schoolId') schoolId: string,
     @Query('studentId') studentId?: string,
     @Query('routeId') routeId?: string,
     @Query('status') status?: TransportStatus,
   ) {
     if (studentId) {
-      return this.studentTransportService.getStudentTransports(studentId);
+      return this.studentTransportService.getStudentTransports(schoolId, studentId, { status });
     } else if (routeId) {
-      return this.studentTransportService.getActiveTransportsByRoute(routeId);
+      return this.studentTransportService.getStudentTransports(schoolId, undefined, { routeId, status });
     }
     // Return all active transports if no specific filter
-    return this.studentTransportService.getTransportsByDateRange(
-      new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
-      new Date()
-    );
+    return this.studentTransportService.getStudentTransports(schoolId, undefined, { status: TransportStatus.ACTIVE });
   }
 
   // ==================== ANALYTICS & REPORTING ====================
@@ -353,9 +353,9 @@ export class TransportationController {
     description: 'Route analytics retrieved successfully',
   })
   async getRouteAnalytics(@Query('schoolId') schoolId: string) {
-    const routes = await this.routeService.getRoutesBySchool(schoolId);
+    const routes = await this.routeService.getRoutes(schoolId);
     const analytics = await Promise.all(
-      routes.map(route => this.routeService.getRouteAnalytics(route.id))
+      routes.map(route => this.routeService.getRouteAnalytics(schoolId, route.id))
     );
 
     return {
@@ -381,9 +381,9 @@ export class TransportationController {
     description: 'Vehicle analytics retrieved successfully',
   })
   async getVehicleAnalytics(@Query('schoolId') schoolId: string) {
-    const vehicles = await this.vehicleService.getVehiclesBySchool(schoolId);
+    const vehicles = await this.vehicleService.getVehicles(schoolId);
     const analytics = await Promise.all(
-      vehicles.map(vehicle => this.vehicleService.getVehicleAnalytics(vehicle.id))
+      vehicles.map(vehicle => this.vehicleService.getVehicleAnalytics(schoolId, vehicle.id))
     );
 
     return {
@@ -410,16 +410,16 @@ export class TransportationController {
     description: 'Driver analytics retrieved successfully',
   })
   async getDriverAnalytics(@Query('schoolId') schoolId: string) {
-    const drivers = await this.driverService.getDriversBySchool(schoolId);
+    const drivers = await this.driverService.getDrivers(schoolId);
     const analytics = await Promise.all(
-      drivers.map(driver => this.driverService.getDriverAnalytics(driver.id))
+      drivers.map(driver => this.driverService.getDriverAnalytics(schoolId, driver.id))
     );
 
     return {
       totalDrivers: drivers.length,
       activeDrivers: drivers.filter(d => d.status === 'active').length,
       averageExperience: drivers.length > 0
-        ? drivers.reduce((sum, d) => sum + d.yearsOfExperience, 0) / drivers.length
+        ? drivers.reduce((sum, d) => sum + (new Date().getFullYear() - new Date(d.dateOfBirth).getFullYear()), 0) / drivers.length
         : 0,
       averageRating: analytics.length > 0
         ? analytics.reduce((sum, a) => sum + a.performanceMetrics.averageRating, 0) / analytics.length

@@ -2,7 +2,8 @@
 // Database entity for user management
 
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Index, OneToMany } from 'typeorm';
-import { UserRole, UserStatus } from '@academia/common';
+import { randomBytes } from 'crypto';
+import { UserRole, UserStatus } from '../../../common/src/types/shared/types';
 
 @Entity('users')
 @Index(['email'], { unique: true })
@@ -154,14 +155,14 @@ export class User {
   }
 
   generateEmailVerificationToken(): string {
-    const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const token = randomBytes(32).toString('hex');
     this.emailVerificationToken = token;
     this.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
     return token;
   }
 
   generatePasswordResetToken(): string {
-    const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const token = randomBytes(32).toString('hex');
     this.passwordResetToken = token;
     this.passwordResetExpires = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour
     return token;

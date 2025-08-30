@@ -80,7 +80,9 @@ export class StudentTransferService {
         applicationDate: transferData.applicationDate,
         transferDate: transferData.transferDate,
         specialConsiderations: transferData.specialConsiderations,
-        createdBy: userId,
+        academicYear: new Date().getFullYear().toString(),
+        initiatedBy: userId,
+        initiatedByName: 'System', // TODO: Get actual user name
       });
 
       const savedTransfer = await queryRunner.manager.save(StudentTransfer, transfer);
@@ -282,8 +284,11 @@ export class StudentTransferService {
       throw new BadRequestException('Only rejected transfers can be appealed');
     }
 
-    // TODO: Implement appeal functionality when entity properties are added
-    // For now, just log the appeal request
+    // Mark appeal as submitted
+    await this.transferRepository.update(requestId, {
+      appealSubmitted: true,
+      updatedBy: userId,
+    });
 
     // Log audit event
     await this.logAuditEvent(

@@ -1,32 +1,48 @@
 // Academia Pro - Schools Module
-// Manages school entities and multi-school architecture
+// Module for multi-school architecture and school management
 
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-// Controllers
-import { SchoolsController } from './schools.controller';
-
-// Services
-import { SchoolsService } from './schools.service';
-
 // Entities
 import { School } from './school.entity';
+import { User } from '../users/user.entity';
+import { Student } from '../students/student.entity';
+
+// Services
+import { SchoolContextService } from './school-context.service';
+import { CrossSchoolReportingService } from './cross-school-reporting.service';
+
+// Controllers
+import { SuperAdminController } from './super-admin.controller';
+import { SchoolAdminController } from './school-admin.controller';
 
 // Guards
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { SchoolContextGuard } from '../common/guards/school-context.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([School]),
+    TypeOrmModule.forFeature([
+      School,
+      User,
+      Student,
+    ]),
   ],
-  controllers: [SchoolsController],
+  controllers: [
+    SuperAdminController,
+    SchoolAdminController,
+  ],
   providers: [
-    SchoolsService,
-    JwtAuthGuard,
+    SchoolContextService,
+    CrossSchoolReportingService,
+    SchoolContextGuard,
     RolesGuard,
   ],
-  exports: [SchoolsService],
+  exports: [
+    SchoolContextService,
+    SchoolContextGuard,
+    TypeOrmModule,
+  ],
 })
 export class SchoolsModule {}

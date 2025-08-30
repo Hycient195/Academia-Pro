@@ -8,7 +8,7 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { User } from '../users/user.entity';
 import { LoginDto, RegisterDto, RefreshTokenDto, ChangePasswordDto } from './dtos';
-import { AuthTokens, UserRole } from '@academia/common';
+import { AuthTokens, UserRole } from '@academia-pro/common';
 
 @Injectable()
 export class AuthService {

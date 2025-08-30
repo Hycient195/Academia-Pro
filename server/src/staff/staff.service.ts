@@ -60,10 +60,10 @@ export class StaffService {
       email,
       schoolId,
       employmentStatus: TEmploymentStatus.ACTIVE,
-    });
+    } as any);
 
     const savedStaff = await this.staffRepository.save(staff);
-    return StaffResponseDto.fromEntity(savedStaff);
+    return StaffResponseDto.fromEntity(Array.isArray(savedStaff) ? savedStaff[0] : savedStaff);
   }
 
   /**
@@ -165,15 +165,8 @@ export class StaffService {
       throw new NotFoundException('Staff member not found');
     }
 
-    // Check for unique constraints if updating employeeId or email
-    if (updateStaffDto.employeeId && updateStaffDto.employeeId !== staff.employeeId) {
-      const existingStaff = await this.staffRepository.findOne({
-        where: { employeeId: updateStaffDto.employeeId },
-      });
-      if (existingStaff) {
-        throw new ConflictException('Staff member with this employee ID already exists');
-      }
-    }
+    // Check for unique constraints if updating email
+    // Note: employeeId should not be updatable as it's typically auto-generated
 
     if (updateStaffDto.email && updateStaffDto.email !== staff.email) {
       const existingEmail = await this.staffRepository.findOne({
@@ -276,10 +269,11 @@ export class StaffService {
     ]);
 
     // Helper function to convert array to record
-    const convertToRecord = (data: any[], keyField: string): Record<string, number> => {
+    const convertToRecord = (data: any[], keyField: string, valueField: string = 'count'): Record<string, number> => {
       const result: Record<string, number> = {};
       data.forEach(item => {
-        result[item[keyField]] = parseInt(item.count) || parseFloat(item.averageSalary) || 0;
+        const value = item[valueField];
+        result[item[keyField]] = valueField === 'count' ? parseInt(value) || 0 : parseFloat(value) || 0;
       });
       return result;
     };

@@ -11,6 +11,10 @@ import { StudentPortalSelfServiceController } from './controllers/self-service.c
 import { StudentPortalExtracurricularController } from './controllers/extracurricular.controller';
 import { StudentPortalWellnessController } from './controllers/wellness.controller';
 import { StudentPortalCareerController } from './controllers/career.controller';
+import { StudentPortalLibraryController } from './controllers/library.controller';
+import { StudentPortalTransportationController } from './controllers/transportation.controller';
+import { StudentPortalFeeController } from './controllers/fee.controller';
+import { StudentPortalEmergencyController } from './controllers/emergency.controller';
 
 // Services
 import { StudentPortalDashboardService } from './services/dashboard.service';
@@ -20,6 +24,10 @@ import { StudentPortalSelfServiceService } from './services/self-service.service
 import { StudentPortalExtracurricularService } from './services/extracurricular.service';
 import { StudentPortalWellnessService } from './services/wellness.service';
 import { StudentPortalCareerService } from './services/career.service';
+import { StudentPortalLibraryService } from './services/library.service';
+import { StudentPortalTransportationService } from './services/transportation.service';
+import { StudentPortalFeeService } from './services/fee.service';
+import { StudentPortalEmergencyService } from './services/emergency.service';
 
 // Entities
 import { StudentPortalAccess } from './entities/student-portal-access.entity';
@@ -66,6 +74,10 @@ import { StudentAccessGuard } from './guards/student-access.guard';
     StudentPortalExtracurricularController,
     StudentPortalWellnessController,
     StudentPortalCareerController,
+    StudentPortalLibraryController,
+    StudentPortalTransportationController,
+    StudentPortalFeeController,
+    StudentPortalEmergencyController,
   ],
   providers: [
     StudentPortalDashboardService,
@@ -75,6 +87,10 @@ import { StudentAccessGuard } from './guards/student-access.guard';
     StudentPortalExtracurricularService,
     StudentPortalWellnessService,
     StudentPortalCareerService,
+    StudentPortalLibraryService,
+    StudentPortalTransportationService,
+    StudentPortalFeeService,
+    StudentPortalEmergencyService,
     StudentPortalGuard,
     StudentAccessGuard,
   ],
@@ -86,6 +102,10 @@ import { StudentAccessGuard } from './guards/student-access.guard';
     StudentPortalExtracurricularService,
     StudentPortalWellnessService,
     StudentPortalCareerService,
+    StudentPortalLibraryService,
+    StudentPortalTransportationService,
+    StudentPortalFeeService,
+    StudentPortalEmergencyService,
   ],
 })
 export class StudentPortalModule {}

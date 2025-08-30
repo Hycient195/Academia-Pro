@@ -130,6 +130,28 @@ export class User {
   @Column({ type: 'timestamp', nullable: true })
   refreshTokenExpires: Date;
 
+  // MFA (Multi-Factor Authentication) fields
+  @Column({ type: 'boolean', default: false })
+  mfaEnabled: boolean;
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  mfaMethod: 'totp' | 'sms' | null;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  mfaSecret: string;
+
+  @Column({ type: 'jsonb', nullable: true })
+  mfaBackupCodes: string[];
+
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  mfaVerificationCode: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  mfaVerificationExpires: Date;
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  phoneNumber: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

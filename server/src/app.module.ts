@@ -19,8 +19,11 @@ import { TimetableModule } from './timetable/timetable.module';
 import { StaffModule } from './staff/staff.module';
 import { LibraryModule } from './library/library.module';
 import { HostelModule } from './hostel/hostel.module';
+import { FeeModule } from './fee/fee.module';
 import { CommunicationModule } from './communication/communication.module';
 import { ParentPortalModule } from './parent-portal/parent-portal.module';
+import { TransportationModule } from './transportation/transportation.module';
+import { InventoryModule } from './inventory/inventory.module';
 
 // Common modules
 import { CommonModule } from './common/common.module';
@@ -65,8 +68,11 @@ import { databaseConfig } from './database.config';
     StaffModule,
     LibraryModule,
     HostelModule,
+    FeeModule,
     CommunicationModule,
     ParentPortalModule,
+    TransportationModule,
+    InventoryModule,
 
     // TODO: Add remaining modules as they are implemented
     // FeeModule,

@@ -2,7 +2,7 @@
 // Academia Pro - Staff & HR Management Types
 // Shared type definitions for staff and HR management module
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TLeaveStatus = exports.TLeaveType = exports.TQualificationLevel = exports.TPosition = exports.TDepartment = exports.TEmploymentStatus = exports.TEmploymentType = void 0;
+exports.TLeaveStatus = exports.TLeaveType = exports.TBloodGroup = exports.TQualificationLevel = exports.TPosition = exports.TDepartment = exports.TEmploymentStatus = exports.TEmploymentType = void 0;
 // Enums
 var TEmploymentType;
 (function (TEmploymentType) {
@@ -60,6 +60,17 @@ var TQualificationLevel;
     TQualificationLevel["PHD"] = "phd";
     TQualificationLevel["PROFESSIONAL_CERTIFICATION"] = "professional_certification";
 })(TQualificationLevel || (exports.TQualificationLevel = TQualificationLevel = {}));
+var TBloodGroup;
+(function (TBloodGroup) {
+    TBloodGroup["A_POSITIVE"] = "a_positive";
+    TBloodGroup["A_NEGATIVE"] = "a_negative";
+    TBloodGroup["B_POSITIVE"] = "b_positive";
+    TBloodGroup["B_NEGATIVE"] = "b_negative";
+    TBloodGroup["AB_POSITIVE"] = "ab_positive";
+    TBloodGroup["AB_NEGATIVE"] = "ab_negative";
+    TBloodGroup["O_POSITIVE"] = "o_positive";
+    TBloodGroup["O_NEGATIVE"] = "o_negative";
+})(TBloodGroup || (exports.TBloodGroup = TBloodGroup = {}));
 var TLeaveType;
 (function (TLeaveType) {
     TLeaveType["ANNUAL"] = "annual";

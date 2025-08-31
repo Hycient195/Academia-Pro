@@ -363,6 +363,7 @@ export class ParentPortalCommunicationService {
         message: messageData.message,
         attachments: messageData.attachments,
         isRead: false,
+        createdBy: parentPortalAccessId,
         metadata: {
           recipientId: messageData.recipientId,
           recipientType: messageData.recipientType,
@@ -466,6 +467,9 @@ export class ParentPortalCommunicationService {
         parentPortalAccessId,
         studentId: appointmentData.studentId,
         schoolId: '', // Would get from parent access
+        senderId: parentPortalAccessId,
+        senderType: 'parent',
+        senderName: 'Parent', // Would get from parent profile
         communicationType: CommunicationType.IN_APP_MESSAGE,
         direction: CommunicationDirection.OUTBOUND,
         status: CommunicationStatus.SENT,
@@ -474,6 +478,7 @@ export class ParentPortalCommunicationService {
         subject: `Appointment Request: ${appointmentData.title}`,
         message: `Appointment requested for ${appointmentData.appointmentType} on ${appointmentData.preferredDate.toDateString()}. ${appointmentData.description || ''}`,
         isRead: false,
+        createdBy: parentPortalAccessId,
         metadata: {
           appointmentId: appointment.id,
           appointmentType: appointmentData.appointmentType,

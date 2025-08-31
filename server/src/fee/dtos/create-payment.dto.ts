@@ -3,7 +3,7 @@
 
 import { IsNotEmpty, IsOptional, IsString, IsEnum, IsDateString, IsBoolean, IsNumber, IsObject, Min, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TPaymentMethod, ICreatePaymentRequest, IProcessPaymentRequest, IRefundPaymentRequest } from '../../../../common/src/types/fee/fee.types';
+import { TPaymentMethod, ICreatePaymentRequest } from '@academia-pro/common/fee';
 
 export class CreatePaymentDto implements ICreatePaymentRequest {
   @ApiProperty({
@@ -55,6 +55,16 @@ export class CreatePaymentDto implements ICreatePaymentRequest {
   @IsNumber({}, { message: 'Amount paid must be a number' })
   @Min(0.01, { message: 'Amount paid must be greater than 0' })
   amountPaid: number;
+
+  @ApiProperty({
+    description: 'Amount (duplicate for interface compatibility)',
+    example: 500.00,
+    minimum: 0.01,
+  })
+  @IsNotEmpty({ message: 'Amount is required' })
+  @IsNumber({}, { message: 'Amount must be a number' })
+  @Min(0.01, { message: 'Amount must be greater than 0' })
+  amount: number;
 
   @ApiPropertyOptional({
     description: 'Currency code',
@@ -199,7 +209,7 @@ export class CreatePaymentDto implements ICreatePaymentRequest {
   metadata?: any;
 }
 
-export class ProcessPaymentDto implements IProcessPaymentRequest {
+export class ProcessPaymentDto {
   @ApiProperty({
     description: 'Payment ID to process',
     example: 'payment-uuid-123',
@@ -245,7 +255,7 @@ export class ProcessPaymentDto implements IProcessPaymentRequest {
   processingNotes?: string;
 }
 
-export class RefundPaymentDto implements IRefundPaymentRequest {
+export class RefundPaymentDto {
   @ApiProperty({
     description: 'Payment ID to refund',
     example: 'payment-uuid-123',

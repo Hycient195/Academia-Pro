@@ -75,6 +75,20 @@ export class Asset {
   @Column({ name: 'location_id', type: 'uuid', nullable: true })
   locationId: string;
 
+  @Column({ name: 'location', type: 'jsonb', nullable: true })
+  location: {
+    building?: string;
+    floor?: string;
+    room?: string;
+    department?: string;
+    custodian?: string;
+    custodianContact?: string;
+    coordinates?: {
+      latitude: number;
+      longitude: number;
+    };
+  };
+
   @Column({ name: 'assigned_to_user_id', type: 'uuid', nullable: true })
   assignedToUserId: string;
 

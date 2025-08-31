@@ -106,7 +106,7 @@ export interface IMarkAttendanceRequest {
     latitude?: number;
     longitude?: number;
 }
-export interface IBulkMarkAttendanceRequest {
+export interface IBulkMarkAttendanceRequestOld {
     attendances: IMarkAttendanceRequest[];
     classId?: string;
     subjectId?: string;
@@ -114,32 +114,34 @@ export interface IBulkMarkAttendanceRequest {
     attendanceDate: string;
     attendanceType?: TAttendanceType;
 }
-export interface IAttendanceResponse extends IAttendance {
-    student?: {
-        id: string;
-        firstName: string;
-        lastName: string;
-        admissionNumber: string;
-    };
-    class?: {
-        id: string;
-        name: string;
-        gradeLevel: string;
-        section: string;
-    };
-    subject?: {
-        id: string;
-        name: string;
-        code: string;
-    };
-    teacher?: {
-        id: string;
-        firstName: string;
-        lastName: string;
-    };
+export interface IAttendanceResponse {
+    id: string;
+    studentId: string;
+    studentName?: string;
+    status: TAttendanceStatus;
+    attendanceType: TAttendanceType;
+    attendanceDate: string;
+    checkInTime?: string;
+    checkOutTime?: string;
+    className?: string;
+    sectionName?: string;
+    subjectName?: string;
+    teacherName?: string;
+    periodNumber?: number;
+    eventName?: string;
+    location?: string;
+    attendanceMethod: TAttendanceMethod;
+    lateMinutes?: number;
+    absenceReason?: string;
+    excuseType?: string;
+    notes?: string;
+    markedByName: string;
+    markedByRole: string;
+    createdAt: string;
+    updatedAt: string;
 }
 export interface IAttendanceListResponse {
-    attendances: IAttendanceResponse[];
+    data: IAttendanceResponse[];
     total: number;
     page: number;
     limit: number;
@@ -151,6 +153,68 @@ export interface IAttendanceListResponse {
         totalExcused: number;
         attendancePercentage: number;
     };
+}
+export interface IAttendanceStatisticsResponse {
+    totalRecords: number;
+    presentCount: number;
+    absentCount: number;
+    lateCount: number;
+    excusedCount: number;
+    attendancePercentage: number;
+    averageLateMinutes: number;
+    commonAbsenceReason?: string;
+}
+export interface IStudentAttendanceReport {
+    studentId: string;
+    studentName: string;
+    gradeLevel: string;
+    section: string;
+    totalDays: number;
+    presentDays: number;
+    absentDays: number;
+    lateDays: number;
+    excusedDays: number;
+    attendancePercentage: number;
+    totalLateMinutes: number;
+    consecutiveAbsences: number;
+    absencesThisMonth: number;
+    absencesThisYear: number;
+}
+export interface IClassAttendanceReportResponse {
+    classId: string;
+    className: string;
+    sectionName: string;
+    reportDate: string;
+    totalStudents: number;
+    presentCount: number;
+    absentCount: number;
+    lateCount: number;
+    excusedCount: number;
+    attendancePercentage: number;
+    absentStudents: string[];
+    lateStudents: string[];
+}
+export interface IBulkMarkAttendanceRequest {
+    attendances: {
+        studentId: string;
+        status: TAttendanceStatus;
+        lateMinutes?: number;
+        absenceReason?: string;
+        excuseType?: string;
+        notes?: string;
+    }[];
+    classId?: string;
+    subjectId?: string;
+    teacherId?: string;
+    attendanceDate: string;
+    attendanceType?: TAttendanceType;
+}
+export interface IBulkUpdateAttendanceRequest {
+    studentIds: string[];
+    status: TAttendanceStatus;
+    attendanceDate: string;
+    reason?: string;
+    internalNotes?: string;
 }
 export interface IAttendanceFilters {
     studentId?: string;

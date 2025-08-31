@@ -703,7 +703,15 @@ export class ParentPortalApiGatewayService {
       eventType: event.eventType,
       data: event.data,
       timestamp: event.timestamp,
-      deliveryAttempts: event.deliveryAttempts,
+      deliveryAttempts: Array.from({ length: event.deliveryAttempts }, (_, i) => ({
+        attemptNumber: i + 1,
+        timestamp: event.timestamp,
+        status: event.status === 'success' ? 'success' as const :
+                event.status === 'failed' ? 'failed' as const : 'retry' as const,
+        responseStatus: event.responseStatus,
+        errorMessage: event.status === 'failed' ? 'Delivery failed' : undefined,
+        duration: event.processingTime || 0,
+      })),
       status: event.status,
       responseStatus: event.responseStatus,
       responseBody: event.responseBody,
@@ -1537,6 +1545,173 @@ const analytics: ApiAnalyticsDto = {
 this.logger.log(`API analytics retrieved for parent: ${parentPortalAccessId}`);
 
 return analytics;
+}
+
+/**
+ * Proxy request to external service
+ */
+async proxyRequest(
+  parentPortalAccessId: string,
+  service: string,
+  targetEndpoint: string,
+  requestBody: any,
+  headers: any,
+): Promise<ApiResponseDto> {
+  this.logger.log(`Proxying request to service: ${service}, endpoint: ${targetEndpoint}`);
+
+  const startTime = Date.now();
+
+  try {
+    // Get parent portal access to verify permissions
+    const parentAccess = await this.parentPortalAccessRepository.findOne({
+      where: { id: parentPortalAccessId },
+    });
+
+    if (!parentAccess) {
+      throw new NotFoundException('Parent portal access not found');
+    }
+
+    // Find the integration for the service
+    const integration = await this.integrationRepository.findOne({
+      where: {
+        parentPortalAccessId,
+        name: service,
+        status: IntegrationStatus.ACTIVE,
+      },
+    });
+
+    if (!integration) {
+      throw new NotFoundException(`Integration '${service}' not found or not active`);
+    }
+
+    // Construct the target URL
+    const baseUrl = integration.config.baseUrl || integration.provider;
+    const targetUrl = `${baseUrl}${targetEndpoint}`;
+
+    // Prepare headers for the external request
+    const requestHeaders = {
+      'Content-Type': 'application/json',
+      'User-Agent': 'ParentPortal-API-Gateway/1.0',
+      ...headers,
+    };
+
+    // Remove headers that shouldn't be forwarded
+    delete requestHeaders.authorization;
+    delete requestHeaders.cookie;
+    delete requestHeaders['x-forwarded-for'];
+    delete requestHeaders['x-real-ip'];
+
+    // Add integration-specific headers if configured
+    if (integration.config.apiKey) {
+      requestHeaders['Authorization'] = `Bearer ${integration.config.apiKey}`;
+    }
+
+    // Make the HTTP request to the external service
+    const response = await firstValueFrom(
+      this.httpService.post(targetUrl, requestBody, {
+        headers: requestHeaders,
+        timeout: integration.config.timeout || 30000,
+      })
+    );
+
+    const processingTime = Date.now() - startTime;
+
+    this.logger.log(`Request proxied successfully to ${service}, response time: ${processingTime}ms`);
+
+    // Log the API request
+    await this.logApiRequest(
+      parentPortalAccessId,
+      'POST',
+      `/proxy/${service}${targetEndpoint}`,
+      response.status,
+      processingTime,
+      JSON.stringify(requestBody).length,
+      response.data ? JSON.stringify(response.data).length : 0,
+    );
+
+    return {
+      status: 'success',
+      message: 'Request proxied successfully',
+      data: response.data,
+      timestamp: new Date(),
+      requestId: `proxy-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      version: ApiVersion.V1,
+      processingTime,
+    };
+
+  } catch (error) {
+    const processingTime = Date.now() - startTime;
+
+    this.logger.error(`Failed to proxy request to ${service}: ${error.message}`);
+
+    // Log the failed request
+    await this.logApiRequest(
+      parentPortalAccessId,
+      'POST',
+      `/proxy/${service}${targetEndpoint}`,
+      error.response?.status || 500,
+      processingTime,
+      JSON.stringify(requestBody).length,
+      0,
+    );
+
+    if (error.response) {
+      // External service returned an error
+      return {
+        status: 'error',
+        message: `External service error: ${error.response.status} ${error.response.statusText}`,
+        data: error.response.data,
+        timestamp: new Date(),
+        requestId: `proxy-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        version: ApiVersion.V1,
+        processingTime,
+      };
+    } else if (error.code === 'ECONNABORTED') {
+      // Timeout error
+      throw new HttpException(
+        'Request timeout - external service did not respond in time',
+        HttpStatus.GATEWAY_TIMEOUT,
+      );
+    } else {
+      // Other errors
+      throw new HttpException(
+        `Failed to proxy request: ${error.message}`,
+        HttpStatus.BAD_GATEWAY,
+      );
+    }
+  }
+}
+
+/**
+ * Log API request for analytics
+ */
+private async logApiRequest(
+  parentPortalAccessId: string,
+  method: string,
+  endpoint: string,
+  statusCode: number,
+  responseTime: number,
+  requestSize: number,
+  responseSize: number,
+): Promise<void> {
+  try {
+    const log = this.apiLogRepository.create({
+      parentPortalAccessId,
+      method: method as any,
+      endpoint,
+      statusCode,
+      responseTime,
+      requestSize,
+      responseSize,
+      timestamp: new Date(),
+      version: ApiVersion.V1,
+      requestId: `req-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+    });
+
+    await this.apiLogRepository.save(log);
+  } catch (error) {
+    this.logger.error(`Failed to log API request: ${error.message}`);
+  }
 }
 }
      

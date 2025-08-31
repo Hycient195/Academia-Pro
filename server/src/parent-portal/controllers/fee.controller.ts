@@ -437,6 +437,7 @@ export class ParentPortalFeeController {
               status: { type: 'string', enum: ['available', 'applied', 'awarded', 'denied'] },
               appliedDate: { type: 'string', format: 'date' },
             },
+            required: ['scholarshipId', 'name', 'description', 'amount', 'coverage', 'eligibilityCriteria', 'status'],
           },
         },
         appliedScholarships: {
@@ -452,6 +453,7 @@ export class ParentPortalFeeController {
               decisionDate: { type: 'string', format: 'date' },
               awardedAmount: { type: 'number' },
             },
+            required: ['applicationId', 'scholarshipId', 'scholarshipName', 'appliedDate', 'status'],
           },
         },
       },
@@ -469,7 +471,7 @@ export class ParentPortalFeeController {
       amount: number;
       coverage: 'full' | 'partial' | 'percentage';
       eligibilityCriteria: string[];
-      applicationDeadline: Date;
+      applicationDeadline?: Date;
       status: 'available' | 'applied' | 'awarded' | 'denied';
       appliedDate?: Date;
     }>;

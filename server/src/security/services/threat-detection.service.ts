@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, Between, MoreThan, LessThan } from 'typeorm';
-import { AuditLog, AuditEventType, AuditSeverity } from '../entities/audit-log.entity';
+import { AuditLog } from '../entities/audit-log.entity';
+import { AuditAction, AuditSeverity } from './audit.service';
 import { UserSession, SessionStatus } from '../entities/user-session.entity';
 import { SecurityService } from './security.service';
 import { PolicyService } from './policy.service';
@@ -100,7 +101,7 @@ export class ThreatDetectionService {
         .select('audit.ipAddress', 'ipAddress')
         .addSelect('COUNT(*)', 'attempts')
         .addSelect('ARRAY_AGG(audit.userId)', 'userIds')
-        .where('audit.eventType = :eventType', { eventType: AuditEventType.LOGIN_FAILED })
+        .where('audit.action = :action', { action: AuditAction.AUTHENTICATION_FAILED })
         .andWhere('audit.timestamp BETWEEN :startTime AND :endTime', { startTime, endTime })
         .groupBy('audit.ipAddress')
         .having('COUNT(*) >= :threshold', { threshold: 5 })
@@ -157,7 +158,7 @@ export class ThreatDetectionService {
         .addSelect('COUNT(*)', 'loginCount')
         .addSelect('MIN(EXTRACT(hour from audit.timestamp))', 'earliestHour')
         .addSelect('MAX(EXTRACT(hour from audit.timestamp))', 'latestHour')
-        .where('audit.eventType = :eventType', { eventType: AuditEventType.LOGIN_SUCCESS })
+        .where('audit.action = :action', { action: AuditAction.LOGIN })
         .andWhere('audit.timestamp BETWEEN :startTime AND :endTime', { startTime, endTime })
         .groupBy('audit.userId')
         .having('COUNT(*) >= :minLogins', { minLogins: 3 })
@@ -296,7 +297,7 @@ export class ThreatDetectionService {
         .select('audit.userId', 'userId')
         .addSelect('COUNT(*)', 'changeCount')
         .where('audit.eventType IN (:...events)', {
-          events: [AuditEventType.PERMISSION_GRANTED, AuditEventType.ROLE_ASSIGNED]
+          events: [AuditAction.USER_UPDATED, AuditAction.SECURITY_CONFIG_CHANGED]
         })
         .andWhere('audit.timestamp BETWEEN :startTime AND :endTime', { startTime, endTime })
         .groupBy('audit.userId')
@@ -345,7 +346,7 @@ export class ThreatDetectionService {
         .select('audit.userId', 'userId')
         .addSelect('audit.resourceType', 'resourceType')
         .addSelect('COUNT(*)', 'accessCount')
-        .where('audit.eventType = :eventType', { eventType: AuditEventType.DATA_ACCESSED })
+        .where('audit.action = :action', { action: AuditAction.DATA_ACCESSED })
         .andWhere('audit.timestamp BETWEEN :startTime AND :endTime', { startTime, endTime })
         .groupBy('audit.userId, audit.resourceType')
         .having('COUNT(*) >= :threshold', { threshold: 100 })
@@ -485,7 +486,7 @@ export class ThreatDetectionService {
       const highSeverityCount = threats.filter(t => t.severity === 'high' || t.severity === 'critical').length;
 
       await this.securityService.logSecurityEvent(
-        AuditEventType.SUSPICIOUS_ACTIVITY,
+        AuditAction.SUSPICIOUS_ACTIVITY,
         null,
         highSeverityCount > 0 ? AuditSeverity.HIGH : AuditSeverity.LOW,
         `Threat detection completed: ${threatCount} threats detected`,

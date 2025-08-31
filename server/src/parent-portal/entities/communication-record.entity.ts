@@ -142,6 +142,15 @@ export class CommunicationRecord {
     openCount?: number;
     bounceCount?: number;
     unsubscribeCount?: number;
+    // Appointment-related metadata
+    appointmentId?: string;
+    appointmentType?: string;
+    preferredDate?: Date;
+    contactPhone?: string;
+    specialRequirements?: string;
+    // Message-related metadata
+    recipientId?: string;
+    recipientType?: string;
   };
 
   @Column({ name: 'is_read', type: 'boolean', default: false })

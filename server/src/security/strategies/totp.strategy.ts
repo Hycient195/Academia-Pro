@@ -3,7 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-custom';
 import * as speakeasy from 'speakeasy';
 import { SecurityService } from '../services/security.service';
-import { AuditEventType, AuditSeverity } from '../entities/audit-log.entity';
+import { AuditAction, AuditSeverity } from '../services/audit.service';
 
 export interface TotpPayload {
   userId: string;
@@ -253,7 +253,7 @@ export class TotpStrategy extends PassportStrategy(Strategy, 'totp') {
   private async logSuccessfulVerification(request: any, userId: string, type: string): Promise<void> {
     try {
       await this.securityService.logSecurityEvent(
-        AuditEventType.MFA_VERIFIED,
+        AuditAction.AUTHENTICATION_SUCCESS,
         userId,
         AuditSeverity.LOW,
         `MFA verification successful: ${type}`,
@@ -272,7 +272,7 @@ export class TotpStrategy extends PassportStrategy(Strategy, 'totp') {
   private async logInvalidUser(request: any, userId: string): Promise<void> {
     try {
       await this.securityService.logSecurityEvent(
-        AuditEventType.LOGIN_FAILED,
+        AuditAction.AUTHENTICATION_FAILED,
         userId,
         AuditSeverity.MEDIUM,
         'MFA verification failed: User not found',
@@ -290,7 +290,7 @@ export class TotpStrategy extends PassportStrategy(Strategy, 'totp') {
   private async logMfaNotEnabled(request: any, userId: string): Promise<void> {
     try {
       await this.securityService.logSecurityEvent(
-        AuditEventType.LOGIN_FAILED,
+        AuditAction.AUTHENTICATION_FAILED,
         userId,
         AuditSeverity.MEDIUM,
         'MFA verification failed: MFA not enabled',
@@ -308,7 +308,7 @@ export class TotpStrategy extends PassportStrategy(Strategy, 'totp') {
   private async logInvalidToken(request: any, userId: string, type: string): Promise<void> {
     try {
       await this.securityService.logSecurityEvent(
-        AuditEventType.LOGIN_FAILED,
+        AuditAction.AUTHENTICATION_FAILED,
         userId,
         AuditSeverity.HIGH,
         `MFA verification failed: Invalid ${type} token`,
@@ -327,7 +327,7 @@ export class TotpStrategy extends PassportStrategy(Strategy, 'totp') {
   private async logVerificationError(request: any, userId: string, type: string, error: string): Promise<void> {
     try {
       await this.securityService.logSecurityEvent(
-        AuditEventType.LOGIN_FAILED,
+        AuditAction.AUTHENTICATION_FAILED,
         userId,
         AuditSeverity.HIGH,
         `MFA verification error: ${type} - ${error}`,

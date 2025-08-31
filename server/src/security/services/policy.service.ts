@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { SecurityPolicy, PolicyType, PolicyStatus, EnforcementLevel, PolicyScope } from '../entities/security-policy.entity';
 import { SecurityService } from './security.service';
-import { AuditEventType, AuditSeverity } from '../entities/audit-log.entity';
+import { AuditAction, AuditSeverity } from './audit.service';
 
 export interface PolicyEvaluationContext {
   user: {
@@ -336,7 +336,7 @@ export class PolicyService {
       const severity = result.allowed ? AuditSeverity.LOW : AuditSeverity.MEDIUM;
 
       await this.securityService.logSecurityEvent(
-        result.allowed ? AuditEventType.DATA_ACCESSED : AuditEventType.ACCESS_DENIED,
+        result.allowed ? AuditAction.DATA_ACCESSED : AuditAction.AUTHORIZATION_FAILED,
         context.user.id,
         severity,
         `Policy evaluation: ${result.allowed ? 'Granted' : 'Denied'}`,
@@ -379,7 +379,7 @@ export class PolicyService {
 
       // Log policy creation
       await this.securityService.logSecurityEvent(
-        AuditEventType.CONFIGURATION_CHANGE,
+        AuditAction.SYSTEM_CONFIG_CHANGED,
         policyData.createdBy || 'system',
         AuditSeverity.LOW,
         `Security policy created: ${policyData.name}`,
@@ -411,7 +411,7 @@ export class PolicyService {
 
       // Log policy update
       await this.securityService.logSecurityEvent(
-        AuditEventType.CONFIGURATION_CHANGE,
+        AuditAction.SYSTEM_CONFIG_CHANGED,
         updates.updatedBy || 'system',
         AuditSeverity.MEDIUM,
         `Security policy updated: ${policy.name}`,
@@ -441,7 +441,7 @@ export class PolicyService {
 
       // Log policy deletion
       await this.securityService.logSecurityEvent(
-        AuditEventType.CONFIGURATION_CHANGE,
+        AuditAction.SYSTEM_CONFIG_CHANGED,
         deletedBy,
         AuditSeverity.HIGH,
         `Security policy deleted: ${policy.name}`,

@@ -6,185 +6,109 @@
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    },
-    "./academic": {
-      "types": "./dist/types/academic/index.d.ts",
-      "import": "./dist/types/academic/index.js"
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js",
+      "require": "./src/index.js"
     },
     "./attendance": {
-      "types": "./dist/types/attendance/index.d.ts",
-      "import": "./dist/types/attendance/index.js"
+      "types": "./src/types/attendance/index.d.ts",
+      "import": "./src/types/attendance/index.js",
+      "require": "./src/types/attendance/index.js"
+    },
+    "./academic": {
+      "types": "./src/types/academic/index.d.ts",
+      "import": "./src/types/academic/index.js",
+      "require": "./src/types/academic/index.js"
     },
     "./auth": {
-      "types": "./dist/types/auth/index.d.ts",
-      "import": "./dist/types/auth/index.js"
+      "types": "./src/types/auth/index.d.ts",
+      "import": "./src/types/auth/index.js",
+      "require": "./src/types/auth/index.js"
     },
     "./communication": {
-      "types": "./dist/types/communication/index.d.ts",
-      "import": "./dist/types/communication/index.js"
+      "types": "./src/types/communication/index.d.ts",
+      "import": "./src/types/communication/index.js",
+      "require": "./src/types/communication/index.js"
     },
     "./examination": {
-      "types": "./dist/types/examination/index.d.ts",
-      "import": "./dist/types/examination/index.js"
+      "types": "./src/types/examination/index.d.ts",
+      "import": "./src/types/examination/index.js",
+      "require": "./src/types/examination/index.js"
     },
     "./fee": {
-      "types": "./dist/types/fee/index.d.ts",
-      "import": "./dist/types/fee/index.js"
+      "types": "./src/types/fee/index.d.ts",
+      "import": "./src/types/fee/index.js",
+      "require": "./src/types/fee/index.js"
     },
     "./hostel": {
-      "types": "./dist/types/hostel/index.d.ts",
-      "import": "./dist/types/hostel/index.js"
+      "types": "./src/types/hostel/index.d.ts",
+      "import": "./src/types/hostel/index.js",
+      "require": "./src/types/hostel/index.js"
     },
     "./inventory": {
-      "types": "./dist/types/inventory/index.d.ts",
-      "import": "./dist/types/inventory/index.js"
+      "types": "./src/types/inventory/index.d.ts",
+      "import": "./src/types/inventory/index.js",
+      "require": "./src/types/inventory/index.js"
     },
     "./library": {
-      "types": "./dist/types/library/index.d.ts",
-      "import": "./dist/types/library/index.js"
+      "types": "./src/types/library/index.d.ts",
+      "import": "./src/types/library/index.js",
+      "require": "./src/types/library/index.js"
     },
     "./mobile": {
-      "types": "./dist/types/mobile/index.d.ts",
-      "import": "./dist/types/mobile/index.js"
+      "types": "./src/types/mobile/index.d.ts",
+      "import": "./src/types/mobile/index.js",
+      "require": "./src/types/mobile/index.js"
     },
     "./online-learning": {
-      "types": "./dist/types/online-learning/index.d.ts",
-      "import": "./dist/types/online-learning/index.js"
+      "types": "./src/types/online-learning/index.d.ts",
+      "import": "./src/types/online-learning/index.js",
+      "require": "./src/types/online-learning/index.js"
     },
     "./parent": {
-      "types": "./dist/types/parent/index.d.ts",
-      "import": "./dist/types/parent/index.js"
+      "types": "./src/types/parent/index.d.ts",
+      "import": "./src/types/parent/index.js",
+      "require": "./src/types/parent/index.js"
     },
     "./parent-portal": {
-      "types": "./dist/types/parent-portal/index.d.ts",
-      "import": "./dist/types/parent-portal/index.js"
+      "types": "./src/types/parent-portal/index.d.ts",
+      "import": "./src/types/parent-portal/index.js",
+      "require": "./src/types/parent-portal/index.js"
     },
     "./reports": {
-      "types": "./dist/types/reports/index.d.ts",
-      "import": "./dist/types/reports/index.js"
+      "types": "./src/types/reports/index.d.ts",
+      "import": "./src/types/reports/index.js",
+      "require": "./src/types/reports/index.js"
     },
     "./schools": {
-      "types": "./dist/types/schools/index.d.ts",
-      "import": "./dist/types/schools/index.js"
+      "types": "./src/types/schools/index.d.ts",
+      "import": "./src/types/schools/index.js",
+      "require": "./src/types/schools/index.js"
+    },
+    "./shared": {
+      "types": "./src/types/shared/index.d.ts",
+      "import": "./src/types/shared/index.js",
+      "require": "./src/types/shared/index.js"
+    },
+    "./staff": {
+      "types": "./src/types/staff/index.d.ts",
+      "import": "./src/types/staff/index.js",
+      "require": "./src/types/staff/index.js"
+    },
+    "./student": {
+      "types": "./src/types/student/index.d.ts",
+      "import": "./src/types/student/index.js",
+      "require": "./src/types/student/index.js"
     },
     "./timetable": {
-      "types": "./dist/types/timetable/index.d.ts",
-      "import": "./dist/types/timetable/index.js"
-    },
-    "./shared": {
-      "types": "./dist/types/shared/index.d.ts",
-      "import": "./dist/types/shared/index.js"
-    },
-    "./staff": {
-      "types": "./dist/types/staff/index.d.ts",
-      "import": "./dist/types/staff/index.js"
-    },
-    "./student": {
-      "types": "./dist/types/student/index.d.ts",
-      "import": "./dist/types/student/index.js"
+      "types": "./src/types/timetable/index.d.ts",
+      "import": "./src/types/timetable/index.js",
+      "require": "./src/types/timetable/index.js"
     },
     "./users": {
-      "types": "./dist/types/users/index.d.ts",
-      "import": "./dist/types/users/index.js"
-    }
-  },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
-    },
-    "./attendance": {
-      "types": "./dist/types/attendance/index.d.ts",
-      "import": "./dist/types/attendance/index.js",
-      "require": "./dist/types/attendance/index.js"
-    },
-    "./academic": {
-      "types": "./dist/types/academic/index.d.ts",
-      "import": "./dist/types/academic/index.js",
-      "require": "./dist/types/academic/index.js"
-    },
-    "./auth": {
-      "types": "./dist/types/auth/index.d.ts",
-      "import": "./dist/types/auth/index.js",
-      "require": "./dist/types/auth/index.js"
-    },
-    "./communication": {
-      "types": "./dist/types/communication/index.d.ts",
-      "import": "./dist/types/communication/index.js",
-      "require": "./dist/types/communication/index.js"
-    },
-    "./examination": {
-      "types": "./dist/types/examination/index.d.ts",
-      "import": "./dist/types/examination/index.js",
-      "require": "./dist/types/examination/index.js"
-    },
-    "./fee": {
-      "types": "./dist/types/fee/index.d.ts",
-      "import": "./dist/types/fee/index.js",
-      "require": "./dist/types/fee/index.js"
-    },
-    "./hostel": {
-      "types": "./dist/types/hostel/index.d.ts",
-      "import": "./dist/types/hostel/index.js",
-      "require": "./dist/types/hostel/index.js"
-    },
-    "./inventory": {
-      "types": "./dist/types/inventory/index.d.ts",
-      "import": "./dist/types/inventory/index.js",
-      "require": "./dist/types/inventory/index.js"
-    },
-    "./library": {
-      "types": "./dist/types/library/index.d.ts",
-      "import": "./dist/types/library/index.js",
-      "require": "./dist/types/library/index.js"
-    },
-    "./mobile": {
-      "types": "./dist/types/mobile/index.d.ts",
-      "import": "./dist/types/mobile/index.js",
-      "require": "./dist/types/mobile/index.js"
-    },
-    "./online-learning": {
-      "types": "./dist/types/online-learning/index.d.ts",
-      "import": "./dist/types/online-learning/index.js",
-      "require": "./dist/types/online-learning/index.js"
-    },
-    "./parent": {
-      "types": "./dist/types/parent/index.d.ts",
-      "import": "./dist/types/parent/index.js",
-      "require": "./dist/types/parent/index.js"
-    },
-    "./parent-portal": {
-      "types": "./dist/types/parent-portal/index.d.ts",
-      "import": "./dist/types/parent-portal/index.js",
-      "require": "./dist/types/parent-portal/index.js"
-    },
-    "./reports": {
-      "types": "./dist/types/reports/index.d.ts",
-      "import": "./dist/types/reports/index.js",
-      "require": "./dist/types/reports/index.js"
-    },
-    "./shared": {
-      "types": "./dist/types/shared/index.d.ts",
-      "import": "./dist/types/shared/index.js",
-      "require": "./dist/types/shared/index.js"
-    },
-    "./staff": {
-      "types": "./dist/types/staff/index.d.ts",
-      "import": "./dist/types/staff/index.js",
-      "require": "./dist/types/staff/index.js"
-    },
-    "./student": {
-      "types": "./dist/types/student/index.d.ts",
-      "import": "./dist/types/student/index.js",
-      "require": "./dist/types/student/index.js"
-    },
-    "./users": {
-      "types": "./dist/types/users/index.d.ts",
-      "import": "./dist/types/users/index.js",
-      "require": "./dist/types/users/index.js"
+      "types": "./src/types/users/index.d.ts",
+      "import": "./src/types/users/index.js",
+      "require": "./src/types/users/index.js"
     }
   },
   "scripts": {

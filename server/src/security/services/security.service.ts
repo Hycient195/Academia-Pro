@@ -1,7 +1,8 @@
 import { Injectable, Logger, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, Between, MoreThan } from 'typeorm';
-import { AuditLog, AuditEventType, AuditSeverity, AuditStatus } from '../entities/audit-log.entity';
+import { AuditLog } from '../entities/audit-log.entity';
+import { AuditAction, AuditSeverity } from './audit.service';
 import { SecurityPolicy, PolicyType, PolicyStatus } from '../entities/security-policy.entity';
 import { UserSession, SessionStatus } from '../entities/user-session.entity';
 
@@ -20,7 +21,7 @@ export class SecurityService {
   ) {}
 
   async logSecurityEvent(
-    eventType: AuditEventType,
+    action: AuditAction,
     userId: string | null,
     severity: AuditSeverity,
     description: string,
@@ -29,18 +30,19 @@ export class SecurityService {
     userAgent?: string,
   ): Promise<AuditLog> {
     try {
-      this.logger.log(`Logging security event: ${eventType} for user: ${userId}`);
+      this.logger.log(`Logging security event: ${action} for user: ${userId}`);
 
       const auditLog = this.auditLogRepository.create({
         userId,
-        eventType,
+        action,
         severity,
-        status: AuditStatus.SUCCESS,
-        action: eventType.replace('_', ' '),
-        description,
+        resource: 'security',
         ipAddress,
         userAgent,
-        metadata,
+        details: {
+          description,
+          ...metadata,
+        },
       });
 
       const savedLog = await this.auditLogRepository.save(auditLog);
@@ -56,7 +58,7 @@ export class SecurityService {
   async getSecurityEvents(
     filters: {
       userId?: string;
-      eventType?: AuditEventType;
+      action?: AuditAction;
       severity?: AuditSeverity;
       startDate?: Date;
       endDate?: Date;
@@ -73,8 +75,8 @@ export class SecurityService {
         queryBuilder.andWhere('audit.userId = :userId', { userId: filters.userId });
       }
 
-      if (filters.eventType) {
-        queryBuilder.andWhere('audit.eventType = :eventType', { eventType: filters.eventType });
+      if (filters.action) {
+        queryBuilder.andWhere('audit.action = :action', { action: filters.action });
       }
 
       if (filters.severity) {
@@ -122,13 +124,13 @@ export class SecurityService {
         .groupBy('audit.severity')
         .getRawMany();
 
-      // Get event counts by type
+      // Get event counts by action type
       const eventTypeStats = await this.auditLogRepository
         .createQueryBuilder('audit')
-        .select('audit.eventType', 'eventType')
+        .select('audit.action', 'eventType')
         .addSelect('COUNT(*)', 'count')
         .where('audit.timestamp >= :last30Days', { last30Days })
-        .groupBy('audit.eventType')
+        .groupBy('audit.action')
         .orderBy('count', 'DESC')
         .limit(10)
         .getRawMany();
@@ -151,7 +153,7 @@ export class SecurityService {
       // Get failed login attempts in last 24 hours
       const failedLoginAttempts = await this.auditLogRepository.count({
         where: {
-          eventType: AuditEventType.LOGIN_FAILED,
+          action: AuditAction.AUTHENTICATION_FAILED,
           timestamp: MoreThan(last24Hours),
         },
       });
@@ -178,8 +180,8 @@ export class SecurityService {
         })),
         recentCriticalEvents: recentCriticalEvents.map(event => ({
           id: event.id,
-          eventType: event.eventType,
-          description: event.description,
+          action: event.action,
+          description: event.details?.description || 'Security event',
           timestamp: event.timestamp,
           userId: event.userId,
           ipAddress: event.ipAddress,
@@ -249,13 +251,13 @@ export class SecurityService {
         .limit(10)
         .getRawMany();
 
-      // Risk score distribution
+      // Risk score distribution (calculated based on suspicious activity)
       const riskDistribution = await this.userSessionRepository
         .createQueryBuilder('session')
-        .select('FLOOR(session.riskScore * 10) / 10', 'riskRange')
+        .select('FLOOR(session.suspiciousActivityCount * 0.2)', 'riskRange')
         .addSelect('COUNT(*)', 'count')
         .where('session.createdAt >= :startDate', { startDate })
-        .groupBy('FLOOR(session.riskScore * 10) / 10')
+        .groupBy('FLOOR(session.suspiciousActivityCount * 0.2)')
         .orderBy('riskRange', 'ASC')
         .getRawMany();
 
@@ -336,7 +338,7 @@ export class SecurityService {
       // Log policy evaluation
       if (userId) {
         await this.logSecurityEvent(
-          AuditEventType.POLICY_VIOLATION,
+          AuditAction.SECURITY_ALERT,
           userId,
           allowed ? AuditSeverity.LOW : AuditSeverity.MEDIUM,
           `Policy validation: ${policyType} - ${allowed ? 'Passed' : 'Failed'}`,
@@ -378,7 +380,7 @@ export class SecurityService {
 
       // Log the incident
       await this.logSecurityEvent(
-        AuditEventType.UNAUTHORIZED_ACCESS,
+        AuditAction.AUTHORIZATION_FAILED,
         reportedBy,
         severity,
         `Security incident: ${title} - ${description}`,

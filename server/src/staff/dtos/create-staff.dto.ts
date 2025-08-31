@@ -124,13 +124,13 @@ export class QualificationDto {
   @IsString({ message: 'Certificate number must be a string' })
   certificateNumber?: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'Whether qualification is verified',
     example: true,
   })
-  @IsOptional()
+  @IsNotEmpty({ message: 'Is verified is required' })
   @IsBoolean({ message: 'Is verified must be a boolean' })
-  isVerified?: boolean;
+  isVerified: boolean;
 }
 
 export class CertificationDto {
@@ -156,7 +156,8 @@ export class CertificationDto {
   })
   @IsNotEmpty({ message: 'Issue date is required' })
   @IsDateString({}, { message: 'Issue date must be a valid date' })
-  issueDate: string;
+  @Type(() => Date)
+  issueDate: Date;
 
   @ApiPropertyOptional({
     description: 'Expiry date',
@@ -164,7 +165,8 @@ export class CertificationDto {
   })
   @IsOptional()
   @IsDateString({}, { message: 'Expiry date must be a valid date' })
-  expiryDate?: string;
+  @Type(() => Date)
+  expiryDate?: Date;
 
   @ApiPropertyOptional({
     description: 'Certificate number',
@@ -206,7 +208,8 @@ export class PreviousExperienceDto {
   })
   @IsNotEmpty({ message: 'Start date is required' })
   @IsDateString({}, { message: 'Start date must be a valid date' })
-  startDate: string;
+  @Type(() => Date)
+  startDate: Date;
 
   @ApiPropertyOptional({
     description: 'End date',
@@ -214,7 +217,8 @@ export class PreviousExperienceDto {
   })
   @IsOptional()
   @IsDateString({}, { message: 'End date must be a valid date' })
-  endDate?: string;
+  @Type(() => Date)
+  endDate?: Date;
 
   @ApiProperty({
     description: 'Job responsibilities',
@@ -302,7 +306,8 @@ export class MedicalInfoDto {
   })
   @IsOptional()
   @IsDateString({}, { message: 'Insurance expiry date must be a valid date' })
-  insuranceExpiryDate?: string;
+  @Type(() => Date)
+  insuranceExpiryDate?: Date;
 }
 
 export class CommunicationPreferencesDto {
@@ -409,11 +414,12 @@ export class CreateStaffDto implements ICreateStaffRequest {
 
   @ApiProperty({
     description: 'Date of birth',
-    example: '1985-03-15',
+    example: '1985-03-15T00:00:00Z',
   })
   @IsNotEmpty({ message: 'Date of birth is required' })
   @IsDateString({}, { message: 'Date of birth must be a valid date' })
-  dateOfBirth: string;
+  @Type(() => Date)
+  dateOfBirth: Date;
 
   @ApiPropertyOptional({
     description: 'Marital status',
@@ -426,12 +432,11 @@ export class CreateStaffDto implements ICreateStaffRequest {
 
   @ApiPropertyOptional({
     description: 'Blood group',
-    example: TBloodGroup.O_POSITIVE,
-    enum: TBloodGroup,
+    example: 'O_POSITIVE',
   })
   @IsOptional()
-  @IsEnum(TBloodGroup, { message: 'Invalid blood group' })
-  bloodGroup?: TBloodGroup;
+  @IsString({ message: 'Blood group must be a string' })
+  bloodGroup?: string;
 
   @ApiProperty({
     description: 'Email address',
@@ -509,13 +514,12 @@ export class CreateStaffDto implements ICreateStaffRequest {
 
   @ApiProperty({
     description: 'Department',
-    example: 'Mathematics',
-    maxLength: 100,
+    example: TDepartment.ACADEMIC,
+    enum: TDepartment,
   })
   @IsNotEmpty({ message: 'Department is required' })
-  @IsString({ message: 'Department must be a string' })
-  @MaxLength(100, { message: 'Department cannot exceed 100 characters' })
-  department: string;
+  @IsEnum(TDepartment, { message: 'Invalid department' })
+  department: TDepartment;
 
   @ApiProperty({
     description: 'Job designation',
@@ -550,7 +554,8 @@ export class CreateStaffDto implements ICreateStaffRequest {
   })
   @IsNotEmpty({ message: 'Joining date is required' })
   @IsDateString({}, { message: 'Joining date must be a valid date' })
-  joiningDate: string;
+  @Type(() => Date)
+  joiningDate: Date;
 
   @ApiPropertyOptional({
     description: 'Probation end date',
@@ -558,15 +563,17 @@ export class CreateStaffDto implements ICreateStaffRequest {
   })
   @IsOptional()
   @IsDateString({}, { message: 'Probation end date must be a valid date' })
-  probationEndDate?: string;
+  @Type(() => Date)
+  probationEndDate?: Date;
 
   @ApiPropertyOptional({
     description: 'Contract end date',
-    example: '2025-07-31',
+    example: '2025-07-31T00:00:00Z',
   })
   @IsOptional()
   @IsDateString({}, { message: 'Contract end date must be a valid date' })
-  contractEndDate?: string;
+  @Type(() => Date)
+  contractEndDate?: Date;
 
   @ApiProperty({
     description: 'Basic salary',

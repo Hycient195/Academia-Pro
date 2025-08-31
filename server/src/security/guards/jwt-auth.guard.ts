@@ -6,8 +6,8 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserSession } from '../entities/user-session.entity';
-import { SecurityEvent } from '../entities/security-event.entity';
-import { AuditService } from '../services/audit.service';
+import { SecurityEvent, SecurityEventType, SecurityEventSeverity } from '../entities/security-event.entity';
+import { AuditService, AuditSeverity } from '../services/audit.service';
 
 export interface JwtPayload {
   sub: string; // user ID
@@ -74,19 +74,19 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       // Validate session
       const session = await this.validateSession(payload);
       if (!session) {
-        await this.logSecurityEvent('INVALID_SESSION', payload.sub, request);
+        await this.logSecurityEvent(SecurityEventType.SESSION_INVALID, payload.sub, request);
         throw new UnauthorizedException('Invalid session');
       }
 
       // Check if session is expired
       if (session.expiresAt < new Date()) {
-        await this.logSecurityEvent('SESSION_EXPIRED', payload.sub, request);
+        await this.logSecurityEvent(SecurityEventType.SESSION_EXPIRED, payload.sub, request);
         throw new UnauthorizedException('Session expired');
       }
 
       // Check if user is blocked or suspended
       if (session.isBlocked) {
-        await this.logSecurityEvent('USER_BLOCKED', payload.sub, request);
+        await this.logSecurityEvent(SecurityEventType.USER_BLOCKED, payload.sub, request);
         throw new UnauthorizedException('User account is blocked');
       }
 
@@ -116,7 +116,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         },
         ipAddress: this.getClientIp(request),
         userAgent: request.headers['user-agent'] || 'Unknown',
-        severity: 'info',
+        severity: AuditSeverity.LOW,
       });
 
       return true;
@@ -135,7 +135,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         }
       }
 
-      await this.logSecurityEvent('AUTHENTICATION_FAILED', userId, request);
+      await this.logSecurityEvent(SecurityEventType.AUTHENTICATION_FAILED, userId, request);
 
       await this.auditService.logActivity({
         userId,
@@ -151,7 +151,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         },
         ipAddress: this.getClientIp(request),
         userAgent: request.headers['user-agent'] || 'Unknown',
-        severity: 'warning',
+        severity: AuditSeverity.MEDIUM,
       });
 
       throw error;
@@ -221,24 +221,23 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   }
 
   private async logSecurityEvent(
-    eventType: string,
+    eventType: SecurityEventType,
     userId: string,
     request: Request,
   ): Promise<void> {
     try {
-      const securityEvent = this.securityEventRepository.create({
-        eventType,
-        userId,
-        ipAddress: this.getClientIp(request),
-        userAgent: request.headers['user-agent'] || 'Unknown',
-        details: {
-          url: request.url,
-          method: request.method,
-          headers: this.sanitizeHeaders(request.headers),
-          timestamp: new Date(),
-        },
-        severity: eventType.includes('FAILED') || eventType.includes('INVALID') ? 'high' : 'medium',
-      });
+      const securityEvent = new SecurityEvent();
+      securityEvent.eventType = eventType;
+      securityEvent.userId = userId;
+      securityEvent.ipAddress = this.getClientIp(request);
+      securityEvent.userAgent = request.headers['user-agent'] || 'Unknown';
+      securityEvent.details = {
+        url: request.url,
+        method: request.method,
+        headers: this.sanitizeHeaders(request.headers),
+        timestamp: new Date(),
+      };
+      securityEvent.severity = (eventType.includes('failed') || eventType.includes('invalid')) ? SecurityEventSeverity.HIGH : SecurityEventSeverity.MEDIUM;
 
       await this.securityEventRepository.save(securityEvent);
     } catch (error) {

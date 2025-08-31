@@ -5,7 +5,7 @@ import { PolicyService, PolicyEvaluationContext, PolicyEvaluationResult } from '
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { SecurityPolicy, PolicyType, PolicyStatus } from '../entities/security-policy.entity';
-import { AuditEventType, AuditSeverity } from '../entities/audit-log.entity';
+import { AuditAction, AuditSeverity } from '../services/audit.service';
 import { Roles } from '../decorators/roles.decorator';
 
 @ApiTags('Security - Authorization & Policies')
@@ -341,7 +341,7 @@ export class SecurityController {
 
     return this.securityService.getSecurityEvents({
       ...filters,
-      eventType: filters.eventType as AuditEventType,
+      action: filters.eventType as AuditAction,
       severity: filters.severity as AuditSeverity,
       startDate: filters.startDate ? new Date(filters.startDate) : undefined,
       endDate: filters.endDate ? new Date(filters.endDate) : undefined,

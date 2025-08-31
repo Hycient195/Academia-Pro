@@ -173,8 +173,8 @@ export class CreateTimetableDto implements ICreateTimetableEntryRequest {
 
   @ApiProperty({
     description: 'Day of the week',
-    example: DayOfWeek.MONDAY,
-    enum: DayOfWeek,
+    example: TDayOfWeek.MONDAY,
+    enum: TDayOfWeek,
   })
   @IsNotEmpty({ message: 'Day of week is required' })
   @IsEnum(TDayOfWeek, { message: 'Invalid day of week' })
@@ -220,8 +220,8 @@ export class CreateTimetableDto implements ICreateTimetableEntryRequest {
 
   @ApiPropertyOptional({
     description: 'Type of period',
-    example: PeriodType.REGULAR_CLASS,
-    enum: PeriodType,
+    example: TPeriodType.REGULAR_CLASS,
+    enum: TPeriodType,
   })
   @IsOptional()
   @IsEnum(TPeriodType, { message: 'Invalid period type' })
@@ -276,8 +276,8 @@ export class CreateTimetableDto implements ICreateTimetableEntryRequest {
 
   @ApiPropertyOptional({
     description: 'Recurrence type',
-    example: RecurrenceType.WEEKLY,
-    enum: RecurrenceType,
+    example: TRecurrenceType.WEEKLY,
+    enum: TRecurrenceType,
   })
   @IsOptional()
   @IsEnum(TRecurrenceType, { message: 'Invalid recurrence type' })
@@ -345,8 +345,8 @@ export class CreateTimetableDto implements ICreateTimetableEntryRequest {
 
   @ApiPropertyOptional({
     description: 'Priority level',
-    example: PriorityLevel.NORMAL,
-    enum: PriorityLevel,
+    example: TPriorityLevel.NORMAL,
+    enum: TPriorityLevel,
   })
   @IsOptional()
   @IsEnum(TPriorityLevel, { message: 'Invalid priority level' })
@@ -505,8 +505,8 @@ export class BulkCreateTimetableDto {
 export class UpdateTimetableDto {
   @ApiPropertyOptional({
     description: 'Day of the week',
-    example: DayOfWeek.MONDAY,
-    enum: DayOfWeek,
+    example: TDayOfWeek.MONDAY,
+    enum: TDayOfWeek,
   })
   @IsOptional()
   @IsEnum(TDayOfWeek, { message: 'Invalid day of week' })

@@ -241,14 +241,27 @@ export interface IUpdateFeeStructureRequest {
     internalNotes?: string;
 }
 export interface ICreatePaymentRequest {
+    schoolId: string;
     studentId: string;
     feeStructureId: string;
-    amount: number;
     paymentMethod: TPaymentMethod;
-    transactionId?: string;
+    paymentType?: string;
+    amountPaid: number;
+    currency?: string;
     paymentDate: string;
+    dueDate: string;
+    academicYear: string;
+    gradeLevel: string;
+    section?: string;
+    installmentNumber?: number;
+    installmentPlanId?: string;
+    bankName?: string;
+    bankReference?: string;
+    chequeNumber?: string;
+    cardLastFour?: string;
+    parentNotified?: boolean;
     notes?: string;
-    paymentProof?: string;
+    metadata?: any;
 }
 export interface IApplyDiscountRequest {
     studentId: string;
@@ -265,6 +278,20 @@ export interface ICreateInstallmentPlanRequest {
     numberOfInstallments: number;
     startDate: string;
     interestRate?: number;
+}
+export interface IProcessPaymentRequest {
+    paymentId: string;
+    gatewayTransactionId?: string;
+    gatewayName?: string;
+    gatewayResponse?: any;
+    processingNotes?: string;
+}
+export interface IRefundPaymentRequest {
+    paymentId: string;
+    refundAmount: number;
+    refundReason: string;
+    refundProcessingDate?: string;
+    refundNotes?: string;
 }
 export interface IProcessRefundRequest {
     paymentId: string;

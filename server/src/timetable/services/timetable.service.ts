@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, MoreThanOrEqual, LessThanOrEqual, In } from 'typeorm';
 import { Timetable, DayOfWeek, TimetableStatus, PeriodType, PriorityLevel, RecurrenceType } from '../entities/timetable.entity';
 import { CreateTimetableDto, BulkCreateTimetableDto, UpdateTimetableDto } from '../dtos';
+import { TDayOfWeek, TPriorityLevel } from '@academia-pro/common/timetable';
 
 @Injectable()
 export class TimetableService {
@@ -15,6 +16,38 @@ export class TimetableService {
     @InjectRepository(Timetable)
     private readonly timetableRepository: Repository<Timetable>,
   ) {}
+
+  /**
+   * Convert TDayOfWeek to DayOfWeek
+   */
+  private convertTDayOfWeekToDayOfWeek(tDayOfWeek: TDayOfWeek): DayOfWeek {
+    const mapping: Record<TDayOfWeek, DayOfWeek> = {
+      [TDayOfWeek.SUNDAY]: DayOfWeek.SUNDAY,
+      [TDayOfWeek.MONDAY]: DayOfWeek.MONDAY,
+      [TDayOfWeek.TUESDAY]: DayOfWeek.TUESDAY,
+      [TDayOfWeek.WEDNESDAY]: DayOfWeek.WEDNESDAY,
+      [TDayOfWeek.THURSDAY]: DayOfWeek.THURSDAY,
+      [TDayOfWeek.FRIDAY]: DayOfWeek.FRIDAY,
+      [TDayOfWeek.SATURDAY]: DayOfWeek.SATURDAY,
+    };
+    return mapping[tDayOfWeek];
+  }
+
+  /**
+   * Convert DayOfWeek to TDayOfWeek
+   */
+  private convertDayOfWeekToTDayOfWeek(dayOfWeek: DayOfWeek): TDayOfWeek {
+    const mapping: Record<DayOfWeek, TDayOfWeek> = {
+      [DayOfWeek.SUNDAY]: TDayOfWeek.SUNDAY,
+      [DayOfWeek.MONDAY]: TDayOfWeek.MONDAY,
+      [DayOfWeek.TUESDAY]: TDayOfWeek.TUESDAY,
+      [DayOfWeek.WEDNESDAY]: TDayOfWeek.WEDNESDAY,
+      [DayOfWeek.THURSDAY]: TDayOfWeek.THURSDAY,
+      [DayOfWeek.FRIDAY]: TDayOfWeek.FRIDAY,
+      [DayOfWeek.SATURDAY]: TDayOfWeek.SATURDAY,
+    };
+    return mapping[dayOfWeek];
+  }
 
   /**
    * Create a new timetable entry
@@ -34,7 +67,7 @@ export class TimetableService {
     }
 
     // Create timetable entry
-    const timetable = this.timetableRepository.create({
+    const savedTimetable = await this.timetableRepository.save({
       schoolId: dto.schoolId,
       academicYear: dto.academicYear,
       gradeLevel: dto.gradeLevel,
@@ -44,12 +77,12 @@ export class TimetableService {
       subjectName: dto.subjectName,
       teacherId: dto.teacherId,
       teacherName: dto.teacherName,
-      dayOfWeek: dto.dayOfWeek,
+      dayOfWeek: this.convertTDayOfWeekToDayOfWeek(dto.dayOfWeek),
       startTime: dto.startTime,
       endTime: dto.endTime,
       durationMinutes: dto.durationMinutes,
       periodNumber: dto.periodNumber,
-      periodType: dto.periodType || PeriodType.REGULAR_CLASS,
+      periodType: (dto.periodType as unknown as PeriodType) || PeriodType.REGULAR_CLASS,
       roomId: dto.roomId,
       roomName: dto.roomName,
       roomCapacity: dto.roomCapacity,
@@ -63,7 +96,7 @@ export class TimetableService {
       isSpecialEvent: dto.isSpecialEvent || false,
       requiresApproval: dto.requiresApproval || false,
       expectedStudents: dto.expectedStudents,
-      priorityLevel: dto.priorityLevel || PriorityLevel.NORMAL,
+      priorityLevel: (dto.priorityLevel as unknown as PriorityLevel) || PriorityLevel.NORMAL,
       isFixed: dto.isFixed || false,
       notifyStudents: dto.notifyStudents !== false,
       notifyTeachers: dto.notifyTeachers !== false,
@@ -80,9 +113,7 @@ export class TimetableService {
       internalNotes: dto.internalNotes,
       createdBy,
       updatedBy: createdBy,
-    });
-
-    const savedTimetable = await this.timetableRepository.save(timetable);
+    } as any) as Timetable;
 
     this.logger.log(
       `Created timetable entry for ${dto.subjectName} on ${dto.dayOfWeek} at ${dto.startTime}`
@@ -295,7 +326,7 @@ export class TimetableService {
         subjectName: timetable.subjectName,
         teacherId: timetable.teacherId,
         teacherName: timetable.teacherName,
-        dayOfWeek: dto.dayOfWeek || timetable.dayOfWeek,
+        dayOfWeek: dto.dayOfWeek || this.convertDayOfWeekToTDayOfWeek(timetable.dayOfWeek),
         startTime: dto.startTime || timetable.startTime,
         endTime: dto.endTime || timetable.endTime,
         durationMinutes: timetable.durationMinutes,
@@ -384,7 +415,7 @@ export class TimetableService {
     const teacherConflicts = await this.timetableRepository.find({
       where: {
         teacherId: dto.teacherId,
-        dayOfWeek: dto.dayOfWeek,
+        dayOfWeek: this.convertTDayOfWeekToDayOfWeek(dto.dayOfWeek),
         academicYear: dto.academicYear,
         status: In([TimetableStatus.DRAFT, TimetableStatus.PUBLISHED, TimetableStatus.ACTIVE]),
       },
@@ -406,7 +437,7 @@ export class TimetableService {
       const roomConflicts = await this.timetableRepository.find({
         where: {
           roomId: dto.roomId,
-          dayOfWeek: dto.dayOfWeek,
+          dayOfWeek: this.convertTDayOfWeekToDayOfWeek(dto.dayOfWeek),
           academicYear: dto.academicYear,
           status: In([TimetableStatus.DRAFT, TimetableStatus.PUBLISHED, TimetableStatus.ACTIVE]),
         },
@@ -428,7 +459,7 @@ export class TimetableService {
     const classConflicts = await this.timetableRepository.find({
       where: {
         classId: dto.classId,
-        dayOfWeek: dto.dayOfWeek,
+        dayOfWeek: this.convertTDayOfWeekToDayOfWeek(dto.dayOfWeek),
         academicYear: dto.academicYear,
         section: dto.section,
         status: In([TimetableStatus.DRAFT, TimetableStatus.PUBLISHED, TimetableStatus.ACTIVE]),
@@ -464,7 +495,7 @@ export class TimetableService {
       teacherName: string;
       periodsPerWeek: number;
       durationMinutes: number;
-      priorityLevel?: PriorityLevel;
+      priorityLevel?: TPriorityLevel;
     }>;
     constraints?: {
       maxPeriodsPerDay?: number;
@@ -496,9 +527,9 @@ export class TimetableService {
 
     // Sort subjects by priority
     const sortedSubjects = subjects.sort((a, b) => {
-      const priorityOrder = { [PriorityLevel.URGENT]: 3, [PriorityLevel.HIGH]: 2, [PriorityLevel.NORMAL]: 1, [PriorityLevel.LOW]: 0 };
-      return (priorityOrder[b.priorityLevel || PriorityLevel.NORMAL] || 0) -
-             (priorityOrder[a.priorityLevel || PriorityLevel.NORMAL] || 0);
+      const priorityOrder = { [TPriorityLevel.URGENT]: 3, [TPriorityLevel.HIGH]: 2, [TPriorityLevel.NORMAL]: 1, [TPriorityLevel.LOW]: 0 };
+      return (priorityOrder[b.priorityLevel || TPriorityLevel.NORMAL] || 0) -
+             (priorityOrder[a.priorityLevel || TPriorityLevel.NORMAL] || 0);
     });
 
     for (const subject of sortedSubjects) {
@@ -539,7 +570,7 @@ export class TimetableService {
             subjectName: subject.subjectName,
             teacherId: subject.teacherId,
             teacherName: subject.teacherName,
-            dayOfWeek: day,
+            dayOfWeek: this.convertDayOfWeekToTDayOfWeek(day),
             startTime: slot.startTime,
             endTime: slot.endTime,
             durationMinutes: subject.durationMinutes,
@@ -558,7 +589,7 @@ export class TimetableService {
               subjectName: subject.subjectName,
               teacherId: subject.teacherId,
               teacherName: subject.teacherName,
-              dayOfWeek: day,
+              dayOfWeek: this.convertDayOfWeekToTDayOfWeek(day),
               startTime: slot.startTime,
               endTime: slot.endTime,
               durationMinutes: subject.durationMinutes,

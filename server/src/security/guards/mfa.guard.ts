@@ -1,7 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext, UnauthorizedException, Logger } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { SecurityService } from '../services/security.service';
-import { AuditEventType, AuditSeverity } from '../entities/audit-log.entity';
+import { AuditAction, AuditSeverity } from '../services/audit.service';
 
 @Injectable()
 export class MfaGuard implements CanActivate {
@@ -76,7 +76,7 @@ export class MfaGuard implements CanActivate {
   private async logMfaRequired(request: any, user: any, reason: string): Promise<void> {
     try {
       await this.securityService.logSecurityEvent(
-        AuditEventType.MFA_ENABLED,
+        AuditAction.SECURITY_ALERT,
         user.id,
         AuditSeverity.MEDIUM,
         `MFA verification required: ${reason}`,
@@ -97,7 +97,7 @@ export class MfaGuard implements CanActivate {
   private async logMfaExpired(request: any, user: any): Promise<void> {
     try {
       await this.securityService.logSecurityEvent(
-        AuditEventType.MFA_VERIFIED,
+        AuditAction.SECURITY_ALERT,
         user.id,
         AuditSeverity.MEDIUM,
         'MFA verification expired',
@@ -117,7 +117,7 @@ export class MfaGuard implements CanActivate {
   private async logMfaSuccess(request: any, user: any): Promise<void> {
     try {
       await this.securityService.logSecurityEvent(
-        AuditEventType.MFA_VERIFIED,
+        AuditAction.SECURITY_ALERT,
         user.id,
         AuditSeverity.LOW,
         'MFA verification successful',
@@ -137,7 +137,7 @@ export class MfaGuard implements CanActivate {
   private async logMfaError(request: any, user: any, error: string): Promise<void> {
     try {
       await this.securityService.logSecurityEvent(
-        AuditEventType.LOGIN_FAILED,
+        AuditAction.AUTHENTICATION_FAILED,
         user.id,
         AuditSeverity.HIGH,
         `MFA verification error: ${error}`,

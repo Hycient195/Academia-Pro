@@ -15,29 +15,27 @@ export class SchoolsService {
   ) {}
 
   /**
-   * Create a new school
-   */
+    * Create a new school
+    */
   async create(createSchoolDto: CreateSchoolDto): Promise<School> {
     const { name, code, ...schoolData } = createSchoolDto;
 
-    // Check if school with same name or code already exists
-    const existingSchool = await this.schoolsRepository.findOne({
-      where: [{ name }, { code }],
+    // Check if school with same name already exists
+    const existingByName = await this.schoolsRepository.findOne({
+      where: { name },
     });
 
-    if (!existingSchool) {
-      // This is fine, no existing school found
-    } else if (existingSchool.name === name) {
+    if (existingByName) {
       throw new ConflictException('School with this name already exists');
-    } else if (existingSchool.code === code) {
-      throw new ConflictException('School with this code already exists');
     }
 
-    if (existingSchool) {
-      if (existingSchool.name === name) {
-        throw new ConflictException('School with this name already exists');
-      }
-      if (existingSchool.code === code) {
+    // Check if school with same code already exists
+    if (code) {
+      const existingByCode = await this.schoolsRepository.findOne({
+        where: { code },
+      });
+
+      if (existingByCode) {
         throw new ConflictException('School with this code already exists');
       }
     }
@@ -46,7 +44,21 @@ export class SchoolsService {
     const school = this.schoolsRepository.create({
       name,
       code: code || this.generateSchoolCode(name),
-      ...schoolData,
+      description: schoolData.description,
+      phone: schoolData.phone,
+      email: schoolData.email,
+      website: schoolData.website,
+      address: schoolData.address ? `${schoolData.address.street}, ${schoolData.address.city}, ${schoolData.address.state} ${schoolData.address.postalCode}, ${schoolData.address.country}` : undefined,
+      city: schoolData.address?.city,
+      state: schoolData.address?.state,
+      zipCode: schoolData.address?.postalCode,
+      country: schoolData.address?.country,
+      principalName: schoolData.principalName,
+      principalPhone: schoolData.principalPhone,
+      principalEmail: schoolData.principalEmail,
+      currentStudents: schoolData.totalStudents || 0,
+      currentStaff: schoolData.totalStaff || 0,
+      createdBy: 'system', // TODO: Get from current user
     });
 
     return this.schoolsRepository.save(school);
@@ -226,14 +238,14 @@ export class SchoolsService {
     // This would involve querying related entities
 
     const activeFeatures = [];
-    if (school.hasOnlineLearning) activeFeatures.push('online-learning');
-    if (school.hasTransportation) activeFeatures.push('transportation');
-    if (school.hasHostel) activeFeatures.push('hostel');
+    if (school.settings?.features?.includes('online-learning')) activeFeatures.push('online-learning');
+    if (school.settings?.features?.includes('transportation')) activeFeatures.push('transportation');
+    if (school.settings?.features?.includes('hostel')) activeFeatures.push('hostel');
 
     return {
-      totalStudents: school.totalStudents || 0,
-      totalTeachers: school.totalTeachers || 0,
-      totalStaff: school.totalStaff || 0,
+      totalStudents: school.currentStudents || 0,
+      totalTeachers: 0, // TODO: Implement calculation from staff entities
+      totalStaff: school.currentStaff || 0,
       activeFeatures,
     };
   }

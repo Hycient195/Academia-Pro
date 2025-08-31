@@ -241,27 +241,33 @@ export interface IUpdateMessageRequest {
     metadata?: Record<string, any>;
 }
 export interface ICreateNoticeRequest {
+    schoolId: string;
+    noticeType: TNoticeType;
+    priority?: TMessagePriority;
     title: string;
     content: string;
-    type: TNoticeType;
-    priority?: TMessagePriority;
-    targetAudience: {
-        allUsers: boolean;
-        userTypes?: TRecipientType[];
-        gradeLevels?: string[];
-        sections?: string[];
+    summary?: string;
+    visibilityLevel?: string;
+    targetAudience?: {
+        allUsers?: boolean;
+        specificRoles?: string[];
+        specificGrades?: string[];
+        specificSections?: string[];
         specificUsers?: string[];
     };
+    allowComments?: boolean;
+    moderateComments?: boolean;
+    sendNotifications?: boolean;
+    expiresAt?: Date;
+    tags?: string[];
     attachments?: Array<{
         fileName: string;
         fileUrl: string;
         fileSize: number;
         mimeType: string;
     }>;
-    publishDate: Date;
-    expiryDate?: Date;
-    acknowledgementRequired?: boolean;
-    tags?: string[];
+    publishImmediately?: boolean;
+    metadata?: Record<string, any>;
 }
 export interface IUpdateNoticeRequest {
     title?: string;
@@ -287,24 +293,52 @@ export interface IUpdateNoticeRequest {
     tags?: string[];
 }
 export interface ICreateNotificationRequest {
-    userId: string;
-    title: string;
-    message: string;
-    type: TNotificationType;
+    schoolId: string;
+    notificationType: TNotificationType;
+    category: string;
     priority?: TMessagePriority;
-    data?: Record<string, any>;
-    actionUrl?: string;
-    actionText?: string;
-    expiresAt?: Date;
+    subject: string;
+    message: string;
+    recipientId?: string;
+    recipientName?: string;
+    email?: string;
+    phoneNumber?: string;
+    deviceToken?: string;
+    whatsappNumber?: string;
+    telegramChatId?: string;
+    userPreferences?: {
+        emailEnabled?: boolean;
+        smsEnabled?: boolean;
+        pushEnabled?: boolean;
+        whatsappEnabled?: boolean;
+        telegramEnabled?: boolean;
+    };
+    isScheduled?: boolean;
+    scheduledSendAt?: Date;
+    templateId?: string;
+    metadata?: Record<string, any>;
 }
 export interface ICreateTemplateRequest {
+    schoolId: string;
     name: string;
-    type: TTemplateType;
-    subject?: string;
-    content: string;
-    variables?: string[];
+    description: string;
+    templateType: TTemplateType;
     category?: string;
+    subjectTemplate: string;
+    contentTemplate: string;
+    shortContentTemplate?: string;
+    htmlTemplate?: string;
+    variables?: Array<{
+        name: string;
+        type: 'string' | 'number' | 'date' | 'boolean';
+        description: string;
+        required: boolean;
+        defaultValue?: any;
+    }>;
+    isActive?: boolean;
     tags?: string[];
+    previewData?: Record<string, any>;
+    metadata?: Record<string, any>;
 }
 export interface IUpdateTemplateRequest {
     name?: string;

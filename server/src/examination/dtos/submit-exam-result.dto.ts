@@ -3,7 +3,7 @@
 
 import { IsNotEmpty, IsOptional, IsString, IsNumber, Min, Max, IsArray, IsObject, ValidateNested } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ISubmitExamResultRequest, IGradeExamResultRequest, IRequestReEvaluationRequest } from '../../../../common/src/types/examination/examination.types';
+import { ISubmitExamResultRequest, IGradeExamResultRequest } from '@academia-pro/common/examination';
 
 export class QuestionScoreDto {
   @ApiProperty({
@@ -95,6 +95,33 @@ export class SubmitExamResultDto implements ISubmitExamResultRequest {
   @IsOptional()
   @IsString({ message: 'Notes must be a string' })
   notes?: string;
+
+  @ApiProperty({
+    description: 'Student answers',
+    type: [Object],
+  })
+  @IsArray({ message: 'Answers must be an array' })
+  answers: Array<{
+    questionId: string;
+    answer: string;
+    timeSpentSeconds?: number;
+  }>;
+
+  @ApiProperty({
+    description: 'Submission timestamp',
+    example: '2024-12-15T10:30:00Z',
+  })
+  @IsString({ message: 'Submitted at must be a string' })
+  submittedAt: string;
+
+  @ApiProperty({
+    description: 'Time taken in minutes',
+    example: 120,
+    minimum: 0,
+  })
+  @IsNumber({}, { message: 'Time taken must be a number' })
+  @Min(0, { message: 'Time taken cannot be negative' })
+  timeTakenMinutes: number;
 }
 
 export class GradeExamResultDto implements IGradeExamResultRequest {
@@ -115,6 +142,16 @@ export class GradeExamResultDto implements IGradeExamResultRequest {
   @IsNumber({}, { message: 'Obtained marks must be a number' })
   @Min(0, { message: 'Obtained marks cannot be negative' })
   obtainedMarks: number;
+
+  @ApiProperty({
+    description: 'Marks obtained (duplicate for interface compatibility)',
+    example: 85,
+    minimum: 0,
+  })
+  @IsNotEmpty({ message: 'Marks obtained is required' })
+  @IsNumber({}, { message: 'Marks obtained must be a number' })
+  @Min(0, { message: 'Marks obtained cannot be negative' })
+  marksObtained: number;
 
   @ApiPropertyOptional({
     description: 'Teacher comments',
@@ -145,7 +182,7 @@ export class GradeExamResultDto implements IGradeExamResultRequest {
   strengths?: string[];
 }
 
-export class RequestReEvaluationDto implements IRequestReEvaluationRequest {
+export class RequestReEvaluationDto {
   @ApiProperty({
     description: 'Exam Result ID',
     example: 'exam-result-uuid-123',

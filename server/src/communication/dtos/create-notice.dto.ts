@@ -3,7 +3,7 @@
 
 import { IsString, IsOptional, IsEnum, IsUUID, IsObject, IsBoolean, IsArray } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TNoticeType, TMessagePriority, ICreateNoticeRequest } from '../../../../common/src/types/communication/communication.types';
+import { TNoticeType, TMessagePriority, TMessageType, ICreateNoticeRequest } from '@academia-pro/common/communication';
 
 export class CreateNoticeDto implements ICreateNoticeRequest {
   @ApiProperty({
@@ -20,6 +20,19 @@ export class CreateNoticeDto implements ICreateNoticeRequest {
   })
   @IsEnum(TNoticeType)
   noticeType: TNoticeType;
+
+  @ApiProperty({
+    description: 'Message type',
+    enum: TNoticeType,
+    example: 'announcement',
+  })
+  @IsEnum(TNoticeType)
+  type: TNoticeType;
+
+  @ApiProperty({
+    description: 'Publish date',
+  })
+  publishDate: Date;
 
   @ApiPropertyOptional({
     description: 'Notice priority',
@@ -58,13 +71,12 @@ export class CreateNoticeDto implements ICreateNoticeRequest {
   @IsOptional()
   visibilityLevel?: string = 'public';
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'Target audience specification',
   })
-  @IsOptional()
   @IsObject()
-  targetAudience?: {
-    allUsers?: boolean;
+  targetAudience: {
+    allUsers: boolean;
     specificRoles?: string[];
     specificGrades?: string[];
     specificSections?: string[];

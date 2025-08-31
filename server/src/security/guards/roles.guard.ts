@@ -1,7 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException, Logger } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { SecurityService } from '../services/security.service';
-import { AuditEventType, AuditSeverity } from '../entities/audit-log.entity';
+import { AuditAction, AuditSeverity } from '../services/audit.service';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -253,7 +253,7 @@ export class RolesGuard implements CanActivate {
   private async logAccessGranted(request: any, user: any, roles: string[]): Promise<void> {
     try {
       await this.securityService.logSecurityEvent(
-        AuditEventType.DATA_ACCESSED,
+        AuditAction.DATA_ACCESSED,
         user.id,
         AuditSeverity.LOW,
         'Access granted',
@@ -282,7 +282,7 @@ export class RolesGuard implements CanActivate {
   ): Promise<void> {
     try {
       await this.securityService.logSecurityEvent(
-        AuditEventType.ACCESS_DENIED,
+        AuditAction.AUTHORIZATION_FAILED,
         user.id,
         AuditSeverity.MEDIUM,
         `Access denied: ${reason}`,
@@ -309,7 +309,7 @@ export class RolesGuard implements CanActivate {
   private async logAuthorizationError(request: any, user: any, error: string): Promise<void> {
     try {
       await this.securityService.logSecurityEvent(
-        AuditEventType.ACCESS_DENIED,
+        AuditAction.AUTHORIZATION_FAILED,
         user.id,
         AuditSeverity.HIGH,
         `Authorization error: ${error}`,

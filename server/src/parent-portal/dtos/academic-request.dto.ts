@@ -4,9 +4,8 @@ import {
   IGetAcademicGradesRequest,
   IGetAttendanceRequest,
   IGetAssignmentsRequest,
-  IGetTimetableRequest,
-  TFeeStatus
-} from '@academia-pro/common';
+  IGetTimetableRequest
+} from '@academia-pro/common/parent-portal';
 
 export class ParentAcademicRequestDto implements Partial<IGetAcademicGradesRequest & IGetAttendanceRequest & IGetAssignmentsRequest & IGetTimetableRequest> {
   @IsUUID()
@@ -22,7 +21,7 @@ export class ParentAcademicRequestDto implements Partial<IGetAcademicGradesReque
   })
   @IsOptional()
   @IsDateString()
-  startDate?: string;
+  startDate?: Date;
 
   @ApiPropertyOptional({
     description: 'End date for data filtering',
@@ -30,7 +29,7 @@ export class ParentAcademicRequestDto implements Partial<IGetAcademicGradesReque
   })
   @IsOptional()
   @IsDateString()
-  endDate?: string;
+  endDate?: Date;
 
   @ApiPropertyOptional({
     description: 'Academic year filter',

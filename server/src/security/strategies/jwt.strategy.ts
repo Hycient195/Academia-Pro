@@ -3,7 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { SecurityService } from '../services/security.service';
-import { AuditEventType, AuditSeverity } from '../entities/audit-log.entity';
+import { AuditAction, AuditSeverity } from '../services/audit.service';
 
 export interface JwtPayload {
   sub: string;
@@ -189,7 +189,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   private async logSuccessfulValidation(request: any, payload: JwtPayload): Promise<void> {
     try {
       await this.securityService.logSecurityEvent(
-        AuditEventType.DATA_ACCESSED,
+        AuditAction.DATA_ACCESSED,
         payload.sub,
         AuditSeverity.LOW,
         'JWT token validation successful',
@@ -209,7 +209,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   private async logInvalidUser(request: any, payload: JwtPayload): Promise<void> {
     try {
       await this.securityService.logSecurityEvent(
-        AuditEventType.LOGIN_FAILED,
+        AuditAction.AUTHENTICATION_FAILED,
         payload.sub,
         AuditSeverity.MEDIUM,
         'JWT validation failed: User not found or inactive',
@@ -228,7 +228,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   private async logInvalidRoles(request: any, payload: JwtPayload): Promise<void> {
     try {
       await this.securityService.logSecurityEvent(
-        AuditEventType.ACCESS_DENIED,
+        AuditAction.AUTHORIZATION_FAILED,
         payload.sub,
         AuditSeverity.MEDIUM,
         'JWT validation failed: No valid roles',
@@ -247,7 +247,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   private async logInvalidSchoolAccess(request: any, payload: JwtPayload): Promise<void> {
     try {
       await this.securityService.logSecurityEvent(
-        AuditEventType.ACCESS_DENIED,
+        AuditAction.AUTHORIZATION_FAILED,
         payload.sub,
         AuditSeverity.HIGH,
         'JWT validation failed: Invalid school access',
@@ -266,7 +266,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   private async logValidationError(request: any, payload: JwtPayload, error: string): Promise<void> {
     try {
       await this.securityService.logSecurityEvent(
-        AuditEventType.LOGIN_FAILED,
+        AuditAction.AUTHENTICATION_FAILED,
         payload?.sub,
         AuditSeverity.MEDIUM,
         `JWT validation error: ${error}`,

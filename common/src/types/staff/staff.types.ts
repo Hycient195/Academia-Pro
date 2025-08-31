@@ -58,6 +58,17 @@ export enum TQualificationLevel {
   PROFESSIONAL_CERTIFICATION = 'professional_certification',
 }
 
+export enum TBloodGroup {
+  A_POSITIVE = 'a_positive',
+  A_NEGATIVE = 'a_negative',
+  B_POSITIVE = 'b_positive',
+  B_NEGATIVE = 'b_negative',
+  AB_POSITIVE = 'ab_positive',
+  AB_NEGATIVE = 'ab_negative',
+  O_POSITIVE = 'o_positive',
+  O_NEGATIVE = 'o_negative',
+}
+
 export enum TLeaveType {
   ANNUAL = 'annual',
   SICK = 'sick',
@@ -249,7 +260,8 @@ export interface IDocument {
 
 // Request Interfaces
 export interface ICreateStaffRequest {
-  employeeId: string;
+  schoolId: string;
+  employeeId?: string;
   userId?: string;
   firstName: string;
   lastName: string;
@@ -258,18 +270,43 @@ export interface ICreateStaffRequest {
   phone: string;
   dateOfBirth: Date;
   gender: 'male' | 'female' | 'other';
-  address: IAddress;
-  department: TDepartment;
-  position: TPosition;
-  employmentType: TEmploymentType;
-  hireDate: Date;
+  maritalStatus?: 'single' | 'married' | 'divorced' | 'widowed';
+  bloodGroup?: string;
+  alternatePhone?: string;
+  emergencyContactName: string;
+  emergencyContactPhone: string;
+  emergencyContactRelation: string;
+  currentAddress: IAddress;
+  permanentAddress?: IAddress;
+  staffType: TDepartment;
+  department: string;
+  designation: string;
+  reportingTo?: string;
+  employmentType?: TEmploymentType;
+  joiningDate: Date;
+  probationEndDate?: Date;
   contractEndDate?: Date;
-  salary: Omit<ISalaryInfo, 'netSalary'>;
-  qualifications: Omit<IQualification, 'id' | 'documents'>[];
-  emergencyContact: IEmergencyContact;
-  workSchedule: IWorkSchedule;
-  benefits: IBenefits;
-  schoolId: string;
+  basicSalary: number;
+  salaryCurrency?: string;
+  houseAllowance?: number;
+  transportAllowance?: number;
+  medicalAllowance?: number;
+  otherAllowances?: number;
+  taxDeductible?: number;
+  providentFund?: number;
+  otherDeductions?: number;
+  paymentMethod?: string;
+  bankName?: string;
+  bankAccountNumber?: string;
+  bankBranch?: string;
+  ifscCode?: string;
+  qualifications?: Omit<IQualification, 'id' | 'documents'>[];
+  certifications?: any[];
+  previousExperience?: any[];
+  medicalInfo?: any;
+  communicationPreferences?: any;
+  tags?: string[];
+  internalNotes?: string;
   managerId?: string;
 }
 

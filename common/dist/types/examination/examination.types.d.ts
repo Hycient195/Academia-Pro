@@ -260,21 +260,22 @@ export interface IUpdateExamRequest {
 export interface ISubmitExamResultRequest {
     examId: string;
     studentId: string;
-    answers: Array<{
+    questionScores?: Array<{
         questionId: string;
-        answer: string;
+        obtainedMarks: number;
+        totalMarks: number;
         timeSpentSeconds?: number;
+        attempts?: number;
+        isCorrect?: boolean;
     }>;
-    submittedAt: string;
-    timeTakenMinutes: number;
+    notes?: string;
 }
 export interface IGradeExamResultRequest {
     examResultId: string;
-    marksObtained: number;
-    grade?: string;
-    remarks?: string;
-    reviewComments?: string;
-    feedback?: string;
+    obtainedMarks: number;
+    teacherComments?: string;
+    improvementAreas?: string[];
+    strengths?: string[];
 }
 export interface ICreateQuestionRequest {
     examId: string;
@@ -297,6 +298,10 @@ export interface IBulkGradeRequest {
         grade?: string;
         remarks?: string;
     }>;
+}
+export interface IRequestReEvaluationRequest {
+    examResultId: string;
+    reason: string;
 }
 export interface IExamResponse extends Omit<IExam, 'createdBy' | 'updatedBy'> {
     subject?: {

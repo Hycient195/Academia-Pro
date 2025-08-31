@@ -446,7 +446,7 @@ export class StudentEnrollmentService {
   async getEnrollmentStatistics(schoolId: string, academicYear?: string): Promise<any> {
     // TODO: Implement comprehensive enrollment statistics
     const totalStudents = await this.studentRepository.count({
-      where: { schoolId, status: 'active' },
+      where: { schoolId, status: StudentStatus.ACTIVE },
     });
 
     const gradeDistribution = await this.studentRepository
@@ -454,7 +454,7 @@ export class StudentEnrollmentService {
       .select('student.currentGrade', 'grade')
       .addSelect('COUNT(*)', 'count')
       .where('student.schoolId = :schoolId', { schoolId })
-      .andWhere('student.status = :status', { status: 'active' })
+      .andWhere('student.status = :status', { status: StudentStatus.ACTIVE })
       .groupBy('student.currentGrade')
       .getRawMany();
 

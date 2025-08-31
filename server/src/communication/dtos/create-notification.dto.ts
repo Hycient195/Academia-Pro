@@ -3,7 +3,7 @@
 
 import { IsString, IsOptional, IsEnum, IsUUID, IsObject, IsBoolean } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TNotificationType, TMessagePriority, ICreateNotificationRequest } from '../../../../common/src/types/communication/communication.types';
+import { TNotificationType, TMessagePriority, ICreateNotificationRequest } from '@academia-pro/common/communication';
 
 export class CreateNotificationDto implements ICreateNotificationRequest {
   @ApiProperty({
@@ -12,6 +12,28 @@ export class CreateNotificationDto implements ICreateNotificationRequest {
   })
   @IsUUID()
   schoolId: string;
+
+  @ApiProperty({
+    description: 'User ID',
+    example: '123e4567-e89b-12d3-a456-426614174001',
+  })
+  @IsUUID()
+  userId: string;
+
+  @ApiProperty({
+    description: 'Notification title',
+    example: 'Assignment Due Reminder',
+  })
+  @IsString()
+  title: string;
+
+  @ApiProperty({
+    description: 'Notification type',
+    enum: TNotificationType,
+    example: 'email',
+  })
+  @IsEnum(TNotificationType)
+  type: TNotificationType;
 
   @ApiProperty({
     description: 'Notification type',

@@ -1,9 +1,47 @@
 // Academia Pro - Create Template DTO
 // Data Transfer Object for communication template creation
 
-import { IsString, IsOptional, IsEnum, IsUUID, IsObject, IsBoolean, IsArray } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsUUID, IsObject, IsBoolean, IsArray, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TTemplateType, ICreateTemplateRequest } from '../../../../common/src/types/communication/communication.types';
+import { TTemplateType, ICreateTemplateRequest } from '@academia-pro/common/communication';
+
+export class TemplateVariableDto {
+  @ApiProperty({
+    description: 'Variable name',
+    example: 'studentName',
+  })
+  @IsString()
+  name: string;
+
+  @ApiProperty({
+    description: 'Variable type',
+    enum: ['string', 'number', 'date', 'boolean'],
+    example: 'string',
+  })
+  @IsEnum(['string', 'number', 'date', 'boolean'])
+  type: 'string' | 'number' | 'date' | 'boolean';
+
+  @ApiProperty({
+    description: 'Variable description',
+    example: 'Name of the student',
+  })
+  @IsString()
+  description: string;
+
+  @ApiProperty({
+    description: 'Whether the variable is required',
+    example: true,
+  })
+  @IsBoolean()
+  required: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Default value for the variable',
+  })
+  @IsOptional()
+  defaultValue?: any;
+}
 
 export class CreateTemplateDto implements ICreateTemplateRequest {
   @ApiProperty({
@@ -70,18 +108,14 @@ export class CreateTemplateDto implements ICreateTemplateRequest {
   htmlTemplate?: string;
 
   @ApiPropertyOptional({
-    description: 'Template variables definition',
-    type: [Object],
+    description: 'Template variables',
+    type: [TemplateVariableDto],
   })
   @IsOptional()
   @IsArray()
-  variables?: Array<{
-    name: string;
-    type: 'string' | 'number' | 'date' | 'boolean';
-    description: string;
-    required: boolean;
-    defaultValue?: any;
-  }>;
+  @ValidateNested({ each: true })
+  @Type(() => TemplateVariableDto)
+  variables?: TemplateVariableDto[];
 
   @ApiPropertyOptional({
     description: 'Whether the template is active',

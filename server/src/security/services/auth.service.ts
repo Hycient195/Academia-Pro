@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException, BadRequestException, Logger } from '
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { SecurityService } from './security.service';
-import { AuditEventType, AuditSeverity } from '../entities/audit-log.entity';
+import { AuditAction, AuditSeverity } from './audit.service';
 import { TotpStrategy } from '../strategies/totp.strategy';
 
 export interface LoginCredentials {
@@ -186,7 +186,7 @@ export class AuthService {
 
       // Log MFA setup
       await this.securityService.logSecurityEvent(
-        AuditEventType.MFA_ENABLED,
+        AuditAction.SECURITY_ALERT,
         userId,
         AuditSeverity.LOW,
         `MFA setup initiated: ${method}`,
@@ -221,7 +221,7 @@ export class AuthService {
 
       // Log MFA enabled
       await this.securityService.logSecurityEvent(
-        AuditEventType.MFA_ENABLED,
+        AuditAction.SECURITY_ALERT,
         userId,
         AuditSeverity.LOW,
         `MFA enabled successfully: ${method}`,
@@ -254,7 +254,7 @@ export class AuthService {
 
       // Log MFA disabled
       await this.securityService.logSecurityEvent(
-        AuditEventType.MFA_ENABLED,
+        AuditAction.SECURITY_ALERT,
         userId,
         AuditSeverity.MEDIUM,
         'MFA disabled',
@@ -287,7 +287,7 @@ export class AuthService {
 
       // Log token refresh
       await this.securityService.logSecurityEvent(
-        AuditEventType.LOGIN_SUCCESS,
+        AuditAction.AUTHENTICATION_SUCCESS,
         user.id,
         AuditSeverity.LOW,
         'Token refreshed successfully',
@@ -314,7 +314,7 @@ export class AuthService {
 
       // Log logout
       await this.securityService.logSecurityEvent(
-        AuditEventType.LOGOUT,
+        AuditAction.LOGOUT,
         userId,
         AuditSeverity.LOW,
         'User logged out successfully',
@@ -520,7 +520,7 @@ export class AuthService {
   // Logging methods
   private async logFailedLogin(email: string, reason: string, ipAddress: string, userAgent: string): Promise<void> {
     await this.securityService.logSecurityEvent(
-      AuditEventType.LOGIN_FAILED,
+      AuditAction.AUTHENTICATION_FAILED,
       null,
       AuditSeverity.MEDIUM,
       `Login failed: ${reason}`,
@@ -532,7 +532,7 @@ export class AuthService {
 
   private async logSuccessfulLogin(user: any, ipAddress: string, userAgent: string): Promise<void> {
     await this.securityService.logSecurityEvent(
-      AuditEventType.LOGIN_SUCCESS,
+      AuditAction.AUTHENTICATION_SUCCESS,
       user.id,
       AuditSeverity.LOW,
       'User logged in successfully',
@@ -544,7 +544,7 @@ export class AuthService {
 
   private async logSuspiciousLogin(user: any, riskAssessment: any, ipAddress: string, userAgent: string): Promise<void> {
     await this.securityService.logSecurityEvent(
-      AuditEventType.SUSPICIOUS_ACTIVITY,
+      AuditAction.SUSPICIOUS_ACTIVITY,
       user.id,
       AuditSeverity.HIGH,
       'Suspicious login detected',
@@ -556,7 +556,7 @@ export class AuthService {
 
   private async logMfaRequired(user: any, ipAddress: string, userAgent: string): Promise<void> {
     await this.securityService.logSecurityEvent(
-      AuditEventType.MFA_ENABLED,
+      AuditAction.SECURITY_ALERT,
       user.id,
       AuditSeverity.LOW,
       'MFA verification required for login',
@@ -568,7 +568,7 @@ export class AuthService {
 
   private async logMfaSuccess(user: any, method: string): Promise<void> {
     await this.securityService.logSecurityEvent(
-      AuditEventType.MFA_VERIFIED,
+      AuditAction.SECURITY_ALERT,
       user.id,
       AuditSeverity.LOW,
       `MFA verification successful: ${method}`,
@@ -578,7 +578,7 @@ export class AuthService {
 
   private async logMfaFailure(user: any, method: string, reason: string): Promise<void> {
     await this.securityService.logSecurityEvent(
-      AuditEventType.LOGIN_FAILED,
+      AuditAction.AUTHENTICATION_FAILED,
       user.id,
       AuditSeverity.HIGH,
       `MFA verification failed: ${method} - ${reason}`,

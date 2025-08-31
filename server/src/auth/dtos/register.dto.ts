@@ -4,7 +4,7 @@
 import { IsEmail, IsString, IsNotEmpty, IsOptional, IsEnum, IsDateString, MinLength, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole } from '@academia-pro/common';
-import { IRegisterRequest } from '../../../../common/src/types';
+import { IRegisterRequest } from '@academia-pro/common/auth';
 
 export class RegisterDto implements IRegisterRequest {
   @ApiProperty({

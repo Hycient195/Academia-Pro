@@ -226,11 +226,11 @@ export interface ISubjectResponse extends ISubject {
     curriculumCount: number;
     classCount: number;
 }
-export interface ICurriculumResponse extends ICurriculum {
+export interface ICurriculumResponse extends Omit<ICurriculum, 'subjects' | 'learningObjectives'> {
     subjectCount: number;
     objectiveCount: number;
 }
-export interface IClassResponse extends IClass {
+export interface IClassResponse extends Omit<IClass, 'subjects'> {
     classTeacher?: {
         id: string;
         firstName: string;
@@ -238,6 +238,7 @@ export interface IClassResponse extends IClass {
     };
     subjectCount: number;
     studentCount: number;
+    utilizationPercentage: number;
 }
 export interface ILearningObjectiveResponse extends ILearningObjective {
     subject?: {
@@ -245,6 +246,7 @@ export interface ILearningObjectiveResponse extends ILearningObjective {
         name: string;
         code: string;
     };
+    bloomLevelName: string;
 }
 export interface IAcademicCalendarResponse extends IAcademicCalendar {
     termCount: number;

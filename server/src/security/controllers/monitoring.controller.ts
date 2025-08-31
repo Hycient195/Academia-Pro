@@ -5,7 +5,7 @@ import { SecurityService } from '../services/security.service';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../decorators/roles.decorator';
-import { AuditEventType, AuditSeverity } from '../entities/audit-log.entity';
+import { AuditAction, AuditSeverity } from '../services/audit.service';
 
 @ApiTags('Security - Monitoring & Threat Detection')
 @Controller('monitoring')
@@ -91,7 +91,7 @@ export class MonitoringController {
 
     // Log monitoring access
     await this.securityService.logSecurityEvent(
-      AuditEventType.DATA_ACCESSED,
+      AuditAction.DATA_ACCESSED,
       req.user.userId,
       AuditSeverity.LOW,
       'Security threats accessed',
@@ -134,7 +134,7 @@ export class MonitoringController {
 
     // Log report generation
     await this.securityService.logSecurityEvent(
-      AuditEventType.DATA_ACCESSED,
+      AuditAction.DATA_ACCESSED,
       req.user.userId,
       AuditSeverity.LOW,
       'Threat report generated',
@@ -184,7 +184,7 @@ export class MonitoringController {
 
     // Log analysis
     await this.securityService.logSecurityEvent(
-      AuditEventType.DATA_ACCESSED,
+      AuditAction.DATA_ACCESSED,
       req.user.userId,
       analysis.isAnomalous ? AuditSeverity.MEDIUM : AuditSeverity.LOW,
       'User behavior analysis performed',
@@ -225,7 +225,7 @@ export class MonitoringController {
 
     // Log intelligence access
     await this.securityService.logSecurityEvent(
-      AuditEventType.DATA_ACCESSED,
+      AuditAction.DATA_ACCESSED,
       req.user.userId,
       AuditSeverity.LOW,
       'Threat intelligence accessed',
@@ -308,7 +308,7 @@ export class MonitoringController {
 
     // Log configuration change
     await this.securityService.logSecurityEvent(
-      AuditEventType.CONFIGURATION_CHANGE,
+      AuditAction.SECURITY_CONFIG_CHANGED,
       req.user.userId,
       AuditSeverity.MEDIUM,
       'Security alert configuration updated',
@@ -424,7 +424,7 @@ export class MonitoringController {
 
     // Log scan initiation
     await this.securityService.logSecurityEvent(
-      AuditEventType.SECURITY_SCAN,
+      AuditAction.SECURITY_ALERT,
       req.user.userId,
       AuditSeverity.LOW,
       'Security scan initiated',
@@ -612,7 +612,7 @@ export class MonitoringController {
 
     // Log incident response
     await this.securityService.logSecurityEvent(
-      AuditEventType.INCIDENT_RESPONSE,
+      AuditAction.SECURITY_ALERT,
       req.user.userId,
       AuditSeverity.HIGH,
       `Incident response executed: ${responseConfig.responseType}`,

@@ -175,7 +175,7 @@ export class SecurityEvent {
     event.ipAddress = ipAddress;
     event.userAgent = userAgent;
     event.details = details;
-    event.severity = eventType.includes('FAILED') ? SecurityEventSeverity.HIGH : SecurityEventSeverity.LOW;
+    event.severity = (eventType.includes('failed') || eventType.includes('invalid')) ? SecurityEventSeverity.HIGH : SecurityEventSeverity.LOW;
     return event;
   }
 

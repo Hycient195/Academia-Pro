@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { AuditLog, AuditEventType, AuditSeverity } from '../entities/audit-log.entity';
+import { AuditLog } from '../entities/audit-log.entity';
+import { AuditAction, AuditSeverity } from './audit.service';
 import { SecurityService } from './security.service';
 import { PolicyService } from './policy.service';
 

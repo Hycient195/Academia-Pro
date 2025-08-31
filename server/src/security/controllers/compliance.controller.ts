@@ -5,7 +5,7 @@ import { SecurityService } from '../services/security.service';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../decorators/roles.decorator';
-import { AuditEventType, AuditSeverity } from '../entities/audit-log.entity';
+import { AuditAction, AuditSeverity } from '../services/audit.service';
 
 @ApiTags('Security - Compliance & Audit')
 @Controller('compliance')
@@ -71,7 +71,7 @@ export class ComplianceController {
 
     // Log compliance check
     await this.securityService.logSecurityEvent(
-      AuditEventType.COMPLIANCE_CHECK,
+      AuditAction.SECURITY_ALERT,
       req.user.userId,
       summary.nonCompliant > 0 ? AuditSeverity.HIGH : AuditSeverity.LOW,
       `Compliance check completed: ${data.framework}`,
@@ -126,7 +126,7 @@ export class ComplianceController {
 
     // Log report generation
     await this.securityService.logSecurityEvent(
-      AuditEventType.AUDIT_REVIEW,
+      AuditAction.AUDIT_LOG_ACCESSED,
       req.user.userId,
       report.overallCompliance < 80 ? AuditSeverity.HIGH : AuditSeverity.LOW,
       `Compliance report generated: ${query.framework}`,
@@ -205,7 +205,7 @@ export class ComplianceController {
 
     // Log data subject request
     await this.securityService.logSecurityEvent(
-      AuditEventType.DATA_SUBJECT_REQUEST,
+      AuditAction.DATA_ACCESSED,
       req.user.userId,
       AuditSeverity.MEDIUM,
       `Data subject request created: ${requestData.requestType}`,
@@ -343,7 +343,7 @@ export class ComplianceController {
 
     // Log data classification
     await this.securityService.logSecurityEvent(
-      AuditEventType.DATA_ACCESSED,
+      AuditAction.DATA_ACCESSED,
       req.user.userId,
       AuditSeverity.LOW,
       'Data classification performed',
@@ -387,7 +387,7 @@ export class ComplianceController {
 
     // Log retention check
     await this.securityService.logSecurityEvent(
-      AuditEventType.AUDIT_REVIEW,
+      AuditAction.AUDIT_LOG_ACCESSED,
       req.user.userId,
       AuditSeverity.LOW,
       `Data retention status checked: ${query.dataCategory}`,
@@ -569,7 +569,7 @@ export class ComplianceController {
 
     // Log audit trail access
     await this.securityService.logSecurityEvent(
-      AuditEventType.AUDIT_REVIEW,
+      AuditAction.AUDIT_LOG_ACCESSED,
       req.user.userId,
       AuditSeverity.LOW,
       'Audit trail accessed',

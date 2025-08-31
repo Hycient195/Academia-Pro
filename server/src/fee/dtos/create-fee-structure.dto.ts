@@ -3,7 +3,7 @@
 
 import { IsNotEmpty, IsOptional, IsString, IsEnum, IsDateString, IsBoolean, IsNumber, IsArray, IsObject, Min, Max, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ICreateFeeStructureRequest, TFeeType, TFeeFrequency, TFeeStatus } from '../../../../common/src/types/fee/fee.types';
+import { ICreateFeeStructureRequest, TFeeType, TFeeFrequency, TFeeStatus } from '@academia-pro/common/fee';
 
 export class CreateFeeStructureDto implements ICreateFeeStructureRequest {
   @ApiProperty({

@@ -2,16 +2,15 @@
 // Data Transfer Object for timetable filtering and querying
 
 import { IsOptional, IsString, IsEnum, IsInt, Min, MaxLength, IsArray } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TDayOfWeek, TPeriodType, TTimetableStatus, ITimetableFilters } from '@academia-pro/common/timetable';
 import { Type } from 'class-transformer';
 
 export class TimetableFiltersDto implements ITimetableFilters {
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'School ID filter',
     example: 'school-uuid-123',
   })
-  @IsOptional()
   @IsString({ message: 'School ID must be a string' })
   schoolId: string;
 

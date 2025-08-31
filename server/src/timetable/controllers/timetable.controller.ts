@@ -27,6 +27,7 @@ import {
 import { TimetableService } from '../services/timetable.service';
 import { CreateTimetableDto, BulkCreateTimetableDto, UpdateTimetableDto } from '../dtos';
 import { DayOfWeek, TimetableStatus, PeriodType, PriorityLevel } from '../entities/timetable.entity';
+import { TPriorityLevel, TDayOfWeek } from '@academia-pro/common/timetable';
 
 @ApiTags('Timetable Management')
 @ApiBearerAuth()
@@ -385,7 +386,7 @@ export class TimetableController {
       teacherName: string;
       periodsPerWeek: number;
       durationMinutes: number;
-      priorityLevel?: PriorityLevel;
+      priorityLevel?: TPriorityLevel;
     }>;
     constraints?: {
       maxPeriodsPerDay?: number;
@@ -460,7 +461,7 @@ export class TimetableController {
       subjectName: 'Temp Subject',
       teacherId: query.teacherId,
       teacherName: 'Temp Teacher',
-      dayOfWeek: query.dayOfWeek,
+      dayOfWeek: query.dayOfWeek as unknown as TDayOfWeek,
       startTime: query.startTime,
       endTime: query.endTime,
       durationMinutes: 60, // Default

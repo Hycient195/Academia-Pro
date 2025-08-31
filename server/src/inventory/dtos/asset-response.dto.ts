@@ -3,7 +3,7 @@
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Asset } from '../asset.entity';
-import { TAssetCategory, TAssetStatus, TProcurementStatus, IAssetResponse, IAssetListResponse, IAssetStatisticsResponse } from '@academia-pro/common/inventory';
+import { TAssetCategory, TAssetStatus, TProcurementStatus, IAssetResponse, IAssetListResponse, IAssetStatisticsResponse, IAssetLocation, IAssetSpecifications } from '@academia-pro/common/inventory';
 
 export class AssetResponseDto implements IAssetResponse {
   @ApiProperty({
@@ -43,6 +43,18 @@ export class AssetResponseDto implements IAssetResponse {
     enum: TAssetStatus,
   })
   status: TAssetStatus;
+
+  @ApiProperty({
+    description: 'Asset location details',
+    type: Object,
+  })
+  location: IAssetLocation;
+
+  @ApiProperty({
+    description: 'Asset specifications',
+    type: Object,
+  })
+  specifications: IAssetSpecifications;
 
   @ApiProperty({
     description: 'School ID',
@@ -153,32 +165,34 @@ export class AssetResponseDto implements IAssetResponse {
     dto.assetCode = asset.assetCode;
     dto.name = asset.name;
     dto.description = asset.description;
-    dto.category = asset.category;
-    dto.status = asset.status;
+    dto.category = asset.category as any;
+    dto.status = asset.status as any;
+    dto.location = asset.location;
+    dto.specifications = asset.specifications as any;
     dto.schoolId = asset.schoolId;
     dto.createdAt = asset.createdAt;
     dto.updatedAt = asset.updatedAt;
 
     // Computed fields
     dto.procurementSummary = {
-      supplierName: asset.supplierName,
-      purchaseDate: asset.procurement.purchaseDate,
-      purchasePrice: asset.financial.purchasePrice,
-      warrantyExpiryDate: asset.procurement.warrantyExpiryDate,
-      procurementStatus: asset.procurement.procurementStatus,
+      supplierName: asset.procurement?.supplier?.name || '',
+      purchaseDate: asset.procurement?.purchaseDate || new Date(),
+      purchasePrice: asset.financial?.purchasePrice || 0,
+      warrantyExpiryDate: asset.procurement?.warrantyExpiryDate,
+      procurementStatus: asset.procurement?.procurementStatus || 'received' as any,
     };
 
     dto.financialSummary = {
-      currentValue: asset.financial.currentValue,
-      accumulatedDepreciation: asset.financial.accumulatedDepreciation,
+      currentValue: asset.financial?.currentValue || 0,
+      accumulatedDepreciation: asset.financial?.accumulatedDepreciation || 0,
       depreciationPercentage: asset.depreciationPercentage,
       nextDepreciationDate: undefined, // Would be calculated based on depreciation schedule
     };
 
     dto.maintenanceSummary = {
-      lastMaintenanceDate: asset.maintenance.lastMaintenanceDate,
-      nextMaintenanceDate: asset.maintenance.nextMaintenanceDate,
-      totalMaintenanceCost: asset.totalMaintenanceCost,
+      lastMaintenanceDate: asset.maintenance?.lastMaintenanceDate,
+      nextMaintenanceDate: asset.maintenance?.nextMaintenanceDate,
+      totalMaintenanceCost: asset.maintenance?.maintenanceCost || 0,
       maintenanceCount: asset.maintenanceCount,
     };
 
@@ -190,10 +204,10 @@ export class AssetResponseDto implements IAssetResponse {
     };
 
     dto.locationSummary = {
-      building: asset.location.building,
-      room: asset.location.room,
-      department: asset.location.department,
-      custodian: asset.location.custodian,
+      building: asset.location?.building,
+      room: asset.location?.room,
+      department: asset.location?.department,
+      custodian: asset.location?.custodian,
     };
 
     dto.depreciationPercentage = asset.depreciationPercentage;

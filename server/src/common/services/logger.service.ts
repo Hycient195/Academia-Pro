@@ -12,7 +12,7 @@ export enum LogLevel {
 
 @Injectable()
 export class LoggerService extends Logger {
-  private context: string;
+  protected context: string;
 
   constructor() {
     super('LoggerService');

@@ -3,9 +3,9 @@
 
 import { IsNotEmpty, IsOptional, IsString, IsEnum, IsDateString, IsBoolean, IsNumber, IsArray, IsObject, Min, Max, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { FeeType, FeeFrequency, FeeStatus } from '../entities/fee-structure.entity';
+import { ICreateFeeStructureRequest, TFeeType, TFeeFrequency, TFeeStatus } from '../../../../common/src/types/fee/fee.types';
 
-export class CreateFeeStructureDto {
+export class CreateFeeStructureDto implements ICreateFeeStructureRequest {
   @ApiProperty({
     description: 'School ID',
     example: 'school-uuid-123',
@@ -16,12 +16,12 @@ export class CreateFeeStructureDto {
 
   @ApiProperty({
     description: 'Type of fee',
-    example: FeeType.TUITION,
-    enum: FeeType,
+    example: TFeeType.TUITION,
+    enum: TFeeType,
   })
   @IsNotEmpty({ message: 'Fee type is required' })
-  @IsEnum(FeeType, { message: 'Invalid fee type' })
-  feeType: FeeType;
+  @IsEnum(TFeeType, { message: 'Invalid fee type' })
+  feeType: TFeeType;
 
   @ApiProperty({
     description: 'Name of the fee',
@@ -43,12 +43,12 @@ export class CreateFeeStructureDto {
 
   @ApiPropertyOptional({
     description: 'Frequency of the fee',
-    example: FeeFrequency.ANNUAL,
-    enum: FeeFrequency,
+    example: TFeeFrequency.ANNUAL,
+    enum: TFeeFrequency,
   })
   @IsOptional()
-  @IsEnum(FeeFrequency, { message: 'Invalid fee frequency' })
-  frequency?: FeeFrequency;
+  @IsEnum(TFeeFrequency, { message: 'Invalid fee frequency' })
+  frequency?: TFeeFrequency;
 
   @ApiProperty({
     description: 'Base amount of the fee',
@@ -294,12 +294,12 @@ export class CreateFeeStructureDto {
 export class UpdateFeeStructureDto {
   @ApiPropertyOptional({
     description: 'Type of fee',
-    example: FeeType.TUITION,
-    enum: FeeType,
+    example: TFeeType.TUITION,
+    enum: TFeeType,
   })
   @IsOptional()
-  @IsEnum(FeeType, { message: 'Invalid fee type' })
-  feeType?: FeeType;
+  @IsEnum(TFeeType, { message: 'Invalid fee type' })
+  feeType?: TFeeType;
 
   @ApiPropertyOptional({
     description: 'Name of the fee',
@@ -321,21 +321,21 @@ export class UpdateFeeStructureDto {
 
   @ApiPropertyOptional({
     description: 'Frequency of the fee',
-    example: FeeFrequency.ANNUAL,
-    enum: FeeFrequency,
+    example: TFeeFrequency.ANNUAL,
+    enum: TFeeFrequency,
   })
   @IsOptional()
-  @IsEnum(FeeFrequency, { message: 'Invalid fee frequency' })
-  frequency?: FeeFrequency;
+  @IsEnum(TFeeFrequency, { message: 'Invalid fee frequency' })
+  frequency?: TFeeFrequency;
 
   @ApiPropertyOptional({
     description: 'Status of the fee structure',
-    example: FeeStatus.ACTIVE,
-    enum: FeeStatus,
+    example: TFeeStatus.ACTIVE,
+    enum: TFeeStatus,
   })
   @IsOptional()
-  @IsEnum(FeeStatus, { message: 'Invalid fee status' })
-  status?: FeeStatus;
+  @IsEnum(TFeeStatus, { message: 'Invalid fee status' })
+  status?: TFeeStatus;
 
   @ApiPropertyOptional({
     description: 'Base amount of the fee',

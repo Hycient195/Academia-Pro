@@ -3,8 +3,9 @@
 
 import { IsString, IsNotEmpty, MinLength, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IChangePasswordRequest } from '../../../../common/src/types';
 
-export class ChangePasswordDto {
+export class ChangePasswordDto implements IChangePasswordRequest {
   @ApiProperty({
     description: 'Current password',
     example: 'CurrentPass123!',

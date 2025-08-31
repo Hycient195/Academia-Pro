@@ -49,7 +49,7 @@ export class StudentsService {
     const finalAdmissionNumber = admissionNumber || await this.generateAdmissionNumber(schoolId);
 
     // Create student
-    const student = this.studentsRepository.create({
+    const studentToSave = {
       firstName: createStudentDto.firstName,
       lastName: createStudentDto.lastName,
       middleName: createStudentDto.middleName,
@@ -71,9 +71,9 @@ export class StudentsService {
       transportation: createStudentDto.transportation,
       hostel: createStudentDto.hostel,
       status: StudentStatus.ACTIVE,
-    });
+    };
 
-    const savedStudent = await this.studentsRepository.save(student);
+    const savedStudent = await this.studentsRepository.save(studentToSave as any);
     return StudentResponseDto.fromEntity(savedStudent);
   }
 

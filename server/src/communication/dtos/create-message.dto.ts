@@ -3,9 +3,9 @@
 
 import { IsString, IsOptional, IsEnum, IsArray, IsUUID, IsObject } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { MessageType, MessagePriority, RecipientType } from '../entities/message.entity';
+import { ICreateMessageRequest, TMessageType, TMessagePriority, TRecipientType } from '../../../../common/src/types/communication/communication.types';
 
-export class CreateMessageDto {
+export class CreateMessageDto implements ICreateMessageRequest {
   @ApiProperty({
     description: 'Message subject',
     example: 'Important Announcement',
@@ -22,21 +22,21 @@ export class CreateMessageDto {
 
   @ApiPropertyOptional({
     description: 'Type of message',
-    enum: MessageType,
-    default: MessageType.DIRECT,
+    enum: TMessageType,
+    default: TMessageType.DIRECT,
   })
   @IsOptional()
-  @IsEnum(MessageType)
-  messageType?: MessageType = MessageType.DIRECT;
+  @IsEnum(TMessageType)
+  messageType?: TMessageType = TMessageType.DIRECT;
 
   @ApiPropertyOptional({
     description: 'Message priority',
-    enum: MessagePriority,
-    default: MessagePriority.NORMAL,
+    enum: TMessagePriority,
+    default: TMessagePriority.NORMAL,
   })
   @IsOptional()
-  @IsEnum(MessagePriority)
-  priority?: MessagePriority = MessagePriority.NORMAL;
+  @IsEnum(TMessagePriority)
+  priority?: TMessagePriority = TMessagePriority.NORMAL;
 
   @ApiPropertyOptional({
     description: 'Recipient ID (for direct messages)',
@@ -61,11 +61,11 @@ export class CreateMessageDto {
 
   @ApiPropertyOptional({
     description: 'Recipient type',
-    enum: RecipientType,
+    enum: TRecipientType,
   })
   @IsOptional()
-  @IsEnum(RecipientType)
-  recipientType?: RecipientType;
+  @IsEnum(TRecipientType)
+  recipientType?: TRecipientType;
 
   @ApiPropertyOptional({
     description: 'Group ID (for group messages)',
@@ -91,7 +91,7 @@ export class CreateMessageDto {
     id: string;
     name: string;
     role: string;
-    type: RecipientType;
+    type: TRecipientType;
   }>;
 
   @ApiPropertyOptional({

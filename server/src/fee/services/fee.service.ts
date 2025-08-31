@@ -34,15 +34,15 @@ export class FeeService {
 
   // Fee Structure Management
   async createFeeStructure(dto: CreateFeeStructureDto, createdBy: string): Promise<FeeStructure> {
-    const feeStructure = this.feeStructureRepository.create({
+    const feeStructureData = {
       ...dto,
       createdBy,
       createdByName: createdBy, // This should be fetched from user service
       updatedBy: createdBy,
       updatedByName: createdBy,
-    });
+    };
 
-    return await this.feeStructureRepository.save(feeStructure);
+    return await this.feeStructureRepository.save(feeStructureData as any);
   }
 
   async updateFeeStructure(id: string, dto: UpdateFeeStructureDto, updatedBy: string): Promise<FeeStructure> {
@@ -104,7 +104,7 @@ export class FeeService {
     const transactionId = await this.generateTransactionId();
     const receiptNumber = await this.generateReceiptNumber(dto.schoolId);
 
-    const payment = this.feePaymentRepository.create({
+    const paymentData = {
       ...dto,
       transactionId,
       receiptNumber,
@@ -112,9 +112,9 @@ export class FeeService {
       createdByName: createdBy,
       updatedBy: createdBy,
       updatedByName: createdBy,
-    });
+    };
 
-    return await this.feePaymentRepository.save(payment);
+    return await this.feePaymentRepository.save(paymentData as any);
   }
 
   async processPayment(dto: ProcessPaymentDto, processedBy: string): Promise<FeePayment> {

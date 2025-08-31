@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany, Index } from 'typeorm';
-import { ClassSubject } from './class-subject.entity';
+import { ClassSubject } from '../class-subject.entity';
 
 export enum SubstituteRequestStatus {
   PENDING = 'pending',

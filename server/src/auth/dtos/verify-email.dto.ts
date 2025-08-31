@@ -3,8 +3,9 @@
 
 import { IsString, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IVerifyEmailRequest } from '../../../../common/src/types';
 
-export class VerifyEmailDto {
+export class VerifyEmailDto implements IVerifyEmailRequest {
   @ApiProperty({
     description: 'Email verification token',
     example: 'abc123def456ghi789',

@@ -43,7 +43,7 @@ export class AttendanceService {
       where: {
         studentId: dto.studentId,
         attendanceDate: new Date(dto.attendanceDate),
-        attendanceType: dto.attendanceType || AttendanceType.CLASS,
+        attendanceType: (dto.attendanceType as unknown as AttendanceType) || AttendanceType.CLASS,
         classId: dto.classId,
         periodNumber: dto.periodNumber,
       },
@@ -59,10 +59,10 @@ export class AttendanceService {
     const patternData = await this.calculateAttendancePattern(dto.studentId, new Date(dto.attendanceDate));
 
     // Create attendance record
-    const attendance = this.attendanceRepository.create({
+    const attendanceData = {
       studentId: dto.studentId,
-      status: dto.status,
-      attendanceType: dto.attendanceType || AttendanceType.CLASS,
+      status: dto.status as unknown as AttendanceStatus,
+      attendanceType: (dto.attendanceType as unknown as AttendanceType) || AttendanceType.CLASS,
       attendanceDate: new Date(dto.attendanceDate),
       checkInTime: dto.checkInTime ? new Date(dto.checkInTime) : undefined,
       checkOutTime: dto.checkOutTime ? new Date(dto.checkOutTime) : undefined,
@@ -74,7 +74,7 @@ export class AttendanceService {
       eventId: dto.eventId,
       eventName: dto.eventName,
       location: dto.location,
-      attendanceMethod: dto.attendanceMethod || AttendanceMethod.MANUAL,
+      attendanceMethod: (dto.attendanceMethod as unknown as AttendanceMethod) || AttendanceMethod.MANUAL,
       markedBy,
       markedByName,
       markedByRole,
@@ -90,7 +90,9 @@ export class AttendanceService {
       gradeLevel: student.currentGrade,
       section: student.currentSection,
       ...patternData,
-    });
+    };
+
+    const attendance = this.attendanceRepository.create(attendanceData);
 
     const savedAttendance = await this.attendanceRepository.save(attendance);
 
@@ -113,7 +115,7 @@ export class AttendanceService {
     const attendanceRecords: Attendance[] = [];
     const errors: string[] = [];
 
-    for (const item of dto.attendanceData) {
+    for (const item of dto.attendances) {
       try {
         const attendanceDto: MarkAttendanceDto = {
           studentId: item.studentId,
@@ -170,7 +172,7 @@ export class AttendanceService {
     }
 
     // Update fields
-    if (dto.status) attendance.status = dto.status;
+    if (dto.status) attendance.status = dto.status as unknown as AttendanceStatus;
     if (dto.checkInTime) attendance.checkInTime = new Date(dto.checkInTime);
     if (dto.checkOutTime) attendance.checkOutTime = new Date(dto.checkOutTime);
     if (dto.lateMinutes !== undefined) attendance.lateMinutes = dto.lateMinutes;
@@ -181,7 +183,7 @@ export class AttendanceService {
     if (dto.internalNotes !== undefined) attendance.internalNotes = dto.internalNotes;
 
     // Recalculate pattern data if status changed
-    if (dto.status && dto.status !== attendance.status) {
+    if (dto.status && (dto.status as unknown as AttendanceStatus) !== attendance.status) {
       const patternData = await this.calculateAttendancePattern(attendance.studentId, attendance.attendanceDate);
       Object.assign(attendance, patternData);
     }
@@ -407,9 +409,9 @@ export class AttendanceService {
     const records = await queryBuilder.getMany();
 
     const totalRecords = records.length;
-    const presentCount = records.filter(r => r.isPresent).length;
-    const absentCount = records.filter(r => r.isAbsent).length;
-    const lateCount = records.filter(r => r.isLate).length;
+    const presentCount = records.filter(r => r.status === AttendanceStatus.PRESENT).length;
+    const absentCount = records.filter(r => [AttendanceStatus.ABSENT, AttendanceStatus.MEDICAL_LEAVE, AttendanceStatus.EMERGENCY].includes(r.status)).length;
+    const lateCount = records.filter(r => r.status === AttendanceStatus.LATE || r.lateMinutes > 0).length;
     const excusedCount = records.filter(r => r.status === AttendanceStatus.EXCUSED).length;
 
     const attendancePercentage = totalRecords > 0 ? (presentCount / totalRecords) * 100 : 0;
@@ -485,9 +487,9 @@ export class AttendanceService {
     const records = await this.getStudentAttendance(studentId, options);
 
     const totalDays = records.length;
-    const presentDays = records.filter(r => r.isPresent).length;
-    const absentDays = records.filter(r => r.isAbsent).length;
-    const lateDays = records.filter(r => r.isLate).length;
+    const presentDays = records.filter(r => r.status === AttendanceStatus.PRESENT).length;
+    const absentDays = records.filter(r => [AttendanceStatus.ABSENT, AttendanceStatus.MEDICAL_LEAVE, AttendanceStatus.EMERGENCY].includes(r.status)).length;
+    const lateDays = records.filter(r => r.status === AttendanceStatus.LATE || r.lateMinutes > 0).length;
     const excusedDays = records.filter(r => r.status === AttendanceStatus.EXCUSED).length;
 
     const attendancePercentage = totalDays > 0 ? (presentDays / totalDays) * 100 : 0;
@@ -545,7 +547,7 @@ export class AttendanceService {
       });
 
       if (attendance) {
-        attendance.status = dto.status;
+        attendance.status = dto.status as unknown as AttendanceStatus;
         if (dto.reason) {
           attendance.notes = dto.reason;
         }

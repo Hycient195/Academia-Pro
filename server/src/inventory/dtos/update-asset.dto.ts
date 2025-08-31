@@ -1,7 +1,7 @@
 // Academia Pro - Update Asset DTO
 // Data Transfer Object for updating assets
 
-import { IUpdateAssetRequest } from '../../../../common/src/types/inventory/inventory.types';
+import { IUpdateAssetRequest } from '@academia-pro/common/inventory';
 
 export class UpdateAssetDto implements Partial<IUpdateAssetRequest> {
   name?: string;

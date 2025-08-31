@@ -1,7 +1,7 @@
 // Academia Pro - Update Staff DTO
 // Data Transfer Object for updating staff members
 
-import { IUpdateStaffRequest } from '../../../../common/src/types/staff/staff.types';
+import { IUpdateStaffRequest } from '@academia-pro/common/staff';
 
 export class UpdateStaffDto implements Partial<IUpdateStaffRequest> {
   employeeId?: string;

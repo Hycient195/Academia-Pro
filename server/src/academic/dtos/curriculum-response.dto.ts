@@ -3,9 +3,9 @@
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Curriculum } from '../curriculum.entity';
-import { TGradeLevel, TAcademicYearStatus } from '../../../../common/src/types/academic/academic.types';
+import { TGradeLevel, TAcademicYearStatus, ICurriculumResponse } from '../../../../common/src/types/academic/academic.types';
 
-export class CurriculumResponseDto {
+export class CurriculumResponseDto implements ICurriculumResponse {
   @ApiProperty({
     description: 'Unique curriculum identifier',
     example: 'curriculum-uuid-123',

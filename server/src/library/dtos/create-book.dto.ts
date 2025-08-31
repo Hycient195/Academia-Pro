@@ -3,9 +3,20 @@
 
 import { IsNotEmpty, IsOptional, IsString, IsEnum, IsEmail, IsDateString, IsBoolean, IsNumber, Min, Max, MaxLength, IsArray, IsObject, ValidateNested } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { BookCategory, BookFormat, Language, AcquisitionMethod, BookCondition } from '../entities/book.entity';
+import {
+  ICreateBookRequest,
+  IAdditionalImage,
+  IAward,
+  ISeriesInfo,
+  IBookMetadata,
+  TBookCategory,
+  TBookFormat,
+  TLanguage,
+  TAcquisitionMethod,
+  TBookCondition
+} from '@academia-pro/common/library';
 
-export class AdditionalImageDto {
+export class AdditionalImageDto implements IAdditionalImage {
   @ApiProperty({
     description: 'Image URL',
     example: 'https://storage.example.com/books/image1.jpg',
@@ -31,7 +42,7 @@ export class AdditionalImageDto {
   isPrimary?: boolean;
 }
 
-export class AwardDto {
+export class AwardDto implements IAward {
   @ApiProperty({
     description: 'Award name',
     example: 'Pulitzer Prize',
@@ -59,7 +70,7 @@ export class AwardDto {
   organization: string;
 }
 
-export class SeriesInfoDto {
+export class SeriesInfoDto implements ISeriesInfo {
   @ApiProperty({
     description: 'Series name',
     example: 'Harry Potter',
@@ -89,7 +100,7 @@ export class SeriesInfoDto {
   totalBooks: number;
 }
 
-export class BookMetadataDto {
+export class BookMetadataDto implements IBookMetadata {
   @ApiPropertyOptional({
     description: 'Dewey Decimal Classification',
     example: '813.54',
@@ -170,7 +181,7 @@ export class BookMetadataDto {
   seriesInfo?: SeriesInfoDto;
 }
 
-export class CreateBookDto {
+export class CreateBookDto implements ICreateBookRequest {
   @ApiProperty({
     description: 'School ID',
     example: 'school-uuid-123',
@@ -421,12 +432,12 @@ export class CreateBookDto {
 
   @ApiPropertyOptional({
     description: 'Book category',
-    example: BookCategory.FICTION,
-    enum: BookCategory,
+    example: TBookCategory.FICTION,
+    enum: TBookCategory,
   })
   @IsOptional()
-  @IsEnum(BookCategory, { message: 'Invalid book category' })
-  category?: BookCategory;
+  @IsEnum(TBookCategory, { message: 'Invalid book category' })
+  category?: TBookCategory;
 
   @ApiPropertyOptional({
     description: 'Book subcategory',
@@ -460,21 +471,21 @@ export class CreateBookDto {
 
   @ApiPropertyOptional({
     description: 'Book language',
-    example: Language.ENGLISH,
-    enum: Language,
+    example: TLanguage.ENGLISH,
+    enum: TLanguage,
   })
   @IsOptional()
-  @IsEnum(Language, { message: 'Invalid language' })
-  language?: Language;
+  @IsEnum(TLanguage, { message: 'Invalid language' })
+  language?: TLanguage;
 
   @ApiPropertyOptional({
     description: 'Book format',
-    example: BookFormat.HARDCOVER,
-    enum: BookFormat,
+    example: TBookFormat.HARDCOVER,
+    enum: TBookFormat,
   })
   @IsOptional()
-  @IsEnum(BookFormat, { message: 'Invalid book format' })
-  format?: BookFormat;
+  @IsEnum(TBookFormat, { message: 'Invalid book format' })
+  format?: TBookFormat;
 
   @ApiPropertyOptional({
     description: 'Book description',
@@ -510,12 +521,12 @@ export class CreateBookDto {
 
   @ApiPropertyOptional({
     description: 'Acquisition method',
-    example: AcquisitionMethod.PURCHASE,
-    enum: AcquisitionMethod,
+    example: TAcquisitionMethod.PURCHASE,
+    enum: TAcquisitionMethod,
   })
   @IsOptional()
-  @IsEnum(AcquisitionMethod, { message: 'Invalid acquisition method' })
-  acquisitionMethod?: AcquisitionMethod;
+  @IsEnum(TAcquisitionMethod, { message: 'Invalid acquisition method' })
+  acquisitionMethod?: TAcquisitionMethod;
 
   @ApiProperty({
     description: 'Acquisition date',
@@ -577,12 +588,12 @@ export class CreateBookDto {
 
   @ApiPropertyOptional({
     description: 'Book condition',
-    example: BookCondition.GOOD,
-    enum: BookCondition,
+    example: TBookCondition.GOOD,
+    enum: TBookCondition,
   })
   @IsOptional()
-  @IsEnum(BookCondition, { message: 'Invalid book condition' })
-  condition?: BookCondition;
+  @IsEnum(TBookCondition, { message: 'Invalid book condition' })
+  condition?: TBookCondition;
 
   @ApiPropertyOptional({
     description: 'Condition notes',
@@ -819,12 +830,12 @@ export class UpdateBookDto {
 
   @ApiPropertyOptional({
     description: 'Book category',
-    example: BookCategory.FICTION,
-    enum: BookCategory,
+    example: TBookCategory.FICTION,
+    enum: TBookCategory,
   })
   @IsOptional()
-  @IsEnum(BookCategory, { message: 'Invalid book category' })
-  category?: BookCategory;
+  @IsEnum(TBookCategory, { message: 'Invalid book category' })
+  category?: TBookCategory;
 
   @ApiPropertyOptional({
     description: 'Book status',
@@ -837,12 +848,12 @@ export class UpdateBookDto {
 
   @ApiPropertyOptional({
     description: 'Book condition',
-    example: BookCondition.GOOD,
-    enum: BookCondition,
+    example: TBookCondition.GOOD,
+    enum: TBookCondition,
   })
   @IsOptional()
-  @IsEnum(BookCondition, { message: 'Invalid book condition' })
-  condition?: BookCondition;
+  @IsEnum(TBookCondition, { message: 'Invalid book condition' })
+  condition?: TBookCondition;
 
   @ApiPropertyOptional({
     description: 'Location shelf',

@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany, Index, Unique } from 'typeorm';
-import { Class } from './class.entity';
+import { Class } from '../class.entity';
 
 export enum SectionType {
   ACADEMIC = 'academic',

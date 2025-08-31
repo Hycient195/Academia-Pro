@@ -42,7 +42,7 @@ export class LibraryService {
     }
 
     // Create book
-    const book = this.bookRepository.create({
+    const bookData = {
       schoolId: dto.schoolId,
       title: dto.title,
       subtitle: dto.subtitle,
@@ -69,24 +69,24 @@ export class LibraryService {
       widthCm: dto.widthCm,
       thicknessCm: dto.thicknessCm,
       weightGrams: dto.weightGrams,
-      category: dto.category || BookCategory.OTHER,
+      category: (dto.category as unknown as BookCategory) || BookCategory.OTHER,
       subcategory: dto.subcategory,
       keywords: dto.keywords || [],
       subjects: dto.subjects || [],
-      language: dto.language || Language.ENGLISH,
-      format: dto.format || BookFormat.HARDCOVER,
+      language: (dto.language as unknown as Language) || Language.ENGLISH,
+      format: (dto.format as unknown as BookFormat) || BookFormat.HARDCOVER,
       description: dto.description,
       tableOfContents: dto.tableOfContents,
       summary: dto.summary,
       notes: dto.notes,
-      acquisitionMethod: dto.acquisitionMethod || AcquisitionMethod.PURCHASE,
+      acquisitionMethod: (dto.acquisitionMethod as unknown as AcquisitionMethod) || AcquisitionMethod.PURCHASE,
       acquisitionDate: new Date(dto.acquisitionDate),
       acquisitionCost: dto.acquisitionCost,
       acquisitionCurrency: dto.acquisitionCurrency || 'USD',
       supplierName: dto.supplierName,
       supplierInvoiceNumber: dto.supplierInvoiceNumber,
       donorName: dto.donorName,
-      condition: dto.condition || BookCondition.GOOD,
+      condition: (dto.condition as unknown as BookCondition) || BookCondition.GOOD,
       conditionNotes: dto.conditionNotes,
       locationShelf: dto.locationShelf,
       locationRow: dto.locationRow,
@@ -110,8 +110,9 @@ export class LibraryService {
       internalNotes: dto.internalNotes,
       createdBy,
       updatedBy: createdBy,
-    });
+    };
 
+    const book = this.bookRepository.create(bookData);
     const savedBook = await this.bookRepository.save(book);
 
     this.logger.log(

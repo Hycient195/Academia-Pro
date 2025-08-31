@@ -153,20 +153,20 @@ export class Student {
     allergies?: string[];
     medications?: string[];
     conditions?: string[];
-    emergencyContact: {
+    emergencyContact?: {
       name: string;
       phone: string;
       relation: string;
     };
     doctorInfo?: {
-      name: string;
-      phone: string;
-      clinic: string;
+      name?: string;
+      phone?: string;
+      clinic?: string;
     };
     insuranceInfo?: {
-      provider: string;
-      policyNumber: string;
-      expiryDate: Date;
+      provider?: string;
+      policyNumber?: string;
+      expiryDate?: string;
     };
   };
 

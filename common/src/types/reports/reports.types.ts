@@ -357,6 +357,13 @@ export interface IReportResponse extends Omit<IReport, 'createdBy' | 'updatedAt'
     averageGenerationTime: number;
     lastGenerationTime?: Date;
   };
+  status: 'active' | 'inactive' | 'expired' | 'scheduled' | 'overdue';
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  daysSinceLastGeneration: number;
+  fileSizeFormatted: string;
+  recipientCount: number;
+  metricsCount: number;
+  filtersCount: number;
 }
 
 export interface IReportListResponse {

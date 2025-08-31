@@ -3,9 +3,9 @@
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Asset } from '../asset.entity';
-import { TAssetCategory, TAssetStatus, TProcurementStatus } from '../../../../common/src/types/inventory/inventory.types';
+import { TAssetCategory, TAssetStatus, TProcurementStatus, IAssetResponse, IAssetListResponse, IAssetStatisticsResponse } from '@academia-pro/common/inventory';
 
-export class AssetResponseDto {
+export class AssetResponseDto implements IAssetResponse {
   @ApiProperty({
     description: 'Unique asset identifier',
     example: 'asset-uuid-123',
@@ -205,7 +205,7 @@ export class AssetResponseDto {
   }
 }
 
-export class AssetListResponseDto {
+export class AssetListResponseDto implements IAssetListResponse {
   @ApiProperty({
     description: 'List of assets',
     type: [AssetResponseDto],
@@ -246,7 +246,7 @@ export class AssetListResponseDto {
   }
 }
 
-export class AssetStatisticsResponseDto {
+export class AssetStatisticsResponseDto implements IAssetStatisticsResponse {
   @ApiProperty({
     description: 'Total number of assets',
     example: 150,

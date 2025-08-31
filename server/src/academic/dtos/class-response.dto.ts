@@ -3,9 +3,9 @@
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Class } from '../class.entity';
-import { TGradeLevel } from '../../../../common/src/types/academic/academic.types';
+import { TGradeLevel, IClassResponse } from '../../../../common/src/types/academic/academic.types';
 
-export class ClassResponseDto {
+export class ClassResponseDto implements IClassResponse {
   @ApiProperty({
     description: 'Unique class identifier',
     example: 'class-uuid-123',

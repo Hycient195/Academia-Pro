@@ -3,9 +3,9 @@
 
 import { IsString, IsOptional, IsEnum, IsUUID, IsObject, IsBoolean, IsArray } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TemplateType, TemplateStatus, TemplateCategory } from '../entities/template.entity';
+import { TTemplateType, ICreateTemplateRequest } from '../../../../common/src/types/communication/communication.types';
 
-export class CreateTemplateDto {
+export class CreateTemplateDto implements ICreateTemplateRequest {
   @ApiProperty({
     description: 'School ID',
     example: '123e4567-e89b-12d3-a456-426614174000',
@@ -29,19 +29,17 @@ export class CreateTemplateDto {
 
   @ApiProperty({
     description: 'Template type',
-    enum: TemplateType,
+    enum: TTemplateType,
     example: 'email',
   })
-  @IsEnum(TemplateType)
-  templateType: TemplateType;
+  @IsEnum(TTemplateType)
+  templateType: TTemplateType;
 
   @ApiPropertyOptional({
     description: 'Template category',
-    enum: TemplateCategory,
   })
   @IsOptional()
-  @IsEnum(TemplateCategory)
-  category?: TemplateCategory;
+  category?: string;
 
   @ApiProperty({
     description: 'Subject template with variables',

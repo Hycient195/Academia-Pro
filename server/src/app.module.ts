@@ -27,6 +27,7 @@ import { InventoryModule } from './inventory/inventory.module';
 
 // Common modules
 import { CommonModule } from './common/common.module';
+import { RedisModule } from './redis/redis.module';
 
 // Guards, interceptors, and filters
 import { ThrottlerGuard } from './common/guards/throttler.guard';
@@ -50,13 +51,14 @@ import { databaseConfig } from './database.config';
     TypeOrmModule.forRoot(databaseConfig),
 
     // Rate limiting
-    ThrottlerModule.forRoot({
-      ttl: 60,    // Time window in seconds
+    ThrottlerModule.forRoot([{
+      ttl: 60 * 1000,    // Time window in milliseconds
       limit: 100, // Number of requests per window
-    }),
+    }]),
 
     // Feature modules
     CommonModule,
+    RedisModule,
     AuthModule,
     UsersModule,
     SchoolsModule,

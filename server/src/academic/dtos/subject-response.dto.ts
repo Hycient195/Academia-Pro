@@ -3,9 +3,9 @@
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Subject } from '../subject.entity';
-import { TSubjectType, TGradeLevel } from '../../../../common/src/types/academic/academic.types';
+import { TSubjectType, TGradeLevel, ISubjectResponse } from '../../../../common/src/types/academic/academic.types';
 
-export class SubjectResponseDto {
+export class SubjectResponseDto implements ISubjectResponse {
   @ApiProperty({
     description: 'Unique subject identifier',
     example: 'subject-uuid-123',

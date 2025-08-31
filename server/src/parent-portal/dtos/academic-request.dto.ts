@@ -1,7 +1,14 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsUUID, IsDateString, IsString, IsArray, IsEnum } from 'class-validator';
+import {
+  IGetAcademicGradesRequest,
+  IGetAttendanceRequest,
+  IGetAssignmentsRequest,
+  IGetTimetableRequest,
+  TFeeStatus
+} from '@academia-pro/common';
 
-export class ParentAcademicRequestDto {
+export class ParentAcademicRequestDto implements Partial<IGetAcademicGradesRequest & IGetAttendanceRequest & IGetAssignmentsRequest & IGetTimetableRequest> {
   @IsUUID()
   parentId: string;
 

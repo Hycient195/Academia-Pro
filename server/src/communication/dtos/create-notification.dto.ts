@@ -3,9 +3,9 @@
 
 import { IsString, IsOptional, IsEnum, IsUUID, IsObject, IsBoolean } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { NotificationType, NotificationPriority, NotificationCategory } from '../entities/notification.entity';
+import { TNotificationType, TMessagePriority, ICreateNotificationRequest } from '../../../../common/src/types/communication/communication.types';
 
-export class CreateNotificationDto {
+export class CreateNotificationDto implements ICreateNotificationRequest {
   @ApiProperty({
     description: 'School ID',
     example: '123e4567-e89b-12d3-a456-426614174000',
@@ -15,28 +15,26 @@ export class CreateNotificationDto {
 
   @ApiProperty({
     description: 'Notification type',
-    enum: NotificationType,
+    enum: TNotificationType,
     example: 'email',
   })
-  @IsEnum(NotificationType)
-  notificationType: NotificationType;
+  @IsEnum(TNotificationType)
+  notificationType: TNotificationType;
 
   @ApiProperty({
     description: 'Notification category',
-    enum: NotificationCategory,
     example: 'academic',
   })
-  @IsEnum(NotificationCategory)
-  category: NotificationCategory;
+  category: string;
 
   @ApiPropertyOptional({
     description: 'Notification priority',
-    enum: NotificationPriority,
-    default: NotificationPriority.NORMAL,
+    enum: TMessagePriority,
+    default: TMessagePriority.NORMAL,
   })
   @IsOptional()
-  @IsEnum(NotificationPriority)
-  priority?: NotificationPriority = NotificationPriority.NORMAL;
+  @IsEnum(TMessagePriority)
+  priority?: TMessagePriority = TMessagePriority.NORMAL;
 
   @ApiProperty({
     description: 'Notification subject/title',

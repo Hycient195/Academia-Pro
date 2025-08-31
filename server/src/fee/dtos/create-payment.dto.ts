@@ -3,9 +3,9 @@
 
 import { IsNotEmpty, IsOptional, IsString, IsEnum, IsDateString, IsBoolean, IsNumber, IsObject, Min, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { PaymentMethod, PaymentType } from '../entities/fee-payment.entity';
+import { TPaymentMethod, ICreatePaymentRequest, IProcessPaymentRequest, IRefundPaymentRequest } from '../../../../common/src/types/fee/fee.types';
 
-export class CreatePaymentDto {
+export class CreatePaymentDto implements ICreatePaymentRequest {
   @ApiProperty({
     description: 'School ID',
     example: 'school-uuid-123',
@@ -32,21 +32,19 @@ export class CreatePaymentDto {
 
   @ApiProperty({
     description: 'Payment method',
-    example: PaymentMethod.ONLINE_BANKING,
-    enum: PaymentMethod,
+    example: TPaymentMethod.ONLINE,
+    enum: TPaymentMethod,
   })
   @IsNotEmpty({ message: 'Payment method is required' })
-  @IsEnum(PaymentMethod, { message: 'Invalid payment method' })
-  paymentMethod: PaymentMethod;
+  @IsEnum(TPaymentMethod, { message: 'Invalid payment method' })
+  paymentMethod: TPaymentMethod;
 
   @ApiPropertyOptional({
     description: 'Type of payment',
-    example: PaymentType.FULL_PAYMENT,
-    enum: PaymentType,
+    example: 'full_payment',
   })
   @IsOptional()
-  @IsEnum(PaymentType, { message: 'Invalid payment type' })
-  paymentType?: PaymentType;
+  paymentType?: string;
 
   @ApiProperty({
     description: 'Amount paid',
@@ -201,7 +199,7 @@ export class CreatePaymentDto {
   metadata?: any;
 }
 
-export class ProcessPaymentDto {
+export class ProcessPaymentDto implements IProcessPaymentRequest {
   @ApiProperty({
     description: 'Payment ID to process',
     example: 'payment-uuid-123',
@@ -247,7 +245,7 @@ export class ProcessPaymentDto {
   processingNotes?: string;
 }
 
-export class RefundPaymentDto {
+export class RefundPaymentDto implements IRefundPaymentRequest {
   @ApiProperty({
     description: 'Payment ID to refund',
     example: 'payment-uuid-123',

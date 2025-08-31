@@ -3,9 +3,9 @@
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { LearningObjective } from '../learning-objective.entity';
-import { TLearningObjectiveType, TGradeLevel } from '../../../../common/src/types/academic/academic.types';
+import { TLearningObjectiveType, TGradeLevel, ILearningObjectiveResponse } from '../../../../common/src/types/academic/academic.types';
 
-export class LearningObjectiveResponseDto {
+export class LearningObjectiveResponseDto implements ILearningObjectiveResponse {
   @ApiProperty({
     description: 'Unique learning objective identifier',
     example: 'objective-uuid-123',

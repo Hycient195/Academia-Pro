@@ -3,6 +3,7 @@
 
 import { IsNotEmpty, IsOptional, IsString, IsNumber, Min, Max, IsArray, IsObject, ValidateNested } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ISubmitExamResultRequest, IGradeExamResultRequest, IRequestReEvaluationRequest } from '../../../../common/src/types/examination/examination.types';
 
 export class QuestionScoreDto {
   @ApiProperty({
@@ -61,7 +62,7 @@ export class QuestionScoreDto {
   isCorrect?: boolean;
 }
 
-export class SubmitExamResultDto {
+export class SubmitExamResultDto implements ISubmitExamResultRequest {
   @ApiProperty({
     description: 'Exam ID',
     example: 'exam-uuid-123',
@@ -96,7 +97,7 @@ export class SubmitExamResultDto {
   notes?: string;
 }
 
-export class GradeExamResultDto {
+export class GradeExamResultDto implements IGradeExamResultRequest {
   @ApiProperty({
     description: 'Exam Result ID',
     example: 'exam-result-uuid-123',
@@ -144,7 +145,7 @@ export class GradeExamResultDto {
   strengths?: string[];
 }
 
-export class RequestReEvaluationDto {
+export class RequestReEvaluationDto implements IRequestReEvaluationRequest {
   @ApiProperty({
     description: 'Exam Result ID',
     example: 'exam-result-uuid-123',

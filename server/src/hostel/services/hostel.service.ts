@@ -38,11 +38,11 @@ export class HostelService {
     }
 
     // Create hostel
-    const hostel = this.hostelRepository.create({
+    const hostelData = {
       schoolId: dto.schoolId,
       hostelName: dto.hostelName,
       hostelCode: dto.hostelCode,
-      hostelType: dto.hostelType,
+      hostelType: dto.hostelType as unknown as HostelType,
       address: dto.address,
       buildingNumber: dto.buildingNumber,
       floors: dto.floors,
@@ -55,7 +55,7 @@ export class HostelService {
       wardenContact: dto.wardenContact,
       assistantWardenId: dto.assistantWardenId,
       assistantWardenName: dto.assistantWardenName,
-      facilities: dto.facilities || [],
+      facilities: (dto.facilities || []) as unknown as typeof Hostel.prototype.facilities,
       rules: dto.rules,
       pricing: dto.pricing,
       contactInfo: dto.contactInfo,
@@ -65,8 +65,9 @@ export class HostelService {
       internalNotes: dto.internalNotes,
       createdBy,
       updatedBy: createdBy,
-    });
+    };
 
+    const hostel = this.hostelRepository.create(hostelData);
     const savedHostel = await this.hostelRepository.save(hostel);
 
     this.logger.log(

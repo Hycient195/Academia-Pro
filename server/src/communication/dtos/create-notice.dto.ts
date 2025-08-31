@@ -3,9 +3,9 @@
 
 import { IsString, IsOptional, IsEnum, IsUUID, IsObject, IsBoolean, IsArray } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { NoticeType, NoticePriority, VisibilityLevel } from '../entities/notice-board.entity';
+import { TNoticeType, TMessagePriority, ICreateNoticeRequest } from '../../../../common/src/types/communication/communication.types';
 
-export class CreateNoticeDto {
+export class CreateNoticeDto implements ICreateNoticeRequest {
   @ApiProperty({
     description: 'School ID',
     example: '123e4567-e89b-12d3-a456-426614174000',
@@ -15,20 +15,20 @@ export class CreateNoticeDto {
 
   @ApiProperty({
     description: 'Notice type',
-    enum: NoticeType,
+    enum: TNoticeType,
     example: 'announcement',
   })
-  @IsEnum(NoticeType)
-  noticeType: NoticeType;
+  @IsEnum(TNoticeType)
+  noticeType: TNoticeType;
 
   @ApiPropertyOptional({
     description: 'Notice priority',
-    enum: NoticePriority,
-    default: NoticePriority.NORMAL,
+    enum: TMessagePriority,
+    default: TMessagePriority.NORMAL,
   })
   @IsOptional()
-  @IsEnum(NoticePriority)
-  priority?: NoticePriority = NoticePriority.NORMAL;
+  @IsEnum(TMessagePriority)
+  priority?: TMessagePriority = TMessagePriority.NORMAL;
 
   @ApiProperty({
     description: 'Notice title',
@@ -53,12 +53,10 @@ export class CreateNoticeDto {
 
   @ApiPropertyOptional({
     description: 'Visibility level',
-    enum: VisibilityLevel,
-    default: VisibilityLevel.PUBLIC,
+    default: 'public',
   })
   @IsOptional()
-  @IsEnum(VisibilityLevel)
-  visibilityLevel?: VisibilityLevel = VisibilityLevel.PUBLIC;
+  visibilityLevel?: string = 'public';
 
   @ApiPropertyOptional({
     description: 'Target audience specification',

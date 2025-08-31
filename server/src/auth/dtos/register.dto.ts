@@ -4,8 +4,9 @@
 import { IsEmail, IsString, IsNotEmpty, IsOptional, IsEnum, IsDateString, MinLength, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole } from '@academia-pro/common';
+import { IRegisterRequest } from '../../../../common/src/types';
 
-export class RegisterDto {
+export class RegisterDto implements IRegisterRequest {
   @ApiProperty({
     description: 'User email address',
     example: 'student@school.com',

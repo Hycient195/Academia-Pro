@@ -3,9 +3,9 @@
 
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThan } from 'typeorm';
 import { Student } from '../student.entity';
-import { StudentMedicalRecord, MedicalStatus } from '../entities/student-medical-record.entity';
+import { StudentMedicalRecord, MedicalStatus, MedicalRecordType } from '../entities/student-medical-record.entity';
 import { CreateHealthRecordDto, UpdateHealthRecordDto } from '../dtos/create-health-record.dto';
 
 @Injectable()
@@ -89,7 +89,7 @@ export class StudentHealthService {
     // Create medical record
     const medicalRecord = this.medicalRecordRepository.create({
       studentId,
-      recordType: 'other' as any, // Default type, can be updated based on content
+      recordType: MedicalRecordType.OTHER, // Default type, can be updated based on content
       recordTitle: 'Health Record Update',
       recordDescription: `Health information update for ${student.firstName} ${student.lastName}`,
       recordDate: new Date(),
@@ -252,7 +252,7 @@ export class StudentHealthService {
       where: {
         studentId,
         followUpRequired: true,
-        status: 'active',
+        status: MedicalStatus.ACTIVE,
       },
       order: {
         followUpDate: 'ASC',
@@ -307,7 +307,7 @@ export class StudentHealthService {
     const recentVisits = await this.medicalRecordRepository.count({
       where: {
         studentId,
-        recordDate: thirtyDaysAgo as any,
+        recordDate: MoreThan(thirtyDaysAgo),
       },
     });
 

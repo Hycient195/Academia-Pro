@@ -3,7 +3,21 @@
 
 import { IsNotEmpty, IsOptional, IsString, IsEnum, IsEmail, IsDateString, IsBoolean, IsNumber, Min, Max, MaxLength, IsArray, IsObject, ValidateNested } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { StaffType, EmploymentType, Gender, MaritalStatus, BloodGroup, QualificationLevel } from '../entities/staff.entity';
+import {
+  TEmploymentType,
+  TDepartment,
+  TPosition,
+  TQualificationLevel,
+  TBloodGroup,
+  ICreateStaffRequest,
+  IAddress,
+  ISalaryInfo,
+  IQualification,
+  IEmergencyContact,
+  IWorkSchedule,
+  IBenefits
+} from '@academia-pro/common/staff';
+import { Type } from 'class-transformer';
 
 export class AddressDto {
   @ApiProperty({
@@ -61,12 +75,12 @@ export class AddressDto {
 export class QualificationDto {
   @ApiProperty({
     description: 'Qualification level',
-    example: QualificationLevel.BACHELORS,
-    enum: QualificationLevel,
+    example: TQualificationLevel.BACHELORS,
+    enum: TQualificationLevel,
   })
   @IsNotEmpty({ message: 'Qualification level is required' })
-  @IsEnum(QualificationLevel, { message: 'Invalid qualification level' })
-  level: QualificationLevel;
+  @IsEnum(TQualificationLevel, { message: 'Invalid qualification level' })
+  level: TQualificationLevel;
 
   @ApiProperty({
     description: 'Field of study',
@@ -333,7 +347,7 @@ export class CommunicationPreferencesDto {
   emergencyAlerts?: boolean;
 }
 
-export class CreateStaffDto {
+export class CreateStaffDto implements ICreateStaffRequest {
   @ApiProperty({
     description: 'School ID',
     example: 'school-uuid-123',
@@ -386,12 +400,12 @@ export class CreateStaffDto {
 
   @ApiProperty({
     description: 'Gender',
-    example: Gender.MALE,
-    enum: Gender,
+    example: 'male',
+    enum: ['male', 'female', 'other'],
   })
   @IsNotEmpty({ message: 'Gender is required' })
-  @IsEnum(Gender, { message: 'Invalid gender' })
-  gender: Gender;
+  @IsEnum(['male', 'female', 'other'], { message: 'Invalid gender' })
+  gender: 'male' | 'female' | 'other';
 
   @ApiProperty({
     description: 'Date of birth',
@@ -403,21 +417,21 @@ export class CreateStaffDto {
 
   @ApiPropertyOptional({
     description: 'Marital status',
-    example: MaritalStatus.MARRIED,
-    enum: MaritalStatus,
+    example: 'married',
+    enum: ['single', 'married', 'divorced', 'widowed'],
   })
   @IsOptional()
-  @IsEnum(MaritalStatus, { message: 'Invalid marital status' })
-  maritalStatus?: MaritalStatus;
+  @IsEnum(['single', 'married', 'divorced', 'widowed'], { message: 'Invalid marital status' })
+  maritalStatus?: 'single' | 'married' | 'divorced' | 'widowed';
 
   @ApiPropertyOptional({
     description: 'Blood group',
-    example: BloodGroup.O_POSITIVE,
-    enum: BloodGroup,
+    example: TBloodGroup.O_POSITIVE,
+    enum: TBloodGroup,
   })
   @IsOptional()
-  @IsEnum(BloodGroup, { message: 'Invalid blood group' })
-  bloodGroup?: BloodGroup;
+  @IsEnum(TBloodGroup, { message: 'Invalid blood group' })
+  bloodGroup?: TBloodGroup;
 
   @ApiProperty({
     description: 'Email address',
@@ -486,12 +500,12 @@ export class CreateStaffDto {
 
   @ApiProperty({
     description: 'Staff type',
-    example: StaffType.TEACHING,
-    enum: StaffType,
+    example: TDepartment.ACADEMIC,
+    enum: TDepartment,
   })
   @IsNotEmpty({ message: 'Staff type is required' })
-  @IsEnum(StaffType, { message: 'Invalid staff type' })
-  staffType: StaffType;
+  @IsEnum(TDepartment, { message: 'Invalid staff type' })
+  staffType: TDepartment;
 
   @ApiProperty({
     description: 'Department',
@@ -523,12 +537,12 @@ export class CreateStaffDto {
 
   @ApiPropertyOptional({
     description: 'Employment type',
-    example: EmploymentType.FULL_TIME,
-    enum: EmploymentType,
+    example: TEmploymentType.FULL_TIME,
+    enum: TEmploymentType,
   })
   @IsOptional()
-  @IsEnum(EmploymentType, { message: 'Invalid employment type' })
-  employmentType?: EmploymentType;
+  @IsEnum(TEmploymentType, { message: 'Invalid employment type' })
+  employmentType?: TEmploymentType;
 
   @ApiProperty({
     description: 'Joining date',

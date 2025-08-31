@@ -3,37 +3,38 @@
 
 import { IsNotEmpty, IsOptional, IsString, IsEnum, IsBoolean, IsNumber, Min, Max, MaxLength, IsArray, IsObject, ValidateNested } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { DayOfWeek, PeriodType, RecurrenceType, PriorityLevel } from '../entities/timetable.entity';
+import { ICreateTimetableEntryRequest, IEquipmentRequirement, ITimetableMetadata, TDayOfWeek, TPeriodType, TRecurrenceType, TPriorityLevel } from '@academia-pro/common/timetable';
+import { Type } from 'class-transformer';
 
-export class EquipmentRequirementDto {
-  @ApiProperty({
-    description: 'Equipment ID',
-    example: 'equipment-uuid-123',
-  })
-  @IsNotEmpty({ message: 'Equipment ID is required' })
-  @IsString({ message: 'Equipment ID must be a string' })
-  equipmentId: string;
+export class EquipmentRequirementDto implements IEquipmentRequirement {
+   @ApiProperty({
+     description: 'Equipment ID',
+     example: 'equipment-uuid-123',
+   })
+   @IsNotEmpty({ message: 'Equipment ID is required' })
+   @IsString({ message: 'Equipment ID must be a string' })
+   equipmentId: string;
 
-  @ApiProperty({
-    description: 'Equipment name',
-    example: 'Projector',
-  })
-  @IsNotEmpty({ message: 'Equipment name is required' })
-  @IsString({ message: 'Equipment name must be a string' })
-  equipmentName: string;
+   @ApiProperty({
+     description: 'Equipment name',
+     example: 'Projector',
+   })
+   @IsNotEmpty({ message: 'Equipment name is required' })
+   @IsString({ message: 'Equipment name must be a string' })
+   equipmentName: string;
 
-  @ApiProperty({
-    description: 'Quantity required',
-    example: 1,
-    minimum: 1,
-  })
-  @IsNotEmpty({ message: 'Quantity is required' })
-  @IsNumber({}, { message: 'Quantity must be a number' })
-  @Min(1, { message: 'Quantity must be at least 1' })
-  quantity: number;
-}
+   @ApiProperty({
+     description: 'Quantity required',
+     example: 1,
+     minimum: 1,
+   })
+   @IsNotEmpty({ message: 'Quantity is required' })
+   @IsNumber({}, { message: 'Quantity must be a number' })
+   @Min(1, { message: 'Quantity must be at least 1' })
+   quantity: number;
+ }
 
-export class TimetableMetadataDto {
+export class TimetableMetadataDto implements ITimetableMetadata {
   @ApiPropertyOptional({
     description: 'Syllabus topic for this period',
     example: 'Introduction to Algebra',
@@ -87,7 +88,7 @@ export class TimetableMetadataDto {
   accessibilityNotes?: string;
 }
 
-export class CreateTimetableDto {
+export class CreateTimetableDto implements ICreateTimetableEntryRequest {
   @ApiProperty({
     description: 'School ID',
     example: 'school-uuid-123',
@@ -176,8 +177,8 @@ export class CreateTimetableDto {
     enum: DayOfWeek,
   })
   @IsNotEmpty({ message: 'Day of week is required' })
-  @IsEnum(DayOfWeek, { message: 'Invalid day of week' })
-  dayOfWeek: DayOfWeek;
+  @IsEnum(TDayOfWeek, { message: 'Invalid day of week' })
+  dayOfWeek: TDayOfWeek;
 
   @ApiProperty({
     description: 'Start time (HH:MM format)',
@@ -223,8 +224,8 @@ export class CreateTimetableDto {
     enum: PeriodType,
   })
   @IsOptional()
-  @IsEnum(PeriodType, { message: 'Invalid period type' })
-  periodType?: PeriodType;
+  @IsEnum(TPeriodType, { message: 'Invalid period type' })
+  periodType?: TPeriodType;
 
   @ApiPropertyOptional({
     description: 'Room ID',
@@ -279,8 +280,8 @@ export class CreateTimetableDto {
     enum: RecurrenceType,
   })
   @IsOptional()
-  @IsEnum(RecurrenceType, { message: 'Invalid recurrence type' })
-  recurrenceType?: RecurrenceType;
+  @IsEnum(TRecurrenceType, { message: 'Invalid recurrence type' })
+  recurrenceType?: TRecurrenceType;
 
   @ApiPropertyOptional({
     description: 'Recurrence end date',
@@ -348,8 +349,8 @@ export class CreateTimetableDto {
     enum: PriorityLevel,
   })
   @IsOptional()
-  @IsEnum(PriorityLevel, { message: 'Invalid priority level' })
-  priorityLevel?: PriorityLevel;
+  @IsEnum(TPriorityLevel, { message: 'Invalid priority level' })
+  priorityLevel?: TPriorityLevel;
 
   @ApiPropertyOptional({
     description: 'Whether this schedule is fixed (cannot be moved)',
@@ -508,8 +509,8 @@ export class UpdateTimetableDto {
     enum: DayOfWeek,
   })
   @IsOptional()
-  @IsEnum(DayOfWeek, { message: 'Invalid day of week' })
-  dayOfWeek?: DayOfWeek;
+  @IsEnum(TDayOfWeek, { message: 'Invalid day of week' })
+  dayOfWeek?: TDayOfWeek;
 
   @ApiPropertyOptional({
     description: 'Start time (HH:MM format)',

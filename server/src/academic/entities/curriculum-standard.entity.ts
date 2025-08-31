@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany, Index } from 'typeorm';
-import { Curriculum } from './curriculum.entity';
-import { Subject } from './subject.entity';
+import { Curriculum } from '../curriculum.entity';
+import { Subject } from '../subject.entity';
 
 export enum StandardType {
   NATIONAL = 'national',

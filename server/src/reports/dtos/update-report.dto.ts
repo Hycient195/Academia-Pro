@@ -1,7 +1,7 @@
 // Academia Pro - Update Report DTO
 // Data Transfer Object for updating reports
 
-import { IUpdateReportRequest } from '../../../../common/src/types/reports/reports.types';
+import { IUpdateReportRequest } from '@academia-pro/common/reports';
 
 export class UpdateReportDto implements Partial<IUpdateReportRequest> {
   title?: string;

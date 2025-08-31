@@ -52,7 +52,7 @@ export class StaffService {
     const netSalary = grossSalary - taxDeductible - providentFund - otherDeductions;
 
     // Create staff member
-    const staff = this.staffRepository.create({
+    const staffData = {
       schoolId: dto.schoolId,
       employeeId,
       firstName: dto.firstName,
@@ -109,9 +109,9 @@ export class StaffService {
       internalNotes: dto.internalNotes,
       createdBy,
       updatedBy: createdBy,
-    });
+    };
 
-    const savedStaff = await this.staffRepository.save(staff);
+    const savedStaff = await this.staffRepository.save(staffData as any);
 
     this.logger.log(
       `Created staff member ${savedStaff.fullName} (${savedStaff.employeeId})`

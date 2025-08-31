@@ -3,7 +3,7 @@
 
 import { IsNotEmpty, IsOptional, IsString, IsEnum, IsDateString, IsArray, ValidateNested, IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { AttendanceStatus, AttendanceType, AttendanceMethod } from '../entities/attendance.entity';
+import { TAttendanceStatus, TAttendanceType, TAttendanceMethod, IBulkMarkAttendanceRequest } from '@academia-pro/common/attendance';
 
 export class BulkAttendanceItemDto {
   @ApiProperty({
@@ -16,12 +16,12 @@ export class BulkAttendanceItemDto {
 
   @ApiProperty({
     description: 'Attendance status',
-    example: AttendanceStatus.PRESENT,
-    enum: AttendanceStatus,
+    example: TAttendanceStatus.PRESENT,
+    enum: TAttendanceStatus,
   })
-  @IsEnum(AttendanceStatus, { message: 'Invalid attendance status' })
+  @IsEnum(TAttendanceStatus, { message: 'Invalid attendance status' })
   @IsNotEmpty({ message: 'Attendance status is required' })
-  status: AttendanceStatus;
+  status: TAttendanceStatus;
 
   @ApiPropertyOptional({
     description: 'Late minutes (only for late status)',
@@ -65,16 +65,16 @@ export class BulkMarkAttendanceDto {
   @IsArray({ message: 'Attendance data must be an array' })
   @ValidateNested({ each: true })
   @IsNotEmpty({ message: 'Attendance data is required' })
-  attendanceData: BulkAttendanceItemDto[];
+  attendances: BulkAttendanceItemDto[];
 
   @ApiPropertyOptional({
     description: 'Type of attendance',
-    example: AttendanceType.CLASS,
-    enum: AttendanceType,
+    example: TAttendanceType.CLASS,
+    enum: TAttendanceType,
   })
   @IsOptional()
-  @IsEnum(AttendanceType, { message: 'Invalid attendance type' })
-  attendanceType?: AttendanceType;
+  @IsEnum(TAttendanceType, { message: 'Invalid attendance type' })
+  attendanceType?: TAttendanceType;
 
   @ApiProperty({
     description: 'Attendance date',
@@ -168,12 +168,12 @@ export class BulkMarkAttendanceDto {
 
   @ApiPropertyOptional({
     description: 'Attendance method',
-    example: AttendanceMethod.MANUAL,
-    enum: AttendanceMethod,
+    example: TAttendanceMethod.MANUAL,
+    enum: TAttendanceMethod,
   })
   @IsOptional()
-  @IsEnum(AttendanceMethod, { message: 'Invalid attendance method' })
-  attendanceMethod?: AttendanceMethod;
+  @IsEnum(TAttendanceMethod, { message: 'Invalid attendance method' })
+  attendanceMethod?: TAttendanceMethod;
 
   @ApiPropertyOptional({
     description: 'Whether to notify parents',
@@ -204,12 +204,12 @@ export class BulkUpdateAttendanceDto {
 
   @ApiProperty({
     description: 'New attendance status',
-    example: AttendanceStatus.EXCUSED,
-    enum: AttendanceStatus,
+    example: TAttendanceStatus.EXCUSED,
+    enum: TAttendanceStatus,
   })
-  @IsEnum(AttendanceStatus, { message: 'Invalid attendance status' })
+  @IsEnum(TAttendanceStatus, { message: 'Invalid attendance status' })
   @IsNotEmpty({ message: 'Attendance status is required' })
-  status: AttendanceStatus;
+  status: TAttendanceStatus;
 
   @ApiProperty({
     description: 'Attendance date',

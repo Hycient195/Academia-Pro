@@ -6,9 +6,9 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
-import { User } from '../users/user.entity';
+import { User, UserStatus, UserRole } from '../users/user.entity';
 import { LoginDto, RegisterDto, RefreshTokenDto, ChangePasswordDto } from './dtos';
-import { AuthTokens, UserRole } from '@academia-pro/common';
+import { AuthTokens } from '@academia-pro/common';
 
 @Injectable()
 export class AuthService {
@@ -102,17 +102,17 @@ export class AuthService {
     const emailVerificationToken = this.generateEmailVerificationToken();
 
     // Create user
-    const user = this.usersRepository.create({
+    const userDataToSave = {
       ...userData,
       email,
       passwordHash,
       emailVerificationToken,
       emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-      status: 'pending',
+      status: UserStatus.PENDING,
       isEmailVerified: false,
-    });
+    };
 
-    return this.usersRepository.save(user);
+    return this.usersRepository.save(userDataToSave as any);
   }
 
   /**
@@ -221,7 +221,7 @@ export class AuthService {
       isEmailVerified: true,
       emailVerificationToken: null,
       emailVerificationExpires: null,
-      status: 'active',
+      status: UserStatus.ACTIVE,
     });
   }
 

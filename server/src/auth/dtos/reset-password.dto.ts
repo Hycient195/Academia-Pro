@@ -3,8 +3,9 @@
 
 import { IsString, IsNotEmpty, MinLength, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IResetPasswordWithTokenRequest } from '../../../../common/src/types';
 
-export class ResetPasswordDto {
+export class ResetPasswordDto implements IResetPasswordWithTokenRequest {
   @ApiProperty({
     description: 'Password reset token',
     example: 'abc123def456ghi789',

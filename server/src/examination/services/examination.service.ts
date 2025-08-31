@@ -52,7 +52,7 @@ export class ExaminationService {
     const gradeLevel = 'Grade 10'; // This would come from class service
 
     // Create exam
-    const exam = this.examRepository.create({
+    const examData = {
       examTitle: dto.examTitle,
       examDescription: dto.examDescription,
       examType: dto.examType,
@@ -95,9 +95,9 @@ export class ExaminationService {
       section: dto.sectionId ? 'Section A' : undefined, // This would come from section service
       createdBy,
       updatedBy: createdBy,
-    });
+    };
 
-    const savedExam = await this.examRepository.save(exam);
+    const savedExam = await this.examRepository.save(examData as any);
 
     this.logger.log(
       `Created exam "${dto.examTitle}" for class ${dto.classId} on ${dto.scheduledDate}`

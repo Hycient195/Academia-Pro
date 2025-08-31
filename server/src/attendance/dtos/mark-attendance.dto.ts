@@ -3,9 +3,9 @@
 
 import { IsNotEmpty, IsOptional, IsString, IsEnum, IsDateString, IsBoolean, IsNumber, Min, Max, MaxLength, IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { AttendanceStatus, AttendanceType, AttendanceMethod } from '../entities/attendance.entity';
+import { IMarkAttendanceRequest, TAttendanceStatus, TAttendanceType, TAttendanceMethod } from '@academia-pro/common/attendance';
 
-export class MarkAttendanceDto {
+export class MarkAttendanceDto implements IMarkAttendanceRequest {
   @ApiProperty({
     description: 'Student ID',
     example: 'student-uuid-123',
@@ -16,21 +16,21 @@ export class MarkAttendanceDto {
 
   @ApiProperty({
     description: 'Attendance status',
-    example: AttendanceStatus.PRESENT,
-    enum: AttendanceStatus,
+    example: TAttendanceStatus.PRESENT,
+    enum: TAttendanceStatus,
   })
-  @IsEnum(AttendanceStatus, { message: 'Invalid attendance status' })
+  @IsEnum(TAttendanceStatus, { message: 'Invalid attendance status' })
   @IsNotEmpty({ message: 'Attendance status is required' })
-  status: AttendanceStatus;
+  status: TAttendanceStatus;
 
   @ApiPropertyOptional({
     description: 'Type of attendance',
-    example: AttendanceType.CLASS,
-    enum: AttendanceType,
+    example: TAttendanceType.CLASS,
+    enum: TAttendanceType,
   })
   @IsOptional()
-  @IsEnum(AttendanceType, { message: 'Invalid attendance type' })
-  attendanceType?: AttendanceType;
+  @IsEnum(TAttendanceType, { message: 'Invalid attendance type' })
+  attendanceType?: TAttendanceType;
 
   @ApiProperty({
     description: 'Attendance date',
@@ -130,12 +130,12 @@ export class MarkAttendanceDto {
 
   @ApiPropertyOptional({
     description: 'Attendance method',
-    example: AttendanceMethod.MANUAL,
-    enum: AttendanceMethod,
+    example: TAttendanceMethod.MANUAL,
+    enum: TAttendanceMethod,
   })
   @IsOptional()
-  @IsEnum(AttendanceMethod, { message: 'Invalid attendance method' })
-  attendanceMethod?: AttendanceMethod;
+  @IsEnum(TAttendanceMethod, { message: 'Invalid attendance method' })
+  attendanceMethod?: TAttendanceMethod;
 
   @ApiPropertyOptional({
     description: 'Late minutes',

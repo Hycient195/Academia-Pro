@@ -2,6 +2,8 @@
 // Database entity for curriculum-subject relationships
 
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Curriculum } from './curriculum.entity';
+import { Subject } from './subject.entity';
 
 @Entity('curriculum_subjects')
 export class CurriculumSubject {
@@ -49,7 +51,3 @@ export class CurriculumSubject {
     this.isCompulsory = isCompulsory;
   }
 }
-
-// Forward declarations for relations
-import { Curriculum } from './curriculum.entity';
-import { Subject } from './subject.entity';

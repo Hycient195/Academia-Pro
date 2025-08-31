@@ -3,8 +3,9 @@
 
 import { IsString, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IRefreshTokenRequest } from '../../../../common/src/types';
 
-export class RefreshTokenDto {
+export class RefreshTokenDto implements IRefreshTokenRequest {
   @ApiProperty({
     description: 'Refresh token for generating new access token',
     example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',

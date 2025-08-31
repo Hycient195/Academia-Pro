@@ -51,14 +51,14 @@ export interface MedicalUpdateDto {
     relation: string;
   };
   doctorInfo?: {
-    name: string;
-    phone: string;
-    clinic: string;
+    name?: string;
+    phone?: string;
+    clinic?: string;
   };
   insuranceInfo?: {
-    provider: string;
-    policyNumber: string;
-    expiryDate: Date;
+    provider?: string;
+    policyNumber?: string;
+    expiryDate?: Date | string;
   };
 }
 
@@ -273,17 +273,23 @@ export class StudentProfileService {
       medicalInfo: student.medicalInfo,
     };
 
+    // Process medicalData to convert Date to string for compatibility
+    const processedMedicalData = { ...medicalData };
+    if (processedMedicalData.insuranceInfo?.expiryDate instanceof Date) {
+      (processedMedicalData.insuranceInfo as any).expiryDate = processedMedicalData.insuranceInfo.expiryDate.toISOString();
+    }
+
     const updateData = {
       medicalInfo: {
         ...student.medicalInfo,
-        ...medicalData,
+        ...processedMedicalData,
       },
     };
 
     await this.studentRepository.update(studentId, {
       ...updateData,
       updatedBy: userId,
-    });
+    } as any);
 
     // Log audit event
     await this.logAuditEvent(

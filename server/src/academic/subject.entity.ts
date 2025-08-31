@@ -56,6 +56,9 @@ export class Subject {
   @OneToMany(() => ClassSubject, classSubject => classSubject.subject)
   classSubjects: ClassSubject[];
 
+  @OneToMany(() => CurriculumSubject, curriculumSubject => curriculumSubject.subject)
+  curriculumSubjects: CurriculumSubject[];
+
   @OneToMany(() => LearningObjective, objective => objective.subject)
   learningObjectives: LearningObjective[];
 
@@ -96,4 +99,5 @@ export class Subject {
 // Forward declarations for relations
 import { Curriculum } from './curriculum.entity';
 import { ClassSubject } from './class-subject.entity';
+import { CurriculumSubject } from './curriculum-subject.entity';
 import { LearningObjective } from './learning-objective.entity';

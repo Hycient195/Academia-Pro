@@ -1,9 +1,10 @@
 // Academia Pro - Create School DTO
 // Data Transfer Object for creating new schools
 
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsEmail, IsUrl, IsInt, Min, MaxLength, IsObject } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEnum, IsEmail, IsUrl, IsInt, Min, MaxLength, IsObject, ValidateNested } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { SchoolType } from '../school.entity';
+import { ICreateSchoolRequest, TSchoolType, IAddress } from '@academia-pro/common/schools';
+import { Type } from 'class-transformer';
 
 export class CreateSchoolDto {
   @ApiProperty({
@@ -40,10 +41,10 @@ export class CreateSchoolDto {
     enum: ['primary', 'secondary', 'mixed'],
   })
   @IsOptional()
-  @IsEnum(['primary', 'secondary', 'mixed'], {
+  @IsEnum(TSchoolType, {
     message: 'School type must be one of: primary, secondary, mixed'
   })
-  type?: SchoolType;
+  type?: TSchoolType;
 
   @ApiPropertyOptional({
     description: 'School phone number',
@@ -84,18 +85,9 @@ export class CreateSchoolDto {
     },
   })
   @IsOptional()
-  @IsObject({ message: 'Address must be an object' })
-  address?: {
-    street: string;
-    city: string;
-    state: string;
-    postalCode: string;
-    country: string;
-    coordinates?: {
-      latitude: number;
-      longitude: number;
-    };
-  };
+  @ValidateNested()
+  @Type(() => Object)
+  address?: IAddress;
 
   @ApiPropertyOptional({
     description: 'Principal name',

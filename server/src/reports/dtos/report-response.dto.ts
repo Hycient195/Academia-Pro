@@ -3,9 +3,9 @@
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Report } from '../report.entity';
-import { TReportType, TReportFormat, TReportFrequency } from '../../../../common/src/types/reports/reports.types';
+import { TReportType, TReportFormat, TReportFrequency, IReportResponse, IReportParameters, IReportListResponse, IReportGenerationResponse, IReportsStatisticsResponse } from '@academia-pro/common/reports';
 
-export class ReportResponseDto {
+export class ReportResponseDto implements IReportResponse {
   @ApiProperty({
     description: 'Unique report identifier',
     example: 'report-uuid-123',
@@ -49,7 +49,7 @@ export class ReportResponseDto {
     description: 'Report parameters',
     type: Object,
   })
-  parameters: any;
+  parameters: IReportParameters;
 
   @ApiProperty({
     description: 'Whether report is active',
@@ -220,12 +220,12 @@ export class ReportResponseDto {
   }
 }
 
-export class ReportListResponseDto {
+export class ReportListResponseDto implements IReportListResponse {
   @ApiProperty({
     description: 'List of reports',
     type: [ReportResponseDto],
   })
-  reports: ReportResponseDto[];
+  reports: IReportResponse[];
 
   @ApiProperty({
     description: 'Total number of reports',
@@ -261,7 +261,7 @@ export class ReportListResponseDto {
   }
 }
 
-export class ReportGenerationResponseDto {
+export class ReportGenerationResponseDto implements IReportGenerationResponse {
   @ApiProperty({
     description: 'Report ID',
     example: 'report-uuid-123',
@@ -316,7 +316,7 @@ export class ReportGenerationResponseDto {
   }
 }
 
-export class ReportsStatisticsResponseDto {
+export class ReportsStatisticsResponseDto implements IReportsStatisticsResponse {
   @ApiProperty({
     description: 'Total number of reports',
     example: 150,

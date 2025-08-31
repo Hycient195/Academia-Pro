@@ -3,9 +3,21 @@
 
 import { IsNotEmpty, IsOptional, IsString, IsEnum, IsBoolean, IsNumber, Min, Max, MaxLength, IsArray, IsObject, ValidateNested } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { HostelType, FacilityType } from '../entities/hostel.entity';
+import {
+  ICreateHostelRequest,
+  IUpdateHostelRequest,
+  IAddress,
+  IFacility,
+  IHostelRules,
+  IHostelPricing,
+  IContactInfo,
+  IOperatingHours,
+  THostelType,
+  THostelStatus,
+  TFacilityType
+} from '@academia-pro/common/hostel';
 
-export class AddressDto {
+export class AddressDto implements IAddress {
   @ApiProperty({
     description: 'Street address',
     example: '123 University Avenue',
@@ -57,15 +69,15 @@ export class AddressDto {
   };
 }
 
-export class FacilityDto {
+export class FacilityDto implements IFacility {
   @ApiProperty({
     description: 'Facility type',
-    example: FacilityType.WIFI,
-    enum: FacilityType,
+    example: TFacilityType.WIFI,
+    enum: TFacilityType,
   })
   @IsNotEmpty({ message: 'Facility type is required' })
-  @IsEnum(FacilityType, { message: 'Invalid facility type' })
-  type: FacilityType;
+  @IsEnum(TFacilityType, { message: 'Invalid facility type' })
+  type: TFacilityType;
 
   @ApiProperty({
     description: 'Facility name',
@@ -103,7 +115,7 @@ export class FacilityDto {
   };
 }
 
-export class HostelRulesDto {
+export class HostelRulesDto implements IHostelRules {
   @ApiProperty({
     description: 'Check-in time',
     example: '14:00',
@@ -221,7 +233,7 @@ export class HostelRulesDto {
   additionalRules?: string[];
 }
 
-export class HostelPricingDto {
+export class HostelPricingDto implements IHostelPricing {
   @ApiProperty({
     description: 'Base rent amount',
     example: 500.00,
@@ -326,7 +338,7 @@ export class HostelPricingDto {
   }>;
 }
 
-export class ContactInfoDto {
+export class ContactInfoDto implements IContactInfo {
   @ApiProperty({
     description: 'Contact phone number',
     example: '+1234567890',
@@ -368,7 +380,7 @@ export class ContactInfoDto {
   };
 }
 
-export class OperatingHoursDto {
+export class OperatingHoursDto implements IOperatingHours {
   @ApiProperty({
     description: 'Weekday operating hours',
   })
@@ -400,7 +412,7 @@ export class OperatingHoursDto {
   };
 }
 
-export class CreateHostelDto {
+export class CreateHostelDto implements ICreateHostelRequest {
   @ApiProperty({
     description: 'School ID',
     example: 'school-uuid-123',
@@ -431,12 +443,12 @@ export class CreateHostelDto {
 
   @ApiPropertyOptional({
     description: 'Hostel type',
-    example: HostelType.BOYS,
-    enum: HostelType,
+    example: THostelType.BOYS,
+    enum: THostelType,
   })
   @IsOptional()
-  @IsEnum(HostelType, { message: 'Invalid hostel type' })
-  hostelType?: HostelType;
+  @IsEnum(THostelType, { message: 'Invalid hostel type' })
+  hostelType?: THostelType;
 
   @ApiProperty({
     description: 'Address information',
@@ -600,7 +612,7 @@ export class CreateHostelDto {
   internalNotes?: string;
 }
 
-export class UpdateHostelDto {
+export class UpdateHostelDto implements IUpdateHostelRequest {
   @ApiPropertyOptional({
     description: 'Hostel name',
     example: 'University Hostel A',
@@ -613,21 +625,21 @@ export class UpdateHostelDto {
 
   @ApiPropertyOptional({
     description: 'Hostel type',
-    example: HostelType.BOYS,
-    enum: HostelType,
+    example: THostelType.BOYS,
+    enum: THostelType,
   })
   @IsOptional()
-  @IsEnum(HostelType, { message: 'Invalid hostel type' })
-  hostelType?: HostelType;
+  @IsEnum(THostelType, { message: 'Invalid hostel type' })
+  hostelType?: THostelType;
 
   @ApiPropertyOptional({
     description: 'Hostel status',
-    example: 'active',
-    enum: ['active', 'inactive', 'under_maintenance', 'closed', 'decommissioned'],
+    example: THostelStatus.ACTIVE,
+    enum: THostelStatus,
   })
   @IsOptional()
-  @IsEnum(['active', 'inactive', 'under_maintenance', 'closed', 'decommissioned'], { message: 'Invalid hostel status' })
-  status?: string;
+  @IsEnum(THostelStatus, { message: 'Invalid hostel status' })
+  status?: THostelStatus;
 
   @ApiPropertyOptional({
     description: 'Address information',

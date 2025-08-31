@@ -4,6 +4,189 @@
   "description": "Shared TypeScript types and interfaces for Academia Pro",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./academic": {
+      "types": "./dist/types/academic/index.d.ts",
+      "import": "./dist/types/academic/index.js"
+    },
+    "./attendance": {
+      "types": "./dist/types/attendance/index.d.ts",
+      "import": "./dist/types/attendance/index.js"
+    },
+    "./auth": {
+      "types": "./dist/types/auth/index.d.ts",
+      "import": "./dist/types/auth/index.js"
+    },
+    "./communication": {
+      "types": "./dist/types/communication/index.d.ts",
+      "import": "./dist/types/communication/index.js"
+    },
+    "./examination": {
+      "types": "./dist/types/examination/index.d.ts",
+      "import": "./dist/types/examination/index.js"
+    },
+    "./fee": {
+      "types": "./dist/types/fee/index.d.ts",
+      "import": "./dist/types/fee/index.js"
+    },
+    "./hostel": {
+      "types": "./dist/types/hostel/index.d.ts",
+      "import": "./dist/types/hostel/index.js"
+    },
+    "./inventory": {
+      "types": "./dist/types/inventory/index.d.ts",
+      "import": "./dist/types/inventory/index.js"
+    },
+    "./library": {
+      "types": "./dist/types/library/index.d.ts",
+      "import": "./dist/types/library/index.js"
+    },
+    "./mobile": {
+      "types": "./dist/types/mobile/index.d.ts",
+      "import": "./dist/types/mobile/index.js"
+    },
+    "./online-learning": {
+      "types": "./dist/types/online-learning/index.d.ts",
+      "import": "./dist/types/online-learning/index.js"
+    },
+    "./parent": {
+      "types": "./dist/types/parent/index.d.ts",
+      "import": "./dist/types/parent/index.js"
+    },
+    "./parent-portal": {
+      "types": "./dist/types/parent-portal/index.d.ts",
+      "import": "./dist/types/parent-portal/index.js"
+    },
+    "./reports": {
+      "types": "./dist/types/reports/index.d.ts",
+      "import": "./dist/types/reports/index.js"
+    },
+    "./schools": {
+      "types": "./dist/types/schools/index.d.ts",
+      "import": "./dist/types/schools/index.js"
+    },
+    "./timetable": {
+      "types": "./dist/types/timetable/index.d.ts",
+      "import": "./dist/types/timetable/index.js"
+    },
+    "./shared": {
+      "types": "./dist/types/shared/index.d.ts",
+      "import": "./dist/types/shared/index.js"
+    },
+    "./staff": {
+      "types": "./dist/types/staff/index.d.ts",
+      "import": "./dist/types/staff/index.js"
+    },
+    "./student": {
+      "types": "./dist/types/student/index.d.ts",
+      "import": "./dist/types/student/index.js"
+    },
+    "./users": {
+      "types": "./dist/types/users/index.d.ts",
+      "import": "./dist/types/users/index.js"
+    }
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./attendance": {
+      "types": "./dist/types/attendance/index.d.ts",
+      "import": "./dist/types/attendance/index.js",
+      "require": "./dist/types/attendance/index.js"
+    },
+    "./academic": {
+      "types": "./dist/types/academic/index.d.ts",
+      "import": "./dist/types/academic/index.js",
+      "require": "./dist/types/academic/index.js"
+    },
+    "./auth": {
+      "types": "./dist/types/auth/index.d.ts",
+      "import": "./dist/types/auth/index.js",
+      "require": "./dist/types/auth/index.js"
+    },
+    "./communication": {
+      "types": "./dist/types/communication/index.d.ts",
+      "import": "./dist/types/communication/index.js",
+      "require": "./dist/types/communication/index.js"
+    },
+    "./examination": {
+      "types": "./dist/types/examination/index.d.ts",
+      "import": "./dist/types/examination/index.js",
+      "require": "./dist/types/examination/index.js"
+    },
+    "./fee": {
+      "types": "./dist/types/fee/index.d.ts",
+      "import": "./dist/types/fee/index.js",
+      "require": "./dist/types/fee/index.js"
+    },
+    "./hostel": {
+      "types": "./dist/types/hostel/index.d.ts",
+      "import": "./dist/types/hostel/index.js",
+      "require": "./dist/types/hostel/index.js"
+    },
+    "./inventory": {
+      "types": "./dist/types/inventory/index.d.ts",
+      "import": "./dist/types/inventory/index.js",
+      "require": "./dist/types/inventory/index.js"
+    },
+    "./library": {
+      "types": "./dist/types/library/index.d.ts",
+      "import": "./dist/types/library/index.js",
+      "require": "./dist/types/library/index.js"
+    },
+    "./mobile": {
+      "types": "./dist/types/mobile/index.d.ts",
+      "import": "./dist/types/mobile/index.js",
+      "require": "./dist/types/mobile/index.js"
+    },
+    "./online-learning": {
+      "types": "./dist/types/online-learning/index.d.ts",
+      "import": "./dist/types/online-learning/index.js",
+      "require": "./dist/types/online-learning/index.js"
+    },
+    "./parent": {
+      "types": "./dist/types/parent/index.d.ts",
+      "import": "./dist/types/parent/index.js",
+      "require": "./dist/types/parent/index.js"
+    },
+    "./parent-portal": {
+      "types": "./dist/types/parent-portal/index.d.ts",
+      "import": "./dist/types/parent-portal/index.js",
+      "require": "./dist/types/parent-portal/index.js"
+    },
+    "./reports": {
+      "types": "./dist/types/reports/index.d.ts",
+      "import": "./dist/types/reports/index.js",
+      "require": "./dist/types/reports/index.js"
+    },
+    "./shared": {
+      "types": "./dist/types/shared/index.d.ts",
+      "import": "./dist/types/shared/index.js",
+      "require": "./dist/types/shared/index.js"
+    },
+    "./staff": {
+      "types": "./dist/types/staff/index.d.ts",
+      "import": "./dist/types/staff/index.js",
+      "require": "./dist/types/staff/index.js"
+    },
+    "./student": {
+      "types": "./dist/types/student/index.d.ts",
+      "import": "./dist/types/student/index.js",
+      "require": "./dist/types/student/index.js"
+    },
+    "./users": {
+      "types": "./dist/types/users/index.d.ts",
+      "import": "./dist/types/users/index.js",
+      "require": "./dist/types/users/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",

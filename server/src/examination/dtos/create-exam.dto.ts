@@ -3,7 +3,7 @@
 
 import { IsNotEmpty, IsOptional, IsString, IsEnum, IsDateString, IsBoolean, IsNumber, Min, Max, MaxLength, IsArray, IsObject, ValidateNested } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ExamType, AssessmentType, GradingMethod } from '../entities/exam.entity';
+import { ICreateExamRequest, TExamType, TAssessmentType, TGradingMethod } from '../../../../common/src/types/examination/examination.types';
 
 export class EligibilityCriteriaDto {
   @ApiPropertyOptional({
@@ -49,7 +49,7 @@ export class EligibilityCriteriaDto {
   specialPermissions?: string[];
 }
 
-export class CreateExamDto {
+export class CreateExamDto implements ICreateExamRequest {
   @ApiProperty({
     description: 'Exam title',
     example: 'Mathematics Final Examination 2024',
@@ -70,21 +70,21 @@ export class CreateExamDto {
 
   @ApiProperty({
     description: 'Type of examination',
-    example: ExamType.FINAL,
-    enum: ExamType,
+    example: TExamType.FINAL,
+    enum: TExamType,
   })
   @IsNotEmpty({ message: 'Exam type is required' })
-  @IsEnum(ExamType, { message: 'Invalid exam type' })
-  examType: ExamType;
+  @IsEnum(TExamType, { message: 'Invalid exam type' })
+  examType: TExamType;
 
   @ApiPropertyOptional({
     description: 'Type of assessment',
-    example: AssessmentType.SUMMATIVE,
-    enum: AssessmentType,
+    example: TAssessmentType.SUMMATIVE,
+    enum: TAssessmentType,
   })
   @IsOptional()
-  @IsEnum(AssessmentType, { message: 'Invalid assessment type' })
-  assessmentType?: AssessmentType;
+  @IsEnum(TAssessmentType, { message: 'Invalid assessment type' })
+  assessmentType?: TAssessmentType;
 
   @ApiProperty({
     description: 'Subject ID',
@@ -201,12 +201,12 @@ export class CreateExamDto {
 
   @ApiPropertyOptional({
     description: 'Grading method',
-    example: GradingMethod.MANUAL,
-    enum: GradingMethod,
+    example: TGradingMethod.MANUAL,
+    enum: TGradingMethod,
   })
   @IsOptional()
-  @IsEnum(GradingMethod, { message: 'Invalid grading method' })
-  gradingMethod?: GradingMethod;
+  @IsEnum(TGradingMethod, { message: 'Invalid grading method' })
+  gradingMethod?: TGradingMethod;
 
   @ApiPropertyOptional({
     description: 'Total number of questions',

@@ -2,7 +2,7 @@
 // DTOs for attendance API responses
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { AttendanceStatus, AttendanceType, AttendanceMethod } from '../entities/attendance.entity';
+import { TAttendanceStatus, TAttendanceType, TAttendanceMethod, IAttendanceResponse, IStudentAttendanceReport, IClassAttendanceReport, IAttendanceListResponse, IBulkMarkAttendanceRequest } from '@academia-pro/common/attendance';
 
 export class AttendanceResponseDto {
   @ApiProperty({
@@ -25,17 +25,17 @@ export class AttendanceResponseDto {
 
   @ApiProperty({
     description: 'Attendance status',
-    example: AttendanceStatus.PRESENT,
-    enum: AttendanceStatus,
+    example: TAttendanceStatus.PRESENT,
+    enum: TAttendanceStatus,
   })
-  status: AttendanceStatus;
+  status: TAttendanceStatus;
 
   @ApiProperty({
     description: 'Type of attendance',
-    example: AttendanceType.CLASS,
-    enum: AttendanceType,
+    example: TAttendanceType.CLASS,
+    enum: TAttendanceType,
   })
-  attendanceType: AttendanceType;
+  attendanceType: TAttendanceType;
 
   @ApiProperty({
     description: 'Attendance date',
@@ -99,10 +99,10 @@ export class AttendanceResponseDto {
 
   @ApiProperty({
     description: 'Attendance method',
-    example: AttendanceMethod.MANUAL,
-    enum: AttendanceMethod,
+    example: TAttendanceMethod.MANUAL,
+    enum: TAttendanceMethod,
   })
-  attendanceMethod: AttendanceMethod;
+  attendanceMethod: TAttendanceMethod;
 
   @ApiPropertyOptional({
     description: 'Late minutes',
@@ -370,7 +370,7 @@ export class AttendanceListResponseDto {
     description: 'List of attendance records',
     type: [AttendanceResponseDto],
   })
-  data: AttendanceResponseDto[];
+  data: IAttendanceResponse[];
 
   @ApiProperty({
     description: 'Total number of records',

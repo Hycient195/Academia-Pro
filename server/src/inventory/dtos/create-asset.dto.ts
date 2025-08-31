@@ -11,7 +11,7 @@ import {
   IProcurementInfo,
   IFinancialInfo,
   IAssetSpecifications
-} from '../../../../common/src/types/inventory/inventory.types';
+} from '@academia-pro/common/inventory';
 
 export class CreateAssetDto implements ICreateAssetRequest {
   @ApiProperty({

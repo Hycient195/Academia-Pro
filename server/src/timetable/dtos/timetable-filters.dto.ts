@@ -3,7 +3,7 @@
 
 import { IsOptional, IsString, IsEnum, IsInt, Min, MaxLength, IsArray } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TDayOfWeek, TPeriodType, TTimetableStatus, ITimetableFilters } from '@academia-pro/common/timetable';
+import { TDayOfWeek, TPeriodType, TTimetableStatus, ITimetableFilters } from '../../../../common/src/types/timetable';
 import { Type } from 'class-transformer';
 
 export class TimetableFiltersDto implements ITimetableFilters {

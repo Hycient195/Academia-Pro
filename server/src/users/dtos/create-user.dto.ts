@@ -3,7 +3,7 @@
 
 import { IsEmail, IsString, IsNotEmpty, IsOptional, IsEnum, IsDateString, MinLength, MaxLength, IsObject } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { UserRole } from '@academia-pro/common';
+import { UserRole } from '../../../../common/src/types/shared/types';
 import { ICreateUserRequest } from '../../../../common/src/types/users';
 
 export class CreateUserDto implements ICreateUserRequest {

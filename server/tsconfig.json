@@ -12,7 +12,8 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
-      "@common/*": ["../../common/src/*"]
+      "@common/*": ["../../common/src/*"],
+      "@academia-pro/common/*": ["../../common/src/*"]
     },
     "incremental": true,
     "skipLibCheck": true,

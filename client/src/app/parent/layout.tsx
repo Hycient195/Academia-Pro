@@ -1,11 +1,11 @@
-import { StaffSidebar } from "@/components/staff-sidebar"
+import { ParentSidebar } from "@/components/parent-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import {
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar"
 
-export default function StaffLayout({
+export default function ParentLayout({
   children,
 }: {
   children: React.ReactNode
@@ -19,11 +19,11 @@ export default function StaffLayout({
         } as React.CSSProperties
       }
     >
-      <StaffSidebar variant="inset" />
+      <ParentSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
-        <div className="flex flex-1 flex-col p-4">
-          <div className="@container/main flex flex-1 flex-col  gap-2">
+        <div className="flex flex-1 flex-col">
+          <div className="@container/main flex flex-1 flex-col gap-2">
             {children}
           </div>
         </div>

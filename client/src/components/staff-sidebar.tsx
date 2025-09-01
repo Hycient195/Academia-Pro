@@ -35,6 +35,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import Link from "next/link"
 
 const data = {
   user: {
@@ -45,73 +46,141 @@ const data = {
   navMain: [
     {
       title: "Dashboard",
-      url: "/staff/dashboard",
+      url: "/staff",
       icon: IconDashboard,
+      shortForm: "Dash",
     },
     {
       title: "My Classes",
       url: "/staff/students",
       icon: IconUsers,
+      shortForm: "Class",
     },
     {
       title: "Attendance",
       url: "/staff/attendance",
       icon: IconUserCheck,
+      shortForm: "Att",
     },
     {
       title: "Schedule",
       url: "/staff/schedule",
       icon: IconCalendar,
+      shortForm: "Sch",
     },
     {
       title: "Gradebook",
       url: "/staff/gradebook",
       icon: IconBook,
+      shortForm: "Grade",
     },
     {
       title: "Communication",
-      url: "/staff/communication",
+      url: "#",
       icon: IconMessage,
+      shortForm: "Comm",
+      items: [
+        {
+          title: "Messages",
+          url: "/staff/communication#messages",
+        },
+        {
+          title: "Announcements",
+          url: "/staff/communication#announcements",
+        },
+        {
+          title: "Parent Portal",
+          url: "/staff/communication#parents",
+        },
+        {
+          title: "Notifications",
+          url: "/staff/communication#notifications",
+        },
+      ],
     },
     {
       title: "Results",
-      url: "/staff/results",
+      url: "#",
       icon: IconClipboardList,
+      shortForm: "Res",
+      items: [
+        {
+          title: "Overview",
+          url: "/staff/results#overview",
+        },
+        {
+          title: "Subject Grades",
+          url: "/staff/results#subjects",
+        },
+        {
+          title: "Class Results",
+          url: "/staff/results#classes",
+        },
+        {
+          title: "Reports",
+          url: "/staff/results#reports",
+        },
+      ],
     },
     {
       title: "Library",
       url: "/staff/library",
       icon: IconBooks,
+      shortForm: "Lib",
     },
     {
       title: "Administration",
-      url: "/staff/admin",
+      url: "#",
       icon: IconFileText,
+      shortForm: "Admin",
+      items: [
+        {
+          title: "School Policies",
+          url: "/staff/admin#policies",
+        },
+        {
+          title: "Timetable",
+          url: "/staff/admin#timetable",
+        },
+        {
+          title: "Curriculum",
+          url: "/staff/admin#curriculum",
+        },
+        {
+          title: "Reports",
+          url: "/staff/admin#reports",
+        },
+      ],
     },
     {
       title: "IT Support",
       url: "/staff/it",
       icon: IconDeviceDesktop,
+      shortForm: "IT",
     },
     {
       title: "Counselor",
       url: "/staff/counselor",
       icon: IconUserHeart,
+      shortForm: "Couns",
     },
     {
       title: "Nurse",
       url: "/staff/nurse",
       icon: IconHeart,
+      shortForm: "Nurse",
     },
     {
       title: "Security",
       url: "/staff/security",
       icon: IconShield,
+      shortForm: "Sec",
     },
     {
       title: "Maintenance",
       url: "/staff/maintenance",
       icon: IconTools,
+      shortForm: "Maint",
     },
   ],
   navSecondary: [
@@ -119,11 +188,13 @@ const data = {
       title: "Reports",
       url: "/staff/reports",
       icon: IconChartBar,
+      shortForm: "Rpts",
     },
     {
       title: "Profile",
       url: "/staff/profile",
       icon: IconSettings,
+      shortForm: "Prof",
     },
   ],
 }
@@ -143,18 +214,20 @@ export function StaffSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
   }))
 
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
+    <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
+              tooltip="Staff Portal"
             >
-              <a href="/staff/dashboard">
+              <Link href="/staff">
                 <IconSchool className="!size-5" />
-                <span className="text-base font-semibold">Staff Portal</span>
-              </a>
+                <span className="group-data-[collapsible=icon]:hidden text-base font-semibold">Staff Portal</span>
+                <span className="hidden group-data-[collapsible=icon]:inline text-xs font-medium">Staff</span>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

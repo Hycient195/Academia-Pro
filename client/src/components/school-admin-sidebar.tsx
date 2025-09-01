@@ -39,31 +39,37 @@ const data = {
       title: "Dashboard",
       url: "/school-admin/dashboard",
       icon: IconDashboard,
+      shortForm: "Dash",
     },
     {
       title: "Students",
       url: "/school-admin/students",
       icon: IconUsers,
+      shortForm: "Stud",
     },
     {
       title: "Staff",
       url: "/school-admin/staff",
       icon: IconUserShield,
+      shortForm: "Staff",
     },
     {
       title: "Academic",
       url: "/school-admin/academic",
       icon: IconBook,
+      shortForm: "Acad",
     },
     {
       title: "Financial",
       url: "/school-admin/financial",
       icon: IconBuildingBank,
+      shortForm: "Fin",
     },
     {
       title: "Communication",
       url: "/school-admin/communication",
       icon: IconMail,
+      shortForm: "Comm",
     },
   ],
   navSecondary: [
@@ -71,11 +77,13 @@ const data = {
       title: "Analytics",
       url: "/school-admin/analytics",
       icon: IconChartBar,
+      shortForm: "Anal",
     },
     {
       title: "Settings",
       url: "/school-admin/settings",
       icon: IconSettings,
+      shortForm: "Sett",
     },
   ],
 }
@@ -95,17 +103,19 @@ export function SchoolAdminSidebar({ ...props }: React.ComponentProps<typeof Sid
   }))
 
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
+    <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
+              tooltip="School Admin"
             >
               <Link href="/school-admin/dashboard">
                 <IconSchool className="!size-5" />
-                <span className="text-base font-semibold">School Admin</span>
+                <span className="group-data-[collapsible=icon]:hidden text-base font-semibold">School Admin</span>
+                <span className="hidden group-data-[collapsible=icon]:inline text-xs font-medium">Admin</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

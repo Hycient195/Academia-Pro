@@ -22,8 +22,8 @@ export default function StaffLayout({
       <StaffSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
-        <div className="flex flex-1 flex-col p-4">
-          <div className="@container/main flex flex-1 flex-col gap-2">
+        <div className="flex flex-1 flex-col p-4 !">
+          <div className="@container/main flex flex-1 flex-col  gap-2">
             {children}
           </div>
         </div>

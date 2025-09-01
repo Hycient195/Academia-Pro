@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -121,6 +121,23 @@ const classResults = [
 export default function ResultsPage() {
   const [selectedTab, setSelectedTab] = useState("overview")
 
+  // Handle hash-based navigation for collapsible sub-menus
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '')
+      if (hash && ['overview', 'subjects', 'classes', 'reports'].includes(hash)) {
+        setSelectedTab(hash)
+      }
+    }
+
+    // Check initial hash
+    handleHashChange()
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
+
   const getStatusColor = (status: string) => {
     const colors = {
       "Completed": "bg-green-100 text-green-800",
@@ -153,7 +170,7 @@ export default function ResultsPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 py-4 md:gap-6 md:py-6">
+    <div className="flex flex-1 flex-col gap-4 md:gap-6">
       <div className="flex flex-col gap-4 md:gap-6">
         {/* Header */}
         <div className="flex items-center justify-between">

@@ -7,6 +7,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 // Entities
 import { Exam } from './entities/exam.entity';
 import { ExamResult } from './entities/exam-result.entity';
+import { Student } from '../students/student.entity';
 
 // Controllers
 import { ExaminationController } from './controllers/examination.controller';
@@ -22,7 +23,7 @@ import { ExaminationInterceptor } from './interceptors/examination.interceptor';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Exam, ExamResult]),
+    TypeOrmModule.forFeature([Exam, ExamResult, Student]),
   ],
   controllers: [ExaminationController],
   providers: [

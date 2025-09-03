@@ -35,8 +35,8 @@ export enum CheckOutStatus {
 @Index(['studentId', 'status'])
 @Index(['academicYear', 'status'])
 @Index(['allocationDate'])
-@Index(['checkInDate'])
-@Index(['checkOutDate'])
+@Index(['actualCheckInDate'])
+@Index(['actualCheckOutDate'])
 export class HostelAllocation {
   @PrimaryGeneratedColumn('uuid')
   id: string;

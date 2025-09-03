@@ -4,6 +4,10 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { TLearningObjectiveType, TGradeLevel } from '../../../common/src/types/academic/academic.types';
 
+// Forward declarations for circular dependencies
+import type { Subject } from './subject.entity';
+import type { Curriculum } from './curriculum.entity';
+
 @Entity('learning_objectives')
 export class LearningObjective {
   @PrimaryGeneratedColumn('uuid')
@@ -27,10 +31,10 @@ export class LearningObjective {
   })
   gradeLevel: TGradeLevel;
 
-  @Column({ length: 36, nullable: true })
+  @Column({ type: 'uuid', nullable: true })
   subjectId: string;
 
-  @Column({ length: 36, nullable: true })
+  @Column({ type: 'uuid', nullable: true })
   curriculumId: string;
 
   @Column({ type: 'int', default: 1 })
@@ -46,11 +50,11 @@ export class LearningObjective {
   updatedAt: Date;
 
   // Relations
-  @ManyToOne(() => Subject, subject => subject.learningObjectives)
+  @ManyToOne('Subject', { eager: false })
   @JoinColumn({ name: 'subjectId' })
   subject: Subject;
 
-  @ManyToOne(() => Curriculum, curriculum => curriculum.learningObjectives)
+  @ManyToOne('Curriculum', { eager: false })
   @JoinColumn({ name: 'curriculumId' })
   curriculum: Curriculum;
 
@@ -77,7 +81,3 @@ export class LearningObjective {
     this.updatedAt = new Date();
   }
 }
-
-// Forward declarations for relations
-import { Subject } from './subject.entity';
-import { Curriculum } from './curriculum.entity';

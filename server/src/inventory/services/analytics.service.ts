@@ -137,8 +137,8 @@ export class AnalyticsService {
         totalAssets: assets.length,
         activeAssets: assets.filter(a => a.status === AssetStatus.ACTIVE).length,
         maintenanceAssets: assets.filter(a => a.status === AssetStatus.MAINTENANCE).length,
-        totalValue: assets.reduce((sum, a) => sum + (a.purchaseCost || 0), 0),
-        depreciatedValue: assets.reduce((sum, a) => sum + (a.currentValue || 0), 0),
+        totalValue: assets.reduce((sum, a) => sum + (a.financial?.purchasePrice || 0), 0),
+        depreciatedValue: assets.reduce((sum, a) => sum + (a.financial?.currentValue || 0), 0),
         utilizationRate: 0,
       },
       statusBreakdown: {},
@@ -169,7 +169,7 @@ export class AnalyticsService {
       dashboard.conditionBreakdown[asset.condition] = (dashboard.conditionBreakdown[asset.condition] || 0) + 1;
 
       // Type
-      dashboard.typeBreakdown[asset.assetType] = (dashboard.typeBreakdown[asset.assetType] || 0) + 1;
+      dashboard.typeBreakdown[asset.category] = (dashboard.typeBreakdown[asset.category] || 0) + 1;
 
       // Location
       if (asset.locationId) {
@@ -177,8 +177,8 @@ export class AnalyticsService {
       }
 
       // Category
-      if (asset.categoryId) {
-        dashboard.categoryBreakdown[asset.categoryId] = (dashboard.categoryBreakdown[asset.categoryId] || 0) + 1;
+      if (asset.category) {
+        dashboard.categoryBreakdown[asset.category] = (dashboard.categoryBreakdown[asset.category] || 0) + 1;
       }
     });
 
@@ -207,7 +207,7 @@ export class AnalyticsService {
     ).length;
 
     dashboard.alerts.warrantyExpiring = assets.filter(a =>
-      a.warrantyExpiry && a.warrantyExpiry <= ninetyDaysFromNow
+      a.procurement?.warrantyExpiryDate && a.procurement.warrantyExpiryDate <= ninetyDaysFromNow
     ).length;
 
     dashboard.alerts.overdueAllocations = movements.filter(m =>
@@ -353,28 +353,28 @@ export class AnalyticsService {
     let assetsWithDepreciation = 0;
 
     assets.forEach(asset => {
-      if (asset.purchaseCost) {
-        report.totalAssetsValue += asset.purchaseCost;
+      if (asset.financial?.purchasePrice) {
+        report.totalAssetsValue += asset.financial.purchasePrice;
       }
 
-      if (asset.accumulatedDepreciation) {
-        report.totalDepreciationExpense += asset.accumulatedDepreciation;
-        report.totalDepreciatedValue += asset.currentValue || 0;
+      if (asset.financial?.accumulatedDepreciation) {
+        report.totalDepreciationExpense += asset.financial.accumulatedDepreciation;
+        report.totalDepreciatedValue += asset.financial.currentValue || 0;
       }
 
       // By depreciation method
-      const method = asset.depreciationMethod || 'straight_line';
+      const method = asset.financial?.depreciationMethod || 'straight_line';
       report.assetsByDepreciationMethod[method] = (report.assetsByDepreciationMethod[method] || 0) + 1;
 
       // By category
-      if (asset.categoryId) {
-        report.depreciationByCategory[asset.categoryId] =
-          (report.depreciationByCategory[asset.categoryId] || 0) + (asset.accumulatedDepreciation || 0);
+      if (asset.category) {
+        report.depreciationByCategory[asset.category] =
+          (report.depreciationByCategory[asset.category] || 0) + (asset.financial?.accumulatedDepreciation || 0);
       }
 
       // By age
-      if (asset.purchaseDate) {
-        const ageInYears = (currentDate.getTime() - asset.purchaseDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
+      if (asset.procurement?.purchaseDate) {
+        const ageInYears = (currentDate.getTime() - asset.procurement.purchaseDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
         if (ageInYears < 1) report.depreciationByAge['0-1_years']++;
         else if (ageInYears < 3) report.depreciationByAge['1-3_years']++;
         else if (ageInYears < 5) report.depreciationByAge['3-5_years']++;
@@ -382,8 +382,8 @@ export class AnalyticsService {
       }
 
       // Depreciation rate
-      if (asset.usefulLifeYears && asset.purchaseCost) {
-        const rate = (asset.purchaseCost - (asset.salvageValue || 0)) / asset.usefulLifeYears / asset.purchaseCost;
+      if (asset.financial?.usefulLife && asset.financial.purchasePrice) {
+        const rate = (asset.financial.purchasePrice - (asset.financial.salvageValue || 0)) / asset.financial.usefulLife / asset.financial.purchasePrice;
         totalDepreciationRate += rate;
         assetsWithDepreciation++;
       }

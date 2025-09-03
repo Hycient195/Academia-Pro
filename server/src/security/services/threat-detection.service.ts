@@ -1,8 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, forwardRef, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, Between, MoreThan, LessThan } from 'typeorm';
 import { AuditLog } from '../entities/audit-log.entity';
-import { AuditAction, AuditSeverity } from './audit.service';
+import { AuditAction, AuditSeverity } from '../types/audit.types';
 import { UserSession, SessionStatus } from '../entities/user-session.entity';
 import { SecurityService } from './security.service';
 import { PolicyService } from './policy.service';
@@ -40,7 +40,9 @@ export class ThreatDetectionService {
     private auditLogRepository: Repository<AuditLog>,
     @InjectRepository(UserSession)
     private userSessionRepository: Repository<UserSession>,
+    @Inject(forwardRef(() => SecurityService))
     private securityService: SecurityService,
+    @Inject(forwardRef(() => PolicyService))
     private policyService: PolicyService,
     private dataSource: DataSource,
   ) {}

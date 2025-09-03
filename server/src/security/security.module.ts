@@ -1,4 +1,4 @@
-import { Module, Global } from '@nestjs/common';
+import { Module, Global, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -18,6 +18,7 @@ import { ThreatDetectionService } from './services/threat-detection.service';
 import { AuditLog } from './entities/audit-log.entity';
 import { SecurityEvent } from './entities/security-event.entity';
 import { UserSession } from './entities/user-session.entity';
+import { SecurityPolicy } from './entities/security-policy.entity';
 
 // TODO: Add missing files when needed:
 // - Guards: RateLimitGuard, IpWhitelistGuard, SessionGuard
@@ -33,6 +34,7 @@ import { UserSession } from './entities/user-session.entity';
       AuditLog,
       SecurityEvent,
       UserSession,
+      SecurityPolicy,
     ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],

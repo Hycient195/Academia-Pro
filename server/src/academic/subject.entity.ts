@@ -4,6 +4,12 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable, OneToMany } from 'typeorm';
 import { TSubjectType, TGradeLevel } from '../../../common/src/types/academic/academic.types';
 
+// Type-only imports to avoid circular dependency issues
+import type { Curriculum } from './curriculum.entity';
+import type { ClassSubject } from './class-subject.entity';
+import type { CurriculumSubject } from './curriculum-subject.entity';
+import type { LearningObjective } from './learning-objective.entity';
+
 @Entity('subjects')
 export class Subject {
   @PrimaryGeneratedColumn('uuid')
@@ -40,7 +46,7 @@ export class Subject {
   @Column({ default: true })
   isActive: boolean;
 
-  @Column({ length: 36 })
+   @Column({ type: 'uuid' })
   schoolId: string;
 
   @CreateDateColumn()
@@ -50,16 +56,16 @@ export class Subject {
   updatedAt: Date;
 
   // Relations
-  @ManyToMany(() => Curriculum, curriculum => curriculum.subjects)
+  @ManyToMany(() => require('./curriculum.entity').Curriculum, (curriculum: any) => curriculum.subjects)
   curricula: Curriculum[];
 
-  @OneToMany(() => ClassSubject, classSubject => classSubject.subject)
+  @OneToMany(() => require('./class-subject.entity').ClassSubject, (classSubject: any) => classSubject.subject)
   classSubjects: ClassSubject[];
 
-  @OneToMany(() => CurriculumSubject, curriculumSubject => curriculumSubject.subject)
+  @OneToMany(() => require('./curriculum-subject.entity').CurriculumSubject, (curriculumSubject: any) => curriculumSubject.subject)
   curriculumSubjects: CurriculumSubject[];
 
-  @OneToMany(() => LearningObjective, objective => objective.subject)
+  @OneToMany(() => require('./learning-objective.entity').LearningObjective, (objective: any) => objective.subject)
   learningObjectives: LearningObjective[];
 
   // Methods
@@ -95,9 +101,3 @@ export class Subject {
     this.updatedAt = new Date();
   }
 }
-
-// Forward declarations for relations
-import { Curriculum } from './curriculum.entity';
-import { ClassSubject } from './class-subject.entity';
-import { CurriculumSubject } from './curriculum-subject.entity';
-import { LearningObjective } from './learning-objective.entity';

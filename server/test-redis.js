@@ -4,6 +4,7 @@ const Redis = require('ioredis');
 async function testRedis() {
   try {
     console.log('Testing Redis connection...');
+    // console.log(process.env.REDIS_PASSWORD)
 
     const redis = new Redis({
       host: process.env.REDIS_HOST || 'localhost',

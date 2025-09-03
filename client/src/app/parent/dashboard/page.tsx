@@ -142,7 +142,7 @@ export default function ParentDashboard() {
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-bold tracking-tight">Parent Dashboard</h1>
           <p className="text-muted-foreground">
-            Welcome back! Here's an overview of your children's academic progress.
+            Welcome back! Here&apos;s an overview of your children&apos;s academic progress.
           </p>
         </div>
 
@@ -263,7 +263,7 @@ export default function ParentDashboard() {
             <CardHeader>
               <CardTitle>Recent Activities</CardTitle>
               <CardDescription>
-                Latest updates from your children's academic life
+                Latest updates from your children&apos;s academic life
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -317,7 +317,7 @@ export default function ParentDashboard() {
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
             <CardDescription>
-              Common tasks and shortcuts for managing your children's education
+              Common tasks and shortcuts for managing your children&apos;s education
             </CardDescription>
           </CardHeader>
           <CardContent>

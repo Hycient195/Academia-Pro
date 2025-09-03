@@ -5,7 +5,7 @@ import { PolicyService, PolicyEvaluationContext, PolicyEvaluationResult } from '
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { SecurityPolicy, PolicyType, PolicyStatus } from '../entities/security-policy.entity';
-import { AuditAction, AuditSeverity } from '../services/audit.service';
+import { AuditAction, AuditSeverity } from '../types/audit.types';
 import { Roles } from '../decorators/roles.decorator';
 
 @ApiTags('Security - Authorization & Policies')

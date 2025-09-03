@@ -10,10 +10,10 @@ export class CurriculumSubject {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ length: 36 })
+  @Column({ type: 'uuid' })
   curriculumId: string;
 
-  @Column({ length: 36 })
+  @Column({ type: 'uuid' })
   subjectId: string;
 
   @Column({ type: 'decimal', precision: 4, scale: 1, default: 0 })

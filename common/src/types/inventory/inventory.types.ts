@@ -57,6 +57,14 @@ export enum TDepreciationMethod {
   UNITS_OF_PRODUCTION = 'units_of_production',
 }
 
+export enum TAssetCondition {
+  EXCELLENT = 'excellent',
+  GOOD = 'good',
+  FAIR = 'fair',
+  POOR = 'poor',
+  DAMAGED = 'damaged',
+}
+
 // Interfaces
 export interface IAsset {
   id: string;
@@ -73,6 +81,8 @@ export interface IAsset {
   assignments: IAssetAssignment[];
   documents: IDocument[];
   schoolId: string;
+  assignedToUserId?: string;
+  assignedToDepartment?: string;
   createdAt: Date;
   updatedAt: Date;
   createdBy?: string;

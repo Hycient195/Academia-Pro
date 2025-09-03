@@ -4,6 +4,11 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable, OneToMany } from 'typeorm';
 import { TGradeLevel, TAcademicYearStatus } from '../../../common/src/types/academic/academic.types';
 
+// Type-only imports to avoid circular dependency issues
+import type { Subject } from './subject.entity';
+import type { CurriculumSubject } from './curriculum-subject.entity';
+import type { LearningObjective } from './learning-objective.entity';
+
 @Entity('curricula')
 export class Curriculum {
   @PrimaryGeneratedColumn('uuid')
@@ -31,7 +36,7 @@ export class Curriculum {
   })
   status: TAcademicYearStatus;
 
-  @Column({ length: 36 })
+  @Column({ type: 'uuid' })
   schoolId: string;
 
   @CreateDateColumn()
@@ -41,7 +46,7 @@ export class Curriculum {
   updatedAt: Date;
 
   // Relations
-  @ManyToMany(() => Subject, subject => subject.curricula)
+  @ManyToMany(() => require('./subject.entity').Subject, (subject: any) => subject.curricula)
   @JoinTable({
     name: 'curriculum_subjects',
     joinColumn: { name: 'curriculumId', referencedColumnName: 'id' },
@@ -49,10 +54,10 @@ export class Curriculum {
   })
   subjects: Subject[];
 
-  @OneToMany(() => CurriculumSubject, curriculumSubject => curriculumSubject.curriculum)
+  @OneToMany(() => require('./curriculum-subject.entity').CurriculumSubject, (curriculumSubject: any) => curriculumSubject.curriculum)
   curriculumSubjects: CurriculumSubject[];
 
-  @OneToMany(() => LearningObjective, objective => objective.curriculum)
+  @OneToMany(() => require('./learning-objective.entity').LearningObjective, (objective: any) => objective.curriculum)
   learningObjectives: LearningObjective[];
 
   // Methods
@@ -88,8 +93,3 @@ export class Curriculum {
     }
   }
 }
-
-// Forward declarations for relations
-import { Subject } from './subject.entity';
-import { CurriculumSubject } from './curriculum-subject.entity';
-import { LearningObjective } from './learning-objective.entity';

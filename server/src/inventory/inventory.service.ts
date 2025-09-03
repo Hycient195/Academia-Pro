@@ -4,7 +4,9 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { Asset } from './asset.entity';
+import { Asset } from './entities';
+
+// import { Asset } from './asset.entity';
 import {
   CreateAssetDto,
   UpdateAssetDto,

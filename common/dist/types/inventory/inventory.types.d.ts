@@ -47,6 +47,13 @@ export declare enum TDepreciationMethod {
     DECLINING_BALANCE = "declining_balance",
     UNITS_OF_PRODUCTION = "units_of_production"
 }
+export declare enum TAssetCondition {
+    EXCELLENT = "excellent",
+    GOOD = "good",
+    FAIR = "fair",
+    POOR = "poor",
+    DAMAGED = "damaged"
+}
 export interface IAsset {
     id: string;
     assetCode: string;
@@ -62,6 +69,8 @@ export interface IAsset {
     assignments: IAssetAssignment[];
     documents: IDocument[];
     schoolId: string;
+    assignedToUserId?: string;
+    assignedToDepartment?: string;
     createdAt: Date;
     updatedAt: Date;
     createdBy?: string;

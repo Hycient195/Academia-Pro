@@ -10,6 +10,7 @@ import {
   Request,
   HttpCode,
   HttpStatus,
+  Response,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -103,20 +104,15 @@ export class AuthController {
     },
   })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async login(@Body() loginDto: LoginDto): Promise<{
-    user: any;
-    tokens: AuthTokens;
-  }> {
+  async login(@Body() loginDto: LoginDto, @Response() res: any): Promise<void> {
     const user = await this.authService.validateUser(
       loginDto.email,
       loginDto.password,
     );
-    const tokens = await this.authService.login(user);
 
-    // Remove sensitive information from response
-    const { passwordHash, ...userResponse } = user;
+    const result = await this.authService.loginWithCookies(user, res);
 
-    return { user: userResponse, tokens };
+    res.json(result);
   }
 
   @Post('refresh')
@@ -136,8 +132,20 @@ export class AuthController {
     },
   })
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
-  async refreshToken(@Body() refreshTokenDto: RefreshTokenDto): Promise<AuthTokens> {
-    return this.authService.refreshToken(refreshTokenDto);
+  async refreshToken(@Body() refreshTokenDto: RefreshTokenDto, @Response() res: any): Promise<void> {
+    const tokens = await this.authService.refreshToken(refreshTokenDto);
+    this.authService.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+    res.json(tokens);
+  }
+
+  @Get('csrf-token')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get CSRF token' })
+  @ApiResponse({ status: 200, description: 'CSRF token retrieved successfully' })
+  getCSRFToken(@Request() req: any): { csrfToken: string } {
+    // CSRF token is already set in cookie by login
+    const csrfToken = req.cookies?.csrfToken;
+    return { csrfToken };
   }
 
   @Post('logout')
@@ -147,9 +155,10 @@ export class AuthController {
   @ApiOperation({ summary: 'Logout user and invalidate tokens' })
   @ApiResponse({ status: 200, description: 'Logout successful' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async logout(@Request() req: any): Promise<{ message: string }> {
+  async logout(@Request() req: any, @Response() res: any): Promise<void> {
     await this.authService.logout(req.user.id);
-    return { message: 'Logged out successfully' };
+    this.authService.clearAuthCookies(res);
+    res.json({ message: 'Logged out successfully' });
   }
 
   @Post('change-password')

@@ -1,11 +1,16 @@
 // Academia Pro - Main Application Module
 // Root module that configures the entire NestJS application
 
-import { Module, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { Module, MiddlewareConsumer, RequestMethod, forwardRef } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
+
+// Middleware
+import { CookieAuthMiddleware } from './auth/middleware/cookie-auth.middleware';
+import { CSRFMiddleware } from './auth/middleware/csrf.middleware';
+import { SecurityMiddleware } from './auth/middleware/security.middleware';
 
 // Core modules
 import { AuthModule } from './auth/auth.module';
@@ -24,10 +29,12 @@ import { CommunicationModule } from './communication/communication.module';
 import { ParentPortalModule } from './parent-portal/parent-portal.module';
 import { TransportationModule } from './transportation/transportation.module';
 import { InventoryModule } from './inventory/inventory.module';
+import { SecurityModule } from './security/security.module';
 
 // Common modules
 import { CommonModule } from './common/common.module';
 import { RedisModule } from './redis/redis.module';
+import { SeedersModule } from './database/seeders/seeders.module';
 
 // Guards, interceptors, and filters
 import { ThrottlerGuard } from './common/guards/throttler.guard';
@@ -36,7 +43,10 @@ import { TimeoutInterceptor } from './common/interceptors/timeout.interceptor';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 // Database configuration
-import { databaseConfig } from './database.config';
+import { DatabaseBootstrapService } from './database.bootstrap';
+import { getDatabaseConfig } from './database.config';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
@@ -44,11 +54,20 @@ import { databaseConfig } from './database.config';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env.local', '.env'],
-      cache: true,
+      // cache: true,
     }),
 
     // Database connection
-    TypeOrmModule.forRoot(databaseConfig),
+    // TypeOrmModule.forRoot(databaseConfig),
+
+    forwardRef(() => 
+      TypeOrmModule.forRootAsync({
+        imports: [ConfigModule],
+        useFactory: (configService: ConfigService) => getDatabaseConfig(configService),
+        inject: [ConfigService],
+      }),
+    ),
+    
 
     // Rate limiting
     ThrottlerModule.forRoot([{
@@ -56,25 +75,30 @@ import { databaseConfig } from './database.config';
       limit: 100, // Number of requests per window
     }]),
 
+    // Redis module (before database for cache)
+    forwardRef(() => RedisModule),
+
     // Feature modules
-    CommonModule,
-    RedisModule,
-    AuthModule,
-    UsersModule,
-    SchoolsModule,
-    StudentsModule,
-    AcademicModule,
-    AttendanceModule,
-    ExaminationModule,
-    TimetableModule,
-    StaffModule,
-    LibraryModule,
-    HostelModule,
-    FeeModule,
-    CommunicationModule,
-    ParentPortalModule,
-    TransportationModule,
-    InventoryModule,
+    forwardRef(() => CommonModule),
+    // forwardRef(() => RedisModule),
+    forwardRef(() => SeedersModule),
+    forwardRef(() => AuthModule),
+    forwardRef(() => UsersModule),
+    forwardRef(() => SchoolsModule),
+    forwardRef(() => StudentsModule),
+    forwardRef(() => AcademicModule),
+    forwardRef(() => AttendanceModule),
+    forwardRef(() => ExaminationModule),
+    forwardRef(() => TimetableModule),
+    forwardRef(() => StaffModule),
+    forwardRef(() => LibraryModule),
+    forwardRef(() => HostelModule),
+    forwardRef(() => FeeModule),
+    forwardRef(() => CommunicationModule),
+    forwardRef(() => ParentPortalModule),
+    forwardRef(() => TransportationModule),
+    forwardRef(() => InventoryModule),
+    forwardRef(() => SecurityModule),
 
     // TODO: Add remaining modules as they are implemented
     // FeeModule,
@@ -87,11 +111,13 @@ import { databaseConfig } from './database.config';
     // ReportsModule,
     // StudentPortalModule,
     // OnlineLearningModule,
-    // SecurityModule,
     // IntegrationModule,
     // MobileModule,
   ],
   providers: [
+    // Database bootstrap service
+    DatabaseBootstrapService,
+
     // Global guards
     {
       provide: APP_GUARD,
@@ -113,13 +139,43 @@ import { databaseConfig } from './database.config';
       provide: APP_FILTER,
       useClass: AllExceptionsFilter,
     },
+    AppService,
   ],
+  controllers: [AppController]
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
-    // Apply middleware to specific routes
+    // Apply security middleware globally
     consumer
-      .apply() // Add any global middleware here
+      .apply(SecurityMiddleware)
       .forRoutes({ path: '*', method: RequestMethod.ALL });
+
+    // Apply authentication middleware to protected routes
+    consumer
+      .apply(CookieAuthMiddleware)
+      .exclude(
+        { path: 'api/v1/auth/login', method: RequestMethod.POST },
+        { path: 'api/v1/auth/register', method: RequestMethod.POST },
+        { path: 'api/v1/auth/refresh', method: RequestMethod.POST },
+        { path: 'api/v1/auth/reset-password-request', method: RequestMethod.POST },
+        { path: 'api/v1/auth/reset-password', method: RequestMethod.POST },
+        { path: 'api/v1/auth/verify-email', method: RequestMethod.POST },
+        { path: 'api/v1/auth/csrf-token', method: RequestMethod.GET },
+        { path: 'api/v1/super-admin/auth/login', method: RequestMethod.POST },
+      )
+      .forRoutes({ path: '*', method: RequestMethod.ALL });
+
+    // Apply CSRF middleware to state-changing operations
+    consumer
+      .apply(CSRFMiddleware)
+      .exclude(
+        { path: 'api/v1/auth/login', method: RequestMethod.POST },
+        { path: 'api/v1/auth/register', method: RequestMethod.POST },
+        { path: 'api/v1/auth/refresh', method: RequestMethod.POST },
+        { path: 'api/v1/auth/csrf-token', method: RequestMethod.GET },
+        { path: 'api/v1/auth/me', method: RequestMethod.GET },
+        { path: 'api/v1/super-admin/auth/login', method: RequestMethod.POST },
+      )
+      .forRoutes({ path: '*', method: RequestMethod.POST });
   }
 }

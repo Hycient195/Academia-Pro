@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index } from 'typeorm';
-import { AuditAction, AuditSeverity } from '../services/audit.service';
+import { AuditAction, AuditSeverity } from '../types/audit.types';
 
 @Entity('audit_logs')
 @Index(['userId', 'timestamp'])

@@ -153,11 +153,17 @@ export class UsersService {
     const { password, ...updateData } = updateUserDto;
 
     // Handle dateOfBirth conversion if provided
-    const updateDataPrepared = {
+    const updateDataPrepared: any = {
       ...updateData,
-      role: updateData.role as UserRole | undefined,
-      dateOfBirth: updateData.dateOfBirth ? new Date(updateData.dateOfBirth) : updateData.dateOfBirth,
     };
+
+    if (updateData.role !== undefined) {
+      updateDataPrepared.role = updateData.role as UserRole;
+    }
+
+    if (updateData.dateOfBirth !== undefined) {
+      updateDataPrepared.dateOfBirth = updateData.dateOfBirth ? new Date(updateData.dateOfBirth) : null;
+    }
 
     // Update user
     Object.assign(user, updateDataPrepared);

@@ -89,11 +89,11 @@ NODE_ENV=development
 PORT=3000
 
 # Database
-DATABASE_HOST=localhost
-DATABASE_PORT=5432
-DATABASE_USER=academia_user
-DATABASE_PASSWORD=academia_password
-DATABASE_NAME=academia_pro
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=academia_user
+DB_PASSWORD=admin
+DB_NAME=academia_pro
 
 # JWT
 JWT_SECRET=your-super-secret-jwt-key-change-in-production

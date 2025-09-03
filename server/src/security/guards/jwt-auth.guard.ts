@@ -7,7 +7,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserSession } from '../entities/user-session.entity';
 import { SecurityEvent, SecurityEventType, SecurityEventSeverity } from '../entities/security-event.entity';
-import { AuditService, AuditSeverity } from '../services/audit.service';
+import { AuditService } from '../services/audit.service';
+import { AuditSeverity } from '../types/audit.types';
 
 export interface JwtPayload {
   sub: string; // user ID

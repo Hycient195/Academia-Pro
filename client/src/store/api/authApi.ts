@@ -10,12 +10,17 @@ export interface LoginResponse {
   user: {
     id: string;
     email: string;
-    name: string;
+    firstName: string;
+    lastName: string;
     role: string;
     schoolId?: string;
   };
-  token: string;
-  refreshToken: string;
+  tokens: {
+    accessToken: string;
+    refreshToken: string;
+    expiresIn: number;
+    tokenType: string;
+  };
 }
 
 export interface RegisterRequest {

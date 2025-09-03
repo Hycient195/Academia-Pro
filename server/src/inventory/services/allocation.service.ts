@@ -74,7 +74,7 @@ export class AllocationService {
       assetId: asset.id,
       movementCode,
       movementType: 'assignment' as any,
-      movementTitle: `Asset Allocation Request: ${asset.assetName}`,
+      movementTitle: `Asset Allocation Request: ${asset.name}`,
       movementDescription: `Allocation requested for: ${request.purpose}`,
       status: MovementStatus.PENDING,
       fromLocationId: asset.locationId,

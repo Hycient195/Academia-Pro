@@ -1,10 +1,12 @@
+"use client"
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   IconMail,
   IconLock,
@@ -14,24 +16,128 @@ import {
   IconSchool,
   IconShield,
   IconHelp,
+  IconUser,
+  IconUsers,
+  IconUserShield,
+  IconBuildingBank,
 } from "@tabler/icons-react"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { useLoginMutation } from "@/store/api/authApi"
+import { useDispatch } from "react-redux"
+import { setCredentials } from "@/store/slices/authSlice"
+import { toast } from "sonner"
 
-export default function ParentLoginPage() {
+type UserType = "school-admin" | "student" | "parent" | "teacher"
+
+const userTypes = [
+  {
+    id: "school-admin" as UserType,
+    name: "School Admin",
+    description: "Manage school operations and administration",
+    icon: IconUserShield,
+    redirectPath: "/dashboard",
+    color: "bg-blue-500",
+  },
+  {
+    id: "student" as UserType,
+    name: "Student",
+    description: "Access your academic information and grades",
+    icon: IconUser,
+    redirectPath: "/student/dashboard",
+    color: "bg-green-500",
+  },
+  {
+    id: "parent" as UserType,
+    name: "Parent",
+    description: "Monitor your children's academic progress",
+    icon: IconUsers,
+    redirectPath: "/parent/dashboard",
+    color: "bg-purple-500",
+  },
+  {
+    id: "teacher" as UserType,
+    name: "Teacher",
+    description: "Manage classes and student performance",
+    icon: IconBuildingBank,
+    redirectPath: "/teacher/dashboard",
+    color: "bg-orange-500",
+  },
+]
+
+export default function SignInPage() {
+  const router = useRouter()
+  const dispatch = useDispatch()
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [rememberMe, setRememberMe] = useState(false)
+  const [selectedUserType, setSelectedUserType] = useState<UserType | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [login, { isLoading }] = useLoginMutation()
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle login logic here
-    console.log("Login attempt:", { email, password, rememberMe })
+
+    if (!selectedUserType) {
+      toast.error("Please select a user type")
+      return
+    }
+
+    try {
+      const result = await login({
+        email,
+        password,
+      }).unwrap()
+
+      // Store credentials in Redux
+      dispatch(setCredentials({
+        user: {
+          ...result.user,
+          name: `${result.user.firstName} ${result.user.lastName}`,
+          role: result.user.role as 'super-admin' | 'school-admin' | 'teacher' | 'student' | 'parent',
+          permissions: [], // TODO: Get permissions from API
+        },
+        token: result.tokens.accessToken,
+        refreshToken: result.tokens.refreshToken,
+      }))
+
+      // Redirect based on user role from API response
+      const userRole = result.user.role
+      let redirectPath = "/dashboard"
+
+      switch (userRole) {
+        case "student":
+          redirectPath = "/student/dashboard"
+          break
+        case "parent":
+          redirectPath = "/parent/dashboard"
+          break
+        case "teacher":
+          redirectPath = "/teacher/dashboard"
+          break
+        case "school-admin":
+          redirectPath = "/school-admin/dashboard"
+          break
+        case "super-admin":
+          redirectPath = "/super-admin/dashboard"
+          break
+        default:
+          redirectPath = "/dashboard"
+      }
+
+      toast.success("Login successful! Redirecting...")
+      router.push(redirectPath)
+    } catch (error) {
+      console.error("Login failed:", error)
+      const errorMessage = (error as { data?: { message?: string } })?.data?.message || "Login failed. Please try again."
+      toast.error(errorMessage)
+    }
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="w-full max-w-md space-y-8">
+      <div className="w-full max-w-4xl space-y-8">
         {/* Logo and Header */}
         <div className="text-center">
           <div className="flex justify-center mb-4">
@@ -39,22 +145,38 @@ export default function ParentLoginPage() {
               <IconSchool className="h-8 w-8 text-primary-foreground" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Parent Portal</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Academia Pro</h1>
           <p className="text-gray-600 mt-2">
-            Access your children's academic information
+            Choose your role and sign in to access your portal
           </p>
         </div>
 
+
         {/* Login Form */}
-        <Card className="shadow-lg">
+        <Card className="shadow-lg max-w-lg mx-auto">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl text-center">Sign In</CardTitle>
             <CardDescription className="text-center">
-              Enter your credentials to access the parent portal
+              Enter your credentials to access the portal
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="userType">User Type</Label>
+                <Select value={selectedUserType || ""} onValueChange={(value) => setSelectedUserType(value as UserType)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {userTypes.map((type) => (
+                      <SelectItem key={type.id} value={type.id}>
+                        {type.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
                 <div className="relative">
@@ -62,7 +184,7 @@ export default function ParentLoginPage() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="parent@example.com"
+                    placeholder="user@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10"
@@ -119,8 +241,13 @@ export default function ParentLoginPage() {
                 </Button>
               </div>
 
-              <Button type="submit" className="w-full" size="lg">
-                Sign In
+              <Button
+                type="submit"
+                className="w-full"
+                size="lg"
+                disabled={isLoading || !selectedUserType}
+              >
+                {isLoading ? "Signing In..." : "Sign In"}
                 <IconArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </form>
@@ -151,45 +278,10 @@ export default function ParentLoginPage() {
           </CardContent>
         </Card>
 
-        {/* Quick Access */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Quick Access</CardTitle>
-            <CardDescription>
-              Access your children's information quickly
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer">
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback>EJ</AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Emma Johnson</p>
-                  <p className="text-xs text-muted-foreground">10th Grade - Section A</p>
-                </div>
-                <IconArrowRight className="h-4 w-4 text-muted-foreground" />
-              </div>
-
-              <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer">
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback>MJ</AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Michael Johnson</p>
-                  <p className="text-xs text-muted-foreground">8th Grade - Section B</p>
-                </div>
-                <IconArrowRight className="h-4 w-4 text-muted-foreground" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Footer */}
         <div className="text-center space-y-2">
           <p className="text-sm text-muted-foreground">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Button variant="link" className="p-0 h-auto font-normal">
               Contact School Administration
             </Button>
@@ -209,7 +301,7 @@ export default function ParentLoginPage() {
         </div>
 
         {/* Security Notice */}
-        <Card className="border-amber-200 bg-amber-50">
+        <Card className="border-amber-200 bg-amber-50 max-w-lg mx-auto">
           <CardContent className="pt-6">
             <div className="flex items-start gap-3">
               <IconShield className="h-5 w-5 text-amber-600 mt-0.5" />

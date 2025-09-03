@@ -1,9 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, forwardRef, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { SecurityPolicy, PolicyType, PolicyStatus, EnforcementLevel, PolicyScope } from '../entities/security-policy.entity';
 import { SecurityService } from './security.service';
-import { AuditAction, AuditSeverity } from './audit.service';
+import { AuditAction, AuditSeverity } from '../types/audit.types';
 
 export interface PolicyEvaluationContext {
   user: {
@@ -57,6 +57,7 @@ export class PolicyService {
   constructor(
     @InjectRepository(SecurityPolicy)
     private policyRepository: Repository<SecurityPolicy>,
+    @Inject(forwardRef(() => SecurityService))
     private securityService: SecurityService,
     private dataSource: DataSource,
   ) {}

@@ -174,7 +174,7 @@ export default function CommunicationPage() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Communication</h1>
             <p className="text-muted-foreground">
-              Connect with teachers and stay updated on your children's progress
+              Connect with teachers and stay updated on your children&apos;s progress
             </p>
           </div>
           <div className="flex gap-2">
@@ -328,7 +328,7 @@ export default function CommunicationPage() {
               <CardHeader>
                 <CardTitle>Teacher Directory</CardTitle>
                 <CardDescription>
-                  Contact information for your children's teachers
+                  Contact information for your children&apos;s teachers
                 </CardDescription>
               </CardHeader>
               <CardContent>

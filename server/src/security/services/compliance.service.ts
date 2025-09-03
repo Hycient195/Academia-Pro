@@ -1,8 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, forwardRef, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { AuditLog } from '../entities/audit-log.entity';
-import { AuditAction, AuditSeverity } from './audit.service';
+import { AuditAction, AuditSeverity } from '../types/audit.types';
 import { SecurityService } from './security.service';
 import { PolicyService } from './policy.service';
 
@@ -80,7 +80,9 @@ export class ComplianceService {
   constructor(
     @InjectRepository(AuditLog)
     private auditLogRepository: Repository<AuditLog>,
+    @Inject(forwardRef(() => SecurityService))
     private securityService: SecurityService,
+    @Inject(forwardRef(() => PolicyService))
     private policyService: PolicyService,
     private dataSource: DataSource,
   ) {}

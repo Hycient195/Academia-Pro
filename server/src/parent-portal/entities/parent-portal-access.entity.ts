@@ -1,5 +1,4 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany, Index } from 'typeorm';
-import { Parent } from '../../parent/parent.entity';
 import { ParentStudentLink } from './parent-student-link.entity';
 
 export enum ParentPortalAccessLevel {
@@ -119,9 +118,9 @@ export class ParentPortalAccess {
   updatedAt: Date;
 
   // Relations
-  @ManyToOne(() => Parent)
+  @ManyToOne('Parent')
   @JoinColumn({ name: 'parent_id' })
-  parent: Parent;
+  parent: any;
 
   @OneToMany(() => ParentStudentLink, link => link.parentPortalAccess)
   studentLinks: ParentStudentLink[];

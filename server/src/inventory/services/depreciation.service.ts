@@ -62,39 +62,39 @@ export class DepreciationService {
       throw new Error('Asset not found');
     }
 
-    if (!asset.purchaseDate || !asset.purchaseCost || !asset.usefulLifeYears) {
+    if (!asset.procurement?.purchaseDate || !asset.financial?.purchasePrice || !asset.financial?.usefulLife) {
       throw new Error('Asset missing required depreciation data');
     }
 
     const currentDate = new Date();
-    const purchaseDate = new Date(asset.purchaseDate);
+    const purchaseDate = new Date(asset.procurement.purchaseDate);
     const yearsElapsed = (currentDate.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
 
     let depreciationExpense = 0;
     let depreciationRate = 0;
 
     // Calculate depreciation based on method
-    if (asset.depreciationMethod === DepreciationMethod.STRAIGHT_LINE) {
-      depreciationRate = (asset.purchaseCost - asset.salvageValue) / asset.usefulLifeYears;
+    if (asset.financial.depreciationMethod === DepreciationMethod.STRAIGHT_LINE) {
+      depreciationRate = (asset.financial.purchasePrice - (asset.financial.salvageValue || 0)) / asset.financial.usefulLife;
       depreciationExpense = depreciationRate;
-    } else if (asset.depreciationMethod === DepreciationMethod.DECLINING_BALANCE) {
+    } else if (asset.financial.depreciationMethod === DepreciationMethod.DECLINING_BALANCE) {
       // Double declining balance
-      depreciationRate = 2 / asset.usefulLifeYears;
-      const bookValue = asset.currentValue || asset.purchaseCost;
+      depreciationRate = 2 / asset.financial.usefulLife;
+      const bookValue = asset.financial.currentValue || asset.financial.purchasePrice;
       depreciationExpense = bookValue * depreciationRate;
     }
 
     // Ensure we don't depreciate below salvage value
-    const maxDepreciableAmount = asset.purchaseCost - asset.salvageValue;
-    const currentAccumulated = asset.accumulatedDepreciation || 0;
+    const maxDepreciableAmount = asset.financial.purchasePrice - (asset.financial.salvageValue || 0);
+    const currentAccumulated = asset.financial.accumulatedDepreciation || 0;
 
     if (currentAccumulated + depreciationExpense > maxDepreciableAmount) {
       depreciationExpense = maxDepreciableAmount - currentAccumulated;
     }
 
     const newAccumulatedDepreciation = currentAccumulated + depreciationExpense;
-    const newBookValue = asset.purchaseCost - newAccumulatedDepreciation;
-    const usefulLifeRemaining = asset.usefulLifeYears - yearsElapsed;
+    const newBookValue = asset.financial.purchasePrice - newAccumulatedDepreciation;
+    const usefulLifeRemaining = asset.financial.usefulLife - yearsElapsed;
 
     // Calculate next depreciation date (typically monthly)
     const nextDepreciationDate = new Date(currentDate);
@@ -120,8 +120,8 @@ export class DepreciationService {
     const asset = await this.assetRepository.findOne({ where: { id: assetId } });
 
     // Update asset with new depreciation values
-    asset.currentValue = calculation.currentValue;
-    asset.accumulatedDepreciation = calculation.accumulatedDepreciation;
+    asset.financial.currentValue = calculation.currentValue;
+    asset.financial.accumulatedDepreciation = calculation.accumulatedDepreciation;
     asset.lastDepreciationDate = calculation.lastDepreciationDate;
     asset.updatedAt = new Date();
 
@@ -145,7 +145,7 @@ export class DepreciationService {
 
     for (const asset of assets) {
       try {
-        if (asset.purchaseDate && asset.purchaseCost && asset.usefulLifeYears) {
+        if (asset.procurement?.purchaseDate && asset.financial?.purchasePrice && asset.financial?.usefulLife) {
           const calculation = await this.calculateDepreciation(asset.id);
           calculations.push(calculation);
         }
@@ -166,8 +166,8 @@ export class DepreciationService {
     for (const calculation of calculations) {
       try {
         const asset = await this.assetRepository.findOne({ where: { id: calculation.assetId } });
-        asset.currentValue = calculation.currentValue;
-        asset.accumulatedDepreciation = calculation.accumulatedDepreciation;
+        asset.financial.currentValue = calculation.currentValue;
+        asset.financial.accumulatedDepreciation = calculation.accumulatedDepreciation;
         asset.lastDepreciationDate = calculation.lastDepreciationDate;
         asset.updatedAt = new Date();
 
@@ -190,45 +190,45 @@ export class DepreciationService {
       throw new Error('Asset not found');
     }
 
-    if (!asset.purchaseDate || !asset.purchaseCost || !asset.usefulLifeYears) {
+    if (!asset.procurement?.purchaseDate || !asset.financial?.purchasePrice || !asset.financial?.usefulLife) {
       throw new Error('Asset missing required depreciation data');
     }
 
     const schedule: DepreciationSchedule = {
       assetId: asset.id,
-      assetName: asset.assetName,
-      depreciationMethod: asset.depreciationMethod,
-      usefulLifeYears: asset.usefulLifeYears,
-      purchaseCost: asset.purchaseCost,
-      salvageValue: asset.salvageValue || 0,
+      assetName: asset.name,
+      depreciationMethod: asset.financial.depreciationMethod,
+      usefulLifeYears: asset.financial.usefulLife,
+      purchaseCost: asset.financial.purchasePrice,
+      salvageValue: asset.financial.salvageValue || 0,
       schedule: [],
     };
 
-    const purchaseDate = new Date(asset.purchaseDate);
+    const purchaseDate = new Date(asset.procurement.purchaseDate);
     let accumulatedDepreciation = 0;
-    let currentBookValue = asset.purchaseCost;
+    let currentBookValue = asset.financial.purchasePrice;
 
     // Generate schedule for each year
-    for (let year = 1; year <= asset.usefulLifeYears; year++) {
+    for (let year = 1; year <= asset.financial.usefulLife; year++) {
       const periodDate = new Date(purchaseDate);
       periodDate.setFullYear(purchaseDate.getFullYear() + year - 1);
 
       let depreciationExpense = 0;
 
-      if (asset.depreciationMethod === DepreciationMethod.STRAIGHT_LINE) {
-        depreciationExpense = (asset.purchaseCost - asset.salvageValue) / asset.usefulLifeYears;
-      } else if (asset.depreciationMethod === DepreciationMethod.DECLINING_BALANCE) {
-        const rate = 2 / asset.usefulLifeYears;
+      if (asset.financial.depreciationMethod === DepreciationMethod.STRAIGHT_LINE) {
+        depreciationExpense = (asset.financial.purchasePrice - asset.financial.salvageValue) / asset.financial.usefulLife;
+      } else if (asset.financial.depreciationMethod === DepreciationMethod.DECLINING_BALANCE) {
+        const rate = 2 / asset.financial.usefulLife;
         depreciationExpense = currentBookValue * rate;
       }
 
       // Ensure we don't go below salvage value
-      if (accumulatedDepreciation + depreciationExpense > asset.purchaseCost - asset.salvageValue) {
-        depreciationExpense = (asset.purchaseCost - asset.salvageValue) - accumulatedDepreciation;
+      if (accumulatedDepreciation + depreciationExpense > asset.financial.purchasePrice - asset.financial.salvageValue) {
+        depreciationExpense = (asset.financial.purchasePrice - asset.financial.salvageValue) - accumulatedDepreciation;
       }
 
       accumulatedDepreciation += depreciationExpense;
-      currentBookValue = asset.purchaseCost - accumulatedDepreciation;
+      currentBookValue = asset.financial.purchasePrice - accumulatedDepreciation;
 
       schedule.schedule.push({
         period: year,
@@ -280,28 +280,28 @@ export class DepreciationService {
     let assetsWithDepreciation = 0;
 
     assets.forEach(asset => {
-      if (asset.purchaseCost) {
-        analytics.totalAssetsValue += asset.purchaseCost;
+      if (asset.financial?.purchasePrice) {
+        analytics.totalAssetsValue += asset.financial.purchasePrice;
       }
 
-      if (asset.accumulatedDepreciation) {
-        analytics.totalDepreciationExpense += asset.accumulatedDepreciation;
-        analytics.totalDepreciatedValue += asset.currentValue || 0;
+      if (asset.financial?.accumulatedDepreciation) {
+        analytics.totalDepreciationExpense += asset.financial.accumulatedDepreciation;
+        analytics.totalDepreciatedValue += asset.financial.currentValue || 0;
       }
 
-      if (asset.usefulLifeYears && asset.purchaseCost) {
-        const rate = (asset.purchaseCost - (asset.salvageValue || 0)) / asset.usefulLifeYears / asset.purchaseCost;
+      if (asset.financial?.usefulLife && asset.financial?.purchasePrice) {
+        const rate = (asset.financial.purchasePrice - (asset.financial.salvageValue || 0)) / asset.financial.usefulLife / asset.financial.purchasePrice;
         totalDepreciationRate += rate;
         assetsWithDepreciation++;
       }
 
       // Count by depreciation method
-      const method = asset.depreciationMethod || DepreciationMethod.STRAIGHT_LINE;
+      const method = asset.financial?.depreciationMethod || DepreciationMethod.STRAIGHT_LINE;
       analytics.assetsByDepreciationMethod[method] = (analytics.assetsByDepreciationMethod[method] || 0) + 1;
 
       // Count by category (simplified - would need category relation)
-      if (asset.categoryId) {
-        analytics.depreciationByCategory[asset.categoryId] = (analytics.depreciationByCategory[asset.categoryId] || 0) + (asset.accumulatedDepreciation || 0);
+      if (asset.category) {
+        analytics.depreciationByCategory[asset.category] = (analytics.depreciationByCategory[asset.category] || 0) + (asset.financial?.accumulatedDepreciation || 0);
       }
     });
 
@@ -323,8 +323,8 @@ export class DepreciationService {
       throw new Error('Asset not found');
     }
 
-    asset.accumulatedDepreciation = 0;
-    asset.currentValue = asset.purchaseCost;
+    asset.financial.accumulatedDepreciation = 0;
+    asset.financial.currentValue = asset.financial.purchasePrice;
     asset.lastDepreciationDate = null;
     asset.updatedAt = new Date();
 
@@ -346,14 +346,14 @@ export class DepreciationService {
       throw new Error('Asset not found');
     }
 
-    asset.depreciationMethod = newMethod;
+    asset.financial.depreciationMethod = newMethod;
     if (newUsefulLifeYears) {
-      asset.usefulLifeYears = newUsefulLifeYears;
+      asset.financial.usefulLife = newUsefulLifeYears;
     }
 
     // Reset depreciation when method changes
-    asset.accumulatedDepreciation = 0;
-    asset.currentValue = asset.purchaseCost;
+    asset.financial.accumulatedDepreciation = 0;
+    asset.financial.currentValue = asset.financial.purchasePrice;
     asset.lastDepreciationDate = null;
     asset.updatedAt = new Date();
 

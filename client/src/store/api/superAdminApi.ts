@@ -1,6 +1,47 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-// Types for Super Admin API
+// Enums (aligned with common package)
+export enum UserRole {
+  SUPER_ADMIN = 'super_admin',
+  SCHOOL_ADMIN = 'school_admin',
+  PRINCIPAL = 'principal',
+  TEACHER = 'teacher',
+  STUDENT = 'student',
+  PARENT = 'parent',
+  STAFF = 'staff'
+}
+
+export enum SchoolType {
+  PRIMARY = 'primary',
+  SECONDARY = 'secondary',
+  MIXED = 'mixed'
+}
+
+export enum SchoolStatus {
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  SUSPENDED = 'suspended',
+  CLOSED = 'closed'
+}
+
+// Types aligned with common package structure
+export interface Address {
+  street: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
+}
+
+export interface ContactInfo {
+  email: string;
+  phone: string;
+}
+
 export interface SystemOverview {
   totalSchools: number;
   totalUsers: number;
@@ -18,31 +59,58 @@ export interface SystemOverview {
 export interface School {
   id: string;
   name: string;
-  type: 'primary' | 'secondary' | 'mixed';
-  status: 'active' | 'inactive' | 'suspended';
-  currentStudents: number;
-  totalCapacity: number;
-  subscriptionPlan: string;
-  subscriptionExpiry: string;
-  location: {
-    address: string;
+  code?: string;
+  description?: string;
+  type?: SchoolType;
+  status: SchoolStatus;
+  address?: Address;
+  phone?: string;
+  email?: string;
+  website?: string;
+  principalName?: string;
+  principalPhone?: string;
+  principalEmail?: string;
+  totalStudents?: number;
+  totalTeachers?: number;
+  totalStaff?: number;
+  establishedDate?: string;
+  timezone?: string;
+  currency?: string;
+  language?: string;
+  workingDays?: string[];
+  academicYearStart?: string;
+  academicYearEnd?: string;
+  gradingSystem?: string;
+  facilities?: string[];
+  amenities?: string[];
+  emergencyContacts?: Array<{
+    name: string;
+    phone: string;
+    email?: string;
+    relationship: string;
+  }>;
+  createdAt: string;
+  updatedAt: string;
+  // Additional properties for backward compatibility
+  contact?: {
+    email?: string;
+    phone?: string;
+  };
+  location?: {
     city: string;
     state: string;
     country: string;
   };
-  contact: {
-    email: string;
-    phone: string;
-  };
-  createdAt: string;
-  updatedAt: string;
+  currentStudents?: number;
+  totalCapacity?: number;
+  subscriptionPlan?: string;
 }
 
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: string;
+  role: UserRole;
   schoolId?: string;
   schoolName?: string;
   status: 'active' | 'inactive' | 'suspended';
@@ -102,6 +170,91 @@ export interface AnalyticsData {
   };
 }
 
+export interface SystemHealth {
+  overallStatus: 'healthy' | 'warning' | 'critical';
+  timestamp: string;
+  version: string;
+  database?: ServiceHealth;
+  api?: ServiceHealth;
+  network?: ServiceHealth;
+  cpu?: {
+    usage: number;
+    cores?: number;
+  };
+  memory?: {
+    usage: number;
+    total?: number;
+  };
+  disk?: {
+    usage: number;
+    total?: number;
+  };
+  performance?: {
+    avgResponseTime: number;
+    requestsPerMinute: number;
+    errorRate: number;
+    activeConnections: number;
+  };
+  resources?: {
+    cpuCores: number;
+    cpuUsage: number;
+    memoryUsage: number;
+    totalMemory: number;
+    storageUsage: number;
+    totalStorage: number;
+  };
+  uptime: number;
+  responseTime: number;
+}
+
+export interface ServiceHealth {
+  status: 'healthy' | 'warning' | 'critical';
+  responseTime?: number;
+  latency?: number;
+  errorMessage?: string;
+}
+
+export interface SubscriptionAnalytics {
+  subscriptionStatus: {
+    active: number;
+    expired: number;
+    expiringSoon: number;
+    total: number;
+  };
+  planDistribution: Record<string, number>;
+  revenue: {
+    monthly: number;
+    annual: number;
+  };
+  atRiskSchools: any[];
+  expiredSchools: any[];
+  generatedAt: string;
+}
+
+export interface SchoolComparison {
+  schools: any[];
+  summary: {
+    totalSchools: number;
+    averagePerformanceScore: number;
+    topPerformer: any;
+    needsAttention: any[];
+  };
+  generatedAt: string;
+}
+
+export interface GeographicReport {
+  distributions: {
+    countries: Record<string, number>;
+    cities: Record<string, number>;
+  };
+  topLocations: {
+    countries: any[];
+    cities: any[];
+  };
+  regionalBreakdown: Record<string, any[]>;
+  generatedAt: string;
+}
+
 export interface SchoolFilters {
   search?: string;
   type?: string;
@@ -146,7 +299,7 @@ export interface UpdateSchoolRequest {
 export interface BulkUserUpdateRequest {
   userIds: string[];
   updates: {
-    role?: string;
+    role?: UserRole;
     status?: string;
     schoolId?: string;
   };
@@ -158,20 +311,48 @@ export interface BulkOperationResult {
   errors: string[];
 }
 
+export interface SuperAdminLoginRequest {
+  email: string;
+  password: string;
+  rememberMe?: boolean;
+  deviceInfo?: {
+    type: 'desktop' | 'mobile' | 'tablet';
+    os: string;
+    browser: string;
+    version: string;
+  };
+}
+
+export interface SuperAdminLoginResponse {
+  user: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: UserRole;
+    isEmailVerified: boolean;
+  };
+  tokens: {
+    accessToken: string;
+    refreshToken: string;
+    tokenType: string;
+    expiresIn: number;
+  };
+  session: {
+    id: string;
+    expiresAt: string;
+  };
+  requiresMFA?: boolean;
+}
+
 export const superAdminApi = createApi({
   reducerPath: 'superAdminApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1',
-    prepareHeaders: (headers, { getState }) => {
-      // Get token from auth state
-      const token = (getState() as any)?.auth?.token;
-
-      if (token) {
-        headers.set('authorization', `Bearer ${token}`);
-      }
-
+    baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
+    prepareHeaders: (headers) => {
+      // Cookies are automatically sent with credentials: 'include'
+      // No need to manually set authorization headers
       headers.set('Content-Type', 'application/json');
-
       return headers;
     },
     credentials: 'include',
@@ -183,13 +364,23 @@ export const superAdminApi = createApi({
     'SystemHealth',
     'SystemOverview',
     'SystemMetrics',
-    'Activities',
-    'Alerts',
+    'SubscriptionAnalytics',
+    'SchoolComparison',
+    'GeographicReport',
   ],
   endpoints: (builder) => ({
+    // Super Admin Authentication
+    superAdminLogin: builder.mutation<SuperAdminLoginResponse, SuperAdminLoginRequest>({
+      query: (credentials) => ({
+        url: '/super-admin/auth/login',
+        method: 'POST',
+        body: credentials,
+      }),
+    }),
+
     // System Overview
     getSystemOverview: builder.query<SystemOverview, void>({
-      query: () => '/super-admin/dashboard/overview',
+      query: () => '/super-admin/reports/overview',
       providesTags: ['SystemOverview'],
     }),
 
@@ -294,39 +485,38 @@ export const superAdminApi = createApi({
     }),
 
     // System Health
-    getSystemHealth: builder.query<any, void>({
+    getSystemHealth: builder.query<SystemHealth, void>({
       query: () => '/super-admin/health',
       providesTags: ['SystemHealth'],
     }),
 
-    // Activities and Alerts
-    getRecentActivities: builder.query<Activity[], { limit?: number }>({
-      query: ({ limit = 10 }) => ({
-        url: '/super-admin/activities',
-        params: { limit },
-      }),
-      providesTags: ['Activities'],
+    // Subscription Analytics
+    getSubscriptionAnalytics: builder.query<SubscriptionAnalytics, void>({
+      query: () => '/super-admin/reports/subscription',
+      providesTags: ['SubscriptionAnalytics'],
     }),
 
-    getSystemAlerts: builder.query<Alert[], { acknowledged?: boolean }>({
-      query: ({ acknowledged = false }) => ({
-        url: '/super-admin/alerts',
-        params: { acknowledged },
+    // School Comparison
+    getSchoolComparison: builder.query<SchoolComparison, { schoolIds?: string }>({
+      query: ({ schoolIds }) => ({
+        url: '/super-admin/comparison',
+        params: { schoolIds },
       }),
-      providesTags: ['Alerts'],
+      providesTags: ['SchoolComparison'],
     }),
 
-    acknowledgeAlert: builder.mutation<void, string>({
-      query: (alertId) => ({
-        url: `/super-admin/alerts/${alertId}/acknowledge`,
-        method: 'POST',
-      }),
-      invalidatesTags: ['Alerts'],
+    // Geographic Report
+    getGeographicReport: builder.query<GeographicReport, void>({
+      query: () => '/super-admin/geographic',
+      providesTags: ['GeographicReport'],
     }),
   }),
 });
 
 export const {
+  // Super Admin Authentication
+  useSuperAdminLoginMutation,
+
   // System Overview
   useGetSystemOverviewQuery,
 
@@ -351,8 +541,8 @@ export const {
   // System Health
   useGetSystemHealthQuery,
 
-  // Activities and Alerts
-  useGetRecentActivitiesQuery,
-  useGetSystemAlertsQuery,
-  useAcknowledgeAlertMutation,
+  // Additional Reports
+  useGetSubscriptionAnalyticsQuery,
+  useGetSchoolComparisonQuery,
+  useGetGeographicReportQuery,
 } = superAdminApi;

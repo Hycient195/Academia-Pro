@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException, BadRequestException, Logger } from '
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { SecurityService } from './security.service';
-import { AuditAction, AuditSeverity } from './audit.service';
+import { AuditAction, AuditSeverity } from '../types/audit.types';
 import { TotpStrategy } from '../strategies/totp.strategy';
 
 export interface LoginCredentials {

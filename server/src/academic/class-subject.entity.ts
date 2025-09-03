@@ -3,29 +3,34 @@
 
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 
+// Type-only imports to avoid circular dependency issues
+import type { Class } from './class.entity';
+import type { Subject } from './subject.entity';
+import { ISubjectSchedule } from '../../../common/src/types/academic/academic.types';
+
 @Entity('class_subjects')
 export class ClassSubject {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ length: 36 })
+   @Column({ type: 'uuid' })
   classId: string;
 
-  @Column({ length: 36 })
+   @Column({ type: 'uuid' })
   subjectId: string;
 
-  @Column({ length: 36 })
+   @Column({ type: 'uuid' })
   teacherId: string;
 
   @Column({ type: 'json', nullable: true })
   schedule: ISubjectSchedule[];
 
   // Relations
-  @ManyToOne(() => Class, class_ => class_.classSubjects)
+  @ManyToOne(() => require('./class.entity').Class, (class_: any) => class_.classSubjects)
   @JoinColumn({ name: 'classId' })
   class: Class;
 
-  @ManyToOne(() => Subject, subject => subject.classSubjects)
+  @ManyToOne(() => require('./subject.entity').Subject, (subject: any) => subject.classSubjects)
   @JoinColumn({ name: 'subjectId' })
   subject: Subject;
 
@@ -51,8 +56,3 @@ export class ClassSubject {
     this.teacherId = teacherId;
   }
 }
-
-// Import interfaces and forward declarations
-import { ISubjectSchedule } from '../../../common/src/types/academic/academic.types';
-import { Class } from './class.entity';
-import { Subject } from './subject.entity';

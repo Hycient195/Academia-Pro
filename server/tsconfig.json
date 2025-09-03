@@ -23,6 +23,6 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "test-postgres.js"],
   "exclude": ["node_modules", "dist", "test"]
 }

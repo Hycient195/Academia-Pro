@@ -1,7 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException, Logger } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { SecurityService } from '../services/security.service';
-import { AuditAction, AuditSeverity } from '../services/audit.service';
+import { AuditAction, AuditSeverity } from '../types/audit.types';
 
 @Injectable()
 export class RolesGuard implements CanActivate {

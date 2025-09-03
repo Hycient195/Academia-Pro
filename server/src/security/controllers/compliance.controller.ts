@@ -5,7 +5,7 @@ import { SecurityService } from '../services/security.service';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../decorators/roles.decorator';
-import { AuditAction, AuditSeverity } from '../services/audit.service';
+import { AuditAction, AuditSeverity } from '../types/audit.types';
 
 @ApiTags('Security - Compliance & Audit')
 @Controller('compliance')

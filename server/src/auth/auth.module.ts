@@ -2,13 +2,13 @@
 // Handles user authentication, authorization, and session management
 
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthJwtModule } from './auth-jwt.module';
 
 // Controllers
 import { AuthController } from './auth.controller';
+import { SuperAdminAuthController } from './controllers/super-admin-auth.controller';
 import { MfaController } from './controllers/mfa.controller';
 import { SessionController } from './controllers/session.controller';
 import { UserManagementController } from './controllers/user-management.controller';
@@ -36,19 +36,11 @@ import { RolesGuard } from './guards/roles.guard';
   imports: [
     TypeOrmModule.forFeature([User]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET', 'default-secret'),
-        signOptions: {
-          expiresIn: configService.get<string>('JWT_EXPIRES_IN', '24h'),
-        },
-      }),
-      inject: [ConfigService],
-    }),
+    AuthJwtModule,
   ],
   controllers: [
     AuthController,
+    SuperAdminAuthController,
     MfaController,
     SessionController,
     UserManagementController,

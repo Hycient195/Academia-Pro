@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import cookieParser from 'cookie-parser';
 
 const logger = new Logger('Main');
 
@@ -48,10 +49,11 @@ async function bootstrap() {
       credentials: true,
     });
 
-    // Enable trust proxy for production
-    if (process.env.NODE_ENV === 'production') {
-      app.setGlobalPrefix('api');
-    }
+    // Enable cookie parsing
+    app.use(cookieParser());
+
+    // Set global prefix for API routes
+    app.setGlobalPrefix('api/v1');
 
     await app.listen(port);
 

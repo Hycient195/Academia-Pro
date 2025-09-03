@@ -277,7 +277,7 @@ export default function ChildrenPage() {
                 <CardHeader>
                   <CardTitle>Subject Performance</CardTitle>
                   <CardDescription>
-                    Detailed breakdown of {child.name}'s performance in each subject
+                    Detailed breakdown of {child.name}&apos;s performance in each subject
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

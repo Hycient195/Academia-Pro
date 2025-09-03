@@ -8,6 +8,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 
 // Entities
 import { Attendance } from './entities/attendance.entity';
+import { Student } from '../students/student.entity';
 
 // Controllers
 import { AttendanceController } from './controllers/attendance.controller';
@@ -23,7 +24,7 @@ import { AttendanceInterceptor } from './interceptors/attendance.interceptor';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Attendance]),
+    TypeOrmModule.forFeature([Attendance, Student]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

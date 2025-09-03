@@ -1,34 +1,106 @@
 -- Academia Pro Database Initialization
 -- This script sets up the initial database structure and configurations
 
+-- Ensure we're in the correct database context
+-- Note: This script runs in the context of the database specified in POSTGRES_DB
+
 -- Create extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-CREATE EXTENSION IF NOT EXISTS "postgis";
+-- CREATE EXTENSION IF NOT EXISTS "postgis"; -- Commented out: requires PostGIS to be installed
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 CREATE EXTENSION IF NOT EXISTS "btree_gin";
 CREATE EXTENSION IF NOT EXISTS "btree_gist";
 
 -- Create custom types
-CREATE TYPE user_role AS ENUM ('super-admin', 'school-admin', 'teacher', 'student', 'parent');
-CREATE TYPE user_status AS ENUM ('active', 'inactive', 'suspended', 'pending');
-CREATE TYPE attendance_status AS ENUM ('present', 'absent', 'late', 'excused');
-CREATE TYPE fee_status AS ENUM ('paid', 'pending', 'overdue', 'waived');
-CREATE TYPE notification_type AS ENUM ('email', 'sms', 'push', 'in-app');
-CREATE TYPE priority_level AS ENUM ('low', 'medium', 'high', 'urgent');
-CREATE TYPE exam_type AS ENUM ('unit-test', 'term-exam', 'final-exam', 'entrance-exam', 'practical');
-CREATE TYPE transport_mode AS ENUM ('bus', 'van', 'car', 'walking', 'other');
-CREATE TYPE hostel_room_type AS ENUM ('single', 'double', 'triple', 'dormitory');
-CREATE TYPE asset_status AS ENUM ('active', 'maintenance', 'retired', 'lost');
-CREATE TYPE book_status AS ENUM ('available', 'borrowed', 'reserved', 'lost', 'damaged');
-CREATE TYPE payment_method AS ENUM ('cash', 'card', 'bank-transfer', 'mobile-money', 'cheque');
+DO $$ BEGIN
+    CREATE TYPE user_role AS ENUM ('super-admin', 'school-admin', 'teacher', 'student', 'parent');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
--- Create indexes for better performance
--- These will be created after tables are set up in the application
+DO $$ BEGIN
+    CREATE TYPE user_status AS ENUM ('active', 'inactive', 'suspended', 'pending');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
--- Set up default configurations
-ALTER DATABASE academia_pro SET timezone = 'UTC';
-ALTER DATABASE academia_pro SET default_text_search_config = 'english';
+DO $$ BEGIN
+    CREATE TYPE attendance_status AS ENUM ('present', 'absent', 'late', 'excused');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE fee_status AS ENUM ('paid', 'pending', 'overdue', 'waived');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE notification_type AS ENUM ('email', 'sms', 'push', 'in-app');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE priority_level AS ENUM ('low', 'medium', 'high', 'urgent');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE exam_type AS ENUM ('unit-test', 'term-exam', 'final-exam', 'entrance-exam', 'practical');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE transport_mode AS ENUM ('bus', 'van', 'car', 'walking', 'other');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE hostel_room_type AS ENUM ('single', 'double', 'triple', 'dormitory');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE asset_status AS ENUM ('active', 'maintenance', 'retired', 'lost');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE book_status AS ENUM ('available', 'borrowed', 'reserved', 'lost', 'damaged');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE payment_method AS ENUM ('cash', 'card', 'bank-transfer', 'mobile-money', 'cheque');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+-- Set up default configurations (only if we're in the correct database)
+DO $$
+BEGIN
+    -- Check if we're in the academia_pro database
+    IF current_database() = 'academia_pro' THEN
+        -- Set timezone
+        PERFORM set_config('timezone', 'UTC', false);
+
+        -- Set default text search config
+        PERFORM set_config('default_text_search_config', 'english', false);
+
+        RAISE NOTICE 'Database configurations set for academia_pro';
+    ELSE
+        RAISE NOTICE 'Skipping database-specific configurations for database: %', current_database();
+    END IF;
+END $$;
 
 -- Create audit function for tracking changes
 CREATE OR REPLACE FUNCTION audit_trigger_function()
@@ -152,56 +224,80 @@ $$ LANGUAGE plpgsql;
 -- Set up row level security (RLS) policies
 -- These will be configured by the application
 
--- Create default admin user (for development)
--- Password: admin123 (hashed)
-INSERT INTO users (
-    id,
-    email,
-    password_hash,
-    first_name,
-    last_name,
-    role,
-    status,
-    is_email_verified,
-    created_at,
-    updated_at
-) VALUES (
-    uuid_generate_v4(),
-    'admin@academia-pro.com',
-    '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj6fM9q7Y7K6', -- admin123
-    'System',
-    'Administrator',
-    'super-admin',
-    'active',
-    true,
-    NOW(),
-    NOW()
-) ON CONFLICT DO NOTHING;
+-- Create default data (only if tables exist)
+-- Note: These inserts will be attempted but won't fail if tables don't exist yet
+-- The application will create the tables and insert this data when it starts
 
--- Create default school (for development)
-INSERT INTO schools (
-    id,
-    name,
-    code,
-    address,
-    phone,
-    email,
-    website,
-    status,
-    created_at,
-    updated_at
-) VALUES (
-    uuid_generate_v4(),
-    'Academia Pro Demo School',
-    'APDS',
-    '123 Education Street, Academic City, AC 12345',
-    '+1-555-0123',
-    'info@academiapro.com',
-    'https://academiapro.com',
-    'active',
-    NOW(),
-    NOW()
-) ON CONFLICT DO NOTHING;
+DO $$
+BEGIN
+    -- Try to insert default admin user if users table exists
+    BEGIN
+        INSERT INTO users (
+            id,
+            email,
+            password_hash,
+            first_name,
+            last_name,
+            role,
+            status,
+            is_email_verified,
+            created_at,
+            updated_at
+        ) VALUES (
+            uuid_generate_v4(),
+            'admin@academia-pro.com',
+            '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj6fM9q7Y7K6', -- admin123
+            'System',
+            'Administrator',
+            'super-admin',
+            'active',
+            true,
+            NOW(),
+            NOW()
+        ) ON CONFLICT (email) DO NOTHING;
+
+        RAISE NOTICE 'Default admin user created or already exists';
+    EXCEPTION
+        WHEN undefined_table THEN
+            RAISE NOTICE 'Users table does not exist yet - will be created by application';
+        WHEN OTHERS THEN
+            RAISE NOTICE 'Error creating default admin user: %', SQLERRM;
+    END;
+
+    -- Try to insert default school if schools table exists
+    BEGIN
+        INSERT INTO schools (
+            id,
+            name,
+            code,
+            address,
+            phone,
+            email,
+            website,
+            status,
+            created_at,
+            updated_at
+        ) VALUES (
+            uuid_generate_v4(),
+            'Academia Pro Demo School',
+            'APDS',
+            '123 Education Street, Academic City, AC 12345',
+            '+1-555-0123',
+            'info@academiapro.com',
+            'https://academiapro.com',
+            'active',
+            NOW(),
+            NOW()
+        ) ON CONFLICT (code) DO NOTHING;
+
+        RAISE NOTICE 'Default school created or already exists';
+    EXCEPTION
+        WHEN undefined_table THEN
+            RAISE NOTICE 'Schools table does not exist yet - will be created by application';
+        WHEN OTHERS THEN
+            RAISE NOTICE 'Error creating default school: %', SQLERRM;
+    END;
+END $$;
 
 -- Log initialization completion
 DO $$

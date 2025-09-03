@@ -2,8 +2,9 @@
 // Safe response format for asset data (frontend consumption)
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Asset } from '../asset.entity';
+// import { Asset } from '../asset.entity';
 import { TAssetCategory, TAssetStatus, TProcurementStatus, IAssetResponse, IAssetListResponse, IAssetStatisticsResponse, IAssetLocation, IAssetSpecifications } from '@academia-pro/common/inventory';
+import { Asset } from '../entities';
 
 export class AssetResponseDto implements IAssetResponse {
   @ApiProperty({

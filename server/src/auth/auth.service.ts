@@ -5,6 +5,7 @@ import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { Response } from 'express';
 import * as bcrypt from 'bcryptjs';
 import { User, UserStatus, UserRole } from '../users/user.entity';
 import { LoginDto, RegisterDto, RefreshTokenDto, ChangePasswordDto } from './dtos';
@@ -17,6 +18,41 @@ export class AuthService {
     private usersRepository: Repository<User>,
     private jwtService: JwtService,
   ) {}
+
+  /**
+   * Validate super admin credentials
+   */
+  async validateSuperAdmin(email: string, password: string): Promise<any> {
+    const user = await this.usersRepository.findOne({
+      where: { email, role: UserRole.SUPER_ADMIN },
+      select: ['id', 'email', 'passwordHash', 'firstName', 'lastName', 'role', 'status', 'isEmailVerified'],
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Super admin account not found');
+    }
+
+    if (user.status !== 'active') {
+      throw new UnauthorizedException('Super admin account is not active');
+    }
+
+    if (!user.isEmailVerified) {
+      throw new UnauthorizedException('Super admin email is not verified');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isPasswordValid) {
+      // Increment login attempts
+      await this.incrementLoginAttempts(user.id);
+      throw new UnauthorizedException('Invalid super admin credentials');
+    }
+
+    // Reset login attempts on successful login
+    await this.resetLoginAttempts(user.id);
+
+    const { passwordHash, ...result } = user;
+    return result;
+  }
 
   /**
    * Validate user credentials
@@ -80,6 +116,72 @@ export class AuthService {
       expiresIn: 86400, // 24 hours in seconds
       tokenType: 'Bearer',
     };
+  }
+
+  /**
+   * Login user and set authentication cookies
+   */
+  async loginWithCookies(user: any, res: Response): Promise<{ user: any }> {
+    const tokens = await this.login(user);
+
+    // Set authentication cookies
+    this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+
+    // Remove sensitive information from response
+    const { passwordHash, ...userResponse } = user;
+
+    return { user: userResponse };
+  }
+
+  /**
+   * Set authentication cookies on response
+   */
+  setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'strict' as const,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    };
+
+    res.cookie('accessToken', accessToken, {
+      ...cookieOptions,
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    });
+
+    res.cookie('refreshToken', refreshToken, cookieOptions);
+
+    // Generate and set CSRF token
+    const csrfToken = this.generateCSRFToken();
+    res.cookie('csrfToken', csrfToken, {
+      ...cookieOptions,
+      httpOnly: false, // Allow client-side access for CSRF token
+      maxAge: 60 * 60 * 1000, // 1 hour
+    });
+  }
+
+  /**
+   * Clear authentication cookies
+   */
+  clearAuthCookies(res: Response) {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'strict' as const,
+    };
+
+    res.clearCookie('accessToken', cookieOptions);
+    res.clearCookie('refreshToken', cookieOptions);
+    res.clearCookie('csrfToken', { ...cookieOptions, httpOnly: false });
+  }
+
+  /**
+   * Generate CSRF token
+   */
+  private generateCSRFToken(): string {
+    return require('crypto').randomBytes(32).toString('hex');
   }
 
   /**

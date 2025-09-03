@@ -2,7 +2,7 @@
 // Academia Pro - Inventory & Asset Management Types
 // Shared type definitions for inventory and asset management module
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TDepreciationMethod = exports.TMaintenanceStatus = exports.TMaintenanceType = exports.TProcurementStatus = exports.TAssetStatus = exports.TAssetCategory = void 0;
+exports.TAssetCondition = exports.TDepreciationMethod = exports.TMaintenanceStatus = exports.TMaintenanceType = exports.TProcurementStatus = exports.TAssetStatus = exports.TAssetCategory = void 0;
 // Enums
 var TAssetCategory;
 (function (TAssetCategory) {
@@ -59,5 +59,13 @@ var TDepreciationMethod;
     TDepreciationMethod["DECLINING_BALANCE"] = "declining_balance";
     TDepreciationMethod["UNITS_OF_PRODUCTION"] = "units_of_production";
 })(TDepreciationMethod || (exports.TDepreciationMethod = TDepreciationMethod = {}));
+var TAssetCondition;
+(function (TAssetCondition) {
+    TAssetCondition["EXCELLENT"] = "excellent";
+    TAssetCondition["GOOD"] = "good";
+    TAssetCondition["FAIR"] = "fair";
+    TAssetCondition["POOR"] = "poor";
+    TAssetCondition["DAMAGED"] = "damaged";
+})(TAssetCondition || (exports.TAssetCondition = TAssetCondition = {}));
 // All types are exported above with their declarations
 //# sourceMappingURL=inventory.types.js.map

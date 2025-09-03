@@ -3,7 +3,9 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 export interface User {
   id: string;
   email: string;
-  name: string;
+  firstName: string;
+  lastName: string;
+  name?: string; // Computed property for convenience
   role: 'super-admin' | 'school-admin' | 'teacher' | 'student' | 'parent';
   schoolId?: string;
   schoolName?: string;

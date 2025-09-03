@@ -3,8 +3,7 @@
 
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { JwtModule } from '@nestjs/jwt';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AuthJwtModule } from '../auth/auth-jwt.module';
 
 // Controllers
 import { StudentsController } from './students.controller';
@@ -54,16 +53,7 @@ import { DocumentAccessGuard } from './guards/document-access.guard';
       StudentAlumni,
       StudentAuditLog,
     ]),
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
-        signOptions: {
-          expiresIn: configService.get<string>('JWT_EXPIRES_IN', '24h'),
-        },
-      }),
-      inject: [ConfigService],
-    }),
+    AuthJwtModule,
   ],
   controllers: [
     StudentsController,

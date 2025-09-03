@@ -4,17 +4,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, Between, MoreThanOrEqual } from 'typeorm';
-import { Asset, AssetStatus, AssetCondition, AssetType, DepreciationMethod } from '../entities/asset.entity';
+import { Asset } from '../entities/asset.entity';
+import { TAssetStatus, TAssetCategory, TAssetCondition, TDepreciationMethod } from '../../../../common/src/types/inventory/inventory.types';
 import { AssetCategory } from '../entities/asset-category.entity';
 import { AssetLocation } from '../entities/asset-location.entity';
 import { AssetMaintenance, MaintenanceStatus } from '../entities/asset-maintenance.entity';
 import { AssetMovement, MovementStatus } from '../entities/asset-movement.entity';
 
 export interface AssetFilter {
-  status?: AssetStatus;
-  condition?: AssetCondition;
-  assetType?: AssetType;
-  categoryId?: string;
+  status?: TAssetStatus;
+  condition?: TAssetCondition;
+  category?: TAssetCategory;
   locationId?: string;
   assignedToUserId?: string;
   assignedToDepartment?: string;
@@ -52,7 +52,7 @@ export class AssetService {
   ) {}
 
   async createAsset(assetData: Partial<Asset>): Promise<Asset> {
-    this.logger.log(`Creating new asset: ${assetData.assetName}`);
+    this.logger.log(`Creating new asset: ${assetData.name}`);
 
     // Generate asset code if not provided
     if (!assetData.assetCode) {
@@ -61,19 +61,30 @@ export class AssetService {
 
     // Set default values
     if (!assetData.status) {
-      assetData.status = AssetStatus.ACTIVE;
+      assetData.status = TAssetStatus.ACTIVE;
     }
     if (!assetData.condition) {
-      assetData.condition = AssetCondition.GOOD;
+      assetData.condition = TAssetCondition.GOOD;
     }
-    if (!assetData.depreciationMethod) {
-      assetData.depreciationMethod = DepreciationMethod.STRAIGHT_LINE;
+    if (!assetData.financial) {
+      assetData.financial = {
+        purchasePrice: 0,
+        salvageValue: 0,
+        usefulLife: 1,
+        depreciationMethod: TDepreciationMethod.STRAIGHT_LINE,
+        accumulatedDepreciation: 0,
+        currentValue: 0,
+        depreciationSchedule: []
+      };
     }
-    if (!assetData.salvageValue) {
-      assetData.salvageValue = 0;
+    if (!assetData.financial.depreciationMethod) {
+      assetData.financial.depreciationMethod = TDepreciationMethod.STRAIGHT_LINE;
     }
-    if (!assetData.accumulatedDepreciation) {
-      assetData.accumulatedDepreciation = 0;
+    if (assetData.financial.salvageValue === undefined) {
+      assetData.financial.salvageValue = 0;
+    }
+    if (assetData.financial.accumulatedDepreciation === undefined) {
+      assetData.financial.accumulatedDepreciation = 0;
     }
 
     const asset = this.assetRepository.create(assetData);
@@ -96,11 +107,8 @@ export class AssetService {
       if (filter.condition) {
         queryBuilder.andWhere('asset.condition = :condition', { condition: filter.condition });
       }
-      if (filter.assetType) {
-        queryBuilder.andWhere('asset.assetType = :assetType', { assetType: filter.assetType });
-      }
-      if (filter.categoryId) {
-        queryBuilder.andWhere('asset.categoryId = :categoryId', { categoryId: filter.categoryId });
+      if (filter.category) {
+        queryBuilder.andWhere('asset.category = :category', { category: filter.category });
       }
       if (filter.locationId) {
         queryBuilder.andWhere('asset.locationId = :locationId', { locationId: filter.locationId });
@@ -178,7 +186,7 @@ export class AssetService {
       assetId: asset.id,
       movementCode: await this.generateMovementCode(asset.schoolId),
       movementType: 'assignment' as any,
-      movementTitle: `Asset Assignment: ${asset.assetName}`,
+      movementTitle: `Asset Assignment: ${asset.name}`,
       movementDescription: `Asset assigned to ${assignmentData.assignedToUserId ? 'user' : 'department'}`,
       status: MovementStatus.COMPLETED,
       fromLocationId: asset.locationId,
@@ -204,7 +212,7 @@ export class AssetService {
     return updatedAsset;
   }
 
-  async updateAssetCondition(assetId: string, condition: AssetCondition, notes?: string): Promise<Asset> {
+  async updateAssetCondition(assetId: string, condition: TAssetCondition, notes?: string): Promise<Asset> {
     this.logger.log(`Updating asset condition: ${assetId}`);
 
     const asset = await this.getAssetById(assetId);
@@ -227,27 +235,27 @@ export class AssetService {
 
     const asset = await this.getAssetById(assetId);
 
-    if (!asset.purchaseDate || !asset.purchaseCost || !asset.usefulLifeYears) {
+    if (!asset.procurement.purchaseDate || !asset.financial.purchasePrice || !asset.financial.usefulLife) {
       throw new Error('Asset missing required depreciation data');
     }
 
     const currentDate = new Date();
-    const purchaseDate = new Date(asset.purchaseDate);
+    const purchaseDate = new Date(asset.procurement.purchaseDate);
     const yearsElapsed = (currentDate.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
 
     let depreciationAmount = 0;
 
-    if (asset.depreciationMethod === DepreciationMethod.STRAIGHT_LINE) {
-      const annualDepreciation = (asset.purchaseCost - asset.salvageValue) / asset.usefulLifeYears;
-      depreciationAmount = annualDepreciation * Math.min(yearsElapsed, asset.usefulLifeYears);
-    } else if (asset.depreciationMethod === DepreciationMethod.DECLINING_BALANCE) {
-      const rate = 2 / asset.usefulLifeYears; // Double declining balance
-      depreciationAmount = asset.purchaseCost * (1 - Math.pow(1 - rate, yearsElapsed));
+    if (asset.financial.depreciationMethod === TDepreciationMethod.STRAIGHT_LINE) {
+      const annualDepreciation = (asset.financial.purchasePrice - asset.financial.salvageValue) / asset.financial.usefulLife;
+      depreciationAmount = annualDepreciation * Math.min(yearsElapsed, asset.financial.usefulLife);
+    } else if (asset.financial.depreciationMethod === TDepreciationMethod.DECLINING_BALANCE) {
+      const rate = 2 / asset.financial.usefulLife; // Double declining balance
+      depreciationAmount = asset.financial.purchasePrice * (1 - Math.pow(1 - rate, yearsElapsed));
     }
 
-    asset.accumulatedDepreciation = Math.min(depreciationAmount, asset.purchaseCost - asset.salvageValue);
-    asset.currentValue = asset.purchaseCost - asset.accumulatedDepreciation;
-    asset.lastDepreciationDate = currentDate;
+    asset.financial.accumulatedDepreciation = Math.min(depreciationAmount, asset.financial.purchasePrice - asset.financial.salvageValue);
+    asset.financial.currentValue = asset.financial.purchasePrice - asset.financial.accumulatedDepreciation;
+    // asset.lastDepreciationDate = currentDate; // Not in entity
     asset.updatedAt = currentDate;
 
     const updatedAsset = await this.assetRepository.save(asset);
@@ -263,15 +271,14 @@ export class AssetService {
     const thirtyDaysFromNow = new Date();
     thirtyDaysFromNow.setDate(currentDate.getDate() + 30);
 
-    return this.assetRepository.find({
-      where: {
-        schoolId,
-        status: AssetStatus.ACTIVE,
-        maintenanceSchedule: {
-          nextMaintenanceDate: Between(currentDate, thirtyDaysFromNow),
-        } as any,
-      },
-    });
+    return this.assetRepository.createQueryBuilder('asset')
+      .where('asset.schoolId = :schoolId', { schoolId })
+      .andWhere('asset.status = :status', { status: TAssetStatus.ACTIVE })
+      .andWhere('asset.maintenance->\'nextMaintenanceDate\' BETWEEN :startDate AND :endDate', {
+        startDate: currentDate,
+        endDate: thirtyDaysFromNow
+      })
+      .getMany();
   }
 
   async getAssetsExpiringWarranty(schoolId: string): Promise<Asset[]> {
@@ -281,13 +288,14 @@ export class AssetService {
     const ninetyDaysFromNow = new Date();
     ninetyDaysFromNow.setDate(currentDate.getDate() + 90);
 
-    return this.assetRepository.find({
-      where: {
-        schoolId,
-        status: AssetStatus.ACTIVE,
-        warrantyExpiry: Between(currentDate, ninetyDaysFromNow),
-      },
-    });
+    return this.assetRepository.createQueryBuilder('asset')
+      .where('asset.schoolId = :schoolId', { schoolId })
+      .andWhere('asset.status = :status', { status: TAssetStatus.ACTIVE })
+      .andWhere('asset.procurement->\'warrantyExpiryDate\' BETWEEN :startDate AND :endDate', {
+        startDate: currentDate,
+        endDate: ninetyDaysFromNow
+      })
+      .getMany();
   }
 
   async getAssetAnalytics(schoolId: string): Promise<AssetAnalytics> {
@@ -297,10 +305,10 @@ export class AssetService {
 
     const analytics: AssetAnalytics = {
       totalAssets: assets.length,
-      activeAssets: assets.filter(a => a.status === AssetStatus.ACTIVE).length,
-      maintenanceAssets: assets.filter(a => a.status === AssetStatus.MAINTENANCE).length,
-      totalValue: assets.reduce((sum, a) => sum + (a.purchaseCost || 0), 0),
-      depreciatedValue: assets.reduce((sum, a) => sum + (a.currentValue || 0), 0),
+      activeAssets: assets.filter(a => a.status === TAssetStatus.ACTIVE).length,
+      maintenanceAssets: assets.filter(a => a.status === TAssetStatus.MAINTENANCE).length,
+      totalValue: assets.reduce((sum, a) => sum + (a.financial?.purchasePrice || 0), 0),
+      depreciatedValue: assets.reduce((sum, a) => sum + (a.financial?.currentValue || 0), 0),
       assetsByType: {},
       assetsByStatus: {},
       assetsByCondition: {},
@@ -311,7 +319,7 @@ export class AssetService {
     // Calculate breakdowns
     assets.forEach(asset => {
       // By type
-      analytics.assetsByType[asset.assetType] = (analytics.assetsByType[asset.assetType] || 0) + 1;
+      analytics.assetsByType[asset.category] = (analytics.assetsByType[asset.category] || 0) + 1;
 
       // By status
       analytics.assetsByStatus[asset.status] = (analytics.assetsByStatus[asset.status] || 0) + 1;
@@ -351,7 +359,7 @@ export class AssetService {
 
     return this.assetRepository.createQueryBuilder('asset')
       .where('asset.schoolId = :schoolId', { schoolId })
-      .andWhere('(asset.assetName ILIKE :searchTerm OR asset.assetCode ILIKE :searchTerm OR asset.serialNumber ILIKE :searchTerm)')
+      .andWhere('(asset.name ILIKE :searchTerm OR asset.assetCode ILIKE :searchTerm OR asset.specifications->>\'serialNumber\' ILIKE :searchTerm)')
       .setParameters({ searchTerm: `%${searchTerm}%` })
       .orderBy('asset.createdAt', 'DESC')
       .getMany();

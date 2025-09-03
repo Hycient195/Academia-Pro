@@ -2,7 +2,7 @@ import { Injectable, Logger, BadRequestException, UnauthorizedException } from '
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, Between, MoreThan } from 'typeorm';
 import { AuditLog } from '../entities/audit-log.entity';
-import { AuditAction, AuditSeverity } from './audit.service';
+import { AuditAction, AuditSeverity } from '../types/audit.types';
 import { SecurityPolicy, PolicyType, PolicyStatus } from '../entities/security-policy.entity';
 import { UserSession, SessionStatus } from '../entities/user-session.entity';
 
@@ -18,7 +18,9 @@ export class SecurityService {
     @InjectRepository(UserSession)
     private userSessionRepository: Repository<UserSession>,
     private dataSource: DataSource,
-  ) {}
+  ) {
+    this.logger.log('SecurityService constructor called - checking for circular dependency');
+  }
 
   async logSecurityEvent(
     action: AuditAction,

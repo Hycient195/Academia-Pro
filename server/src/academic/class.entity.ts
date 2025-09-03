@@ -4,6 +4,9 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { TGradeLevel } from '../../../common/src/types/academic/academic.types';
 
+// Type-only imports to avoid circular dependency issues
+import type { ClassSubject } from './class-subject.entity';
+
 @Entity('classes')
 export class Class {
   @PrimaryGeneratedColumn('uuid')
@@ -27,7 +30,7 @@ export class Class {
   @Column({ type: 'int', default: 0 })
   currentEnrollment: number;
 
-  @Column({ length: 36, nullable: true })
+  @Column({ type: 'uuid', nullable: true })
   classTeacherId: string;
 
   @Column({ length: 20 })
@@ -36,7 +39,7 @@ export class Class {
   @Column({ default: true })
   isActive: boolean;
 
-  @Column({ length: 36 })
+   @Column({ type: 'uuid' })
   schoolId: string;
 
   @CreateDateColumn()
@@ -46,7 +49,7 @@ export class Class {
   updatedAt: Date;
 
   // Relations
-  @OneToMany(() => ClassSubject, classSubject => classSubject.class)
+  @OneToMany(() => require('./class-subject.entity').ClassSubject, (classSubject: any) => classSubject.class)
   classSubjects: ClassSubject[];
 
   // Methods
@@ -96,6 +99,3 @@ export class Class {
     return this.currentEnrollment >= this.capacity;
   }
 }
-
-// Forward declarations for relations
-import { ClassSubject } from './class-subject.entity';

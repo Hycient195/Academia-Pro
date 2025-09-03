@@ -3,7 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-custom';
 import * as speakeasy from 'speakeasy';
 import { SecurityService } from '../services/security.service';
-import { AuditAction, AuditSeverity } from '../services/audit.service';
+import { AuditAction, AuditSeverity } from '../types/audit.types';
 
 export interface TotpPayload {
   userId: string;

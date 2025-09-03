@@ -10,6 +10,7 @@ import {
   IconSettings,
   IconShield,
   IconUsers,
+  IconFileText,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -56,6 +57,12 @@ const data = {
       url: "/super-admin/analytics",
       icon: IconChartBar,
       shortForm: "Anal",
+    },
+    {
+      title: "Audit",
+      url: "/super-admin/audit",
+      icon: IconFileText,
+      shortForm: "Audit",
     },
   ],
   navSecondary: [

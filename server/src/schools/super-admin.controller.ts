@@ -3,17 +3,16 @@
 
 import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBody } from '@nestjs/swagger';
-import { SchoolContextService, SchoolContext } from './school-context.service';
+import { SchoolContextService } from './school-context.service';
 import { CrossSchoolReportingService } from './cross-school-reporting.service';
 import { School } from './school.entity';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../users/user.entity';
-import { SchoolContextGuard } from 'src/common/guards/school-context.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 
 @ApiTags('Super Admin - Multi-School Management')
 @Controller('super-admin')
-@UseGuards(SchoolContextGuard, RolesGuard)
+@UseGuards(RolesGuard)
 @Roles(UserRole.SUPER_ADMIN)
 export class SuperAdminController {
   private readonly logger = new Logger(SuperAdminController.name);

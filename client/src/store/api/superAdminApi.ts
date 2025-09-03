@@ -255,6 +255,48 @@ export interface GeographicReport {
   generatedAt: string;
 }
 
+// Audit Types
+export interface AuditLog {
+  id: string;
+  timestamp: string;
+  user: string;
+  userId: string;
+  action: string;
+  roles: string[],
+  actionType: 'LOGIN' | 'LOGOUT' | 'CREATE' | 'UPDATE' | 'DELETE' | 'VIEW' | 'EXPORT';
+  resource: string;
+  resourceType: string;
+  ipAddress: string;
+  userAgent?: string;
+  status: 'SUCCESS' | 'FAILED' | 'WARNING';
+  details?: Record<string, any>;
+  schoolId?: string;
+  sessionId?: string;
+}
+
+export interface AuditMetrics {
+  totalActivities: number;
+  activitiesGrowth: number;
+  activeUsers: number;
+  usersGrowth: number;
+  apiRequests: number;
+  apiGrowth: number;
+  securityEvents: number;
+  securityGrowth: number;
+  period: string;
+}
+
+export interface AuditFilters {
+  period?: string;
+  user?: string;
+  action?: string;
+  status?: string;
+  resourceType?: string;
+  schoolId?: string;
+  page?: number;
+  limit?: number;
+}
+
 export interface SchoolFilters {
   search?: string;
   type?: string;
@@ -367,6 +409,8 @@ export const superAdminApi = createApi({
     'SubscriptionAnalytics',
     'SchoolComparison',
     'GeographicReport',
+    'AuditLogs',
+    'AuditMetrics',
   ],
   endpoints: (builder) => ({
     // Super Admin Authentication
@@ -510,6 +554,23 @@ export const superAdminApi = createApi({
       query: () => '/super-admin/geographic',
       providesTags: ['GeographicReport'],
     }),
+
+    // Audit Logs
+    getAuditLogs: builder.query<{ logs: AuditLog[]; total: number }, AuditFilters>({
+      query: (filters) => ({
+        url: '/super-admin/audit/logs',
+        params: filters,
+      }),
+      providesTags: ['AuditLogs'],
+    }),
+
+    getAuditMetrics: builder.query<AuditMetrics, { period: string }>({
+      query: ({ period }) => ({
+        url: '/super-admin/audit/metrics',
+        params: { period },
+      }),
+      providesTags: ['AuditMetrics'],
+    }),
   }),
 });
 
@@ -545,4 +606,8 @@ export const {
   useGetSubscriptionAnalyticsQuery,
   useGetSchoolComparisonQuery,
   useGetGeographicReportQuery,
+
+  // Audit
+  useGetAuditLogsQuery,
+  useGetAuditMetricsQuery,
 } = superAdminApi;

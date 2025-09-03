@@ -117,7 +117,7 @@ export class AuthController {
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Refresh access token using refresh token' })
+  @ApiOperation({ summary: 'Refresh access token using refresh token from cookies' })
   @ApiResponse({
     status: 200,
     description: 'Token refreshed successfully',
@@ -132,8 +132,16 @@ export class AuthController {
     },
   })
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
-  async refreshToken(@Body() refreshTokenDto: RefreshTokenDto, @Response() res: any): Promise<void> {
-    const tokens = await this.authService.refreshToken(refreshTokenDto);
+  async refreshToken(@Request() req: any, @Response() res: any): Promise<void> {
+    // Get refresh token from cookies instead of request body
+    const refreshToken = req.cookies?.refreshToken;
+
+    if (!refreshToken) {
+      res.status(401).json({ message: 'Refresh token not found in cookies' });
+      return;
+    }
+
+    const tokens = await this.authService.refreshToken({ refreshToken });
     this.authService.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
     res.json(tokens);
   }

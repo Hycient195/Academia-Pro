@@ -41,6 +41,29 @@ class ApiClient {
     return null
   }
 
+  private async refreshAccessToken(): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.baseURL}/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // This will send the refreshToken cookie
+      })
+
+      if (response.ok) {
+        console.log('Access token refreshed successfully')
+        return true
+      } else {
+        console.warn('Failed to refresh access token:', response.status)
+        return false
+      }
+    } catch (error) {
+      console.error('Error refreshing access token:', error)
+      return false
+    }
+  }
+
   private async makeRequest<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -89,6 +112,17 @@ class ApiClient {
             ...config.headers,
             'X-CSRF-Token': this.csrfToken,
           }
+          const retryResponse = await fetch(url, config)
+          return this.handleResponse<T>(retryResponse)
+        }
+      }
+
+      // Handle JWT token expiration (403 Forbidden)
+      if (response.status === 403 && !response.statusText.includes('CSRF')) {
+        // Try to refresh the access token
+        const refreshSuccess = await this.refreshAccessToken()
+        if (refreshSuccess) {
+          // Retry the original request with the new token
           const retryResponse = await fetch(url, config)
           return this.handleResponse<T>(retryResponse)
         }

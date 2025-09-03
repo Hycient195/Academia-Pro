@@ -1,21 +1,13 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import type { RootState } from '@/lib/store';
+import { GLOBAL_API_URL } from '../globalURLs';
 
 // Base API configuration for Academia Pro
 export const baseApi = createApi({
   reducerPath: 'baseApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
-    prepareHeaders: (headers, { getState }) => {
-      // Get token from auth state
-      const token = (getState() as RootState)?.auth?.token;
-
-      if (token) {
-        headers.set('authorization', `Bearer ${token}`);
-      }
-
+    baseUrl: GLOBAL_API_URL,
+    prepareHeaders: (headers) => {
       headers.set('Content-Type', 'application/json');
-
       return headers;
     },
     credentials: 'include',

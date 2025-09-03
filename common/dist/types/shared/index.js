@@ -16,10 +16,5 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.changePasswordSchema = exports.updateProfileSchema = exports.createUserSchema = void 0;
-__exportStar(require("./types"), exports);
-var util_types_1 = require("./util.types");
-Object.defineProperty(exports, "createUserSchema", { enumerable: true, get: function () { return util_types_1.createUserSchema; } });
-Object.defineProperty(exports, "updateProfileSchema", { enumerable: true, get: function () { return util_types_1.updateProfileSchema; } });
-Object.defineProperty(exports, "changePasswordSchema", { enumerable: true, get: function () { return util_types_1.changePasswordSchema; } });
+__exportStar(require("./shared.types"), exports);
 //# sourceMappingURL=index.js.map

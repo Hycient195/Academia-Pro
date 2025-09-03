@@ -19,9 +19,11 @@ export declare enum TFeeFrequency {
     GRADE_WISE = "grade_wise"
 }
 export declare enum TFeeStatus {
-    ACTIVE = "active",
-    INACTIVE = "inactive",
-    ARCHIVED = "archived"
+    PAID = "paid",
+    PENDING = "pending",
+    OVERDUE = "overdue",
+    PARTIAL = "partial",
+    WAIVED = "waived"
 }
 export declare enum TPaymentStatus {
     PENDING = "pending",

@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import {
   IconCreditCard,
   IconDotsVertical,
@@ -28,6 +29,11 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { useAuth } from "@/redux/auth/authContext"
+import { useDispatch } from "react-redux"
+import { logout as logoutAction } from "@/redux/slices/authSlice"
+import { apis } from "@/redux/api"
+import { toast } from "sonner"
 
 export function NavUser({
   user,
@@ -39,6 +45,27 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
+  const { logout } = useAuth()
+  const dispatch = useDispatch()
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+      dispatch(logoutAction()) // Clear Redux auth state
+
+      // Clear API cache
+      dispatch(apis.superAdmin.util.resetApiState())
+      dispatch(apis.auth.util.resetApiState())
+      dispatch(apis.schoolAdmin.util.resetApiState())
+
+      toast.success("Logged out successfully")
+      router.push("/super-admin/auth/sign-in")
+    } catch (error) {
+      console.error("Logout error:", error)
+      toast.error("Failed to logout. Please try again.")
+    }
+  }
 
   return (
     <SidebarMenu>
@@ -72,7 +99,7 @@ export function NavUser({
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  <AvatarFallback className="rounded-lg">{user?.name?.[0]??user?.email?.[0]}</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.name}</span>
@@ -98,7 +125,7 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
               <IconLogout />
               Log out
             </DropdownMenuItem>

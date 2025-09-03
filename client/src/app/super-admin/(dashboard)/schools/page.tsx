@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Pagination } from "@/components/ui/pagination"
 import {
   IconBuilding,
   IconPlus,
@@ -23,56 +23,75 @@ import {
   IconMapPin,
   IconX
 } from "@tabler/icons-react"
-import { useGetAllSchoolsQuery, useCreateSchoolMutation } from "@/store/api/superAdminApi"
-import type { SchoolFilters, CreateSchoolRequest } from "@/store/api/superAdminApi"
-import ErrorBlock from "@/components/utilities/ErrorBlock"
-import { FormCountrySelect, FormRegionSelect, FormSelect, FormText, FormTextArea, FormPhoneInput } from "@/components/ui/form-components"
+import { apis, type ISchoolFilters, type ISuperAdminSchool } from "@/redux/api"
+import { toast } from "sonner"
+import AddSchoolModal from "./_components/AddSchoolModal"
+import DeleteSchoolModal from "./_components/DeleteSchoolModal"
+import ViewSchoolDetailsModal from "./_components/ViewSchoolDetailsModal"
 
 export default function SchoolsPage() {
-  const [filters, setFilters] = useState<SchoolFilters>({
+  const [filters, setFilters] = useState<ISchoolFilters>({
     page: 1,
     limit: 10
   })
 
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [newSchool, setNewSchool] = useState<CreateSchoolRequest>({
-    name: '',
-    type: '',
-    address: '',
-    city: '',
-    state: '',
-    country: '',
-    email: '',
-    phone: '',
-    subscriptionPlan: ''
+  const [modals, setModals] = useState({
+    view: { isOpen: false, school: null as ISuperAdminSchool | null },
+    add: { isOpen: false },
+    edit: { isOpen: false, school: null as ISuperAdminSchool | null },
+    delete: { isOpen: false, school: null as ISuperAdminSchool | null }
   })
 
-  const { data: schoolsData, isLoading } = useGetAllSchoolsQuery(filters)
-  const [createSchool, { isLoading: isCreating, error: createSchoolError }] = useCreateSchoolMutation()
 
+  const { data: schoolsData, isLoading } = apis.superAdmin.useGetAllSchoolsQuery(filters)
+
+  console.log(schoolsData)
+  
   const schools = schoolsData?.schools || []
   const total = schoolsData?.total || 0
+  const currentPage = filters.page || 1
+  const pageSize = filters.limit || 10
+  const totalPages = Math.ceil(total / pageSize)
 
-  const handleCreateSchool = async () => {
-    try {
-      await createSchool(newSchool).unwrap()
-      setIsAddDialogOpen(false)
-      setNewSchool({
-        name: '',
-        type: '',
-        address: '',
-        city: '',
-        state: '',
-        country: '',
-        email: '',
-        phone: '',
-        subscriptionPlan: ''
-      })
-      // Success message could be added here
-    } catch (error) {
-      // Error handling could be added here
-      console.error('Failed to create school:', error)
-    }
+  const handlePageChange = (page: number) => {
+    setFilters({ ...filters, page })
+  }
+
+  const handlePageSizeChange = (limit: number) => {
+    setFilters({ ...filters, limit, page: 1 }) // Reset to first page when changing page size
+  }
+
+  const handleViewDetails = (school: ISuperAdminSchool) => {
+    setModals(prev => ({
+      ...prev,
+      view: { isOpen: true, school }
+    }))
+  }
+
+  const handleEditSchool = (school: ISuperAdminSchool) => {
+    setModals(prev => ({
+      ...prev,
+      edit: { isOpen: true, school }
+    }))
+  }
+
+  const handleDeleteSchool = (school: ISuperAdminSchool) => {
+    setModals(prev => ({
+      ...prev,
+      delete: { isOpen: true, school }
+    }))
+  }
+
+  const handleModalSuccess = () => {
+    // Close all modals and reset data
+    setModals({
+      view: { isOpen: false, school: null },
+      add: { isOpen: false },
+      edit: { isOpen: false, school: null },
+      delete: { isOpen: false, school: null }
+    })
+    // Refetch or update the schools list
+    // For now, we can rely on the mutations invalidating the cache
   }
 
   const getStatusBadge = (status: string) => {
@@ -123,6 +142,35 @@ export default function SchoolsPage() {
             </div>
           </CardContent>
         </Card>
+  
+        {/* Modals */}
+        <ViewSchoolDetailsModal
+          isOpen={modals.view.isOpen}
+          onOpenChange={(open) => setModals(prev => ({ ...prev, view: { ...prev.view, isOpen: open } }))}
+          school={modals.view.school}
+        />
+  
+        <AddSchoolModal
+          mode="add"
+          isOpen={modals.add.isOpen}
+          onOpenChange={(open) => setModals(prev => ({ ...prev, add: { isOpen: open } }))}
+          onSuccess={handleModalSuccess}
+        />
+  
+        <AddSchoolModal
+          mode="edit"
+          isOpen={modals.edit.isOpen}
+          onOpenChange={(open) => setModals(prev => ({ ...prev, edit: { isOpen: open, school: open ? prev.edit.school : null } }))}
+          schoolData={modals.edit.school}
+          onSuccess={handleModalSuccess}
+        />
+  
+        <DeleteSchoolModal
+          isOpen={modals.delete.isOpen}
+          onOpenChange={(open) => setModals(prev => ({ ...prev, delete: { isOpen: open, school: open ? prev.delete.school : null } }))}
+          school={modals.delete.school}
+          onSuccess={handleModalSuccess}
+        />
       </div>
     )
   }
@@ -136,147 +184,13 @@ export default function SchoolsPage() {
             Manage and monitor all schools in the system
           </p>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <IconPlus className="h-4 w-4 mr-2" />
-              Add New School
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Add New School</DialogTitle>
-              <DialogDescription>
-                Create a new school in the Academia Pro system. Fill in the required information below.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <FormText
-                  labelText="School Name *"
-                  placeholder="Enter school name"
-                  value={newSchool.name}
-                  onChange={(arg) => {
-                    if ('nativeEvent' in arg) {
-                      setNewSchool({ ...newSchool, name: arg.target.value })
-                    } else {
-                      setNewSchool({ ...newSchool, name: arg.target.value as string })
-                    }
-                  }}
-                  required
-                />
-                <FormSelect
-                  labelText="School Type *"
-                  placeholder="Select type"
-                  options={[
-                    { text: "Primary", value: "primary" },
-                    { text: "Secondary", value: "secondary" },
-                    { text: "Mixed", value: "mixed" }
-                  ]}
-                  value={newSchool.type}
-                  onChange={(arg) => setNewSchool({ ...newSchool, type: arg.target.value as string })}
-                  required
-                />
-              </div>
+        <Button onClick={() => setModals(prev => ({ ...prev, add: { isOpen: true } }))}>
+          <IconPlus className="h-4 w-4 mr-2" />
+          Add New School
+        </Button>
 
-              <FormTextArea
-                labelText="Address *"
-                id="address"
-                value={newSchool.address}
-                onChange={(arg) => {
-                  if ('nativeEvent' in arg) {
-                    setNewSchool({ ...newSchool, address: arg.target.value })
-                  } else {
-                    setNewSchool({ ...newSchool, address: arg.target.value as string })
-                  }
-                }}
-                placeholder="Enter school address"
-                required
-              />
 
-              <div className="grid grid-cols-3 gap-4">
-                <FormCountrySelect
-                  labelText="Country *"
-                  showFlag
-                  id="country"
-                  value={newSchool.country}
-                  onChange={(arg) => setNewSchool({ ...newSchool, country: arg.target.value as string })}
-                  placeholder="Country"
-                />
-                <FormRegionSelect
-                  countryCode={newSchool.country}
-                  id="state"
-                  value={newSchool.state}
-                  labelText="State *"
-                  onChange={(arg) => setNewSchool({ ...newSchool, state: arg.target.value as string })}
-                  placeholder="State"
-                />
-                <FormText
-                  labelText="City *"
-                  id="city"
-                  value={newSchool.city}
-                  onChange={(arg) => {
-                    if ('nativeEvent' in arg) {
-                      setNewSchool({ ...newSchool, city: arg.target.value })
-                    } else {
-                      setNewSchool({ ...newSchool, city: arg.target.value as string })
-                    }
-                  }}
-                  placeholder="City"
-                />
-                
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <FormText
-                  labelText="Email *"
-                  id="email"
-                  type="email"
-                  value={newSchool.email}
-                  onChange={(arg) => {
-                    if ('nativeEvent' in arg) {
-                      setNewSchool({ ...newSchool, email: arg.target.value })
-                    } else {
-                      setNewSchool({ ...newSchool, email: arg.target.value as string })
-                    }
-                  }}
-                  placeholder="school@example.com"
-                  required
-                />
-                <FormPhoneInput
-                  labelText="Phone *"
-                  id="phone"
-                  value={newSchool.phone}
-                  onChange={(arg) => setNewSchool({ ...newSchool, phone: arg.target.value as string })}
-                  placeholder="+1-555-0123"
-                  required
-                />
-              </div>
-
-              <FormSelect
-                labelText="Subscription Plan *"
-                value={newSchool.subscriptionPlan}
-                onChange={(arg) => setNewSchool({ ...newSchool, subscriptionPlan: arg.target.value as string })}
-                options={[
-                  { value: "basic", text: "Basic" },
-                  { value: "premium", text: "Premium" },
-                  { value: "enterprise", text: "Enterprise" }
-                ]}
-                placeholder="Select plan"
-                required
-              />
-            </div>
-            <ErrorBlock error={createSchoolError} />
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleCreateSchool} disabled={isCreating}>
-                {isCreating ? 'Creating...' : 'Create School'}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
 
       {/* Filters */}
@@ -404,7 +318,7 @@ export default function SchoolsPage() {
                     <div className="flex items-center">
                       <IconMapPin className="h-4 w-4 mr-1 text-muted-foreground" />
                       <span className="text-sm">
-                        {school.location?.city || school.address?.city || 'N/A'}, {school.location?.state || school.address?.state || 'N/A'}
+                        {school.city || school.location?.city || 'N/A'}, {school.state || school.location?.state || 'N/A'}
                       </span>
                     </div>
                   </TableCell>
@@ -419,15 +333,18 @@ export default function SchoolsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleViewDetails(school)}>
                           <IconEye className="h-4 w-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEditSchool(school)}>
                           <IconEdit className="h-4 w-4 mr-2" />
                           Edit School
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteSchool(school)}
+                          className="text-red-600"
+                        >
                           <IconTrash className="h-4 w-4 mr-2" />
                           Delete School
                         </DropdownMenuItem>
@@ -450,8 +367,53 @@ export default function SchoolsPage() {
               </p>
             </div>
           )}
+
+          {/* Pagination */}
+          {total > 0 && (
+            <div className="px-2 py-4">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={total}
+                pageSize={pageSize}
+                onPageChange={handlePageChange}
+                onPageSizeChange={handlePageSizeChange}
+                showPageSizeSelector={true}
+                showInfo={true}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Modals */}
+      <ViewSchoolDetailsModal
+        isOpen={modals.view.isOpen}
+        onOpenChange={(open) => setModals(prev => ({ ...prev, view: { ...prev.view, isOpen: open } }))}
+        school={modals.view.school}
+      />
+
+      <AddSchoolModal
+        mode="add"
+        isOpen={modals.add.isOpen}
+        onOpenChange={(open) => setModals(prev => ({ ...prev, add: { isOpen: open } }))}
+        onSuccess={handleModalSuccess}
+      />
+
+      <AddSchoolModal
+        mode="edit"
+        isOpen={modals.edit.isOpen}
+        onOpenChange={(open) => setModals(prev => ({ ...prev, edit: { isOpen: open, school: open ? prev.edit.school : null } }))}
+        schoolData={modals.edit.school}
+        onSuccess={handleModalSuccess}
+      />
+
+      <DeleteSchoolModal
+        isOpen={modals.delete.isOpen}
+        onOpenChange={(open) => setModals(prev => ({ ...prev, delete: { isOpen: open, school: open ? prev.delete.school : null } }))}
+        school={modals.delete.school}
+        onSuccess={handleModalSuccess}
+      />
     </div>
   )
 }

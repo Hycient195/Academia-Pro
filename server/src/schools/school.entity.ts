@@ -8,11 +8,8 @@ import { Student } from '../students/student.entity';
 export enum SchoolType {
   PRESCHOOL = 'preschool',
   ELEMENTARY = 'elementary',
-  MIDDLE_SCHOOL = 'middle_school',
-  HIGH_SCHOOL = 'high_school',
-  SENIOR_SECONDARY = 'senior_secondary',
-  UNIVERSITY = 'university',
-  COLLEGE = 'college',
+  PRIMARY_SCHOOL = 'primary_school',
+  SECONDARY_SCHOOL = 'secondary_school',
   INSTITUTE = 'institute',
   TRAINING_CENTER = 'training_center',
 }
@@ -49,7 +46,7 @@ export class School {
   @Column({
     type: 'enum',
     enum: SchoolType,
-    default: SchoolType.HIGH_SCHOOL,
+    default: SchoolType.SECONDARY_SCHOOL,
   })
   type: SchoolType;
 

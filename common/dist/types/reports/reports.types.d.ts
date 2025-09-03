@@ -173,7 +173,7 @@ export interface IDataSource {
     filters?: IReportFilters;
     refreshInterval?: number;
 }
-export interface IAnalyticsData {
+export interface IReportAnalyticsData {
     summary: IAnalyticsSummary;
     trends: ITrendData[];
     comparisons: IComparisonData[];
@@ -359,7 +359,7 @@ export interface IDashboardListResponse {
     page: number;
     limit: number;
 }
-export interface IAnalyticsResponse extends IAnalyticsData {
+export interface IAnalyticsResponse extends IReportAnalyticsData {
     query: IAnalyticsQueryRequest;
     generatedAt: Date;
     executionTime: number;

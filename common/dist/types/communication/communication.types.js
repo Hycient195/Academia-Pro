@@ -2,7 +2,7 @@
 // Academia Pro - Communication Management Types
 // Shared type definitions for communication management module
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TTemplateType = exports.TNoticeType = exports.TNotificationStatus = exports.TNotificationType = exports.TRecipientType = exports.TMessageStatus = exports.TMessagePriority = exports.TMessageType = void 0;
+exports.TTemplateType = exports.TNoticeType = exports.TNotificationStatus = exports.TNotificationTypeChannel = exports.TRecipientType = exports.TMessageStatus = exports.TMessagePriority = exports.TMessageType = void 0;
 // Enums
 var TMessageType;
 (function (TMessageType) {
@@ -38,13 +38,13 @@ var TRecipientType;
     TRecipientType["ALL"] = "all";
     TRecipientType["GROUP"] = "group";
 })(TRecipientType || (exports.TRecipientType = TRecipientType = {}));
-var TNotificationType;
-(function (TNotificationType) {
-    TNotificationType["EMAIL"] = "email";
-    TNotificationType["SMS"] = "sms";
-    TNotificationType["PUSH"] = "push";
-    TNotificationType["IN_APP"] = "in_app";
-})(TNotificationType || (exports.TNotificationType = TNotificationType = {}));
+var TNotificationTypeChannel;
+(function (TNotificationTypeChannel) {
+    TNotificationTypeChannel["EMAIL"] = "email";
+    TNotificationTypeChannel["SMS"] = "sms";
+    TNotificationTypeChannel["PUSH"] = "push";
+    TNotificationTypeChannel["IN_APP"] = "in_app";
+})(TNotificationTypeChannel || (exports.TNotificationTypeChannel = TNotificationTypeChannel = {}));
 var TNotificationStatus;
 (function (TNotificationStatus) {
     TNotificationStatus["PENDING"] = "pending";

@@ -2,7 +2,7 @@
 // Academia Pro - Hostel Management Types
 // Shared type definitions for hostel/dormitory management module
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TAllocationStatus = exports.TMaintenanceStatus = exports.TMaintenanceType = exports.TFacilityType = exports.TBedStatus = exports.TRoomStatus = exports.TRoomType = exports.THostelStatus = exports.THostelType = void 0;
+exports.TAllocationStatus = exports.THostelMaintenanceStatus = exports.THostelMaintenanceType = exports.TFacilityType = exports.TBedStatus = exports.TRoomStatus = exports.TRoomType = exports.THostelStatus = exports.THostelType = void 0;
 // Enums
 var THostelType;
 (function (THostelType) {
@@ -71,28 +71,28 @@ var TFacilityType;
     TFacilityType["STORE"] = "store";
     TFacilityType["CAFETERIA"] = "cafeteria";
 })(TFacilityType || (exports.TFacilityType = TFacilityType = {}));
-var TMaintenanceType;
-(function (TMaintenanceType) {
-    TMaintenanceType["ELECTRICAL"] = "electrical";
-    TMaintenanceType["PLUMBING"] = "plumbing";
-    TMaintenanceType["CARPENTRY"] = "carpentry";
-    TMaintenanceType["PAINTING"] = "painting";
-    TMaintenanceType["CLEANING"] = "cleaning";
-    TMaintenanceType["HVAC"] = "hvac";
-    TMaintenanceType["SECURITY"] = "security";
-    TMaintenanceType["LANDSCAPING"] = "landscaping";
-    TMaintenanceType["PEST_CONTROL"] = "pest_control";
-    TMaintenanceType["OTHER"] = "other";
-})(TMaintenanceType || (exports.TMaintenanceType = TMaintenanceType = {}));
-var TMaintenanceStatus;
-(function (TMaintenanceStatus) {
-    TMaintenanceStatus["REQUESTED"] = "requested";
-    TMaintenanceStatus["APPROVED"] = "approved";
-    TMaintenanceStatus["IN_PROGRESS"] = "in_progress";
-    TMaintenanceStatus["COMPLETED"] = "completed";
-    TMaintenanceStatus["CANCELLED"] = "cancelled";
-    TMaintenanceStatus["DEFERRED"] = "deferred";
-})(TMaintenanceStatus || (exports.TMaintenanceStatus = TMaintenanceStatus = {}));
+var THostelMaintenanceType;
+(function (THostelMaintenanceType) {
+    THostelMaintenanceType["ELECTRICAL"] = "electrical";
+    THostelMaintenanceType["PLUMBING"] = "plumbing";
+    THostelMaintenanceType["CARPENTRY"] = "carpentry";
+    THostelMaintenanceType["PAINTING"] = "painting";
+    THostelMaintenanceType["CLEANING"] = "cleaning";
+    THostelMaintenanceType["HVAC"] = "hvac";
+    THostelMaintenanceType["SECURITY"] = "security";
+    THostelMaintenanceType["LANDSCAPING"] = "landscaping";
+    THostelMaintenanceType["PEST_CONTROL"] = "pest_control";
+    THostelMaintenanceType["OTHER"] = "other";
+})(THostelMaintenanceType || (exports.THostelMaintenanceType = THostelMaintenanceType = {}));
+var THostelMaintenanceStatus;
+(function (THostelMaintenanceStatus) {
+    THostelMaintenanceStatus["REQUESTED"] = "requested";
+    THostelMaintenanceStatus["APPROVED"] = "approved";
+    THostelMaintenanceStatus["IN_PROGRESS"] = "in_progress";
+    THostelMaintenanceStatus["COMPLETED"] = "completed";
+    THostelMaintenanceStatus["CANCELLED"] = "cancelled";
+    THostelMaintenanceStatus["DEFERRED"] = "deferred";
+})(THostelMaintenanceStatus || (exports.THostelMaintenanceStatus = THostelMaintenanceStatus = {}));
 var TAllocationStatus;
 (function (TAllocationStatus) {
     TAllocationStatus["ACTIVE"] = "active";

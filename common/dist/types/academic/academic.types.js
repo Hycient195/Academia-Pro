@@ -2,35 +2,10 @@
 // Academia Pro - Academic Management Types
 // Shared type definitions for academic management module
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TLearningObjectiveType = exports.TAcademicYearStatus = exports.TGradeLevel = exports.TSubjectType = void 0;
+exports.TLearningObjectiveType = exports.TAcademicYearStatus = void 0;
 // Enums
-var TSubjectType;
-(function (TSubjectType) {
-    TSubjectType["CORE"] = "core";
-    TSubjectType["ELECTIVE"] = "elective";
-    TSubjectType["PRACTICAL"] = "practical";
-    TSubjectType["LANGUAGE"] = "language";
-    TSubjectType["ARTS"] = "arts";
-    TSubjectType["SPORTS"] = "sports";
-})(TSubjectType || (exports.TSubjectType = TSubjectType = {}));
-var TGradeLevel;
-(function (TGradeLevel) {
-    TGradeLevel["NURSERY"] = "nursery";
-    TGradeLevel["LKG"] = "lkg";
-    TGradeLevel["UKG"] = "ukg";
-    TGradeLevel["GRADE_1"] = "grade_1";
-    TGradeLevel["GRADE_2"] = "grade_2";
-    TGradeLevel["GRADE_3"] = "grade_3";
-    TGradeLevel["GRADE_4"] = "grade_4";
-    TGradeLevel["GRADE_5"] = "grade_5";
-    TGradeLevel["GRADE_6"] = "grade_6";
-    TGradeLevel["GRADE_7"] = "grade_7";
-    TGradeLevel["GRADE_8"] = "grade_8";
-    TGradeLevel["GRADE_9"] = "grade_9";
-    TGradeLevel["GRADE_10"] = "grade_10";
-    TGradeLevel["GRADE_11"] = "grade_11";
-    TGradeLevel["GRADE_12"] = "grade_12";
-})(TGradeLevel || (exports.TGradeLevel = TGradeLevel = {}));
+// TSubjectType moved to shared
+// TGradeLevel moved to shared
 var TAcademicYearStatus;
 (function (TAcademicYearStatus) {
     TAcademicYearStatus["PLANNING"] = "planning";

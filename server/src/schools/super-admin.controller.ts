@@ -5,10 +5,12 @@ import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, Logg
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { SchoolContextService } from './school-context.service';
 import { CrossSchoolReportingService } from './cross-school-reporting.service';
-import { School } from './school.entity';
+import { School, SchoolStatus } from './school.entity';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../users/user.entity';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { CreateSchoolDto } from './dtos/create-school.dto';
+import { UpdateSchoolDto } from './dtos/update-school.dto';
 
 @ApiTags('Super Admin - Multi-School Management')
 @Controller('super-admin')
@@ -27,7 +29,17 @@ export class SuperAdminController {
   @Get('schools')
   @ApiOperation({
     summary: 'Get all schools',
-    description: 'Returns a list of all schools in the system with their statistics.',
+    description: 'Returns a list of all schools in the system with pagination and filtering.',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search schools by name, code, or email',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    description: 'Filter by school type',
   })
   @ApiQuery({
     name: 'status',
@@ -36,19 +48,47 @@ export class SuperAdminController {
     description: 'Filter by school status',
   })
   @ApiQuery({
-    name: 'subscription',
+    name: 'subscriptionPlan',
     required: false,
-    enum: ['active', 'expired', 'expiring_soon'],
-    description: 'Filter by subscription status',
+    description: 'Filter by subscription plan',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of schools per page',
   })
   @ApiResponse({
     status: 200,
     description: 'Schools retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        schools: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/School' }
+        },
+        total: {
+          type: 'number',
+          description: 'Total number of schools'
+        }
+      }
+    }
   })
   async getAllSchools(
+    @Query('search') search?: string,
+    @Query('type') type?: string,
     @Query('status') status?: string,
-    @Query('subscription') subscription?: string,
-  ): Promise<any[]> {
+    @Query('subscriptionPlan') subscriptionPlan?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ): Promise<any> {
     this.logger.log('Getting all schools');
 
     const schools = await this.schoolContextService.getAllSchools();
@@ -56,31 +96,75 @@ export class SuperAdminController {
     // Apply filters
     let filteredSchools = schools;
 
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filteredSchools = filteredSchools.filter(school =>
+        school.name?.toLowerCase().includes(searchLower) ||
+        school.code?.toLowerCase().includes(searchLower) ||
+        school.email?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    if (type) {
+      filteredSchools = filteredSchools.filter(school => school.type === type);
+    }
+
     if (status) {
       filteredSchools = filteredSchools.filter(school => school.status === status);
     }
 
-    if (subscription) {
-      filteredSchools = filteredSchools.filter(school => {
-        if (subscription === 'active') return school.isSubscriptionActive;
-        if (subscription === 'expired') return !school.isSubscriptionActive;
-        if (subscription === 'expiring_soon') return school.daysUntilSubscriptionExpiry <= 30;
-        return true;
-      });
+    if (subscriptionPlan) {
+      filteredSchools = filteredSchools.filter(school => school.subscriptionPlan === subscriptionPlan);
     }
 
-    // Get statistics for each school
-    const schoolsWithStats = await Promise.all(
-      filteredSchools.map(async (school) => {
-        const stats = await this.schoolContextService.getSchoolStatistics(school.id);
-        return {
-          ...school,
-          statistics: stats,
-        };
-      })
-    );
+    const total = filteredSchools.length;
+    const pageNum = parseInt(page || '1', 10);
+    const limitNum = parseInt(limit || '10', 10);
+    const startIndex = (pageNum - 1) * limitNum;
+    const endIndex = startIndex + limitNum;
 
-    return schoolsWithStats;
+    // Apply pagination
+    const paginatedSchools = filteredSchools.slice(startIndex, endIndex);
+
+    // Map schools to client-expected format
+    const schoolsFormatted = paginatedSchools.map((school) => ({
+      id: school.id,
+      name: school.name,
+      code: school.code,
+      description: school.description,
+      type: school.type,
+      status: school.status,
+      address: school.address,
+      city: school.city,
+      state: school.state,
+      country: school.country,
+      phone: school.phone,
+      email: school.email,
+      website: school.website,
+      principalName: school.principalName,
+      principalPhone: school.principalPhone,
+      principalEmail: school.principalEmail,
+      currentStudents: school.currentStudents,
+      totalCapacity: school.maxStudents, // Map maxStudents to totalCapacity
+      subscriptionPlan: school.subscriptionPlan,
+      createdAt: school.createdAt.toISOString(),
+      updatedAt: school.updatedAt.toISOString(),
+      // Additional properties for backward compatibility
+      contact: {
+        email: school.email,
+        phone: school.phone,
+      },
+      location: {
+        city: school.city,
+        state: school.state,
+        country: school.country,
+      },
+    }));
+
+    return {
+      schools: schoolsFormatted,
+      total,
+    };
   }
 
   @Post('schools')
@@ -126,15 +210,69 @@ export class SuperAdminController {
     description: 'School created successfully',
   })
   async createSchool(
-    @Body() schoolData: Partial<School>,
+    @Body() schoolData: CreateSchoolDto,
     // Note: createdBy will be extracted from JWT token in service
-  ): Promise<School> {
+  ): Promise<any> {
     this.logger.log(`Creating new school: ${schoolData.name}`);
+
+    // Transform front-end data to match School entity structure
+    const transformedData: Partial<School> = {
+      name: schoolData.name,
+      type: schoolData.type as any, // Cast to match entity type
+      address: schoolData.address, // Front-end sends address as string
+      city: schoolData.city,
+      state: schoolData.state,
+      country: schoolData.country,
+      email: schoolData.email,
+      phone: schoolData.phone,
+      subscriptionPlan: schoolData.subscriptionPlan as any, // Cast to match entity type
+      status: SchoolStatus.ACTIVE,
+      isActiveSubscription: true,
+      currentStudents: 0,
+      maxStudents: 1000, // Default capacity
+      currentStaff: 0,
+      maxStaff: 100,
+    };
 
     // In a real implementation, you'd extract the user ID from the JWT token
     const createdBy = 'system'; // This should come from JWT
 
-    return this.schoolContextService.createSchoolContext(schoolData, createdBy);
+    const createdSchool = await this.schoolContextService.createSchoolContext(transformedData, createdBy);
+
+    // Format the response to match client expectations
+    return {
+      id: createdSchool.id,
+      name: createdSchool.name,
+      code: createdSchool.code,
+      description: createdSchool.description,
+      type: createdSchool.type,
+      status: createdSchool.status,
+      address: createdSchool.address,
+      city: createdSchool.city,
+      state: createdSchool.state,
+      country: createdSchool.country,
+      phone: createdSchool.phone,
+      email: createdSchool.email,
+      website: createdSchool.website,
+      principalName: createdSchool.principalName,
+      principalPhone: createdSchool.principalPhone,
+      principalEmail: createdSchool.principalEmail,
+      currentStudents: createdSchool.currentStudents,
+      totalCapacity: createdSchool.maxStudents, // Map maxStudents to totalCapacity
+      subscriptionPlan: createdSchool.subscriptionPlan,
+      createdAt: createdSchool.createdAt.toISOString(),
+      updatedAt: createdSchool.updatedAt.toISOString(),
+      // Additional properties for backward compatibility
+      contact: {
+        email: createdSchool.email,
+        phone: createdSchool.phone,
+      },
+      location: {
+        city: createdSchool.city,
+        state: createdSchool.state,
+        country: createdSchool.country,
+      },
+    };
   }
 
   @Get('schools/:schoolId')
@@ -160,11 +298,39 @@ export class SuperAdminController {
       throw new Error('School not found');
     }
 
-    const statistics = await this.schoolContextService.getSchoolStatistics(schoolId);
-
+    // Format the response to match client expectations
     return {
-      ...school,
-      statistics,
+      id: school.id,
+      name: school.name,
+      code: school.code,
+      description: school.description,
+      type: school.type,
+      status: school.status,
+      address: school.address,
+      city: school.city,
+      state: school.state,
+      country: school.country,
+      phone: school.phone,
+      email: school.email,
+      website: school.website,
+      principalName: school.principalName,
+      principalPhone: school.principalPhone,
+      principalEmail: school.principalEmail,
+      currentStudents: school.currentStudents,
+      totalCapacity: school.maxStudents, // Map maxStudents to totalCapacity
+      subscriptionPlan: school.subscriptionPlan,
+      createdAt: school.createdAt.toISOString(),
+      updatedAt: school.updatedAt.toISOString(),
+      // Additional properties for backward compatibility
+      contact: {
+        email: school.email,
+        phone: school.phone,
+      },
+      location: {
+        city: school.city,
+        state: school.state,
+        country: school.country,
+      },
     };
   }
 
@@ -203,20 +369,55 @@ export class SuperAdminController {
   })
   async updateSchool(
     @Param('schoolId') schoolId: string,
-    @Body() updates: Partial<School>,
-  ): Promise<School> {
+    @Body() updates: UpdateSchoolDto,
+  ): Promise<any> {
     this.logger.log(`Updating school: ${schoolId}`);
 
     // In a real implementation, you'd extract the user ID from the JWT token
     const updatedBy = 'system'; // This should come from JWT
 
-    return this.schoolContextService.updateSchoolContext(schoolId, updates, updatedBy);
+    const updatedSchool = await this.schoolContextService.updateSchoolContext(schoolId, updates as any, updatedBy);
+
+    // Format the response to match client expectations
+    return {
+      id: updatedSchool.id,
+      name: updatedSchool.name,
+      code: updatedSchool.code,
+      description: updatedSchool.description,
+      type: updatedSchool.type,
+      status: updatedSchool.status,
+      address: updatedSchool.address,
+      city: updatedSchool.city,
+      state: updatedSchool.state,
+      country: updatedSchool.country,
+      phone: updatedSchool.phone,
+      email: updatedSchool.email,
+      website: updatedSchool.website,
+      principalName: updatedSchool.principalName,
+      principalPhone: updatedSchool.principalPhone,
+      principalEmail: updatedSchool.principalEmail,
+      currentStudents: updatedSchool.currentStudents,
+      totalCapacity: updatedSchool.maxStudents, // Map maxStudents to totalCapacity
+      subscriptionPlan: updatedSchool.subscriptionPlan,
+      createdAt: updatedSchool.createdAt.toISOString(),
+      updatedAt: updatedSchool.updatedAt.toISOString(),
+      // Additional properties for backward compatibility
+      contact: {
+        email: updatedSchool.email,
+        phone: updatedSchool.phone,
+      },
+      location: {
+        city: updatedSchool.city,
+        state: updatedSchool.state,
+        country: updatedSchool.country,
+      },
+    };
   }
 
   @Delete('schools/:schoolId')
   @ApiOperation({
-    summary: 'Deactivate school',
-    description: 'Deactivates a school (soft delete - sets status to inactive).',
+    summary: 'Delete school',
+    description: 'Permanently deletes a school and all associated data.',
   })
   @ApiParam({
     name: 'schoolId',
@@ -224,16 +425,12 @@ export class SuperAdminController {
   })
   @ApiResponse({
     status: 200,
-    description: 'School deactivated successfully',
+    description: 'School deleted successfully',
   })
-  async deactivateSchool(@Param('schoolId') schoolId: string): Promise<void> {
-    this.logger.log(`Deactivating school: ${schoolId}`);
+  async deleteSchool(@Param('schoolId') schoolId: string): Promise<void> {
+    this.logger.log(`Deleting school: ${schoolId}`);
 
-    await this.schoolContextService.updateSchoolContext(
-      schoolId,
-      { status: 'inactive' as any },
-      'system' // This should come from JWT
-    );
+    await this.schoolContextService.deleteSchoolContext(schoolId);
   }
 
   // ==================== CROSS-SCHOOL REPORTING ====================

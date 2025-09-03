@@ -59,7 +59,7 @@ export declare enum TFacilityType {
     STORE = "store",
     CAFETERIA = "cafeteria"
 }
-export declare enum TMaintenanceType {
+export declare enum THostelMaintenanceType {
     ELECTRICAL = "electrical",
     PLUMBING = "plumbing",
     CARPENTRY = "carpentry",
@@ -71,7 +71,7 @@ export declare enum TMaintenanceType {
     PEST_CONTROL = "pest_control",
     OTHER = "other"
 }
-export declare enum TMaintenanceStatus {
+export declare enum THostelMaintenanceStatus {
     REQUESTED = "requested",
     APPROVED = "approved",
     IN_PROGRESS = "in_progress",
@@ -85,17 +85,6 @@ export declare enum TAllocationStatus {
     TRANSFERRED = "transferred",
     TERMINATED = "terminated",
     SUSPENDED = "suspended"
-}
-export interface IAddress {
-    street: string;
-    city: string;
-    state: string;
-    postalCode: string;
-    country: string;
-    coordinates?: {
-        latitude: number;
-        longitude: number;
-    };
 }
 export interface IFacility {
     type: TFacilityType;
@@ -379,8 +368,8 @@ export interface IMaintenanceRequest {
     hostelId: string;
     roomId?: string;
     requestedBy: string;
-    maintenanceType: TMaintenanceType;
-    status: TMaintenanceStatus;
+    maintenanceType: THostelMaintenanceType;
+    status: THostelMaintenanceStatus;
     priority: 'low' | 'medium' | 'high' | 'urgent';
     title: string;
     description: string;
@@ -630,10 +619,10 @@ export interface IAllocateRoomRequest {
         relationship: string;
     };
 }
-export interface ICreateMaintenanceRequest {
+export interface ICreateHostelMaintenanceRequest {
     hostelId: string;
     roomId?: string;
-    maintenanceType: TMaintenanceType;
+    maintenanceType: THostelMaintenanceType;
     priority: 'low' | 'medium' | 'high' | 'urgent';
     title: string;
     description: string;
@@ -802,8 +791,8 @@ export interface IHostelAllocationFilters {
 export interface IMaintenanceRequestFilters {
     hostelId?: string;
     roomId?: string;
-    maintenanceType?: TMaintenanceType;
-    status?: TMaintenanceStatus;
+    maintenanceType?: THostelMaintenanceType;
+    status?: THostelMaintenanceStatus;
     priority?: 'low' | 'medium' | 'high' | 'urgent';
     requestedBy?: string;
     assignedTo?: string;
@@ -904,7 +893,7 @@ export interface IBulkRoomAllocationRequest {
 export interface IBulkMaintenanceUpdateRequest {
     requestIds: string[];
     updates: {
-        status?: TMaintenanceStatus;
+        status?: THostelMaintenanceStatus;
         assignedTo?: string;
         notes?: string;
         actualCost?: number;

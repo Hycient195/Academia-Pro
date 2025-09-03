@@ -1,25 +1,4 @@
-export declare enum TSchoolType {
-    PRIMARY = "primary",
-    SECONDARY = "secondary",
-    MIXED = "mixed"
-}
-export declare enum TSchoolStatus {
-    ACTIVE = "active",
-    INACTIVE = "inactive",
-    SUSPENDED = "suspended",
-    CLOSED = "closed"
-}
-export interface IAddress {
-    street: string;
-    city: string;
-    state: string;
-    postalCode: string;
-    country: string;
-    coordinates?: {
-        latitude: number;
-        longitude: number;
-    };
-}
+import { IAddress, TSchoolType, TSchoolStatus } from '../shared';
 export interface ISchool {
     id: string;
     name: string;
@@ -74,7 +53,7 @@ export interface ISchool {
     createdBy?: string;
     updatedBy?: string;
 }
-export interface ICreateSchoolRequest {
+export interface ISchoolCreateSchoolRequest {
     name: string;
     code?: string;
     description?: string;
@@ -107,7 +86,7 @@ export interface ICreateSchoolRequest {
     }>;
     metadata?: Record<string, any>;
 }
-export interface IUpdateSchoolRequest {
+export interface ISchoolUpdateSchoolRequest {
     name?: string;
     code?: string;
     description?: string;
@@ -172,19 +151,6 @@ export interface ISchoolListResponse {
         byStatus: Record<TSchoolStatus, number>;
     };
 }
-export interface ISchoolFilters {
-    type?: TSchoolType;
-    status?: TSchoolStatus;
-    city?: string;
-    state?: string;
-    country?: string;
-    establishedAfter?: string;
-    establishedBefore?: string;
-    minStudents?: number;
-    maxStudents?: number;
-    hasFacilities?: string[];
-    search?: string;
-}
 export interface ISchoolQuery {
     type?: TSchoolType;
     status?: TSchoolStatus;
@@ -225,10 +191,10 @@ export interface ISchoolStatistics {
 }
 export interface IBulkSchoolUpdateRequest {
     schoolIds: string[];
-    updates: Partial<IUpdateSchoolRequest>;
+    updates: Partial<ISchoolUpdateSchoolRequest>;
 }
 export interface IBulkSchoolCreateRequest {
-    schools: ICreateSchoolRequest[];
+    schools: ISchoolCreateSchoolRequest[];
 }
 export interface ISchoolValidationRules {
     name: {
@@ -266,50 +232,6 @@ export interface ISchoolValidationRules {
             pattern: string;
             maxLength: number;
         };
-    };
-}
-export interface ISchoolSettings {
-    schoolId: string;
-    generalSettings: {
-        timezone: string;
-        currency: string;
-        language: string;
-        dateFormat: string;
-        timeFormat: string;
-    };
-    academicSettings: {
-        academicYearFormat: string;
-        gradingScale: Array<{
-            grade: string;
-            minScore: number;
-            maxScore: number;
-            description: string;
-        }>;
-        attendanceThreshold: number;
-        promotionCriteria: {
-            minimumAttendance: number;
-            minimumGrade: string;
-            requiredSubjects: string[];
-        };
-    };
-    communicationSettings: {
-        emailNotifications: boolean;
-        smsNotifications: boolean;
-        parentPortalEnabled: boolean;
-        studentPortalEnabled: boolean;
-        emergencyAlertsEnabled: boolean;
-    };
-    securitySettings: {
-        passwordPolicy: {
-            minLength: number;
-            requireUppercase: boolean;
-            requireLowercase: boolean;
-            requireNumbers: boolean;
-            requireSpecialChars: boolean;
-        };
-        sessionTimeout: number;
-        maxLoginAttempts: number;
-        twoFactorEnabled: boolean;
     };
 }
 //# sourceMappingURL=schools.types.d.ts.map

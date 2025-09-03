@@ -1,6 +1,6 @@
 import { SuperAdminSidebar } from "@/components/super-admin-sidebar"
 import { SiteHeader } from "@/components/site-header"
-import { AuthProvider } from "@/store/auth/authContext"
+import { AuthProvider } from "@/redux/auth/authContext"
 import { AuthGuard, RoleGuard } from "@/components/auth/AuthGuard"
 import {
   SidebarInset,

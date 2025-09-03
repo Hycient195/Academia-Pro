@@ -23,7 +23,7 @@ import {
   IconCircleCheck,
   IconCircleX
 } from "@tabler/icons-react"
-import { useGetAuditLogsQuery, useGetAuditMetricsQuery, type AuditLog } from "@/store/api/superAdminApi"
+import { apis, type AuditLog } from "@/redux/api"
 
 function AuditMetricCard({
   title,
@@ -145,8 +145,8 @@ export default function AuditPage() {
     status: ''
   })
 
-  const { data: auditLogs, isLoading: logsLoading } = useGetAuditLogsQuery(filters)
-  const { data: auditMetrics, isLoading: metricsLoading } = useGetAuditMetricsQuery({ period: filters.period })
+  const { data: auditLogs, isLoading: logsLoading } = apis.superAdmin.useGetAuditLogsQuery(filters)
+  const { data: auditMetrics, isLoading: metricsLoading } = apis.superAdmin.useGetAuditMetricsQuery({ period: filters.period })
 
   const isLoading = logsLoading || metricsLoading
 

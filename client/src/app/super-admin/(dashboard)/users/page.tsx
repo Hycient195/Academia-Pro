@@ -23,8 +23,7 @@ import {
   IconMail,
   IconClock
 } from "@tabler/icons-react"
-import { useGetCrossSchoolUsersQuery } from "@/store/api/superAdminApi"
-import type { UserFilters } from "@/store/api/superAdminApi"
+import { apis, type UserFilters } from "@/redux/api"
 
 export default function UsersPage() {
   const [filters, setFilters] = useState<UserFilters>({
@@ -32,7 +31,7 @@ export default function UsersPage() {
     limit: 10
   })
 
-  const { data: usersData, isLoading } = useGetCrossSchoolUsersQuery(filters)
+  const { data: usersData, isLoading } = apis.superAdmin.useGetCrossSchoolUsersQuery(filters)
   const users = usersData?.users || []
   const total = usersData?.total || 0
 

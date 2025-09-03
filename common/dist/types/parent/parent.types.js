@@ -2,7 +2,7 @@
 // Academia Pro - Parent Portal Types
 // Shared type definitions for parent portal module
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TAppointmentStatus = exports.TPortalAccessLevel = exports.TCommunicationType = exports.TNotificationPreference = exports.TParentRelationship = void 0;
+exports.TNotificationPreference = exports.TAppointmentStatus = exports.TPortalAccessLevel = exports.TParentRelationship = void 0;
 // Enums
 var TParentRelationship;
 (function (TParentRelationship) {
@@ -12,24 +12,6 @@ var TParentRelationship;
     TParentRelationship["GRANDPARENT"] = "grandparent";
     TParentRelationship["OTHER"] = "other";
 })(TParentRelationship || (exports.TParentRelationship = TParentRelationship = {}));
-var TNotificationPreference;
-(function (TNotificationPreference) {
-    TNotificationPreference["EMAIL"] = "email";
-    TNotificationPreference["SMS"] = "sms";
-    TNotificationPreference["PUSH"] = "push";
-    TNotificationPreference["IN_APP"] = "in_app";
-    TNotificationPreference["NONE"] = "none";
-})(TNotificationPreference || (exports.TNotificationPreference = TNotificationPreference = {}));
-var TCommunicationType;
-(function (TCommunicationType) {
-    TCommunicationType["ANNOUNCEMENT"] = "announcement";
-    TCommunicationType["ASSIGNMENT"] = "assignment";
-    TCommunicationType["GRADE"] = "grade";
-    TCommunicationType["ATTENDANCE"] = "attendance";
-    TCommunicationType["EVENT"] = "event";
-    TCommunicationType["EMERGENCY"] = "emergency";
-    TCommunicationType["GENERAL"] = "general";
-})(TCommunicationType || (exports.TCommunicationType = TCommunicationType = {}));
 var TPortalAccessLevel;
 (function (TPortalAccessLevel) {
     TPortalAccessLevel["FULL_ACCESS"] = "full_access";
@@ -42,8 +24,19 @@ var TAppointmentStatus;
     TAppointmentStatus["REQUESTED"] = "requested";
     TAppointmentStatus["APPROVED"] = "approved";
     TAppointmentStatus["REJECTED"] = "rejected";
+    TAppointmentStatus["SCHEDULED"] = "scheduled";
+    TAppointmentStatus["CONFIRMED"] = "confirmed";
     TAppointmentStatus["COMPLETED"] = "completed";
     TAppointmentStatus["CANCELLED"] = "cancelled";
+    TAppointmentStatus["NO_SHOW"] = "no_show";
 })(TAppointmentStatus || (exports.TAppointmentStatus = TAppointmentStatus = {}));
+var TNotificationPreference;
+(function (TNotificationPreference) {
+    TNotificationPreference["EMAIL"] = "email";
+    TNotificationPreference["SMS"] = "sms";
+    TNotificationPreference["PUSH"] = "push";
+    TNotificationPreference["IN_APP"] = "in_app";
+    TNotificationPreference["NONE"] = "none";
+})(TNotificationPreference || (exports.TNotificationPreference = TNotificationPreference = {}));
 // All types are exported above with their declarations
 //# sourceMappingURL=parent.types.js.map

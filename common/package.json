@@ -109,6 +109,16 @@
       "types": "./dist/types/users/index.d.ts",
       "import": "./dist/types/users/index.js",
       "require": "./dist/types/users/index.js"
+    },
+    "./super-admin": {
+      "types": "./dist/types/super-admin/index.d.ts",
+      "import": "./dist/types/super-admin/index.js",
+      "require": "./dist/types/super-admin/index.js"
+    },
+    "./client-api": {
+      "types": "./dist/types/client-api.types.d.ts",
+      "import": "./dist/types/client-api.types.js",
+      "require": "./dist/types/client-api.types.js"
     }
   },
   "scripts": {

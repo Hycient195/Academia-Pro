@@ -52,6 +52,9 @@ export interface ITokenPair {
   issuedAt: Date;
 }
 
+// Alias for backward compatibility
+export type AuthTokens = ITokenPair;
+
 export interface IRefreshToken {
   id: string;
   token: string;

@@ -3,10 +3,10 @@
 
 import { IsString, IsNotEmpty, IsOptional, IsEnum, IsEmail, IsUrl, IsInt, Min, MaxLength, IsObject, ValidateNested } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ICreateSchoolRequest, TSchoolType, IAddress } from '@academia-pro/common/schools';
+import { ICreateSchoolRequest, TSchoolType } from '@academia-pro/common/super-admin';
 import { Type } from 'class-transformer';
 
-export class CreateSchoolDto {
+export class CreateSchoolDto implements ICreateSchoolRequest {
   @ApiProperty({
     description: 'School name',
     example: 'Green Valley International School',
@@ -35,35 +35,33 @@ export class CreateSchoolDto {
   @IsString({ message: 'Description must be a string' })
   description?: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'School type',
     example: 'mixed',
-    enum: ['primary', 'secondary', 'mixed'],
+    enum: TSchoolType,
   })
-  @IsOptional()
-  @IsEnum(TSchoolType, {
-    message: 'School type must be one of: primary, secondary, mixed'
-  })
-  type?: TSchoolType;
+  @IsNotEmpty({ message: 'School type is required' })
+  @IsEnum(TSchoolType, { message: 'Invalid school type' })
+  type: TSchoolType;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'School phone number',
     example: '+1-555-0123',
     maxLength: 20,
   })
-  @IsOptional()
   @IsString({ message: 'Phone must be a string' })
   @MaxLength(20, { message: 'Phone cannot exceed 20 characters' })
-  phone?: string;
+  @IsNotEmpty({ message: 'School phone is required' })
+  phone: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'School email address',
     example: 'info@greenvalley.edu',
     format: 'email',
   })
-  @IsOptional()
   @IsEmail({}, { message: 'Please provide a valid email address' })
-  email?: string;
+  @IsNotEmpty({ message: 'School email is required' })
+  email: string;
 
   @ApiPropertyOptional({
     description: 'School website URL',
@@ -74,20 +72,45 @@ export class CreateSchoolDto {
   @IsUrl({}, { message: 'Please provide a valid URL' })
   website?: string;
 
-  @ApiPropertyOptional({
-    description: 'School address information',
-    example: {
-      street: '123 Education Street',
-      city: 'Springfield',
-      state: 'IL',
-      postalCode: '62701',
-      country: 'USA',
-    },
+  @ApiProperty({
+    description: 'School address',
+    example: '123 Education Street, Springfield, IL 62701, USA',
   })
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => Object)
-  address?: IAddress;
+  @IsString({ message: 'Address must be a string' })
+  @IsNotEmpty({ message: 'School address is required' })
+  address: string;
+
+  @ApiProperty({
+    description: 'School city',
+    example: 'Springfield',
+  })
+  @IsString({ message: 'City must be a string' })
+  @IsNotEmpty({ message: 'School city is required' })
+  city: string;
+
+  @ApiProperty({
+    description: 'School state',
+    example: 'IL',
+  })
+  @IsString({ message: 'State must be a string' })
+  @IsNotEmpty({ message: 'School state is required' })
+  state: string;
+
+  @ApiProperty({
+    description: 'School country',
+    example: 'USA',
+  })
+  @IsString({ message: 'Country must be a string' })
+  @IsNotEmpty({ message: 'School country is required' })
+  country: string;
+
+  @ApiProperty({
+    description: 'Subscription plan',
+    example: 'premium',
+  })
+  @IsString({ message: 'Subscription plan must be a string' })
+  @IsNotEmpty({ message: 'Subscription plan is required' })
+  subscriptionPlan: string;
 
   @ApiPropertyOptional({
     description: 'Principal name',

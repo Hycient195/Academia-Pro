@@ -1,6 +1,11 @@
 // Academia Pro - Communication Management Types
 // Shared type definitions for communication management module
 
+import { TNotificationType } from "../shared";
+
+// Re-export for convenience
+export type { TNotificationType };
+
 // Enums
 export enum TMessageType {
   DIRECT = 'direct',
@@ -36,7 +41,7 @@ export enum TRecipientType {
   GROUP = 'group',
 }
 
-export enum TNotificationType {
+export enum TNotificationTypeChannel {
   EMAIL = 'email',
   SMS = 'sms',
   PUSH = 'push',

@@ -2,7 +2,7 @@
 // Academia Pro - Examination Management Types
 // Shared type definitions for examination and assessment management module
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TQuestionType = exports.TExamResultStatus = exports.TAssessmentType = exports.TGradingMethod = exports.TExamStatus = exports.TExamType = void 0;
+exports.TQuestionType = exports.TExamResultStatus = exports.TExaminationAssessmentType = exports.TGradingMethod = exports.TExamStatus = exports.TExamType = void 0;
 // Enums
 var TExamType;
 (function (TExamType) {
@@ -38,13 +38,13 @@ var TGradingMethod;
     TGradingMethod["PEER_REVIEW"] = "peer_review";
     TGradingMethod["EXTERNAL"] = "external";
 })(TGradingMethod || (exports.TGradingMethod = TGradingMethod = {}));
-var TAssessmentType;
-(function (TAssessmentType) {
-    TAssessmentType["FORMATIVE"] = "formative";
-    TAssessmentType["SUMMATIVE"] = "summative";
-    TAssessmentType["DIAGNOSTIC"] = "diagnostic";
-    TAssessmentType["PLACEMENT"] = "placement";
-})(TAssessmentType || (exports.TAssessmentType = TAssessmentType = {}));
+var TExaminationAssessmentType;
+(function (TExaminationAssessmentType) {
+    TExaminationAssessmentType["FORMATIVE"] = "formative";
+    TExaminationAssessmentType["SUMMATIVE"] = "summative";
+    TExaminationAssessmentType["DIAGNOSTIC"] = "diagnostic";
+    TExaminationAssessmentType["PLACEMENT"] = "placement";
+})(TExaminationAssessmentType || (exports.TExaminationAssessmentType = TExaminationAssessmentType = {}));
 var TExamResultStatus;
 (function (TExamResultStatus) {
     TExamResultStatus["PENDING"] = "pending";

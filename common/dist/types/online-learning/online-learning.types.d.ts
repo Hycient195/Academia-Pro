@@ -30,7 +30,7 @@ export declare enum TLearningPathType {
     CERTIFICATION = "certification",
     PERSONAL = "personal"
 }
-export declare enum TAssessmentType {
+export declare enum TOnlineLearningAssessmentType {
     QUIZ = "quiz",
     TEST = "test",
     EXAM = "exam",
@@ -167,7 +167,7 @@ export interface ICourseModule {
 export interface IAssessment {
     id: string;
     title: string;
-    type: TAssessmentType;
+    type: TOnlineLearningAssessmentType;
     description: string;
     duration: number;
     totalPoints: number;
@@ -196,6 +196,12 @@ export interface IQuestion {
         difficulty: TDifficultyLevel;
         subject: string;
         gradeLevel: string;
+    };
+}
+export interface IQuestionResponse extends IQuestion {
+    exam?: {
+        id: string;
+        title: string;
     };
 }
 export interface ILearningPath {

@@ -1,5 +1,5 @@
 import React from 'react'
-import { useAuth } from '@/store/auth/authContext'
+import { useAuth } from '@/redux/auth/authContext'
 
 export interface ApiResponse<T = unknown> {
   data?: T

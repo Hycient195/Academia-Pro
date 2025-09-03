@@ -1,9 +1,2 @@
-export * from './types/shared/types';
-export * from './types/shared/util.types';
-export * from './types/student/student.types';
-export * from './types/academic/academic.types';
-export type { IParent, IParentDashboard, IActivity, INotification, IEvent, IAlert, IGradeEntry, ISubjectGrade, IStudentGradesSummary, IParentAcademicGradesResponse, IAttendanceRecord, IAttendanceSummary, IParentAttendanceResponse, IAssignmentSubmission, IAssignmentDetails, IParentAssignmentsResponse, ITimetableEntry, IParentTimetableResponse, IMessage, IParentMessagesResponse, IFeeRecord, IParentFeesResponse, IAppointment, IParentAppointmentsResponse, IResource, IParentResourcesResponse, IParentTransportationResponse, IGetParentDashboardRequest, IGetParentDashboardResponse, IGetAcademicGradesRequest, IGetAttendanceRequest, IGetAssignmentsRequest, IGetTimetableRequest, IGetMessagesRequest, IGetFeesRequest, IGetAppointmentsRequest, IGetResourcesRequest, IGetTransportationRequest, IScheduleAppointmentRequest, IScheduleAppointmentResponse, ISendMessageRequest, ISendMessageResponse, IUpdateCommunicationPreferencesRequest, IUpdateCommunicationPreferencesResponse, IBulkMessageRequest, IBulkMessageResponse, IParentAnalyticsRequest, IParentAnalyticsResponse, IParentSettings } from './types/parent-portal/parent-portal.types';
-export { TParentRelationship, TCommunicationType, TAppointmentStatus, TAppointmentType, TMessagePriority, TNotificationStatus, TResourceType, TAcademicAlertType, TFeeStatus, TTransportationStatus } from './types/parent-portal/parent-portal.types';
-export * from './types/timetable/timetable.types';
-export type { User, School, Grade, Section, Subject, ApiResponse, PaginatedResponse, BaseEntity, SoftDeleteEntity, } from './types/shared/types';
+export * from "./types";
 //# sourceMappingURL=index.d.ts.map

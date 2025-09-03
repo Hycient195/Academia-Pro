@@ -14,7 +14,7 @@ export enum TMobileDeviceType {
   DESKTOP = 'desktop',
 }
 
-export enum TNotificationType {
+export enum TMobileNotificationType {
   ASSIGNMENT = 'assignment',
   GRADE = 'grade',
   ATTENDANCE = 'attendance',
@@ -23,6 +23,11 @@ export enum TNotificationType {
   EMERGENCY = 'emergency',
   SYSTEM = 'system',
 }
+
+// Aliases for backward compatibility
+export type IStudentDashboardResponse = IMobileStudentDashboardResponse;
+export type INotificationSummary = IMobileNotificationSummary;
+export type TNotificationType = TMobileNotificationType;
 
 export enum TEmergencyType {
   MEDICAL = 'medical',
@@ -94,12 +99,12 @@ export interface IMobilePreferences {
 }
 
 // Student Mobile Interfaces
-export interface IStudentDashboardRequest {
+export interface IMobileStudentDashboardRequest {
   studentId: string;
   deviceId?: string;
 }
 
-export interface IStudentDashboardResponse {
+export interface IMobileStudentDashboardResponse {
   studentId: string;
   deviceId?: string;
   timestamp: Date;
@@ -112,7 +117,7 @@ export interface IStudentDashboardResponse {
   todaySchedule: IScheduleItem[];
   pendingAssignments: IAssignmentSummary[];
   recentGrades: IGradeSummary[];
-  notifications: INotificationSummary[];
+  notifications: IMobileNotificationSummary[];
   quickActions: IQuickAction[];
 }
 
@@ -145,18 +150,18 @@ export interface IGradeSummary {
   trend: 'improving' | 'stable' | 'declining';
 }
 
-export interface INotificationSummary {
+export interface IMobileNotificationSummary {
   id: string;
-  type: TNotificationType;
+  type: TMobileNotificationType;
   title: string;
   message: string;
   timestamp: Date;
   read: boolean;
   priority: 'low' | 'medium' | 'high';
-  actions?: INotificationAction[];
+  actions?: IMobileNotificationAction[];
 }
 
-export interface INotificationAction {
+export interface IMobileNotificationAction {
   action: string;
   label: string;
 }
@@ -168,13 +173,13 @@ export interface IQuickAction {
 }
 
 // Timetable Interfaces
-export interface ITimetableRequest {
+export interface IMobileTimetableRequest {
   studentId: string;
   date?: string;
   week?: string;
 }
 
-export interface ITimetableResponse {
+export interface IMobileTimetableResponse {
   studentId: string;
   date: string;
   week: string;
@@ -188,13 +193,13 @@ export interface ITimetableResponse {
 }
 
 // Assignments Interfaces
-export interface IAssignmentsRequest {
+export interface IMobileAssignmentsRequest {
   studentId: string;
   status?: TAssignmentStatus;
   subject?: string;
 }
 
-export interface IAssignmentsResponse {
+export interface IMobileAssignmentsResponse {
   studentId: string;
   totalCount: number;
   pendingCount: number;
@@ -211,24 +216,24 @@ export interface IAssignmentDetail {
   dueDate: string;
   status: TAssignmentStatus;
   priority: TAssignmentPriority;
-  attachments: IFileAttachment[];
-  submissionStatus?: ISubmissionStatus;
-  grade?: IGradeDetail;
+  attachments: IMobileFileAttachment[];
+  submissionStatus?: IMobileSubmissionStatus;
+  grade?: IMobileGradeDetail;
 }
 
-export interface IFileAttachment {
+export interface IMobileFileAttachment {
   name: string;
   url: string;
   type: string;
 }
 
-export interface ISubmissionStatus {
+export interface IMobileSubmissionStatus {
   submittedAt: string;
   status: string;
-  attachments: IFileAttachment[];
+  attachments: IMobileFileAttachment[];
 }
 
-export interface IGradeDetail {
+export interface IMobileGradeDetail {
   score: number;
   maxScore: number;
   grade: string;
@@ -236,55 +241,55 @@ export interface IGradeDetail {
   gradedAt: string;
 }
 
-export interface IAssignmentSubmissionRequest {
+export interface IMobileAssignmentSubmissionRequest {
   studentId: string;
   assignmentId: string;
   notes?: string;
-  attachments?: IFileAttachment[];
+  attachments?: IMobileFileAttachment[];
 }
 
-export interface IAssignmentSubmissionResponse {
+export interface IMobileAssignmentSubmissionResponse {
   assignmentId: string;
   studentId: string;
   submissionId: string;
   status: string;
   submittedAt: Date;
-  attachments: IFileAttachment[];
+  attachments: IMobileFileAttachment[];
   message: string;
 }
 
 // Grades Interfaces
-export interface IGradesRequest {
+export interface IMobileGradesRequest {
   studentId: string;
   term?: string;
   subject?: string;
 }
 
-export interface IGradesResponse {
+export interface IMobileGradesResponse {
   studentId: string;
   term: string;
   overallGPA: number;
-  subjects: ISubjectGrade[];
-  recentAssessments: IAssessmentDetail[];
+  subjects: IMobileSubjectGrade[];
+  recentAssessments: IMobileAssessmentDetail[];
 }
 
-export interface ISubjectGrade {
+export interface IMobileSubjectGrade {
   subject: string;
   currentGrade: string;
   score: number;
   teacher: string;
   trend: 'improving' | 'stable' | 'declining';
-  assessments: IAssessmentSummary[];
+  assessments: IMobileAssessmentSummary[];
 }
 
-export interface IAssessmentSummary {
+export interface IMobileAssessmentSummary {
   name: string;
   score: number;
   maxScore: number;
   weight: number;
 }
 
-export interface IAssessmentDetail {
+export interface IMobileAssessmentDetail {
   subject: string;
   assessment: string;
   date: string;
@@ -295,7 +300,7 @@ export interface IAssessmentDetail {
 }
 
 // Attendance Interfaces
-export interface IAttendanceRequest {
+export interface IMobileAttendanceRequest {
   studentId: string;
   period?: string;
 }
@@ -340,36 +345,36 @@ export interface ISubjectAttendance {
 }
 
 // Notifications Interfaces
-export interface INotificationsRequest {
+export interface IMobileNotificationsRequest {
   studentId: string;
   unreadOnly?: boolean;
   limit?: number;
 }
 
-export interface INotificationsResponse {
+export interface IMobileNotificationsResponse {
   studentId: string;
   totalCount: number;
   unreadCount: number;
-  notifications: INotificationDetail[];
+  notifications: IMobileNotificationDetail[];
 }
 
-export interface INotificationDetail {
+export interface IMobileNotificationDetail {
   id: string;
-  type: TNotificationType;
+  type: TMobileNotificationType;
   title: string;
   message: string;
   timestamp: Date;
   read: boolean;
   priority: 'low' | 'medium' | 'high';
-  actions?: INotificationAction[];
+  actions?: IMobileNotificationAction[];
 }
 
-export interface IMarkNotificationReadRequest {
+export interface IMobileMarkNotificationReadRequest {
   studentId: string;
   notificationId: string;
 }
 
-export interface IMarkNotificationReadResponse {
+export interface IMobileMarkNotificationReadResponse {
   notificationId: string;
   studentId: string;
   status: string;
@@ -377,12 +382,12 @@ export interface IMarkNotificationReadResponse {
 }
 
 // Library Interfaces
-export interface ILibraryInfoRequest {
+export interface IMobileLibraryInfoRequest {
   studentId: string;
   status?: 'borrowed' | 'reserved' | 'overdue' | 'returned';
 }
 
-export interface ILibraryInfoResponse {
+export interface IMobileLibraryInfoResponse {
   studentId: string;
   borrowingLimit: number;
   currentBorrowed: number;
@@ -412,12 +417,12 @@ export interface IBookRecommendation {
   reason: string;
 }
 
-export interface IRenewBookRequest {
+export interface IMobileRenewBookRequest {
   studentId: string;
   bookId: string;
 }
 
-export interface IRenewBookResponse {
+export interface IMobileRenewBookResponse {
   bookId: string;
   studentId: string;
   renewalId: string;
@@ -427,11 +432,11 @@ export interface IRenewBookResponse {
 }
 
 // Transport Interfaces
-export interface ITransportInfoRequest {
+export interface IMobileTransportInfoRequest {
   studentId: string;
 }
 
-export interface ITransportInfoResponse {
+export interface IMobileTransportInfoResponse {
   studentId: string;
   transportStatus: 'active' | 'inactive' | 'suspended';
   routeName?: string;
@@ -444,16 +449,16 @@ export interface ITransportInfoResponse {
   vehicleNumber?: string;
   todayStatus: TTransportStatus;
   lastUpdate: Date;
-  emergencyContacts: IEmergencyContact[];
+  emergencyContacts: IMobileEmergencyContact[];
 }
 
-export interface IEmergencyContact {
+export interface IMobileEmergencyContact {
   name: string;
   phone: string;
 }
 
 // Emergency Interfaces
-export interface IEmergencyReportRequest {
+export interface IMobileEmergencyReportRequest {
   studentId: string;
   emergencyType: TEmergencyType;
   description: string;
@@ -462,7 +467,7 @@ export interface IEmergencyReportRequest {
   witnesses?: string[];
 }
 
-export interface IEmergencyReportResponse {
+export interface IMobileEmergencyReportResponse {
   emergencyId: string;
   studentId: string;
   status: string;
@@ -472,11 +477,11 @@ export interface IEmergencyReportResponse {
 }
 
 // Profile Interfaces
-export interface IStudentProfileRequest {
+export interface IMobileStudentProfileRequest {
   studentId: string;
 }
 
-export interface IStudentProfileResponse {
+export interface IMobileStudentProfileResponse {
   studentId: string;
   personalInfo: {
     firstName: string;
@@ -521,7 +526,7 @@ export interface IStudentProfileResponse {
   };
 }
 
-export interface IUpdateProfileRequest {
+export interface IMobileUpdateProfileRequest {
   studentId: string;
   phone?: string;
   address?: string;
@@ -540,7 +545,7 @@ export interface IUpdateProfileRequest {
   };
 }
 
-export interface IUpdateProfileResponse {
+export interface IMobileUpdateProfileResponse {
   studentId: string;
   updatedFields: string[];
   timestamp: Date;
@@ -548,12 +553,12 @@ export interface IUpdateProfileResponse {
 }
 
 // Parent Mobile Interfaces
-export interface IParentDashboardRequest {
+export interface IMobileParentDashboardRequest {
   parentId: string;
   deviceId?: string;
 }
 
-export interface IParentDashboardResponse {
+export interface IMobileParentDashboardResponse {
   parentId: string;
   deviceId?: string;
   timestamp: Date;
@@ -564,7 +569,7 @@ export interface IParentDashboardResponse {
     profileImage?: string;
   };
   children: IChildSummary[];
-  notifications: INotificationSummary[];
+  notifications: IMobileNotificationSummary[];
   quickActions: IQuickAction[];
 }
 
@@ -578,12 +583,12 @@ export interface IChildSummary {
 }
 
 // Staff Mobile Interfaces
-export interface IStaffDashboardRequest {
+export interface IMobileStaffDashboardRequest {
   staffId: string;
   deviceId?: string;
 }
 
-export interface IStaffDashboardResponse {
+export interface IMobileStaffDashboardResponse {
   staffId: string;
   deviceId?: string;
   timestamp: Date;
@@ -595,7 +600,7 @@ export interface IStaffDashboardResponse {
   };
   todaySchedule: IStaffScheduleItem[];
   pendingTasks: ITaskSummary[];
-  notifications: INotificationSummary[];
+  notifications: IMobileNotificationSummary[];
   quickActions: IQuickAction[];
 }
 
@@ -644,21 +649,21 @@ export interface IMobileRefreshTokenResponse {
 }
 
 // Push Notification Interfaces
-export interface IRegisterPushTokenRequest {
+export interface IMobileRegisterPushTokenRequest {
   userId: string;
   deviceId: string;
   pushToken: string;
   platform: TMobilePlatform;
 }
 
-export interface IRegisterPushTokenResponse {
+export interface IMobileRegisterPushTokenResponse {
   deviceId: string;
   pushToken: string;
   registered: boolean;
   timestamp: Date;
 }
 
-export interface IPushNotificationPayload {
+export interface IMobilePushNotificationPayload {
   to: string;
   title: string;
   body: string;
@@ -668,14 +673,14 @@ export interface IPushNotificationPayload {
 }
 
 // Offline Sync Interfaces
-export interface ISyncRequest {
+export interface IMobileSyncRequest {
   userId: string;
   deviceId: string;
   lastSyncTimestamp: Date;
   dataTypes: string[];
 }
 
-export interface ISyncResponse {
+export interface IMobileSyncResponse {
   userId: string;
   deviceId: string;
   syncTimestamp: Date;
@@ -699,13 +704,13 @@ export interface ISyncConflict {
 }
 
 // App Update Interfaces
-export interface IAppUpdateCheckRequest {
+export interface IMobileAppUpdateCheckRequest {
   platform: TMobilePlatform;
   currentVersion: string;
   deviceId: string;
 }
 
-export interface IAppUpdateCheckResponse {
+export interface IMobileAppUpdateCheckResponse {
   updateAvailable: boolean;
   currentVersion: string;
   latestVersion?: string;
@@ -727,11 +732,11 @@ export interface IMobileAnalyticsEvent {
   platform: TMobilePlatform;
 }
 
-export interface ITrackAnalyticsRequest {
+export interface IMobileTrackAnalyticsRequest {
   events: IMobileAnalyticsEvent[];
 }
 
-export interface ITrackAnalyticsResponse {
+export interface IMobileTrackAnalyticsResponse {
   tracked: number;
   failed: number;
   timestamp: Date;

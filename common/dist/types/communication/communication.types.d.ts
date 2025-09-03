@@ -1,3 +1,4 @@
+import { TNotificationType } from "../shared";
 export declare enum TMessageType {
     DIRECT = "direct",
     GROUP = "group",
@@ -28,7 +29,7 @@ export declare enum TRecipientType {
     ALL = "all",
     GROUP = "group"
 }
-export declare enum TNotificationType {
+export declare enum TNotificationTypeChannel {
     EMAIL = "email",
     SMS = "sms",
     PUSH = "push",

@@ -29,7 +29,7 @@ export declare enum TGradingMethod {
     PEER_REVIEW = "peer_review",
     EXTERNAL = "external"
 }
-export declare enum TAssessmentType {
+export declare enum TExaminationAssessmentType {
     FORMATIVE = "formative",
     SUMMATIVE = "summative",
     DIAGNOSTIC = "diagnostic",
@@ -57,7 +57,7 @@ export interface IExam {
     examTitle: string;
     examDescription?: string;
     examType: TExamType;
-    assessmentType: TAssessmentType;
+    assessmentType: TExaminationAssessmentType;
     status: TExamStatus;
     subjectId: string;
     classId: string;
@@ -147,22 +147,6 @@ export interface IExamResult {
     createdAt: Date;
     updatedAt: Date;
 }
-export interface IQuestion {
-    id: string;
-    examId: string;
-    questionNumber: number;
-    questionText: string;
-    questionType: TQuestionType;
-    marks: number;
-    options?: string[];
-    correctAnswer?: string;
-    explanation?: string;
-    difficulty: 'easy' | 'medium' | 'hard';
-    topic?: string;
-    subtopic?: string;
-    createdAt: Date;
-    updatedAt: Date;
-}
 export interface IStudentAnswer {
     id: string;
     examResultId: string;
@@ -178,7 +162,7 @@ export interface ICreateExamRequest {
     examTitle: string;
     examDescription?: string;
     examType: TExamType;
-    assessmentType?: TAssessmentType;
+    assessmentType?: TExaminationAssessmentType;
     subjectId: string;
     classId: string;
     sectionId?: string;
@@ -222,7 +206,7 @@ export interface IUpdateExamRequest {
     examTitle?: string;
     examDescription?: string;
     examType?: TExamType;
-    assessmentType?: TAssessmentType;
+    assessmentType?: TExaminationAssessmentType;
     scheduledDate?: string;
     startTime?: string;
     endTime?: string;
@@ -374,12 +358,6 @@ export interface IExamResultResponse {
     isLate: boolean;
     gradeColor: string;
 }
-export interface IQuestionResponse extends IQuestion {
-    exam?: {
-        id: string;
-        title: string;
-    };
-}
 export interface IExamListResponse {
     exams: IExamResponse[];
     total: number;
@@ -425,7 +403,7 @@ export interface IStudentExamDashboardResponse {
 }
 export interface IExamFilters {
     examType?: TExamType;
-    assessmentType?: TAssessmentType;
+    assessmentType?: TExaminationAssessmentType;
     status?: TExamStatus;
     subjectId?: string;
     classId?: string;
@@ -462,7 +440,7 @@ export interface IExamStatistics {
     totalExams: number;
     examsByType: Record<TExamType, number>;
     examsByStatus: Record<TExamStatus, number>;
-    examsByAssessmentType: Record<TAssessmentType, number>;
+    examsByAssessmentType: Record<TExaminationAssessmentType, number>;
     averagePassRate?: number;
     averageScore?: number;
     gradeDistribution: Record<string, number>;

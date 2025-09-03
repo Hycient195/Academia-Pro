@@ -25,9 +25,11 @@ export enum TFeeFrequency {
 }
 
 export enum TFeeStatus {
-  ACTIVE = 'active',
-  INACTIVE = 'inactive',
-  ARCHIVED = 'archived',
+  PAID = 'paid',
+  PENDING = 'pending',
+  OVERDUE = 'overdue',
+  PARTIAL = 'partial',
+  WAIVED = 'waived',
 }
 
 export enum TPaymentStatus {

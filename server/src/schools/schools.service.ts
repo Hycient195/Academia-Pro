@@ -4,7 +4,7 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { School, SchoolType, SchoolStatus } from './school.entity';
+import { School, SchoolType, SchoolStatus, SubscriptionPlan } from './school.entity';
 import { CreateSchoolDto, UpdateSchoolDto } from './dtos';
 
 @Injectable()
@@ -45,6 +45,7 @@ export class SchoolsService {
       name,
       code: code || this.generateSchoolCode(name),
       description: schoolData.description,
+      type: schoolData.type as unknown as SchoolType,
       phone: schoolData.phone,
       email: schoolData.email,
       website: schoolData.website,
@@ -58,6 +59,7 @@ export class SchoolsService {
       principalEmail: schoolData.principalEmail,
       currentStudents: schoolData.totalStudents || 0,
       currentStaff: schoolData.totalStaff || 0,
+      subscriptionPlan: ((schoolData as any).subscriptionPlan as unknown as SubscriptionPlan) || SubscriptionPlan.BASIC,
       createdBy: 'system', // TODO: Get from current user
     });
 

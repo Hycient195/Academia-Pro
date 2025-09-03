@@ -23,9 +23,9 @@ import {
 } from "@tabler/icons-react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { useLoginMutation } from "@/store/api/authApi"
+import { apis } from "@/redux/api"
 import { useDispatch } from "react-redux"
-import { setCredentials } from "@/store/slices/authSlice"
+import { setCredentials } from "@/redux/slices/authSlice"
 import { toast } from "sonner"
 
 type UserType = "school-admin" | "student" | "parent" | "teacher"
@@ -74,7 +74,7 @@ export default function SignInPage() {
   const [rememberMe, setRememberMe] = useState(false)
   const [selectedUserType, setSelectedUserType] = useState<UserType | null>(null)
 
-  const [login, { isLoading }] = useLoginMutation()
+  const [login, { isLoading }] = apis.auth.useLoginMutation()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

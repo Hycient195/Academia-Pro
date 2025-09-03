@@ -1,48 +1,15 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import type { RootState } from '@/lib/store';
+import { GLOBAL_API_URL } from '../globalURLs';
 
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface LoginResponse {
-  user: {
-    id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    role: string;
-    schoolId?: string;
-  };
-  tokens: {
-    accessToken: string;
-    refreshToken: string;
-    expiresIn: number;
-    tokenType: string;
-  };
-}
-
-export interface RegisterRequest {
-  email: string;
-  password: string;
-  name: string;
-  role: string;
-  schoolId?: string;
-}
+// Import types from common package
+import type { LoginRequest, LoginResponse, RegisterRequest } from '@academia-pro/common/client-api';
+import type { IAuthUser } from '@academia-pro/common/auth';
 
 export const authApi = createApi({
   reducerPath: 'authApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1',
-    prepareHeaders: (headers, { getState }) => {
-      // Get token from auth state
-      const token = (getState() as RootState)?.auth?.token;
-
-      if (token) {
-        headers.set('authorization', `Bearer ${token}`);
-      }
-
+    baseUrl: GLOBAL_API_URL,
+    prepareHeaders: (headers) => {
       headers.set('Content-Type', 'application/json');
 
       return headers;
@@ -82,7 +49,7 @@ export const authApi = createApi({
       }),
     }),
 
-    getProfile: builder.query<any, void>({
+    getProfile: builder.query<IAuthUser, void>({
       query: () => '/auth/profile',
       providesTags: ['Auth'],
     }),

@@ -3,10 +3,9 @@
 
 import { IsString, IsNotEmpty, IsOptional, IsEnum, IsEmail, IsUrl, IsInt, Min, MaxLength, IsObject, ValidateNested } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IUpdateSchoolRequest, TSchoolType, TSchoolStatus, IAddress } from '@academia-pro/common/schools';
-import { Type } from 'class-transformer';
+import { IUpdateSchoolRequest } from '@academia-pro/common/super-admin';
 
-export class UpdateSchoolDto {
+export class UpdateSchoolDto implements IUpdateSchoolRequest {
   @ApiPropertyOptional({
     description: 'School name',
     example: 'Green Valley International School',
@@ -38,13 +37,10 @@ export class UpdateSchoolDto {
   @ApiPropertyOptional({
     description: 'School type',
     example: 'mixed',
-    enum: ['primary', 'secondary', 'mixed'],
   })
   @IsOptional()
-  @IsEnum(TSchoolType, {
-    message: 'School type must be one of: primary, secondary, mixed'
-  })
-  type?: TSchoolType;
+  @IsString({ message: 'Type must be a string' })
+  type?: string;
 
   @ApiPropertyOptional({
     description: 'School phone number',
@@ -75,19 +71,44 @@ export class UpdateSchoolDto {
   website?: string;
 
   @ApiPropertyOptional({
-    description: 'School address information',
-    example: {
-      street: '123 Education Street',
-      city: 'Springfield',
-      state: 'IL',
-      postalCode: '62701',
-      country: 'USA',
-    },
+    description: 'School address',
+    example: '123 Education Street, Springfield, IL 62701, USA',
   })
   @IsOptional()
-  @ValidateNested()
-  @Type(() => Object)
-  address?: IAddress;
+  @IsString({ message: 'Address must be a string' })
+  address?: string;
+
+  @ApiPropertyOptional({
+    description: 'School city',
+    example: 'Springfield',
+  })
+  @IsOptional()
+  @IsString({ message: 'City must be a string' })
+  city?: string;
+
+  @ApiPropertyOptional({
+    description: 'School state',
+    example: 'IL',
+  })
+  @IsOptional()
+  @IsString({ message: 'State must be a string' })
+  state?: string;
+
+  @ApiPropertyOptional({
+    description: 'School country',
+    example: 'USA',
+  })
+  @IsOptional()
+  @IsString({ message: 'Country must be a string' })
+  country?: string;
+
+  @ApiPropertyOptional({
+    description: 'Subscription plan',
+    example: 'premium',
+  })
+  @IsOptional()
+  @IsString({ message: 'Subscription plan must be a string' })
+  subscriptionPlan?: string;
 
   @ApiPropertyOptional({
     description: 'Principal name',

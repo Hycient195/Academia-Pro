@@ -2,7 +2,7 @@
 // Academia Pro - Online Learning Types
 // Shared type definitions for online learning and digital education module
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TCollaborationType = exports.TDiscussionType = exports.TEnrollmentStatus = exports.TProgressStatus = exports.TAssessmentType = exports.TLearningPathType = exports.TDifficultyLevel = exports.TContentStatus = exports.TContentType = void 0;
+exports.TCollaborationType = exports.TDiscussionType = exports.TEnrollmentStatus = exports.TProgressStatus = exports.TOnlineLearningAssessmentType = exports.TLearningPathType = exports.TDifficultyLevel = exports.TContentStatus = exports.TContentType = void 0;
 // Enums
 var TContentType;
 (function (TContentType) {
@@ -40,15 +40,15 @@ var TLearningPathType;
     TLearningPathType["CERTIFICATION"] = "certification";
     TLearningPathType["PERSONAL"] = "personal";
 })(TLearningPathType || (exports.TLearningPathType = TLearningPathType = {}));
-var TAssessmentType;
-(function (TAssessmentType) {
-    TAssessmentType["QUIZ"] = "quiz";
-    TAssessmentType["TEST"] = "test";
-    TAssessmentType["EXAM"] = "exam";
-    TAssessmentType["ASSIGNMENT"] = "assignment";
-    TAssessmentType["PROJECT"] = "project";
-    TAssessmentType["PRACTICAL"] = "practical";
-})(TAssessmentType || (exports.TAssessmentType = TAssessmentType = {}));
+var TOnlineLearningAssessmentType;
+(function (TOnlineLearningAssessmentType) {
+    TOnlineLearningAssessmentType["QUIZ"] = "quiz";
+    TOnlineLearningAssessmentType["TEST"] = "test";
+    TOnlineLearningAssessmentType["EXAM"] = "exam";
+    TOnlineLearningAssessmentType["ASSIGNMENT"] = "assignment";
+    TOnlineLearningAssessmentType["PROJECT"] = "project";
+    TOnlineLearningAssessmentType["PRACTICAL"] = "practical";
+})(TOnlineLearningAssessmentType || (exports.TOnlineLearningAssessmentType = TOnlineLearningAssessmentType = {}));
 var TProgressStatus;
 (function (TProgressStatus) {
     TProgressStatus["NOT_STARTED"] = "not_started";

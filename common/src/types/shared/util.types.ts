@@ -2,98 +2,11 @@
 // Types and interfaces for user management functionality
 
 import { BaseEntity, UserRole, UserStatus, UserPreferences, Address } from './types';
+import { User, Teacher, Student, Parent, Qualification, EmergencyContact, MedicalInfo, AcademicInfo } from './shared.types';
 import { z } from 'zod';
 
-// User Management Types
-export interface User extends BaseEntity {
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: UserRole;
-  status: UserStatus;
-  avatar?: string;
-  phone?: string;
-  dateOfBirth?: Date;
-  gender?: 'male' | 'female' | 'other';
-  address?: Address;
-  schoolId?: string;
-  isEmailVerified: boolean;
-  lastLoginAt?: Date;
-  preferences: UserPreferences;
-  passwordHash?: string; // Only used in backend
-}
-
-export interface Teacher extends User {
-  role: 'teacher';
-  employeeId: string;
-  department?: string;
-  subjects: string[];
-  qualifications: Qualification[];
-  experience: number; // years
-  specializations: string[];
-  classTeacherOf?: string[]; // Section IDs
-}
-
-export interface Student extends User {
-  role: 'student';
-  studentId: string;
-  gradeId: string;
-  sectionId: string;
-  enrollmentDate: Date;
-  parentIds: string[];
-  emergencyContacts: EmergencyContact[];
-  medicalInfo?: MedicalInfo;
-  academicInfo: AcademicInfo;
-}
-
-export interface Parent extends User {
-  role: 'parent';
-  childrenIds: string[];
-  relationship: 'father' | 'mother' | 'guardian' | 'other';
-  occupation?: string;
-  workplace?: string;
-  emergencyContact: boolean;
-}
-
-// Supporting Types
-export interface Qualification {
-  id: string;
-  degree: string;
-  institution: string;
-  year: number;
-  grade?: string;
-  specialization?: string;
-}
-
-export interface EmergencyContact {
-  id: string;
-  name: string;
-  relationship: string;
-  phone: string;
-  email?: string;
-  address?: Address;
-  isPrimary: boolean;
-}
-
-export interface MedicalInfo {
-  bloodGroup?: string;
-  allergies?: string[];
-  medications?: string[];
-  conditions?: string[];
-  doctorName?: string;
-  doctorPhone?: string;
-  insuranceProvider?: string;
-  insuranceNumber?: string;
-}
-
-export interface AcademicInfo {
-  previousSchool?: string;
-  transferCertificate?: string;
-  achievements?: string[];
-  specialNeeds?: string[];
-  learningStyle?: 'visual' | 'auditory' | 'kinesthetic' | 'reading';
-  languageProficiency?: Record<string, 'beginner' | 'intermediate' | 'advanced' | 'native'>;
-}
+// Re-export shared types for backward compatibility
+export type { User, Teacher, Student, Parent, Qualification, EmergencyContact, MedicalInfo, AcademicInfo };
 
 // Authentication Types
 export interface LoginCredentials {

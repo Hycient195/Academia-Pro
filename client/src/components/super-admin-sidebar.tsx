@@ -13,6 +13,7 @@ import {
   IconFileText,
   IconKey,
 } from "@tabler/icons-react"
+import { useAuth } from "@/redux/auth/authContext"
 
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
@@ -28,76 +29,82 @@ import {
 } from "@/components/ui/sidebar"
 import Link from "next/link"
 
-const data = {
-  user: {
-    name: "Super Admin",
-    email: "superadmin@academiapro.com",
-    avatar: "/avatars/superadmin.jpg",
+const navMain = [
+  {
+    title: "Overview",
+    url: "/super-admin/overview",
+    icon: IconDashboard,
+    shortForm: "Dash",
   },
-  navMain: [
-    {
-      title: "Overview",
-      url: "/super-admin/overview",
-      icon: IconDashboard,
-      shortForm: "Dash",
-    },
-    {
-      title: "Schools",
-      url: "/super-admin/schools",
-      icon: IconBuilding,
-      shortForm: "Schools",
-    },
-    {
-      title: "Users",
-      url: "/super-admin/users",
-      icon: IconUsers,
-      shortForm: "Users",
-    },
-    {
-      title: "Identity & Access Management",
-      url: "/super-admin/iam",
-      icon: IconKey,
-      shortForm: "IAM",
-    },
-    {
-      title: "Analytics",
-      url: "/super-admin/analytics",
-      icon: IconChartBar,
-      shortForm: "Anal",
-    },
-    {
-      title: "Audit",
-      url: "/super-admin/audit",
-      icon: IconFileText,
-      shortForm: "Audit",
-    },
-  ],
-  navSecondary: [
-    {
-      title: "System Health",
-      url: "/super-admin/system",
-      icon: IconActivity,
-      shortForm: "Health",
-    },
-    {
-      title: "Settings",
-      url: "/super-admin/settings",
-      icon: IconSettings,
-      shortForm: "Sett",
-    },
-  ],
-}
+  {
+    title: "Schools",
+    url: "/super-admin/schools",
+    icon: IconBuilding,
+    shortForm: "Schools",
+  },
+  {
+    title: "Users",
+    url: "/super-admin/users",
+    icon: IconUsers,
+    shortForm: "Users",
+  },
+  {
+    title: "Identity & Access Management",
+    url: "/super-admin/iam",
+    icon: IconKey,
+    shortForm: "IAM",
+  },
+  {
+    title: "Analytics",
+    url: "/super-admin/analytics",
+    icon: IconChartBar,
+    shortForm: "Anal",
+  },
+  {
+    title: "Audit",
+    url: "/super-admin/audit",
+    icon: IconFileText,
+    shortForm: "Audit",
+  },
+]
+
+const navSecondary = [
+  {
+    title: "System Health",
+    url: "/super-admin/system",
+    icon: IconActivity,
+    shortForm: "Health",
+  },
+  {
+    title: "Settings",
+    url: "/super-admin/settings",
+    icon: IconSettings,
+    shortForm: "Sett",
+  },
+]
 
 export function SuperAdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
+  const { user, isAuthenticated } = useAuth()
+
+  // Transform user data for NavUser component
+  const userData = user ? {
+    name: `${user.firstName} ${user.lastName}`.trim(),
+    email: user.email,
+    avatar: "/avatars/default.jpg", // Default avatar since User interface doesn't have avatar field
+  } : {
+    name: "Super Admin",
+    email: "superadmin@academiapro.com",
+    avatar: "/avatars/superadmin.jpg",
+  }
 
   // Create nav items with active state
-  const navMainWithActive = data.navMain.map(item => ({
+  const navMainWithActive = navMain.map(item => ({
     ...item,
     isActive: pathname === item.url
   }))
 
-  const navSecondaryWithActive = data.navSecondary.map(item => ({
+  const navSecondaryWithActive = navSecondary.map(item => ({
     ...item,
     isActive: pathname === item.url
   }))
@@ -126,7 +133,7 @@ export function SuperAdminSidebar({ ...props }: React.ComponentProps<typeof Side
         <NavSecondary items={navSecondaryWithActive} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={userData} />
       </SidebarFooter>
     </Sidebar>
   )

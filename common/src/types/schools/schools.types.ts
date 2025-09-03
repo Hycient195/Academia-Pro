@@ -1,32 +1,12 @@
 // Academia Pro - Schools Management Types
 // Shared type definitions for schools management module
 
-// Enums
-export enum TSchoolType {
-  PRIMARY = 'primary',
-  SECONDARY = 'secondary',
-  MIXED = 'mixed',
-}
+import { IAddress, TSchoolType, TSchoolStatus } from '../shared';
 
-export enum TSchoolStatus {
-  ACTIVE = 'active',
-  INACTIVE = 'inactive',
-  SUSPENDED = 'suspended',
-  CLOSED = 'closed',
-}
+// Enums - moved to shared types
 
 // Interfaces
-export interface IAddress {
-  street: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  country: string;
-  coordinates?: {
-    latitude: number;
-    longitude: number;
-  };
-}
+// IAddress interface moved to shared types
 
 export interface ISchool {
   id: string;
@@ -84,7 +64,7 @@ export interface ISchool {
 }
 
 // Request Interfaces
-export interface ICreateSchoolRequest {
+export interface ISchoolCreateSchoolRequest {
   name: string;
   code?: string;
   description?: string;
@@ -118,7 +98,7 @@ export interface ICreateSchoolRequest {
   metadata?: Record<string, any>;
 }
 
-export interface IUpdateSchoolRequest {
+export interface ISchoolUpdateSchoolRequest {
   name?: string;
   code?: string;
   description?: string;
@@ -187,21 +167,6 @@ export interface ISchoolListResponse {
   };
 }
 
-// Filter and Query Interfaces
-export interface ISchoolFilters {
-  type?: TSchoolType;
-  status?: TSchoolStatus;
-  city?: string;
-  state?: string;
-  country?: string;
-  establishedAfter?: string;
-  establishedBefore?: string;
-  minStudents?: number;
-  maxStudents?: number;
-  hasFacilities?: string[];
-  search?: string;
-}
-
 export interface ISchoolQuery {
   type?: TSchoolType;
   status?: TSchoolStatus;
@@ -246,11 +211,11 @@ export interface ISchoolStatistics {
 // Bulk Operations
 export interface IBulkSchoolUpdateRequest {
   schoolIds: string[];
-  updates: Partial<IUpdateSchoolRequest>;
+  updates: Partial<ISchoolUpdateSchoolRequest>;
 }
 
 export interface IBulkSchoolCreateRequest {
-  schools: ICreateSchoolRequest[];
+  schools: ISchoolCreateSchoolRequest[];
 }
 
 // Validation Rules
@@ -290,52 +255,6 @@ export interface ISchoolValidationRules {
       pattern: string;
       maxLength: number;
     };
-  };
-}
-
-// Settings and Configuration
-export interface ISchoolSettings {
-  schoolId: string;
-  generalSettings: {
-    timezone: string;
-    currency: string;
-    language: string;
-    dateFormat: string;
-    timeFormat: string;
-  };
-  academicSettings: {
-    academicYearFormat: string;
-    gradingScale: Array<{
-      grade: string;
-      minScore: number;
-      maxScore: number;
-      description: string;
-    }>;
-    attendanceThreshold: number;
-    promotionCriteria: {
-      minimumAttendance: number;
-      minimumGrade: string;
-      requiredSubjects: string[];
-    };
-  };
-  communicationSettings: {
-    emailNotifications: boolean;
-    smsNotifications: boolean;
-    parentPortalEnabled: boolean;
-    studentPortalEnabled: boolean;
-    emergencyAlertsEnabled: boolean;
-  };
-  securitySettings: {
-    passwordPolicy: {
-      minLength: number;
-      requireUppercase: boolean;
-      requireLowercase: boolean;
-      requireNumbers: boolean;
-      requireSpecialChars: boolean;
-    };
-    sessionTimeout: number;
-    maxLoginAttempts: number;
-    twoFactorEnabled: boolean;
   };
 }
 

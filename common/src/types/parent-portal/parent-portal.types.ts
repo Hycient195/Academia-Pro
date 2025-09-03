@@ -1,30 +1,13 @@
 // Academia Pro - Parent Portal Types
 // Shared type definitions for parent portal and family communication module
 
-// Enums
-export enum TParentRelationship {
-  FATHER = 'father',
-  MOTHER = 'mother',
-  GUARDIAN = 'guardian',
-  GRANDPARENT = 'grandparent',
-  OTHER = 'other',
-}
+import { IMessage, TMessagePriority } from "../communication";
+import { TFeeStatus } from "../fee";
+import { TAppointmentStatus, TParentRelationship } from "../parent/parent.types";
+import { IAlert, INotification } from "../shared";
+import { IStudent, ITransportationInfo } from "../student";
+import { ITimetableEntry } from "../timetable";
 
-export enum TCommunicationType {
-  EMAIL = 'email',
-  SMS = 'sms',
-  PUSH = 'push',
-  IN_APP = 'in_app',
-  CALL = 'call',
-}
-
-export enum TAppointmentStatus {
-  SCHEDULED = 'scheduled',
-  CONFIRMED = 'confirmed',
-  COMPLETED = 'completed',
-  CANCELLED = 'cancelled',
-  NO_SHOW = 'no_show',
-}
 
 export enum TAppointmentType {
   PARENT_TEACHER = 'parent_teacher',
@@ -32,20 +15,6 @@ export enum TAppointmentType {
   ADMINISTRATIVE = 'administrative',
   MEDICAL = 'medical',
   OTHER = 'other',
-}
-
-export enum TMessagePriority {
-  LOW = 'low',
-  NORMAL = 'normal',
-  HIGH = 'high',
-  URGENT = 'urgent',
-}
-
-export enum TNotificationStatus {
-  SENT = 'sent',
-  DELIVERED = 'delivered',
-  READ = 'read',
-  FAILED = 'failed',
 }
 
 export enum TResourceType {
@@ -64,66 +33,12 @@ export enum TAcademicAlertType {
   ACHIEVEMENT = 'achievement',
 }
 
-export enum TFeeStatus {
-  PAID = 'paid',
-  PENDING = 'pending',
-  OVERDUE = 'overdue',
-  PARTIAL = 'partial',
-  WAIVED = 'waived',
-}
-
-export enum TTransportationStatus {
-  ACTIVE = 'active',
-  INACTIVE = 'inactive',
-  SUSPENDED = 'suspended',
-}
-
-// Interfaces
-export interface IParent {
-  id: string;
-  userId: string;
-  schoolId: string;
+export interface IParentPortalDashboard {
+  parentId: string;
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
-  relationship: TParentRelationship;
-  isPrimary: boolean;
-  emergencyContact: boolean;
-  communicationPreferences: {
-    email: boolean;
-    sms: boolean;
-    push: boolean;
-    language: string;
-  };
-  address: {
-    street: string;
-    city: string;
-    state: string;
-    postalCode: string;
-    country: string;
-  };
-  occupation?: string;
-  employer?: string;
-  workPhone?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface IStudent {
-  id: string;
-  firstName: string;
-  lastName: string;
-  grade: string;
-  section: string;
-  rollNumber: string;
-  profileImage?: string;
-  relationship: TParentRelationship;
-}
-
-export interface IParentDashboard {
-  parentId: string;
-  parentName: string;
   schoolId: string;
   schoolName: string;
   students: IStudent[];
@@ -131,6 +46,11 @@ export interface IParentDashboard {
   notifications: INotification[];
   upcomingEvents: IEvent[];
   alerts: IAlert[];
+  systemStatus: {
+    lastUpdated: Date;
+    dataFreshness: 'fresh' | 'stale' | 'outdated';
+    nextUpdate: Date;
+  };
   quickStats: {
     totalStudents: number;
     averageAttendance: number;
@@ -152,20 +72,6 @@ export interface IActivity {
   actionUrl?: string;
 }
 
-export interface INotification {
-  id: string;
-  type: TCommunicationType;
-  title: string;
-  message: string;
-  timestamp: Date;
-  read: boolean;
-  priority: TMessagePriority;
-  studentId?: string;
-  studentName?: string;
-  actionUrl?: string;
-  expiresAt?: Date;
-}
-
 export interface IEvent {
   id: string;
   title: string;
@@ -178,20 +84,6 @@ export interface IEvent {
   isMandatory: boolean;
   rsvpRequired: boolean;
   rsvpStatus?: 'pending' | 'accepted' | 'declined';
-}
-
-export interface IAlert {
-  id: string;
-  type: TAcademicAlertType;
-  title: string;
-  message: string;
-  severity: 'info' | 'warning' | 'critical';
-  studentId: string;
-  studentName: string;
-  timestamp: Date;
-  acknowledged: boolean;
-  actionRequired: boolean;
-  actionUrl?: string;
 }
 
 // Academic Performance Interfaces
@@ -251,7 +143,7 @@ export interface IParentAcademicGradesResponse {
 }
 
 // Attendance Interfaces
-export interface IAttendanceRecord {
+export interface IParentAttendanceRecord {
   date: Date;
   status: 'present' | 'absent' | 'late' | 'excused';
   checkInTime?: string;
@@ -279,7 +171,7 @@ export interface IParentAttendanceResponse {
     start: string;
     end: string;
   };
-  records: IAttendanceRecord[];
+  records: IParentAttendanceRecord[];
   summary: IAttendanceSummary;
   timestamp: Date;
 }
@@ -323,17 +215,6 @@ export interface IParentAssignmentsResponse {
   timestamp: Date;
 }
 
-// Timetable Interfaces
-export interface ITimetableEntry {
-  subject: string;
-  teacher: string;
-  room: string;
-  startTime: string;
-  endTime: string;
-  dayOfWeek: string;
-  period: number;
-  notes?: string;
-}
 
 export interface IParentTimetableResponse {
   parentId: string;
@@ -347,29 +228,6 @@ export interface IParentTimetableResponse {
     averagePeriodsPerDay: number;
   };
   timestamp: Date;
-}
-
-// Communication Interfaces
-export interface IMessage {
-  id: string;
-  senderId: string;
-  senderName: string;
-  senderType: 'teacher' | 'admin' | 'parent';
-  recipientId: string;
-  recipientName: string;
-  subject: string;
-  content: string;
-  priority: TMessagePriority;
-  read: boolean;
-  readAt?: Date;
-  attachments: Array<{
-    name: string;
-    url: string;
-    type: string;
-  }>;
-  threadId?: string;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 export interface IParentMessagesResponse {
@@ -504,42 +362,7 @@ export interface IParentResourcesResponse {
   timestamp: Date;
 }
 
-// Transportation Interfaces
-export interface ITransportationInfo {
-  studentId: string;
-  studentName: string;
-  routeName?: string;
-  pickupTime?: string;
-  dropoffTime?: string;
-  pickupLocation?: string;
-  dropoffLocation?: string;
-  driverName?: string;
-  driverPhone?: string;
-  vehicleNumber?: string;
-  status: TTransportationStatus;
-  lastUpdate: Date;
-  emergencyContacts: Array<{
-    name: string;
-    phone: string;
-  }>;
-  todaySchedule: {
-    pickup: {
-      time: string;
-      location: string;
-      status: 'on_time' | 'delayed' | 'cancelled';
-    };
-    dropoff: {
-      time: string;
-      location: string;
-      status: 'on_time' | 'delayed' | 'cancelled';
-    };
-  };
-  weeklySchedule: Record<string, {
-    pickupTime: string;
-    dropoffTime: string;
-    route: string;
-  }>;
-}
+
 
 export interface IParentTransportationResponse {
   parentId: string;
@@ -562,7 +385,7 @@ export interface IGetParentDashboardRequest {
   includeAlerts?: boolean;
 }
 
-export interface IGetParentDashboardResponse extends IParentDashboard {
+export interface IGetParentDashboardResponse extends IParentPortalDashboard {
   timestamp: Date;
 }
 
@@ -694,12 +517,6 @@ export interface IUpdateCommunicationPreferencesResponse {
   };
   updatedAt: Date;
   message: string;
-}
-
-// Bulk Operations
-export interface IBulkMessageRequest {
-  parentId: string;
-  messages: ISendMessageRequest[];
 }
 
 export interface IBulkMessageResponse {

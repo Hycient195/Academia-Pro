@@ -1,6 +1,6 @@
 "use client"
 
-import { AuthProvider } from "@/store/auth/authContext"
+import { AuthProvider } from "@/redux/auth/authContext"
 
 export default function SuperAdminAuthLayout({
   children,

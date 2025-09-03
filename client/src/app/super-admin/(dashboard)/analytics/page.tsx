@@ -17,7 +17,7 @@ import {
   IconCurrencyDollar,
   IconCalendar
 } from "@tabler/icons-react"
-import { useGetSystemAnalyticsQuery, useGetSystemMetricsQuery } from "@/store/api/superAdminApi"
+import { apis } from "@/redux/api"
 
 function MetricCard({
   title,
@@ -81,8 +81,8 @@ function ChartPlaceholder({ title, height = "h-64" }: { title: string; height?: 
 export default function AnalyticsPage() {
   const [period, setPeriod] = useState('30d')
 
-  const { data: analytics, isLoading: analyticsLoading } = useGetSystemAnalyticsQuery({ period })
-  const { data: metrics, isLoading: metricsLoading } = useGetSystemMetricsQuery()
+  const { data: analytics, isLoading: analyticsLoading } = apis.superAdmin.useGetSystemAnalyticsQuery({ period })
+  const { data: metrics, isLoading: metricsLoading } = apis.superAdmin.useGetSystemMetricsQuery()
 
   const isLoading = analyticsLoading || metricsLoading
 

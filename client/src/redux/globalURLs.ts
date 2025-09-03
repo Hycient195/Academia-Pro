@@ -1,0 +1,2 @@
+export const GLOBAL_BASEURL = `${process.env.NEXT_PUBLIC_API_BASE_URL}${process.env.NEXT_PUBLIC_API_BASE_URL?.endsWith('/') ? '' : '/'}` || 'http://localhost:3001/';
+export const GLOBAL_API_URL = `${GLOBAL_BASEURL}api/v1`;

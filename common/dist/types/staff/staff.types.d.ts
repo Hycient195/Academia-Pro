@@ -1,3 +1,4 @@
+import { IAddress, IDocument, IEmergencyContact } from '../shared';
 export declare enum TEmploymentType {
     FULL_TIME = "full_time",
     PART_TIME = "part_time",
@@ -49,16 +50,6 @@ export declare enum TQualificationLevel {
     PHD = "phd",
     PROFESSIONAL_CERTIFICATION = "professional_certification"
 }
-export declare enum TBloodGroup {
-    A_POSITIVE = "a_positive",
-    A_NEGATIVE = "a_negative",
-    B_POSITIVE = "b_positive",
-    B_NEGATIVE = "b_negative",
-    AB_POSITIVE = "ab_positive",
-    AB_NEGATIVE = "ab_negative",
-    O_POSITIVE = "o_positive",
-    O_NEGATIVE = "o_negative"
-}
 export declare enum TLeaveType {
     ANNUAL = "annual",
     SICK = "sick",
@@ -108,17 +99,6 @@ export interface IStaff {
     createdBy?: string;
     updatedBy?: string;
 }
-export interface IAddress {
-    street: string;
-    city: string;
-    state: string;
-    postalCode: string;
-    country: string;
-    coordinates?: {
-        latitude: number;
-        longitude: number;
-    };
-}
 export interface ISalaryInfo {
     basicSalary: number;
     allowances: IAllowance[];
@@ -162,13 +142,6 @@ export interface IQualification {
     certificateNumber?: string;
     isVerified: boolean;
     documents: IDocument[];
-}
-export interface IEmergencyContact {
-    name: string;
-    relationship: string;
-    phone: string;
-    email?: string;
-    address?: string;
 }
 export interface IWorkSchedule {
     workingDays: string[];
@@ -217,19 +190,6 @@ export interface ILeaveRecord {
     comments?: string;
     documents: IDocument[];
     createdAt: Date;
-}
-export interface IDocument {
-    id: string;
-    type: string;
-    fileName: string;
-    fileUrl: string;
-    fileSize: number;
-    mimeType: string;
-    uploadedAt: Date;
-    uploadedBy: string;
-    isVerified: boolean;
-    verificationDate?: Date;
-    verifiedBy?: string;
 }
 export interface ICreateStaffRequest {
     schoolId: string;

@@ -28,9 +28,11 @@ var TFeeFrequency;
 })(TFeeFrequency || (exports.TFeeFrequency = TFeeFrequency = {}));
 var TFeeStatus;
 (function (TFeeStatus) {
-    TFeeStatus["ACTIVE"] = "active";
-    TFeeStatus["INACTIVE"] = "inactive";
-    TFeeStatus["ARCHIVED"] = "archived";
+    TFeeStatus["PAID"] = "paid";
+    TFeeStatus["PENDING"] = "pending";
+    TFeeStatus["OVERDUE"] = "overdue";
+    TFeeStatus["PARTIAL"] = "partial";
+    TFeeStatus["WAIVED"] = "waived";
 })(TFeeStatus || (exports.TFeeStatus = TFeeStatus = {}));
 var TPaymentStatus;
 (function (TPaymentStatus) {

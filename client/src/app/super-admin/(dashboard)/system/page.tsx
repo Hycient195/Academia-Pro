@@ -17,7 +17,7 @@ import {
   IconClock,
   IconRefresh
 } from "@tabler/icons-react"
-import { useGetSystemHealthQuery, useGetSystemAlertsQuery, useAcknowledgeAlertMutation } from "@/store/api/superAdminApi"
+import { apis } from "@/redux/api"
 
 function HealthStatusCard({
   title,
@@ -133,22 +133,10 @@ function SystemMetric({
 export default function SystemPage() {
   const [selectedTab, setSelectedTab] = useState('overview')
 
-  const { data: healthData, isLoading: healthLoading, refetch: refetchHealth } = useGetSystemHealthQuery()
-  const { data: alerts, isLoading: alertsLoading, refetch: refetchAlerts } = useGetSystemAlertsQuery({ acknowledged: false })
-  const [acknowledgeAlert] = useAcknowledgeAlertMutation()
+  const { data: healthData, isLoading: healthLoading, refetch: refetchHealth } = apis.superAdmin.useGetSystemHealthQuery()
 
   const handleRefresh = () => {
     refetchHealth()
-    refetchAlerts()
-  }
-
-  const handleAcknowledgeAlert = async (alertId: string) => {
-    try {
-      await acknowledgeAlert(alertId)
-      refetchAlerts()
-    } catch (error) {
-      console.error('Failed to acknowledge alert:', error)
-    }
   }
 
   if (healthLoading) {
@@ -186,7 +174,6 @@ export default function SystemPage() {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="metrics">Metrics</TabsTrigger>
-          <TabsTrigger value="alerts">Alerts</TabsTrigger>
           <TabsTrigger value="services">Services</TabsTrigger>
         </TabsList>
 
@@ -312,62 +299,6 @@ export default function SystemPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="alerts" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Active Alerts</CardTitle>
-              <CardDescription>System alerts requiring attention</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {alertsLoading ? (
-                <div className="space-y-4">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="h-20 bg-muted rounded animate-pulse" />
-                  ))}
-                </div>
-              ) : alerts && alerts.length > 0 ? (
-                <div className="space-y-4">
-                  {alerts.map((alert) => (
-                    <Card key={alert.id} className="border-l-4 border-l-red-500">
-                      <CardContent className="pt-4">
-                        <div className="flex items-start space-x-3">
-                          <IconAlertTriangle className="h-4 w-4 text-red-500 mt-0.5" />
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <h4 className="text-sm font-medium">{alert.title}</h4>
-                              <div className="flex items-center space-x-2">
-                                <Badge variant={alert.priority === 'high' ? 'destructive' : alert.priority === 'medium' ? 'default' : 'secondary'}>
-                                  {alert.priority}
-                                </Badge>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleAcknowledgeAlert(alert.id)}
-                                >
-                                  Acknowledge
-                                </Button>
-                              </div>
-                            </div>
-                            <p className="text-sm text-muted-foreground mt-1">{alert.message}</p>
-                            <div className="mt-2 text-xs text-muted-foreground">
-                              {new Date(alert.timestamp).toLocaleString()}
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <IconCircleCheck className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold">No active alerts</h3>
-                  <p className="text-muted-foreground">All systems are running normally</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         <TabsContent value="services" className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

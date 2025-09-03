@@ -1,3 +1,4 @@
+import { IAddress, IDocument, IEmergencyContact, IInsuranceInfo, TBloodGroup } from '../shared';
 export declare enum TStudentStatus {
     ACTIVE = "active",
     INACTIVE = "inactive",
@@ -12,16 +13,6 @@ export declare enum TEnrollmentType {
     GIFTED = "gifted",
     INTERNATIONAL = "international",
     TRANSFER = "transfer"
-}
-export declare enum TBloodGroup {
-    A_POSITIVE = "A+",
-    A_NEGATIVE = "A-",
-    B_POSITIVE = "B+",
-    B_NEGATIVE = "B-",
-    AB_POSITIVE = "AB+",
-    AB_NEGATIVE = "AB-",
-    O_POSITIVE = "O+",
-    O_NEGATIVE = "O-"
 }
 export interface IStudent {
     id: string;
@@ -46,7 +37,7 @@ export interface IStudent {
     medicalInfo?: IMedicalInfo;
     transportation?: ITransportationInfo;
     hostel?: IHostelInfo;
-    financialInfo: IFinancialInfo;
+    financialInfo: IStucentFinancialInfo;
     documents: IDocument[];
     preferences: IStudentPreferences;
     gpa?: number;
@@ -56,17 +47,6 @@ export interface IStudent {
     updatedAt: Date;
     createdBy?: string;
     updatedBy?: string;
-}
-export interface IAddress {
-    street: string;
-    city: string;
-    state: string;
-    postalCode: string;
-    country: string;
-    coordinates?: {
-        latitude: number;
-        longitude: number;
-    };
 }
 export interface IParentsInfo {
     father?: IParentInfo;
@@ -95,29 +75,50 @@ export interface IMedicalInfo {
     doctorInfo?: IDoctorInfo;
     insuranceInfo?: IInsuranceInfo;
 }
-export interface IEmergencyContact {
-    name: string;
-    phone: string;
-    relation: string;
-}
 export interface IDoctorInfo {
     name: string;
     phone: string;
     clinic: string;
 }
-export interface IInsuranceInfo {
-    provider: string;
-    policyNumber: string;
-    expiryDate: Date;
+export declare enum TTransportationStatus {
+    ACTIVE = "active",
+    INACTIVE = "inactive",
+    SUSPENDED = "suspended"
 }
 export interface ITransportationInfo {
-    required: boolean;
-    routeId?: string;
-    stopId?: string;
+    studentId: string;
+    studentName: string;
+    routeName?: string;
     pickupTime?: string;
-    dropTime?: string;
-    distance?: number;
-    fee?: number;
+    dropoffTime?: string;
+    pickupLocation?: string;
+    dropoffLocation?: string;
+    driverName?: string;
+    driverPhone?: string;
+    vehicleNumber?: string;
+    status: TTransportationStatus;
+    lastUpdate: Date;
+    emergencyContacts: Array<{
+        name: string;
+        phone: string;
+    }>;
+    todaySchedule: {
+        pickup: {
+            time: string;
+            location: string;
+            status: 'on_time' | 'delayed' | 'cancelled';
+        };
+        dropoff: {
+            time: string;
+            location: string;
+            status: 'on_time' | 'delayed' | 'cancelled';
+        };
+    };
+    weeklySchedule: Record<string, {
+        pickupTime: string;
+        dropoffTime: string;
+        route: string;
+    }>;
 }
 export interface IHostelInfo {
     required: boolean;
@@ -127,7 +128,7 @@ export interface IHostelInfo {
     bedNumber?: string;
     fee?: number;
 }
-export interface IFinancialInfo {
+export interface IStucentFinancialInfo {
     feeCategory: string;
     scholarship?: IScholarshipInfo;
     outstandingBalance: number;
@@ -139,13 +140,6 @@ export interface IScholarshipInfo {
     amount: number;
     percentage: number;
     validUntil: Date;
-}
-export interface IDocument {
-    type: string;
-    fileName: string;
-    fileUrl: string;
-    uploadedAt: Date;
-    verified: boolean;
 }
 export interface IStudentPreferences {
     language: string;
@@ -208,7 +202,7 @@ export interface IUpdateStudentRequest {
     medicalInfo?: IMedicalInfo;
     transportation?: ITransportationInfo;
     hostel?: IHostelInfo;
-    financialInfo?: Partial<IFinancialInfo>;
+    financialInfo?: Partial<IStucentFinancialInfo>;
     documents?: IDocument[];
     preferences?: Partial<IStudentPreferences>;
     gpa?: number;

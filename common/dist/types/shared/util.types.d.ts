@@ -1,86 +1,7 @@
-import { BaseEntity, UserRole, UserStatus, UserPreferences, Address } from './types';
+import { UserRole, UserStatus, UserPreferences, Address } from './types';
+import { User, Teacher, Student, Parent, Qualification, EmergencyContact, MedicalInfo, AcademicInfo } from './shared.types';
 import { z } from 'zod';
-export interface User extends BaseEntity {
-    email: string;
-    firstName: string;
-    lastName: string;
-    role: UserRole;
-    status: UserStatus;
-    avatar?: string;
-    phone?: string;
-    dateOfBirth?: Date;
-    gender?: 'male' | 'female' | 'other';
-    address?: Address;
-    schoolId?: string;
-    isEmailVerified: boolean;
-    lastLoginAt?: Date;
-    preferences: UserPreferences;
-    passwordHash?: string;
-}
-export interface Teacher extends User {
-    role: 'teacher';
-    employeeId: string;
-    department?: string;
-    subjects: string[];
-    qualifications: Qualification[];
-    experience: number;
-    specializations: string[];
-    classTeacherOf?: string[];
-}
-export interface Student extends User {
-    role: 'student';
-    studentId: string;
-    gradeId: string;
-    sectionId: string;
-    enrollmentDate: Date;
-    parentIds: string[];
-    emergencyContacts: EmergencyContact[];
-    medicalInfo?: MedicalInfo;
-    academicInfo: AcademicInfo;
-}
-export interface Parent extends User {
-    role: 'parent';
-    childrenIds: string[];
-    relationship: 'father' | 'mother' | 'guardian' | 'other';
-    occupation?: string;
-    workplace?: string;
-    emergencyContact: boolean;
-}
-export interface Qualification {
-    id: string;
-    degree: string;
-    institution: string;
-    year: number;
-    grade?: string;
-    specialization?: string;
-}
-export interface EmergencyContact {
-    id: string;
-    name: string;
-    relationship: string;
-    phone: string;
-    email?: string;
-    address?: Address;
-    isPrimary: boolean;
-}
-export interface MedicalInfo {
-    bloodGroup?: string;
-    allergies?: string[];
-    medications?: string[];
-    conditions?: string[];
-    doctorName?: string;
-    doctorPhone?: string;
-    insuranceProvider?: string;
-    insuranceNumber?: string;
-}
-export interface AcademicInfo {
-    previousSchool?: string;
-    transferCertificate?: string;
-    achievements?: string[];
-    specialNeeds?: string[];
-    learningStyle?: 'visual' | 'auditory' | 'kinesthetic' | 'reading';
-    languageProficiency?: Record<string, 'beginner' | 'intermediate' | 'advanced' | 'native'>;
-}
+export type { User, Teacher, Student, Parent, Qualification, EmergencyContact, MedicalInfo, AcademicInfo };
 export interface LoginCredentials {
     email: string;
     password: string;
@@ -262,15 +183,15 @@ export declare const createUserSchema: z.ZodObject<{
     lastName: string;
     role: "super-admin" | "school-admin" | "teacher" | "student" | "parent";
     sendWelcomeEmail: boolean;
-    phone?: string | undefined;
     schoolId?: string | undefined;
+    phone?: string | undefined;
 }, {
     email: string;
     firstName: string;
     lastName: string;
     role: "super-admin" | "school-admin" | "teacher" | "student" | "parent";
-    phone?: string | undefined;
     schoolId?: string | undefined;
+    phone?: string | undefined;
     sendWelcomeEmail?: boolean | undefined;
 }>;
 export declare const updateProfileSchema: z.ZodObject<{
@@ -302,8 +223,6 @@ export declare const updateProfileSchema: z.ZodObject<{
     firstName?: string | undefined;
     lastName?: string | undefined;
     phone?: string | undefined;
-    dateOfBirth?: Date | undefined;
-    gender?: "male" | "female" | "other" | undefined;
     address?: {
         street: string;
         city: string;
@@ -311,12 +230,12 @@ export declare const updateProfileSchema: z.ZodObject<{
         postalCode: string;
         country: string;
     } | undefined;
+    dateOfBirth?: Date | undefined;
+    gender?: "male" | "female" | "other" | undefined;
 }, {
     firstName?: string | undefined;
     lastName?: string | undefined;
     phone?: string | undefined;
-    dateOfBirth?: Date | undefined;
-    gender?: "male" | "female" | "other" | undefined;
     address?: {
         street: string;
         city: string;
@@ -324,6 +243,8 @@ export declare const updateProfileSchema: z.ZodObject<{
         postalCode: string;
         country: string;
     } | undefined;
+    dateOfBirth?: Date | undefined;
+    gender?: "male" | "female" | "other" | undefined;
 }>;
 export declare const changePasswordSchema: z.ZodEffects<z.ZodObject<{
     currentPassword: z.ZodString;

@@ -330,7 +330,7 @@ export class UpdateFeeStructureDto {
 
   @ApiPropertyOptional({
     description: 'Status of the fee structure',
-    example: TFeeStatus.ACTIVE,
+    example: TFeeStatus.PENDING,
     enum: TFeeStatus,
   })
   @IsOptional()

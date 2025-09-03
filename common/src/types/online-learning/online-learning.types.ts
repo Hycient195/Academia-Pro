@@ -38,7 +38,7 @@ export enum TLearningPathType {
   PERSONAL = 'personal',
 }
 
-export enum TAssessmentType {
+export enum TOnlineLearningAssessmentType {
   QUIZ = 'quiz',
   TEST = 'test',
   EXAM = 'exam',
@@ -184,7 +184,7 @@ export interface ICourseModule {
 export interface IAssessment {
   id: string;
   title: string;
-  type: TAssessmentType;
+  type: TOnlineLearningAssessmentType;
   description: string;
   duration: number; // in minutes
   totalPoints: number;
@@ -201,6 +201,7 @@ export interface IAssessment {
   };
 }
 
+
 export interface IQuestion {
   id: string;
   type: 'multiple_choice' | 'true_false' | 'short_answer' | 'essay' | 'matching' | 'ordering';
@@ -214,6 +215,13 @@ export interface IQuestion {
     difficulty: TDifficultyLevel;
     subject: string;
     gradeLevel: string;
+  };
+}
+
+export interface IQuestionResponse extends IQuestion {
+  exam?: {
+    id: string;
+    title: string;
   };
 }
 

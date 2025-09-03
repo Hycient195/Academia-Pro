@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { IconPlus, IconTrash, IconEdit, IconKey, IconShield, IconUsers } from "@tabler/icons-react"
-import { useGetDelegatedAccountsQuery, useCreateDelegatedAccountMutation, useRevokeDelegatedAccountMutation } from "@/store/api/superAdminApi"
+import { apis } from "@/redux/api"
 
 interface Permission {
   id: string
@@ -54,9 +54,9 @@ export default function IAMPage() {
   const [notes, setNotes] = useState("")
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
 
-  const { data: delegatedAccounts, isLoading } = useGetDelegatedAccountsQuery()
-  const [createDelegatedAccount] = useCreateDelegatedAccountMutation()
-  const [revokeDelegatedAccount] = useRevokeDelegatedAccountMutation()
+  const { data: delegatedAccounts, isLoading } = apis.superAdmin.useGetDelegatedAccountsQuery()
+  const [createDelegatedAccount] = apis.superAdmin.useCreateDelegatedAccountMutation()
+  const [revokeDelegatedAccount] = apis.superAdmin.useRevokeDelegatedAccountMutation()
 
   const handlePermissionChange = (permissionName: string, checked: boolean) => {
     if (checked) {

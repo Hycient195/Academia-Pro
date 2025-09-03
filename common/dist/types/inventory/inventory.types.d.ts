@@ -1,3 +1,4 @@
+import { IDocument, IFinancialInfo } from "../shared";
 export declare enum TAssetCategory {
     FURNITURE = "furniture",
     EQUIPMENT = "equipment",
@@ -29,23 +30,18 @@ export declare enum TProcurementStatus {
     CANCELLED = "cancelled",
     REJECTED = "rejected"
 }
-export declare enum TMaintenanceType {
+export declare enum TInventoryMaintenanceType {
     PREVENTIVE = "preventive",
     CORRECTIVE = "corrective",
     PREDICTIVE = "predictive",
     CONDITION_BASED = "condition_based"
 }
-export declare enum TMaintenanceStatus {
+export declare enum TInventoryMaintenanceStatus {
     SCHEDULED = "scheduled",
     IN_PROGRESS = "in_progress",
     COMPLETED = "completed",
     CANCELLED = "cancelled",
     OVERDUE = "overdue"
-}
-export declare enum TDepreciationMethod {
-    STRAIGHT_LINE = "straight_line",
-    DECLINING_BALANCE = "declining_balance",
-    UNITS_OF_PRODUCTION = "units_of_production"
 }
 export declare enum TAssetCondition {
     EXCELLENT = "excellent",
@@ -121,32 +117,6 @@ export interface IProcurementRequest {
     approvalComments?: string;
     status: TProcurementStatus;
 }
-export interface IFinancialInfo {
-    purchasePrice: number;
-    salvageValue: number;
-    usefulLife: number;
-    depreciationMethod: TDepreciationMethod;
-    accumulatedDepreciation: number;
-    currentValue: number;
-    depreciationSchedule: IDepreciationEntry[];
-    insurance?: IInsuranceInfo;
-}
-export interface IDepreciationEntry {
-    period: string;
-    depreciationAmount: number;
-    accumulatedDepreciation: number;
-    currentValue: number;
-    calculationDate: Date;
-}
-export interface IInsuranceInfo {
-    provider: string;
-    policyNumber: string;
-    coverageAmount: number;
-    premium: number;
-    startDate: Date;
-    endDate: Date;
-    deductible: number;
-}
 export interface IMaintenanceInfo {
     maintenanceSchedule: IMaintenanceSchedule[];
     maintenanceHistory: IMaintenanceRecord[];
@@ -157,7 +127,7 @@ export interface IMaintenanceInfo {
 }
 export interface IMaintenanceSchedule {
     id: string;
-    type: TMaintenanceType;
+    type: TInventoryMaintenanceType;
     description: string;
     frequency: number;
     estimatedCost: number;
@@ -166,12 +136,12 @@ export interface IMaintenanceSchedule {
 }
 export interface IMaintenanceRecord {
     id: string;
-    type: TMaintenanceType;
+    type: TInventoryMaintenanceType;
     description: string;
     performedBy: string;
     performedDate: Date;
     cost: number;
-    status: TMaintenanceStatus;
+    status: TInventoryMaintenanceStatus;
     findings?: string;
     recommendations?: string;
     nextMaintenanceDate?: Date;
@@ -215,19 +185,6 @@ export interface IAssetAssignment {
     conditionAtReturn?: string;
     notes?: string;
     isActive: boolean;
-}
-export interface IDocument {
-    id: string;
-    type: string;
-    fileName: string;
-    fileUrl: string;
-    fileSize: number;
-    mimeType: string;
-    uploadedAt: Date;
-    uploadedBy: string;
-    isVerified: boolean;
-    verificationDate?: Date;
-    verifiedBy?: string;
 }
 export interface IInventoryItem {
     id: string;
@@ -280,9 +237,9 @@ export interface ICreateProcurementRequest {
     specifications: IAssetSpecifications;
     schoolId: string;
 }
-export interface ICreateMaintenanceRequest {
+export interface ICreateInventoryMaintenanceRequest {
     assetId: string;
-    type: TMaintenanceType;
+    type: TInventoryMaintenanceType;
     description: string;
     scheduledDate: Date;
     estimatedCost: number;
@@ -435,8 +392,8 @@ export interface IProcurementFilters {
 export interface IMaintenanceFilters {
     schoolId: string;
     assetId?: string;
-    type?: TMaintenanceType;
-    status?: TMaintenanceStatus;
+    type?: TInventoryMaintenanceType;
+    status?: TInventoryMaintenanceStatus;
     assignedTo?: string;
     performedBy?: string;
     scheduledDateFrom?: Date;

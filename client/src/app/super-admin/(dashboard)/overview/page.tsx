@@ -16,7 +16,8 @@ import {
   IconClock,
   IconMapPin
 } from "@tabler/icons-react"
-import { useGetSystemOverviewQuery, Activity, Alert } from "@/store/api/superAdminApi"
+import { apis } from "@/redux/api"
+import type { Activity, Alert } from "@/redux/api/superAdminApi"
 
 function MetricCard({
   title,
@@ -114,7 +115,7 @@ function AlertItem({ alert }: { alert: Alert }) {
 }
 
 export default function SuperAdminDashboard() {
-  const { data: overview, isLoading: overviewLoading } = useGetSystemOverviewQuery()
+  const { data: overview, isLoading: overviewLoading } = apis.superAdmin.useGetSystemOverviewQuery()
   const activities = overview?.recentActivities?.slice(0, 5) || []
   const alerts = overview?.alerts?.filter(alert => !alert.acknowledged) || []
   const activitiesLoading = overviewLoading

@@ -1,33 +1,15 @@
 // Academia Pro - Academic Management Types
 // Shared type definitions for academic management module
 
-// Enums
-export enum TSubjectType {
-  CORE = 'core',
-  ELECTIVE = 'elective',
-  PRACTICAL = 'practical',
-  LANGUAGE = 'language',
-  ARTS = 'arts',
-  SPORTS = 'sports',
-}
+import { TGradeLevel, IClassSubject, ISubjectSchedule, IClass, TSubjectType, ISubject } from '../shared';
 
-export enum TGradeLevel {
-  NURSERY = 'nursery',
-  LKG = 'lkg',
-  UKG = 'ukg',
-  GRADE_1 = 'grade_1',
-  GRADE_2 = 'grade_2',
-  GRADE_3 = 'grade_3',
-  GRADE_4 = 'grade_4',
-  GRADE_5 = 'grade_5',
-  GRADE_6 = 'grade_6',
-  GRADE_7 = 'grade_7',
-  GRADE_8 = 'grade_8',
-  GRADE_9 = 'grade_9',
-  GRADE_10 = 'grade_10',
-  GRADE_11 = 'grade_11',
-  GRADE_12 = 'grade_12',
-}
+// Re-export types from shared for convenience
+export type { TGradeLevel, IClassSubject, ISubjectSchedule, IClass, TSubjectType, ISubject };
+
+// Enums
+// TSubjectType moved to shared
+
+// TGradeLevel moved to shared
 
 export enum TAcademicYearStatus {
   PLANNING = 'planning',
@@ -44,20 +26,7 @@ export enum TLearningObjectiveType {
 }
 
 // Interfaces
-export interface ISubject {
-  id: string;
-  code: string;
-  name: string;
-  type: TSubjectType;
-  description?: string;
-  credits?: number;
-  prerequisites?: string[];
-  gradeLevels: TGradeLevel[];
-  isActive: boolean;
-  schoolId: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+// ISubject moved to shared
 
 export interface ICurriculum {
   id: string;
@@ -95,35 +64,9 @@ export interface ILearningObjective {
   updatedAt: Date;
 }
 
-export interface IClass {
-  id: string;
-  name: string;
-  gradeLevel: TGradeLevel;
-  section: string;
-  capacity: number;
-  currentEnrollment: number;
-  classTeacherId?: string;
-  academicYear: string;
-  subjects: IClassSubject[];
-  isActive: boolean;
-  schoolId: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+// IClass moved to shared
 
-export interface IClassSubject {
-  subjectId: string;
-  subject: ISubject;
-  teacherId: string;
-  schedule: ISubjectSchedule[];
-}
-
-export interface ISubjectSchedule {
-  dayOfWeek: number; // 0-6 (Sunday-Saturday)
-  startTime: string; // HH:mm format
-  endTime: string;
-  room?: string;
-}
+// IClassSubject and ISubjectSchedule moved to shared
 
 export interface IAcademicCalendar {
   id: string;

@@ -2,7 +2,7 @@
 // Academia Pro - Inventory & Asset Management Types
 // Shared type definitions for inventory and asset management module
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TAssetCondition = exports.TDepreciationMethod = exports.TMaintenanceStatus = exports.TMaintenanceType = exports.TProcurementStatus = exports.TAssetStatus = exports.TAssetCategory = void 0;
+exports.TAssetCondition = exports.TInventoryMaintenanceStatus = exports.TInventoryMaintenanceType = exports.TProcurementStatus = exports.TAssetStatus = exports.TAssetCategory = void 0;
 // Enums
 var TAssetCategory;
 (function (TAssetCategory) {
@@ -38,27 +38,21 @@ var TProcurementStatus;
     TProcurementStatus["CANCELLED"] = "cancelled";
     TProcurementStatus["REJECTED"] = "rejected";
 })(TProcurementStatus || (exports.TProcurementStatus = TProcurementStatus = {}));
-var TMaintenanceType;
-(function (TMaintenanceType) {
-    TMaintenanceType["PREVENTIVE"] = "preventive";
-    TMaintenanceType["CORRECTIVE"] = "corrective";
-    TMaintenanceType["PREDICTIVE"] = "predictive";
-    TMaintenanceType["CONDITION_BASED"] = "condition_based";
-})(TMaintenanceType || (exports.TMaintenanceType = TMaintenanceType = {}));
-var TMaintenanceStatus;
-(function (TMaintenanceStatus) {
-    TMaintenanceStatus["SCHEDULED"] = "scheduled";
-    TMaintenanceStatus["IN_PROGRESS"] = "in_progress";
-    TMaintenanceStatus["COMPLETED"] = "completed";
-    TMaintenanceStatus["CANCELLED"] = "cancelled";
-    TMaintenanceStatus["OVERDUE"] = "overdue";
-})(TMaintenanceStatus || (exports.TMaintenanceStatus = TMaintenanceStatus = {}));
-var TDepreciationMethod;
-(function (TDepreciationMethod) {
-    TDepreciationMethod["STRAIGHT_LINE"] = "straight_line";
-    TDepreciationMethod["DECLINING_BALANCE"] = "declining_balance";
-    TDepreciationMethod["UNITS_OF_PRODUCTION"] = "units_of_production";
-})(TDepreciationMethod || (exports.TDepreciationMethod = TDepreciationMethod = {}));
+var TInventoryMaintenanceType;
+(function (TInventoryMaintenanceType) {
+    TInventoryMaintenanceType["PREVENTIVE"] = "preventive";
+    TInventoryMaintenanceType["CORRECTIVE"] = "corrective";
+    TInventoryMaintenanceType["PREDICTIVE"] = "predictive";
+    TInventoryMaintenanceType["CONDITION_BASED"] = "condition_based";
+})(TInventoryMaintenanceType || (exports.TInventoryMaintenanceType = TInventoryMaintenanceType = {}));
+var TInventoryMaintenanceStatus;
+(function (TInventoryMaintenanceStatus) {
+    TInventoryMaintenanceStatus["SCHEDULED"] = "scheduled";
+    TInventoryMaintenanceStatus["IN_PROGRESS"] = "in_progress";
+    TInventoryMaintenanceStatus["COMPLETED"] = "completed";
+    TInventoryMaintenanceStatus["CANCELLED"] = "cancelled";
+    TInventoryMaintenanceStatus["OVERDUE"] = "overdue";
+})(TInventoryMaintenanceStatus || (exports.TInventoryMaintenanceStatus = TInventoryMaintenanceStatus = {}));
 var TAssetCondition;
 (function (TAssetCondition) {
     TAssetCondition["EXCELLENT"] = "excellent";

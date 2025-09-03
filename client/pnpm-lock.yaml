@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@academia-pro/common':
+        specifier: link:../common
+        version: link:../common
       '@dnd-kit/core':
         specifier: ^6.3.1
         version: 6.3.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -163,7 +166,7 @@ importers:
         specifier: ^1.3.7
         version: 1.3.7
       typescript:
-        specifier: ^5
+        specifier: ^5.9.2
         version: 5.9.2
 
 packages:

@@ -2,7 +2,7 @@
 // Academia Pro - Mobile Application Types
 // Shared type definitions for mobile app endpoints
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TTransportStatus = exports.TAssignmentPriority = exports.TAssignmentStatus = exports.TEmergencySeverity = exports.TEmergencyType = exports.TNotificationType = exports.TMobileDeviceType = exports.TMobilePlatform = void 0;
+exports.TTransportStatus = exports.TAssignmentPriority = exports.TAssignmentStatus = exports.TEmergencySeverity = exports.TEmergencyType = exports.TMobileNotificationType = exports.TMobileDeviceType = exports.TMobilePlatform = void 0;
 // Enums
 var TMobilePlatform;
 (function (TMobilePlatform) {
@@ -16,16 +16,16 @@ var TMobileDeviceType;
     TMobileDeviceType["TABLET"] = "tablet";
     TMobileDeviceType["DESKTOP"] = "desktop";
 })(TMobileDeviceType || (exports.TMobileDeviceType = TMobileDeviceType = {}));
-var TNotificationType;
-(function (TNotificationType) {
-    TNotificationType["ASSIGNMENT"] = "assignment";
-    TNotificationType["GRADE"] = "grade";
-    TNotificationType["ATTENDANCE"] = "attendance";
-    TNotificationType["EVENT"] = "event";
-    TNotificationType["ANNOUNCEMENT"] = "announcement";
-    TNotificationType["EMERGENCY"] = "emergency";
-    TNotificationType["SYSTEM"] = "system";
-})(TNotificationType || (exports.TNotificationType = TNotificationType = {}));
+var TMobileNotificationType;
+(function (TMobileNotificationType) {
+    TMobileNotificationType["ASSIGNMENT"] = "assignment";
+    TMobileNotificationType["GRADE"] = "grade";
+    TMobileNotificationType["ATTENDANCE"] = "attendance";
+    TMobileNotificationType["EVENT"] = "event";
+    TMobileNotificationType["ANNOUNCEMENT"] = "announcement";
+    TMobileNotificationType["EMERGENCY"] = "emergency";
+    TMobileNotificationType["SYSTEM"] = "system";
+})(TMobileNotificationType || (exports.TMobileNotificationType = TMobileNotificationType = {}));
 var TEmergencyType;
 (function (TEmergencyType) {
     TEmergencyType["MEDICAL"] = "medical";

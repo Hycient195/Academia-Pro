@@ -1,6 +1,8 @@
 // Academia Pro - Staff & HR Management Types
 // Shared type definitions for staff and HR management module
 
+import { IAddress, IDocument, IEmergencyContact, TBloodGroup, Teacher } from '../shared';
+
 // Enums
 export enum TEmploymentType {
   FULL_TIME = 'full_time',
@@ -58,17 +60,6 @@ export enum TQualificationLevel {
   PROFESSIONAL_CERTIFICATION = 'professional_certification',
 }
 
-export enum TBloodGroup {
-  A_POSITIVE = 'a_positive',
-  A_NEGATIVE = 'a_negative',
-  B_POSITIVE = 'b_positive',
-  B_NEGATIVE = 'b_negative',
-  AB_POSITIVE = 'ab_positive',
-  AB_NEGATIVE = 'ab_negative',
-  O_POSITIVE = 'o_positive',
-  O_NEGATIVE = 'o_negative',
-}
-
 export enum TLeaveType {
   ANNUAL = 'annual',
   SICK = 'sick',
@@ -122,17 +113,7 @@ export interface IStaff {
   updatedBy?: string;
 }
 
-export interface IAddress {
-  street: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  country: string;
-  coordinates?: {
-    latitude: number;
-    longitude: number;
-  };
-}
+// IAddress interface moved to shared types
 
 export interface ISalaryInfo {
   basicSalary: number;
@@ -182,14 +163,6 @@ export interface IQualification {
   certificateNumber?: string;
   isVerified: boolean;
   documents: IDocument[];
-}
-
-export interface IEmergencyContact {
-  name: string;
-  relationship: string;
-  phone: string;
-  email?: string;
-  address?: string;
 }
 
 export interface IWorkSchedule {
@@ -242,20 +215,6 @@ export interface ILeaveRecord {
   comments?: string;
   documents: IDocument[];
   createdAt: Date;
-}
-
-export interface IDocument {
-  id: string;
-  type: string;
-  fileName: string;
-  fileUrl: string;
-  fileSize: number;
-  mimeType: string;
-  uploadedAt: Date;
-  uploadedBy: string;
-  isVerified: boolean;
-  verificationDate?: Date;
-  verifiedBy?: string;
 }
 
 // Request Interfaces

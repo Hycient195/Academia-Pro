@@ -17,7 +17,7 @@ import {
   IconAlertTriangle,
   IconCircleCheck
 } from "@tabler/icons-react"
-import { useAuth } from "@/store/auth/authContext"
+import { useAuth } from "@/redux/auth/authContext"
 
 export default function SuperAdminSignIn() {
   const router = useRouter()

@@ -1,25 +1,10 @@
+import { IAddress, IAlert, IEmergencyContact, INotification, TCommunicationType } from '../shared';
 export declare enum TParentRelationship {
     FATHER = "father",
     MOTHER = "mother",
     GUARDIAN = "guardian",
     GRANDPARENT = "grandparent",
     OTHER = "other"
-}
-export declare enum TNotificationPreference {
-    EMAIL = "email",
-    SMS = "sms",
-    PUSH = "push",
-    IN_APP = "in_app",
-    NONE = "none"
-}
-export declare enum TCommunicationType {
-    ANNOUNCEMENT = "announcement",
-    ASSIGNMENT = "assignment",
-    GRADE = "grade",
-    ATTENDANCE = "attendance",
-    EVENT = "event",
-    EMERGENCY = "emergency",
-    GENERAL = "general"
 }
 export declare enum TPortalAccessLevel {
     FULL_ACCESS = "full_access",
@@ -31,25 +16,48 @@ export declare enum TAppointmentStatus {
     REQUESTED = "requested",
     APPROVED = "approved",
     REJECTED = "rejected",
+    SCHEDULED = "scheduled",
+    CONFIRMED = "confirmed",
     COMPLETED = "completed",
-    CANCELLED = "cancelled"
+    CANCELLED = "cancelled",
+    NO_SHOW = "no_show"
+}
+export declare enum TNotificationPreference {
+    EMAIL = "email",
+    SMS = "sms",
+    PUSH = "push",
+    IN_APP = "in_app",
+    NONE = "none"
 }
 export interface IParent {
     id: string;
     userId: string;
-    relationship: TParentRelationship;
-    isPrimaryContact: boolean;
-    emergencyContact: boolean;
-    portalAccessLevel: TPortalAccessLevel;
-    notificationPreferences: INotificationPreferences;
-    children: IParentChild[];
-    contactInformation: IParentContact;
-    profile: IParentProfile;
     schoolId: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    relationship: TParentRelationship;
+    isPrimary: boolean;
+    emergencyContact: boolean;
+    communicationPreferences: {
+        email: boolean;
+        sms: boolean;
+        push: boolean;
+        language: string;
+    };
+    address: {
+        street: string;
+        city: string;
+        state: string;
+        postalCode: string;
+        country: string;
+    };
+    occupation?: string;
+    employer?: string;
+    workPhone?: string;
     createdAt: Date;
     updatedAt: Date;
-    lastLoginAt?: Date;
-    isActive: boolean;
 }
 export interface IParentChild {
     id: string;
@@ -91,13 +99,7 @@ export interface IParentContact {
     secondaryEmail?: string;
     primaryPhone: string;
     secondaryPhone?: string;
-    address: {
-        street: string;
-        city: string;
-        state: string;
-        postalCode: string;
-        country: string;
-    };
+    address: IAddress;
     workContact?: {
         company?: string;
         position?: string;
@@ -116,13 +118,6 @@ export interface IParentProfile {
     bio?: string;
     interests: string[];
     emergencyContacts: IEmergencyContact[];
-}
-export interface IEmergencyContact {
-    name: string;
-    relationship: string;
-    phone: string;
-    email?: string;
-    priority: number;
 }
 export interface IParentCommunication {
     id: string;
@@ -188,7 +183,7 @@ export interface IParentDashboard {
     upcomingAppointments: IParentAppointment[];
     notifications: INotification[];
     alerts: IAlert[];
-    quickActions: IQuickAction[];
+    quickActions: IParentQuickAction[];
     lastUpdated: Date;
 }
 export interface IChildDashboard {
@@ -197,7 +192,7 @@ export interface IChildDashboard {
     grade: string;
     class: string;
     profilePicture?: string;
-    todaySchedule: IScheduleItem[];
+    todaySchedule: IParentScheduleItem[];
     recentGrades: IGradeItem[];
     attendance: {
         today: boolean;
@@ -208,7 +203,7 @@ export interface IChildDashboard {
     upcomingEvents: IEventItem[];
     unreadMessages: number;
 }
-export interface IScheduleItem {
+export interface IParentScheduleItem {
     subject: string;
     teacher: string;
     time: string;
@@ -228,29 +223,7 @@ export interface IEventItem {
     type: string;
     description?: string;
 }
-export interface INotification {
-    id: string;
-    type: TCommunicationType;
-    title: string;
-    message: string;
-    priority: 'low' | 'medium' | 'high' | 'urgent';
-    isRead: boolean;
-    createdAt: Date;
-    actionUrl?: string;
-    expiresAt?: Date;
-}
-export interface IAlert {
-    id: string;
-    type: 'warning' | 'error' | 'info' | 'success';
-    title: string;
-    message: string;
-    priority: 'low' | 'medium' | 'high' | 'critical';
-    createdAt: Date;
-    acknowledgedAt?: Date;
-    actionRequired: boolean;
-    actionUrl?: string;
-}
-export interface IQuickAction {
+export interface IParentQuickAction {
     id: string;
     title: string;
     description: string;
@@ -412,11 +385,6 @@ export interface IParentDashboardResponse extends IParentDashboard {
         id: string;
         name: string;
         email: string;
-    };
-    systemStatus: {
-        lastUpdated: Date;
-        dataFreshness: 'fresh' | 'stale' | 'outdated';
-        nextUpdate: Date;
     };
 }
 export interface IParentStatisticsResponse {

@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/store/auth/authContext'
+import { useAuth } from '@/redux/auth/authContext'
 import { Skeleton } from '@/components/ui/skeleton'
 
 interface AuthGuardProps {

@@ -17,6 +17,10 @@ import {
   TFacilityType
 } from '@academia-pro/common/hostel';
 
+import {
+  IAddress,
+} from '@academia-pro/common/hostel';
+
 export class AddressDto implements IAddress {
   @ApiProperty({
     description: 'Street address',

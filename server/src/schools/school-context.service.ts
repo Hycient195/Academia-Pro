@@ -200,6 +200,22 @@ export class SchoolContextService {
   }
 
   /**
+   * Delete school context (hard delete)
+   */
+  async deleteSchoolContext(schoolId: string): Promise<void> {
+    try {
+      const result = await this.schoolRepository.delete(schoolId);
+      if (result.affected === 0) {
+        throw new Error(`School with ID ${schoolId} not found`);
+      }
+      this.logger.log(`School ${schoolId} deleted successfully`);
+    } catch (error) {
+      this.logger.error(`Error deleting school context ${schoolId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Get school statistics
    */
   async getSchoolStatistics(schoolId: string): Promise<any> {

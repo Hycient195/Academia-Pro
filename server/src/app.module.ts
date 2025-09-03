@@ -175,6 +175,7 @@ export class AppModule {
         { path: 'api/v1/auth/csrf-token', method: RequestMethod.GET },
         { path: 'api/v1/auth/me', method: RequestMethod.GET },
         { path: 'api/v1/super-admin/auth/login', method: RequestMethod.POST },
+        { path: 'api/v1/super-admin/*', method: RequestMethod.ALL }, // Exclude all super-admin routes
       )
       .forRoutes({ path: '*', method: RequestMethod.POST });
   }

@@ -24,6 +24,7 @@ export const getDatabaseConfig = (configService: ConfigService): TypeOrmModuleOp
     'src/transportation/**/*.entity{.ts,.js}',
     'src/inventory/**/*.entity{.ts,.js}',
     'src/communication/**/*.entity{.ts,.js}',
+    'src/iam/**/*.entity{.ts,.js}',
     // 'src/parent-portal/**/*.entity{.ts,.js}', // Temporarily excluded due to circular dependency
     'src/common/**/*.entity{.ts,.js}',
     'src/auth/**/*.entity{.ts,.js}',

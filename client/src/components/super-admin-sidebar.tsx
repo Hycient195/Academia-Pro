@@ -11,6 +11,7 @@ import {
   IconShield,
   IconUsers,
   IconFileText,
+  IconKey,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -35,8 +36,8 @@ const data = {
   },
   navMain: [
     {
-      title: "Dashboard",
-      url: "/super-admin/dashboard",
+      title: "Overview",
+      url: "/super-admin/overview",
       icon: IconDashboard,
       shortForm: "Dash",
     },
@@ -51,6 +52,12 @@ const data = {
       url: "/super-admin/users",
       icon: IconUsers,
       shortForm: "Users",
+    },
+    {
+      title: "Identity & Access Management",
+      url: "/super-admin/iam",
+      icon: IconKey,
+      shortForm: "IAM",
     },
     {
       title: "Analytics",

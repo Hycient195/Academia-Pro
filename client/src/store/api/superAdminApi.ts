@@ -353,6 +353,52 @@ export interface BulkOperationResult {
   errors: string[];
 }
 
+// IAM Types
+export interface Permission {
+  id: string;
+  name: string;
+  description: string;
+  resource: string;
+  action: string;
+}
+
+export interface Role {
+  id: string;
+  name: string;
+  description: string;
+  permissions: Permission[];
+}
+
+export interface DelegatedAccount {
+  id: string;
+  userId: string;
+  email: string;
+  permissions: string[];
+  expiryDate: string;
+  createdBy: string;
+  status: 'active' | 'expired' | 'revoked';
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  revokedBy?: string;
+  revokedAt?: string;
+}
+
+export interface CreateDelegatedAccountRequest {
+  email: string;
+  permissions: string[];
+  expiryDate: string;
+  notes?: string;
+  userId?: string;
+}
+
+export interface UpdateDelegatedAccountRequest {
+  permissions?: string[];
+  expiryDate?: string;
+  status?: 'active' | 'expired' | 'revoked';
+  notes?: string;
+}
+
 export interface SuperAdminLoginRequest {
   email: string;
   password: string;
@@ -411,6 +457,9 @@ export const superAdminApi = createApi({
     'GeographicReport',
     'AuditLogs',
     'AuditMetrics',
+    'DelegatedAccounts',
+    'Permissions',
+    'Roles',
   ],
   endpoints: (builder) => ({
     // Super Admin Authentication
@@ -571,6 +620,67 @@ export const superAdminApi = createApi({
       }),
       providesTags: ['AuditMetrics'],
     }),
+
+    // IAM endpoints
+    getDelegatedAccounts: builder.query<DelegatedAccount[], void>({
+      query: () => '/super-admin/iam/delegated-accounts',
+      providesTags: ['DelegatedAccounts'],
+    }),
+
+    getDelegatedAccountById: builder.query<DelegatedAccount, string>({
+      query: (id) => `/super-admin/iam/delegated-accounts/${id}`,
+      providesTags: (result, error, id) => [{ type: 'DelegatedAccounts', id }],
+    }),
+
+    createDelegatedAccount: builder.mutation<DelegatedAccount, CreateDelegatedAccountRequest>({
+      query: (accountData) => ({
+        url: '/super-admin/iam/delegated-accounts',
+        method: 'POST',
+        body: accountData,
+      }),
+      invalidatesTags: ['DelegatedAccounts'],
+    }),
+
+    updateDelegatedAccount: builder.mutation<DelegatedAccount, { id: string; updates: UpdateDelegatedAccountRequest }>({
+      query: ({ id, updates }) => ({
+        url: `/super-admin/iam/delegated-accounts/${id}`,
+        method: 'PUT',
+        body: updates,
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: 'DelegatedAccounts', id },
+        'DelegatedAccounts'
+      ],
+    }),
+
+    revokeDelegatedAccount: builder.mutation<DelegatedAccount, string>({
+      query: (id) => ({
+        url: `/super-admin/iam/delegated-accounts/${id}/revoke`,
+        method: 'POST',
+      }),
+      invalidatesTags: (result, error, id) => [
+        { type: 'DelegatedAccounts', id },
+        'DelegatedAccounts'
+      ],
+    }),
+
+    deleteDelegatedAccount: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/super-admin/iam/delegated-accounts/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['DelegatedAccounts'],
+    }),
+
+    getPermissions: builder.query<Permission[], void>({
+      query: () => '/super-admin/iam/permissions',
+      providesTags: ['Permissions'],
+    }),
+
+    getRoles: builder.query<Role[], void>({
+      query: () => '/super-admin/iam/roles',
+      providesTags: ['Roles'],
+    }),
   }),
 });
 
@@ -610,4 +720,14 @@ export const {
   // Audit
   useGetAuditLogsQuery,
   useGetAuditMetricsQuery,
+
+  // IAM
+  useGetDelegatedAccountsQuery,
+  useGetDelegatedAccountByIdQuery,
+  useCreateDelegatedAccountMutation,
+  useUpdateDelegatedAccountMutation,
+  useRevokeDelegatedAccountMutation,
+  useDeleteDelegatedAccountMutation,
+  useGetPermissionsQuery,
+  useGetRolesQuery,
 } = superAdminApi;

@@ -61,7 +61,7 @@ export default function SuperAdminSignIn() {
 
       if (result.success) {
         // Redirect to dashboard - cookies are automatically handled
-        if (typeof window !== 'undefined') window.location.href = '/super-admin'
+        if (typeof window !== 'undefined') window.location.href = '/super-admin/overview'
       } else {
         setErrors({
           general: result.error || 'Login failed. Please check your credentials.'

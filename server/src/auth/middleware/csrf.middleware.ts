@@ -17,7 +17,8 @@ export class CSRFMiddleware implements NestMiddleware {
     }
 
     // Skip CSRF check for API routes that don't need it
-    if (req.path.startsWith('/api/v1/auth/') || req.path.startsWith('/api/v1/super-admin/auth/')) {
+    if (req.path.startsWith('/api/v1/auth/') ||
+        req.path.startsWith('/api/v1/super-admin/')) {
       return next();
     }
 

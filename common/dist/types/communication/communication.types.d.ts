@@ -1,16 +1,11 @@
-import { TNotificationType } from "../shared";
+import { TNotificationType, TMessagePriority } from "../shared";
+export { TNotificationType, TMessagePriority };
 export declare enum TMessageType {
     DIRECT = "direct",
     GROUP = "group",
     ANNOUNCEMENT = "announcement",
     EMERGENCY = "emergency",
     SYSTEM = "system"
-}
-export declare enum TMessagePriority {
-    LOW = "low",
-    NORMAL = "normal",
-    HIGH = "high",
-    URGENT = "urgent"
 }
 export declare enum TMessageStatus {
     DRAFT = "draft",
@@ -479,4 +474,3 @@ export interface ICommunicationSettings {
     autoArchiveAfter: number;
     retentionPeriod: number;
 }
-//# sourceMappingURL=communication.types.d.ts.map

@@ -1,4 +1,6 @@
-import { IAddress, IDocument, IEmergencyContact } from '../shared';
+import { IAddress, IDocument, IEmergencyContact, TBloodGroup } from '../shared';
+export { TBloodGroup };
+export type { IAddress, IEmergencyContact };
 export declare enum TEmploymentType {
     FULL_TIME = "full_time",
     PART_TIME = "part_time",
@@ -461,4 +463,3 @@ export interface IPayrollEntry {
     bankDetails?: IBankDetails;
     status: 'pending' | 'paid' | 'failed';
 }
-//# sourceMappingURL=staff.types.d.ts.map

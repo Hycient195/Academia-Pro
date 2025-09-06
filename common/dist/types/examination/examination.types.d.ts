@@ -35,6 +35,7 @@ export declare enum TExaminationAssessmentType {
     DIAGNOSTIC = "diagnostic",
     PLACEMENT = "placement"
 }
+export { TExaminationAssessmentType as TAssessmentType };
 export declare enum TExamResultStatus {
     PENDING = "pending",
     SUBMITTED = "submitted",
@@ -536,4 +537,3 @@ export interface IProctoringAlert {
     resolvedAt?: Date;
     resolvedBy?: string;
 }
-//# sourceMappingURL=examination.types.d.ts.map

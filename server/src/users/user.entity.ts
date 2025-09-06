@@ -3,22 +3,7 @@
 
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Index, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { School } from '../schools/school.entity';
-
-// Define enums locally since @academia-pro/common may not be available during development
-export enum UserRole {
-  SUPER_ADMIN = 'super-admin',
-  SCHOOL_ADMIN = 'school-admin',
-  TEACHER = 'teacher',
-  STUDENT = 'student',
-  PARENT = 'parent',
-}
-
-export enum UserStatus {
-  ACTIVE = 'active',
-  INACTIVE = 'inactive',
-  SUSPENDED = 'suspended',
-  PENDING = 'pending',
-}
+import { EUserRole, EUserStatus } from '@academia-pro/types/users';
 
 @Entity('users')
 @Index(['email'], { unique: true })
@@ -40,19 +25,22 @@ export class User {
   @Column({ type: 'varchar', length: 100 })
   lastName: string;
 
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  middleName?: string;
+
   @Column({
     type: 'enum',
     enum: ['super-admin', 'school-admin', 'teacher', 'student', 'parent'],
     default: 'student'
   })
-  role: UserRole;
+  role: EUserRole;
 
   @Column({
     type: 'enum',
     enum: ['active', 'inactive', 'suspended', 'pending'],
     default: 'active'
   })
-  status: UserStatus;
+  status: EUserStatus;
 
   @Column({ type: 'varchar', length: 20, nullable: true })
   phone: string;
@@ -171,6 +159,9 @@ export class User {
 
   // Virtual properties (not stored in database)
   get fullName(): string {
+    if (this.middleName) {
+      return `${this.firstName} ${this.middleName} ${this.lastName}`;
+    }
     return `${this.firstName} ${this.lastName}`;
   }
 

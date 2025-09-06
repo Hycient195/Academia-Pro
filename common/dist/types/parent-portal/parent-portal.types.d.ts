@@ -583,4 +583,3 @@ export interface IParentSettings {
         };
     }>;
 }
-//# sourceMappingURL=parent-portal.types.d.ts.map

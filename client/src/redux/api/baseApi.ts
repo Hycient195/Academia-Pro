@@ -25,8 +25,3 @@ export const baseApi = createApi({
     'Alerts',
   ],
 });
-
-// Export hooks for usage in components
-export const {
-  usePrefetch,
-} = baseApi;

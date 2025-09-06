@@ -1,4 +1,6 @@
-import { IAddress, TSchoolType, TSchoolStatus } from '../shared';
+import { IAddress, TSchoolType, TSchoolStatus, ISchoolFilters } from '../shared';
+export { TSchoolType, TSchoolStatus };
+export type { ISchoolFilters };
 export interface ISchool {
     id: string;
     name: string;
@@ -234,4 +236,3 @@ export interface ISchoolValidationRules {
         };
     };
 }
-//# sourceMappingURL=schools.types.d.ts.map

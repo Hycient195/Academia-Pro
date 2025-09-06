@@ -231,7 +231,7 @@ export interface RouteConfiguration {
 export type RoutePath = string;
 export type RouteComponent = string;
 export type RouteLayout = 'main' | 'auth' | 'blank';
-export type UserRole = 'super-admin' | 'school-admin' | 'teacher' | 'student' | 'parent';
+export type IUserPermissionRole = 'super-admin' | 'school-admin' | 'teacher' | 'student' | 'parent';
 export type SecurityLevel = 'public' | 'internal' | 'restricted' | 'confidential';
 export type CacheStrategy = 'none' | 'memory' | 'persistent';
 export type LoadingStrategy = 'eager' | 'lazy';

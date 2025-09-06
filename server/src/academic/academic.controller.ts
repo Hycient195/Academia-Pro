@@ -3,8 +3,8 @@
 
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, ParseUUIDPipe, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { AcademicService } from './academic.service';
-import { CreateSubjectDto, UpdateSubjectDto, CreateCurriculumDto, CreateClassDto, CreateLearningObjectiveDto } from './dtos';
+import { AcademicService } from './academic.service.js';
+import { CreateSubjectDto, UpdateSubjectDto, CreateCurriculumDto, CreateClassDto, CreateLearningObjectiveDto } from './dtos/index.js';
 import {
   CreateCurriculumStandardDto,
   UpdateCurriculumStandardDto,
@@ -21,7 +21,7 @@ import {
   StudentEnrollmentsListResponseDto,
   BulkEnrollmentDto,
   BulkEnrollmentResponseDto,
-} from './dtos/student-enrollment.dto';
+} from './dtos/student-enrollment.dto.js';
 import {
   CreateSubstituteRequestDto,
   UpdateSubstituteRequestDto,
@@ -30,7 +30,7 @@ import {
   SubstituteRequestFiltersDto,
   SubstituteRequestResponseDto,
   SubstituteRequestsListResponseDto,
-} from './dtos/substitute-teacher.dto';
+} from './dtos/substitute-teacher.dto.js';
 import {
   CreateTeacherWorkloadDto,
   UpdateTeacherWorkloadDto,
@@ -39,14 +39,14 @@ import {
   TeacherWorkloadsListResponseDto,
   WorkloadAnalyticsResponseDto,
   TeacherAssignmentOptimizationDto,
-} from './dtos/teacher-workload.dto';
-import { Subject } from './subject.entity';
-import { Curriculum } from './curriculum.entity';
-import { Class } from './class.entity';
-import { LearningObjective } from './learning-objective.entity';
-import { ISubjectFilters, ICurriculumFilters, IClassFilters, IAcademicStatistics } from '../../../common/src/types/academic/academic.types';
-import { Roles } from '../common/decorators';
-import { UserRole } from 'src/users/user.entity';
+} from './dtos/teacher-workload.dto.js';
+import { Subject } from './subject.entity.js';
+import { Curriculum } from './curriculum.entity.js';
+import { Class } from './class.entity.js';
+import { LearningObjective } from './learning-objective.entity.js';
+import { ISubjectFilters, ICurriculumFilters, IClassFilters, IAcademicStatistics } from '@academia-pro/types/academic';
+import { Roles } from '../common/decorators/roles.decorator.js';
+import { EUserRole } from '@academia-pro/types/users/users.types.js';
 
 @ApiTags('Academic Management')
 @ApiBearerAuth()
@@ -56,7 +56,7 @@ export class AcademicController {
 
   // Subject Management Endpoints
   @Post('subjects')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Create a new subject' })
   @ApiResponse({ status: 201, description: 'Subject created successfully', type: Subject })
   @ApiResponse({ status: 409, description: 'Subject code already exists' })
@@ -65,7 +65,7 @@ export class AcademicController {
   }
 
   @Get('subjects')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiOperation({ summary: 'Get all subjects with pagination and filters' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -92,7 +92,7 @@ export class AcademicController {
   }
 
   @Get('subjects/search')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiOperation({ summary: 'Search subjects by name or code' })
   @ApiQuery({ name: 'q', required: true, description: 'Search query' })
   @ApiQuery({ name: 'schoolId', required: true })
@@ -110,7 +110,7 @@ export class AcademicController {
   }
 
   @Get('subjects/:id')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiOperation({ summary: 'Get subject by ID' })
   @ApiResponse({ status: 200, description: 'Subject retrieved successfully', type: Subject })
   @ApiResponse({ status: 404, description: 'Subject not found' })
@@ -119,7 +119,7 @@ export class AcademicController {
   }
 
   @Put('subjects/:id')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Update subject information' })
   @ApiResponse({ status: 200, description: 'Subject updated successfully', type: Subject })
   @ApiResponse({ status: 404, description: 'Subject not found' })
@@ -132,7 +132,7 @@ export class AcademicController {
   }
 
   @Delete('subjects/:id')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Delete subject' })
   @ApiResponse({ status: 200, description: 'Subject deleted successfully' })
   @ApiResponse({ status: 404, description: 'Subject not found' })
@@ -143,7 +143,7 @@ export class AcademicController {
 
   // Curriculum Management Endpoints
   @Post('curricula')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Create a new curriculum' })
   @ApiResponse({ status: 201, description: 'Curriculum created successfully', type: Curriculum })
   async createCurriculum(@Body() createCurriculumDto: CreateCurriculumDto): Promise<Curriculum> {
@@ -151,7 +151,7 @@ export class AcademicController {
   }
 
   @Get('curricula')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiOperation({ summary: 'Get all curricula with pagination and filters' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -178,7 +178,7 @@ export class AcademicController {
   }
 
   @Get('curricula/:id')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiOperation({ summary: 'Get curriculum by ID' })
   @ApiResponse({ status: 200, description: 'Curriculum retrieved successfully', type: Curriculum })
   @ApiResponse({ status: 404, description: 'Curriculum not found' })
@@ -188,7 +188,7 @@ export class AcademicController {
 
   // Class Management Endpoints
   @Post('classes')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Create a new class' })
   @ApiResponse({ status: 201, description: 'Class created successfully', type: Class })
   async createClass(@Body() createClassDto: CreateClassDto): Promise<Class> {
@@ -196,7 +196,7 @@ export class AcademicController {
   }
 
   @Get('classes')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiOperation({ summary: 'Get all classes with pagination and filters' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -223,7 +223,7 @@ export class AcademicController {
   }
 
   @Get('classes/:id')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiOperation({ summary: 'Get class by ID' })
   @ApiResponse({ status: 200, description: 'Class retrieved successfully', type: Class })
   @ApiResponse({ status: 404, description: 'Class not found' })
@@ -233,7 +233,7 @@ export class AcademicController {
 
   // Learning Objectives Management Endpoints
   @Post('learning-objectives')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Create a new learning objective' })
   @ApiResponse({ status: 201, description: 'Learning objective created successfully', type: LearningObjective })
   async createLearningObjective(@Body() createLearningObjectiveDto: CreateLearningObjectiveDto): Promise<LearningObjective> {
@@ -241,7 +241,7 @@ export class AcademicController {
   }
 
   @Get('learning-objectives')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiOperation({ summary: 'Get all learning objectives with pagination and filters' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -267,7 +267,7 @@ export class AcademicController {
 
   // Curriculum-Subject Management Endpoints
   @Post('curricula/:curriculumId/subjects')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Add subject to curriculum' })
   @ApiResponse({ status: 201, description: 'Subject added to curriculum successfully' })
   @ApiResponse({ status: 409, description: 'Subject already in curriculum' })
@@ -286,7 +286,7 @@ export class AcademicController {
 
   // Class-Subject-Teacher Assignment Endpoints
   @Post('classes/:classId/subjects')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Assign subject and teacher to class' })
   @ApiResponse({ status: 201, description: 'Subject assigned to class successfully' })
   @ApiResponse({ status: 409, description: 'Subject already assigned to class' })
@@ -304,7 +304,7 @@ export class AcademicController {
 
   // Statistics and Analytics Endpoints
   @Get('statistics')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Get academic statistics for school' })
   @ApiQuery({ name: 'schoolId', required: true })
   @ApiResponse({ status: 200, description: 'Academic statistics retrieved successfully' })
@@ -314,7 +314,7 @@ export class AcademicController {
 
   // Utility Endpoints
   @Get('subjects/by-grade/:schoolId/:grade')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiOperation({ summary: 'Get subjects by grade level' })
   @ApiResponse({ status: 200, description: 'Subjects retrieved successfully' })
   async getSubjectsByGrade(
@@ -331,7 +331,7 @@ export class AcademicController {
   }
 
   @Get('classes/by-grade/:schoolId/:grade')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiOperation({ summary: 'Get classes by grade level' })
   @ApiResponse({ status: 200, description: 'Classes retrieved successfully' })
   async getClassesByGrade(
@@ -348,7 +348,7 @@ export class AcademicController {
   }
 
   @Get('curricula/by-year/:schoolId/:year')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiOperation({ summary: 'Get curricula by academic year' })
   @ApiResponse({ status: 200, description: 'Curricula retrieved successfully' })
   async getCurriculaByYear(
@@ -366,7 +366,7 @@ export class AcademicController {
   // ==================== CURRICULUM STANDARDS ENDPOINTS ====================
 
   @Post('curriculum-standards')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Create a new curriculum standard' })
   @ApiResponse({ status: 201, description: 'Curriculum standard created successfully', type: CurriculumStandardResponseDto })
   async createCurriculumStandard(@Body() createDto: CreateCurriculumStandardDto) {
@@ -374,7 +374,7 @@ export class AcademicController {
   }
 
   @Get('curriculum-standards')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiOperation({ summary: 'Get all curriculum standards with filters' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -388,7 +388,7 @@ export class AcademicController {
   }
 
   @Get('curriculum-standards/:id')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiOperation({ summary: 'Get curriculum standard by ID' })
   @ApiResponse({ status: 200, description: 'Curriculum standard retrieved successfully', type: CurriculumStandardResponseDto })
   async findCurriculumStandardById(@Param('id', ParseUUIDPipe) id: string) {
@@ -396,7 +396,7 @@ export class AcademicController {
   }
 
   @Put('curriculum-standards/:id')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Update curriculum standard' })
   @ApiResponse({ status: 200, description: 'Curriculum standard updated successfully', type: CurriculumStandardResponseDto })
   async updateCurriculumStandard(
@@ -409,7 +409,7 @@ export class AcademicController {
   // ==================== STUDENT ENROLLMENT ENDPOINTS ====================
 
   @Post('student-enrollments')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Enroll student in class' })
   @ApiResponse({ status: 201, description: 'Student enrolled successfully', type: StudentEnrollmentResponseDto })
   async enrollStudent(@Body() enrollmentDto: CreateStudentEnrollmentDto) {
@@ -417,7 +417,7 @@ export class AcademicController {
   }
 
   @Get('student-enrollments')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiOperation({ summary: 'Get student enrollments with filters' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -431,7 +431,7 @@ export class AcademicController {
   }
 
   @Get('student-enrollments/:studentId')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER, UserRole.STUDENT)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER, EUserRole.STUDENT)
   @ApiOperation({ summary: 'Get student enrollment history' })
   @ApiResponse({ status: 200, description: 'Student enrollment history retrieved successfully' })
   async findStudentEnrollmentHistory(@Param('studentId', ParseUUIDPipe) studentId: string) {
@@ -439,7 +439,7 @@ export class AcademicController {
   }
 
   @Put('student-enrollments/:studentId/:classId')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Update student enrollment' })
   @ApiResponse({ status: 200, description: 'Student enrollment updated successfully', type: StudentEnrollmentResponseDto })
   async updateStudentEnrollment(
@@ -451,7 +451,7 @@ export class AcademicController {
   }
 
   @Post('student-enrollments/:studentId/:classId/withdraw')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Withdraw student from class' })
   @ApiResponse({ status: 200, description: 'Student withdrawn successfully' })
   async withdrawStudent(
@@ -463,7 +463,7 @@ export class AcademicController {
   }
 
   @Post('student-enrollments/bulk')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Bulk enroll students' })
   @ApiResponse({ status: 200, description: 'Bulk enrollment completed', type: BulkEnrollmentResponseDto })
   async bulkEnrollStudents(@Body() bulkDto: BulkEnrollmentDto) {
@@ -473,7 +473,7 @@ export class AcademicController {
   // ==================== SUBSTITUTE TEACHER ENDPOINTS ====================
 
   @Post('substitute-requests')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiOperation({ summary: 'Create substitute teacher request' })
   @ApiResponse({ status: 201, description: 'Substitute request created successfully', type: SubstituteRequestResponseDto })
   async createSubstituteRequest(@Body() requestDto: CreateSubstituteRequestDto) {
@@ -481,7 +481,7 @@ export class AcademicController {
   }
 
   @Get('substitute-requests')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiOperation({ summary: 'Get substitute requests with filters' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -495,7 +495,7 @@ export class AcademicController {
   }
 
   @Put('substitute-requests/:id')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Update substitute request' })
   @ApiResponse({ status: 200, description: 'Substitute request updated successfully', type: SubstituteRequestResponseDto })
   async updateSubstituteRequest(
@@ -506,7 +506,7 @@ export class AcademicController {
   }
 
   @Post('substitute-requests/:id/assign')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Assign substitute teacher' })
   @ApiResponse({ status: 200, description: 'Substitute teacher assigned successfully', type: SubstituteRequestResponseDto })
   async assignSubstituteTeacher(
@@ -517,7 +517,7 @@ export class AcademicController {
   }
 
   @Post('substitute-requests/:id/feedback')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiOperation({ summary: 'Submit substitute feedback' })
   @ApiResponse({ status: 200, description: 'Feedback submitted successfully' })
   async submitSubstituteFeedback(
@@ -530,7 +530,7 @@ export class AcademicController {
   // ==================== TEACHER WORKLOAD ENDPOINTS ====================
 
   @Post('teacher-workloads')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Create teacher workload' })
   @ApiResponse({ status: 201, description: 'Teacher workload created successfully', type: TeacherWorkloadResponseDto })
   async createTeacherWorkload(@Body() workloadDto: CreateTeacherWorkloadDto) {
@@ -538,7 +538,7 @@ export class AcademicController {
   }
 
   @Get('teacher-workloads')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiOperation({ summary: 'Get teacher workloads with filters' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -552,7 +552,7 @@ export class AcademicController {
   }
 
   @Get('teacher-workloads/:teacherId/:academicYear')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiOperation({ summary: 'Get teacher workload by teacher and year' })
   @ApiResponse({ status: 200, description: 'Teacher workload retrieved successfully', type: TeacherWorkloadResponseDto })
   async findTeacherWorkload(
@@ -563,7 +563,7 @@ export class AcademicController {
   }
 
   @Put('teacher-workloads/:teacherId/:academicYear')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Update teacher workload' })
   @ApiResponse({ status: 200, description: 'Teacher workload updated successfully', type: TeacherWorkloadResponseDto })
   async updateTeacherWorkload(
@@ -575,7 +575,7 @@ export class AcademicController {
   }
 
   @Get('teacher-workloads/analytics/:schoolId/:academicYear')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Get teacher workload analytics' })
   @ApiResponse({ status: 200, description: 'Workload analytics retrieved successfully', type: WorkloadAnalyticsResponseDto })
   async getWorkloadAnalytics(
@@ -586,7 +586,7 @@ export class AcademicController {
   }
 
   @Get('teacher-workloads/optimization/:schoolId/:academicYear')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Get teacher assignment optimization' })
   @ApiResponse({ status: 200, description: 'Assignment optimization retrieved successfully', type: TeacherAssignmentOptimizationDto })
   async optimizeTeacherAssignments(
@@ -599,7 +599,7 @@ export class AcademicController {
   // ==================== ACADEMIC ANALYTICS ENDPOINTS ====================
 
   @Get('analytics/performance/:schoolId/:academicYear')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Get academic performance report' })
   @ApiResponse({ status: 200, description: 'Academic performance report retrieved successfully' })
   async getAcademicPerformanceReport(
@@ -610,7 +610,7 @@ export class AcademicController {
   }
 
   @Get('analytics/advanced/:schoolId/:academicYear')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Get advanced academic statistics' })
   @ApiResponse({ status: 200, description: 'Advanced academic statistics retrieved successfully' })
   async getAdvancedAcademicStatistics(
@@ -621,7 +621,7 @@ export class AcademicController {
   }
 
   @Get('analytics/academic-year/:schoolId/:year')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Get academic year status' })
   @ApiResponse({ status: 200, description: 'Academic year status retrieved successfully' })
   async getAcademicYearStatus(
@@ -634,7 +634,7 @@ export class AcademicController {
   // ==================== INTEGRATION ENDPOINTS ====================
 
   @Get('integration/student/:studentId/:academicYear')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER, UserRole.STUDENT)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER, EUserRole.STUDENT)
   @ApiOperation({ summary: 'Get student academic data for integration' })
   @ApiResponse({ status: 200, description: 'Student academic data retrieved successfully' })
   async getStudentAcademicData(
@@ -645,7 +645,7 @@ export class AcademicController {
   }
 
   @Get('integration/parent/:parentId/:academicYear')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.PARENT)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.PARENT)
   @ApiOperation({ summary: 'Get parent academic data for integration' })
   @ApiResponse({ status: 200, description: 'Parent academic data retrieved successfully' })
   async getParentAcademicData(
@@ -656,7 +656,7 @@ export class AcademicController {
   }
 
   @Get('integration/teacher/:teacherId/:academicYear')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiOperation({ summary: 'Get teacher academic data for integration' })
   @ApiResponse({ status: 200, description: 'Teacher academic data retrieved successfully' })
   async getTeacherAcademicData(

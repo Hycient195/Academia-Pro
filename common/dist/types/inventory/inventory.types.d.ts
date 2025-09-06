@@ -1,4 +1,6 @@
-import { IDocument, IFinancialInfo } from "../shared";
+import { IDocument, IFinancialInfo, TDepreciationMethod } from "../shared";
+export { TDepreciationMethod };
+export type { IFinancialInfo };
 export declare enum TAssetCategory {
     FURNITURE = "furniture",
     EQUIPMENT = "equipment",
@@ -43,6 +45,7 @@ export declare enum TInventoryMaintenanceStatus {
     CANCELLED = "cancelled",
     OVERDUE = "overdue"
 }
+export { TInventoryMaintenanceType as TMaintenanceType, TInventoryMaintenanceStatus as TMaintenanceStatus };
 export declare enum TAssetCondition {
     EXCELLENT = "excellent",
     GOOD = "good",
@@ -457,4 +460,3 @@ export interface IAssetDashboardData {
         assetName: string;
     }>;
 }
-//# sourceMappingURL=inventory.types.d.ts.map

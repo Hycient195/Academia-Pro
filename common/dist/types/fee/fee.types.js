@@ -61,4 +61,3 @@ var TDiscountType;
     TDiscountType["EARLY_BIRD"] = "early_bird";
     TDiscountType["OTHER"] = "other";
 })(TDiscountType || (exports.TDiscountType = TDiscountType = {}));
-//# sourceMappingURL=fee.types.js.map

@@ -221,21 +221,21 @@ export default function SystemPage() {
                 label="CPU Usage"
                 value={healthData?.cpu?.usage || 0}
                 unit="%"
-                status={healthData?.cpu?.usage > 80 ? 'critical' : healthData?.cpu?.usage > 60 ? 'warning' : 'normal'}
+                status={(healthData?.cpu?.usage ?? 0) > 80 ? 'critical' : (healthData?.cpu?.usage ?? 0) > 60 ? 'warning' : 'normal'}
                 threshold={{ warning: 60, critical: 80 }}
               />
               <SystemMetric
                 label="Memory Usage"
                 value={healthData?.memory?.usage || 0}
                 unit="%"
-                status={healthData?.memory?.usage > 85 ? 'critical' : healthData?.memory?.usage > 70 ? 'warning' : 'normal'}
+                status={(healthData?.memory?.usage ?? 0) > 85 ? 'critical' : (healthData?.memory?.usage ?? 0) > 70 ? 'warning' : 'normal'}
                 threshold={{ warning: 70, critical: 85 }}
               />
               <SystemMetric
                 label="Disk Usage"
                 value={healthData?.disk?.usage || 0}
                 unit="%"
-                status={healthData?.disk?.usage > 90 ? 'critical' : healthData?.disk?.usage > 75 ? 'warning' : 'normal'}
+                status={(healthData?.disk?.usage ?? 0) > 90 ? 'critical' : (healthData?.disk?.usage ?? 0) > 75 ? 'warning' : 'normal'}
                 threshold={{ warning: 75, critical: 90 }}
               />
             </CardContent>

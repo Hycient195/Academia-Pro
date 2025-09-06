@@ -19,4 +19,4 @@ export type {
   IParentDashboardResponse,
   IParentCommunicationResponse,
   IParentAppointmentResponse,
-} from '../../../../common/src/types/parent/parent.types';
+} from '@academia-pro/types/parent/parent.types';

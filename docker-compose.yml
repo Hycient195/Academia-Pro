@@ -88,7 +88,7 @@ services:
   #   container_name: academia-pro-frontend
   #   restart: unless-stopped
   #   environment:
-  #     NEXT_PUBLIC_API_URL: http://backend:3000
+  #     NEXT_PUBLIC_API_BASE_URL: http://backend:3000
   #     NEXT_PUBLIC_ENVIRONMENT: development
   #   ports:
   #     - "3000:3000"

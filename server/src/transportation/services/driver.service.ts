@@ -63,7 +63,7 @@ export class DriverService {
     const driver = this.driverRepository.create({
       ...driverData,
       schoolId,
-      fullName: `${driverData.firstName} ${driverData.lastName}`,
+      fullName: `${driverData.firstName} ${driverData.middleName ? driverData.middleName + ' ' : ''}${driverData.lastName}`,
       status: DriverStatus.ACTIVE,
     });
 
@@ -138,11 +138,12 @@ export class DriverService {
       }
     }
 
-    // Update full name if first/last name changed
-    if (updateData.firstName || updateData.lastName) {
+    // Update full name if first/last/middle name changed
+    if (updateData.firstName || updateData.lastName || updateData.middleName !== undefined) {
       const firstName = updateData.firstName || driver.firstName;
       const lastName = updateData.lastName || driver.lastName;
-      updateData.fullName = `${firstName} ${lastName}`;
+      const middleName = updateData.middleName !== undefined ? updateData.middleName : driver.middleName;
+      updateData.fullName = `${firstName} ${middleName ? middleName + ' ' : ''}${lastName}`;
     }
 
     Object.assign(driver, updateData);

@@ -18,7 +18,7 @@ import {
   ILeaveFilters,
   IPerformanceReviewFilters,
   IHRStatistics,
-} from '../../../common/src/types/staff/staff.types';
+} from '@academia-pro/types/staff';
 
 @Injectable()
 export class StaffService {

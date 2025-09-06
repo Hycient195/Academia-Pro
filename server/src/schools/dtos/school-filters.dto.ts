@@ -3,7 +3,7 @@
 
 import { IsOptional, IsString, IsEnum, IsInt, Min, Max, MaxLength } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { TSchoolType, TSchoolStatus, ISchoolFilters } from '@academia-pro/common/schools';
+import { TSchoolType, TSchoolStatus, ISchoolFilters } from '@academia-pro/types/schools';
 import { Type } from 'class-transformer';
 
 export class SchoolFiltersDto implements ISchoolFilters {

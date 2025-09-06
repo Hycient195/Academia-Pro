@@ -11,7 +11,7 @@ import {
   IParentContact,
   IParentProfile,
   IParentChildRequest
-} from '../../../../common/src/types/parent/parent.types';
+} from '@academia-pro/types/parent/parent.types';
 
 export class CreateParentDto implements ICreateParentRequest {
   @ApiProperty({
@@ -300,6 +300,7 @@ export class ParentProfileDto implements IParentProfile {
     phone: string;
     email?: string;
     priority: number;
+    address: string;
   }>;
 }
 

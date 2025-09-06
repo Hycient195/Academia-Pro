@@ -3,9 +3,21 @@
 
 import { IsString, IsNotEmpty, IsOptional, IsEnum, IsEmail, IsDateString, IsUUID, IsObject, IsArray, IsBoolean, MinLength, MaxLength, IsNumber } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ICreateStudentRequest, TBloodGroup, TEnrollmentType } from '../../../../common/src/types/student/student.types';
+import { TBloodGroup, TEnrollmentType } from '@academia-pro/types/student';
 
-export class CreateStudentDto implements ICreateStudentRequest {
+// Local interface for create transportation
+interface ICreateTransportationInfo {
+  routeName?: string;
+  pickupTime?: string;
+  dropTime?: string;
+  pickupLocation?: string;
+  dropoffLocation?: string;
+  driverName?: string;
+  driverPhone?: string;
+  vehicleNumber?: string;
+}
+
+export class CreateStudentDto { // implements ICreateStudentRequest
   @ApiProperty({
     description: 'Student first name',
     example: 'John',
@@ -244,8 +256,11 @@ export class CreateStudentDto implements ICreateStudentRequest {
     conditions?: string[];
     emergencyContact: {
       name: string;
+      relationship: string;
       phone: string;
-      relation: string;
+      email?: string;
+      priority: number;
+      address: string;
     };
     doctorInfo?: {
       name: string;
@@ -255,7 +270,11 @@ export class CreateStudentDto implements ICreateStudentRequest {
     insuranceInfo?: {
       provider: string;
       policyNumber: string;
-      expiryDate: Date;
+      coverageAmount: number;
+      premium: number;
+      startDate: Date;
+      endDate: Date;
+      deductible: number;
     };
   };
 
@@ -273,15 +292,7 @@ export class CreateStudentDto implements ICreateStudentRequest {
   })
   @IsOptional()
   @IsObject({ message: 'Transportation information must be an object' })
-  transportation?: {
-    required: boolean;
-    routeId?: string;
-    stopId?: string;
-    pickupTime?: string;
-    dropTime?: string;
-    distance?: number;
-    fee?: number;
-  };
+  transportation?: Partial<ICreateTransportationInfo>;
 
   @ApiPropertyOptional({
     description: 'Hostel accommodation requirements',

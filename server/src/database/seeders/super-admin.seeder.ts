@@ -2,7 +2,8 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
-import { User, UserRole, UserStatus } from '../../users/user.entity';
+import { User } from '../../users/user.entity';
+import { EUserRole, EUserStatus } from '@academia-pro/types/users';
 
 @Injectable()
 export class SuperAdminSeeder implements OnModuleInit {
@@ -38,8 +39,8 @@ export class SuperAdminSeeder implements OnModuleInit {
         firstName: 'Super',
         lastName: 'Admin',
         passwordHash,
-        role: UserRole.SUPER_ADMIN,
-        status: UserStatus.ACTIVE,
+        role: EUserRole.SUPER_ADMIN,
+        status: EUserStatus.ACTIVE,
         isEmailVerified: true,
         emailVerificationToken: null,
         emailVerificationExpires: null,

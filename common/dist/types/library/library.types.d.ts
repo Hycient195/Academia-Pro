@@ -723,4 +723,3 @@ export interface IBulkReturnRequest {
     returnCondition?: TBookCondition;
     returnNotes?: string;
 }
-//# sourceMappingURL=library.types.d.ts.map

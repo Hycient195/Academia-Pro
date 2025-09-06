@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsEnum, IsOptional, IsArray, IsDateString, IsBoolean, IsNumber, IsObject, ValidateNested, Min } from 'class-validator';
 import { Type } from 'class-transformer';
-import { TGradeLevel } from '../../../../common/src/types/academic/academic.types';
+import { TGradeLevel } from '@academia-pro/types/academic';
 
 export enum EnrollmentType {
   REGULAR = 'regular',

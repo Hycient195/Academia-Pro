@@ -33,7 +33,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../common/decorators';
 import { StudentStatus, EnrollmentType } from './student.entity';
-import { UserRole } from '../users/user.entity';
+import { EUserRole } from '@academia-pro/types/users';
 
 @ApiTags('students')
 @Controller('students')
@@ -42,7 +42,7 @@ export class StudentsController {
   constructor(private readonly studentsService: StudentsService) {}
 
   @Post()
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new student' })
@@ -59,7 +59,7 @@ export class StudentsController {
   }
 
   @Get()
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all students with pagination and filtering' })
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -97,7 +97,7 @@ export class StudentsController {
   }
 
   @Get('search')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Search students' })
   @ApiQuery({ name: 'query', required: true, type: String })
@@ -120,7 +120,7 @@ export class StudentsController {
   }
 
   @Get('by-grade/:schoolId/:grade')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get students by grade' })
   @ApiResponse({
@@ -135,7 +135,7 @@ export class StudentsController {
   }
 
   @Get('by-section/:schoolId/:grade/:section')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get students by section' })
   @ApiResponse({
@@ -151,7 +151,7 @@ export class StudentsController {
   }
 
   @Get('statistics')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get student statistics' })
   @ApiQuery({ name: 'schoolId', required: false, type: String })
@@ -164,7 +164,7 @@ export class StudentsController {
   }
 
   @Get(':id')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER, UserRole.STUDENT, UserRole.PARENT)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER, EUserRole.STUDENT, EUserRole.PARENT)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get student by ID' })
   @ApiResponse({
@@ -177,7 +177,7 @@ export class StudentsController {
   }
 
   @Get('admission/:admissionNumber')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get student by admission number' })
   @ApiResponse({
@@ -190,7 +190,7 @@ export class StudentsController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update student information' })
@@ -205,7 +205,7 @@ export class StudentsController {
   }
 
   @Patch(':id/status')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update student status' })
@@ -224,7 +224,7 @@ export class StudentsController {
   }
 
   @Patch(':id/transfer')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Transfer student to different grade/section' })
@@ -239,7 +239,7 @@ export class StudentsController {
   }
 
   @Patch(':id/graduate')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Graduate student' })
@@ -257,7 +257,7 @@ export class StudentsController {
   }
 
   @Patch(':id/medical-info')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update student medical information' })
@@ -271,7 +271,7 @@ export class StudentsController {
   }
 
   @Patch(':id/financial-info')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update student financial information' })
@@ -285,7 +285,7 @@ export class StudentsController {
   }
 
   @Post(':id/documents')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Add document to student record' })
@@ -299,7 +299,7 @@ export class StudentsController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.SUPER_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete student (soft delete)' })

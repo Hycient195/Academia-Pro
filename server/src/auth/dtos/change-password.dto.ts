@@ -3,7 +3,7 @@
 
 import { IsString, IsNotEmpty, MinLength, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { IChangePasswordRequest } from '@academia-pro/common/auth';
+import { IChangePasswordRequest } from '@academia-pro/types/auth';
 
 export class ChangePasswordDto implements IChangePasswordRequest {
   @ApiProperty({

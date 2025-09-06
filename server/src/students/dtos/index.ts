@@ -13,7 +13,6 @@ export { CreateHealthRecordDto, UpdateHealthRecordDto, EmergencyContactDto, Doct
 
 // Achievement DTOs
 export {
-  CreateAchievementDto,
   UpdateAchievementDto,
   SupportingDocumentDto as AchievementSupportingDocumentDto,
   SocialMediaUrlDto,
@@ -50,4 +49,4 @@ export type {
   IStudentResponse,
   IStudentsListResponse,
   IStudentStatisticsResponse
-} from '../../../../common/src/types/student/student.types';
+} from '@academia-pro/types/student/student.types';

@@ -3,7 +3,7 @@
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Report } from '../report.entity';
-import { TReportType, TReportFormat, TReportFrequency, IReportResponse, IReportParameters, IReportListResponse, IReportGenerationResponse, IReportsStatisticsResponse } from '@academia-pro/common/reports';
+import { TReportType, TReportFormat, TReportFrequency, IReportResponse, IReportParameters, IReportListResponse, IReportGenerationResponse, IReportsStatisticsResponse } from '@academia-pro/types/reports';
 
 export class ReportResponseDto implements IReportResponse {
   @ApiProperty({
@@ -220,40 +220,24 @@ export class ReportResponseDto implements IReportResponse {
   }
 }
 
-export class ReportListResponseDto implements IReportListResponse {
+export class ReportListResponseDto {
   @ApiProperty({
     description: 'List of reports',
     type: [ReportResponseDto],
   })
-  reports: IReportResponse[];
+  data: IReportResponse[];
 
   @ApiProperty({
-    description: 'Total number of reports',
-    example: 25,
-  })
-  total: number;
-
-  @ApiProperty({
-    description: 'Current page number',
-    example: 1,
-  })
-  page: number;
-
-  @ApiProperty({
-    description: 'Number of items per page',
-    example: 10,
-  })
-  limit: number;
-
-  @ApiProperty({
-    description: 'Summary statistics',
+    description: 'Pagination information',
     type: Object,
   })
-  summary: {
-    activeReports: number;
-    scheduledReports: number;
-    publicReports: number;
-    totalGenerations: number;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
   };
 
   constructor(partial: Partial<ReportListResponseDto>) {

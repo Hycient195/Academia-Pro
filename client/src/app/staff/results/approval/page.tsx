@@ -127,7 +127,6 @@ export default function ResultsApprovalPage() {
   const [selectedTab, setSelectedTab] = useState("pending")
   const [selectedApprovals, setSelectedApprovals] = useState<number[]>([])
   const [approvalComments, setApprovalComments] = useState("")
-  const [selectedClass, setSelectedClass] = useState<any>(null)
 
   const handleApproval = (classId: number, action: "approve" | "reject") => {
     // In a real app, this would make an API call
@@ -342,7 +341,7 @@ export default function ResultsApprovalPage() {
                               </DialogHeader>
                               <div className="space-y-4">
                                 <div className="grid gap-4">
-                                  {classItem.studentResults.map((student) => (
+                                  {classItem.studentResults?.map((student) => (
                                     <Card key={student.id}>
                                       <CardContent className="p-4">
                                         <div className="flex items-center justify-between mb-3">
@@ -364,7 +363,7 @@ export default function ResultsApprovalPage() {
                                           </Badge>
                                         </div>
                                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                          {Object.entries(student.subjects).map(([subject, data]: [string, any]) => (
+                                          {Object.entries(student.subjects).map(([subject, data]: [string, { grade: string, score: number }]) => (
                                             <div key={subject} className="text-center p-2 bg-muted rounded">
                                               <p className="text-xs font-medium capitalize">{subject}</p>
                                               <Badge className={`${getGradeColor(data.grade)} text-xs mt-1`}>

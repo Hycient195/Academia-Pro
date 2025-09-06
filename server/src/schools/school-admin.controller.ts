@@ -8,7 +8,6 @@ import { School } from './school.entity';
 import { SchoolContextGuard } from '../common/guards/school-context.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
-import { UserRole } from '../users/user.entity';
 import { StudentsService } from '../students/students.service';
 import { StaffService } from '../staff/staff.service';
 import { UsersService } from '../users/users.service';
@@ -19,18 +18,19 @@ import { CreateStudentDto } from '../students/dtos/create-student.dto';
 import { UpdateStudentDto } from '../students/dtos/update-student.dto';
 import { CreateStaffDto } from '../staff/dtos/create-staff.dto';
 import { UpdateStaffDto } from '../staff/dtos/update-staff.dto';
+import { EUserRole } from '@academia-pro/types/users';
 
 @ApiTags('School Admin - School Management')
 @Controller('school-admin')
 @UseGuards(SchoolContextGuard, RolesGuard)
-@Roles(UserRole.SCHOOL_ADMIN)
+@Roles(EUserRole.SCHOOL_ADMIN)
 export class SchoolAdminController {
   private readonly logger = new Logger(SchoolAdminController.name);
 
   constructor(
     private readonly schoolContextService: SchoolContextService,
     private readonly studentsService: StudentsService,
-    private readonly staffService: StaffService,
+    // private readonly staffService: StaffService,
     private readonly usersService: UsersService,
     // private readonly feeService: FeeService,
     // private readonly attendanceService: AttendanceService,
@@ -270,7 +270,7 @@ export class SchoolAdminController {
       role: role as any,
       status: status as any,
     });
-    const users = result.users;
+    const users = result.data;
 
     return users.map(user => ({
       id: user.id,

@@ -12,6 +12,8 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
+  CellContext,
+  HeaderContext,
 } from "@tanstack/react-table"
 import { IconArrowsUpDown, IconChevronDown, IconDots, IconSearch, IconFilter, IconDownload, IconEye, IconEyeOff } from "@tabler/icons-react"
 
@@ -116,7 +118,7 @@ export function DataTable<TData, TValue>({
         <div className="flex flex-1 items-center space-x-2">
           {/* Search */}
           <div className="relative max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <IconSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder={searchPlaceholder}
               value={globalFilter ?? ""}
@@ -379,11 +381,11 @@ export function DataTable<TData, TValue>({
 export function createSortableColumn<T>(
   header: string,
   accessorKey: keyof T,
-  cell?: (props: any) => React.ReactNode
+  cell?: (props: CellContext<T, unknown>) => React.ReactNode
 ) {
   return {
     accessorKey,
-    header: ({ column }: any) => {
+    header: ({ column }: HeaderContext<T, unknown>) => {
       return (
         <Button
           variant="ghost"
@@ -395,7 +397,7 @@ export function createSortableColumn<T>(
         </Button>
       )
     },
-    cell: cell || (({ getValue }: any) => getValue()),
+    cell: cell || (({ getValue }: CellContext<T, unknown>) => getValue()),
   }
 }
 
@@ -403,7 +405,7 @@ export function createSortableColumn<T>(
 export function createSelectableColumn<T>() {
   return {
     id: "select",
-    header: ({ table }: any) => (
+    header: ({ table }: HeaderContext<T, unknown>) => (
       <Checkbox
         checked={
           table.getIsAllPageRowsSelected() ||
@@ -413,7 +415,7 @@ export function createSelectableColumn<T>() {
         aria-label="Select all"
       />
     ),
-    cell: ({ row }: any) => (
+    cell: ({ row }: CellContext<T, unknown>) => (
       <Checkbox
         checked={row.getIsSelected()}
         onCheckedChange={(value) => row.toggleSelected(!!value)}
@@ -437,7 +439,7 @@ export function createActionsColumn<T>(
   return {
     id: "actions",
     enableHiding: false,
-    cell: ({ row }: any) => {
+    cell: ({ row }: CellContext<T, unknown>) => {
       const item = row.original
 
       return (

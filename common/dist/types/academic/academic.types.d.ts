@@ -1,4 +1,6 @@
-import { TGradeLevel, ISubjectSchedule, IClass, TSubjectType, ISubject } from '../shared';
+import { TGradeLevel, IClassSubject, ISubjectSchedule, IClass, TSubjectType, ISubject } from '../shared';
+export { TGradeLevel, TSubjectType };
+export type { IClassSubject, ISubjectSchedule, IClass, ISubject };
 export declare enum TAcademicYearStatus {
     PLANNING = "planning",
     ACTIVE = "active",
@@ -231,4 +233,3 @@ export interface IAcademicValidationRules {
     academicYearFormat: string;
     subjectCodeFormat: string;
 }
-//# sourceMappingURL=academic.types.d.ts.map

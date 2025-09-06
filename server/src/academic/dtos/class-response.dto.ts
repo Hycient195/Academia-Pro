@@ -3,7 +3,7 @@
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Class } from '../class.entity';
-import { TGradeLevel, IClassResponse } from '../../../../common/src/types/academic/academic.types';
+import { TGradeLevel, IClassResponse } from '@academia-pro/types/academic';
 
 export class ClassResponseDto implements IClassResponse {
   @ApiProperty({

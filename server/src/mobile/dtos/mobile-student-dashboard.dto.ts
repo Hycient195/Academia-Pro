@@ -13,8 +13,8 @@ import {
   IQuickAction,
   TAssignmentStatus,
   TAssignmentPriority,
-  TNotificationType
-} from '@academia-pro/common/mobile';
+  TMobileNotificationType
+} from '@academia-pro/types/mobile';
 
 export class ScheduleItemDto implements IScheduleItem {
   @ApiProperty({
@@ -176,10 +176,10 @@ export class NotificationSummaryDto implements INotificationSummary {
 
   @ApiProperty({
     description: 'Notification type',
-    example: TNotificationType.ASSIGNMENT,
-    enum: TNotificationType,
+    example: TMobileNotificationType.ASSIGNMENT,
+    enum: TMobileNotificationType,
   })
-  type: TNotificationType;
+  type: TMobileNotificationType;
 
   @ApiProperty({
     description: 'Notification title',

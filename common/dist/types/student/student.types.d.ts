@@ -1,4 +1,5 @@
 import { IAddress, IDocument, IEmergencyContact, IInsuranceInfo, TBloodGroup } from '../shared';
+export type { TBloodGroup };
 export declare enum TStudentStatus {
     ACTIVE = "active",
     INACTIVE = "inactive",
@@ -283,6 +284,10 @@ export interface IStudentValidationRules {
         minLength: number;
         maxLength: number;
     };
+    middleName?: {
+        minLength: number;
+        maxLength: number;
+    };
     admissionNumber: {
         pattern: string;
         maxLength: number;
@@ -294,4 +299,3 @@ export interface IStudentValidationRules {
         maxLength: number;
     };
 }
-//# sourceMappingURL=student.types.d.ts.map

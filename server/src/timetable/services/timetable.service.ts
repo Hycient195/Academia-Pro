@@ -6,7 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, MoreThanOrEqual, LessThanOrEqual, In } from 'typeorm';
 import { Timetable, DayOfWeek, TimetableStatus, PeriodType, PriorityLevel, RecurrenceType } from '../entities/timetable.entity';
 import { CreateTimetableDto, BulkCreateTimetableDto, UpdateTimetableDto } from '../dtos';
-import { TDayOfWeek, TPriorityLevel } from '@academia-pro/common/timetable';
+import { TDayOfWeek, TPriorityLevel } from '@academia-pro/types/timetable';
 
 @Injectable()
 export class TimetableService {

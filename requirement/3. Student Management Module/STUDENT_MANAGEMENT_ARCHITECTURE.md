@@ -840,7 +840,7 @@ POST /api/communication/achievement-announcement
 
 #### **User Roles & Permissions**
 ```typescript
-enum UserRole {
+enum IUserPermissionRole {
   SUPER_ADMIN = 'super-admin',
   SCHOOL_ADMIN = 'school-admin',
   PRINCIPAL = 'principal',
@@ -855,7 +855,7 @@ enum UserRole {
 
 // Permission Matrix
 const STUDENT_PERMISSIONS = {
-  [UserRole.SUPER_ADMIN]: {
+  [IUserPermissionRole.SUPER_ADMIN]: {
     create: true,
     read: true,
     update: true,
@@ -865,7 +865,7 @@ const STUDENT_PERMISSIONS = {
     viewMedical: true,
     viewDiscipline: true
   },
-  [UserRole.SCHOOL_ADMIN]: {
+  [IUserPermissionRole.SCHOOL_ADMIN]: {
     create: true,
     read: true,
     update: true,
@@ -875,7 +875,7 @@ const STUDENT_PERMISSIONS = {
     viewMedical: true,
     viewDiscipline: true
   },
-  [UserRole.TEACHER]: {
+  [IUserPermissionRole.TEACHER]: {
     create: false,
     read: true, // Only their students
     update: false,
@@ -885,7 +885,7 @@ const STUDENT_PERMISSIONS = {
     viewMedical: false,
     viewDiscipline: true
   },
-  [UserRole.STUDENT]: {
+  [IUserPermissionRole.STUDENT]: {
     create: false,
     read: true, // Own profile only
     update: true, // Limited fields
@@ -895,7 +895,7 @@ const STUDENT_PERMISSIONS = {
     viewMedical: true,
     viewDiscipline: true
   },
-  [UserRole.PARENT]: {
+  [IUserPermissionRole.PARENT]: {
     create: false,
     read: true, // Children's profiles only
     update: false,
@@ -930,7 +930,7 @@ const MEDICAL_FIELDS = [
 
 // Access Control Decorator
 @FieldAccess({
-  roles: [UserRole.MEDICAL_STAFF, UserRole.SCHOOL_ADMIN],
+  roles: [IUserPermissionRole.MEDICAL_STAFF, IUserPermissionRole.SCHOOL_ADMIN],
   fields: MEDICAL_FIELDS
 })
 export class StudentMedicalRecord {

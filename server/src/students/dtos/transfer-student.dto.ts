@@ -3,7 +3,7 @@
 
 import { IsString, IsNotEmpty, IsOptional, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ITransferStudentRequest } from '../../../../common/src/types/student/student.types';
+import { ITransferStudentRequest } from '@academia-pro/types/student';
 
 export class TransferStudentDto implements ITransferStudentRequest {
   @ApiProperty({

@@ -10,7 +10,7 @@ import type {
   CreateSchoolAdminStudentRequest,
   UpdateSchoolAdminStudentRequest,
   SchoolAdminStaff,
-} from '@academia-pro/common/client-api';
+} from '@academia-pro/client-api';
 
 export const schoolAdminApi = createApi({
   reducerPath: 'schoolAdminApi',

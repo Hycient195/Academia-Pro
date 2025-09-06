@@ -3,7 +3,7 @@
 
 import { IsString, IsOptional, IsEnum, IsUUID, IsObject, IsBoolean, IsArray } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TNoticeType, TMessagePriority, TMessageType, ICreateNoticeRequest } from '@academia-pro/common/communication';
+import { TNoticeType, TMessagePriority, TMessageType, ICreateNoticeRequest } from '@academia-pro/types/communication';
 
 export class CreateNoticeDto implements ICreateNoticeRequest {
   @ApiProperty({

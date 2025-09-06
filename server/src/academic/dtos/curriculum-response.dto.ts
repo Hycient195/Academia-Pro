@@ -3,7 +3,7 @@
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Curriculum } from '../curriculum.entity';
-import { TGradeLevel, TAcademicYearStatus, ICurriculumResponse } from '../../../../common/src/types/academic/academic.types';
+import { TGradeLevel, TAcademicYearStatus, ICurriculumResponse } from '@academia-pro/types/academic';
 
 export class CurriculumResponseDto implements ICurriculumResponse {
   @ApiProperty({

@@ -2,7 +2,7 @@
 // Academia Pro - Examination Management Types
 // Shared type definitions for examination and assessment management module
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TQuestionType = exports.TExamResultStatus = exports.TExaminationAssessmentType = exports.TGradingMethod = exports.TExamStatus = exports.TExamType = void 0;
+exports.TQuestionType = exports.TExamResultStatus = exports.TAssessmentType = exports.TExaminationAssessmentType = exports.TGradingMethod = exports.TExamStatus = exports.TExamType = void 0;
 // Enums
 var TExamType;
 (function (TExamType) {
@@ -44,7 +44,7 @@ var TExaminationAssessmentType;
     TExaminationAssessmentType["SUMMATIVE"] = "summative";
     TExaminationAssessmentType["DIAGNOSTIC"] = "diagnostic";
     TExaminationAssessmentType["PLACEMENT"] = "placement";
-})(TExaminationAssessmentType || (exports.TExaminationAssessmentType = TExaminationAssessmentType = {}));
+})(TExaminationAssessmentType || (exports.TAssessmentType = exports.TExaminationAssessmentType = TExaminationAssessmentType = {}));
 var TExamResultStatus;
 (function (TExamResultStatus) {
     TExamResultStatus["PENDING"] = "pending";
@@ -64,4 +64,3 @@ var TQuestionType;
     TQuestionType["MATCHING"] = "matching";
     TQuestionType["ORDERING"] = "ordering";
 })(TQuestionType || (exports.TQuestionType = TQuestionType = {}));
-//# sourceMappingURL=examination.types.js.map

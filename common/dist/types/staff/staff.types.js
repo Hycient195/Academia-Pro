@@ -2,7 +2,9 @@
 // Academia Pro - Staff & HR Management Types
 // Shared type definitions for staff and HR management module
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TLeaveStatus = exports.TLeaveType = exports.TQualificationLevel = exports.TPosition = exports.TDepartment = exports.TEmploymentStatus = exports.TEmploymentType = void 0;
+exports.TLeaveStatus = exports.TLeaveType = exports.TQualificationLevel = exports.TPosition = exports.TDepartment = exports.TEmploymentStatus = exports.TEmploymentType = exports.TBloodGroup = void 0;
+const shared_1 = require("../shared");
+Object.defineProperty(exports, "TBloodGroup", { enumerable: true, get: function () { return shared_1.TBloodGroup; } });
 // Enums
 var TEmploymentType;
 (function (TEmploymentType) {
@@ -79,4 +81,3 @@ var TLeaveStatus;
     TLeaveStatus["COMPLETED"] = "completed";
 })(TLeaveStatus || (exports.TLeaveStatus = TLeaveStatus = {}));
 // All types are exported above with their declarations
-//# sourceMappingURL=staff.types.js.map

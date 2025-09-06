@@ -9,7 +9,7 @@ import {
   TContentType,
   TContentStatus,
   TDifficultyLevel
-} from '@academia-pro/common/online-learning';
+} from '@academia-pro/types/online-learning';
 
 export class ContentItemDto implements Omit<IContent, 'createdBy' | 'updatedBy'> {
   @ApiProperty({

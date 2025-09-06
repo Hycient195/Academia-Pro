@@ -13,6 +13,13 @@ export { CurriculumResponseDto } from './curriculum-response.dto';
 export { ClassResponseDto } from './class-response.dto';
 export { LearningObjectiveResponseDto } from './learning-objective-response.dto';
 
+// Curriculum Standards DTOs
+export {
+  CreateCurriculumStandardDto,
+  UpdateCurriculumStandardDto,
+  CurriculumStandardResponseDto,
+} from './curriculum-standards.dto';
+
 // Re-export for convenience
 export type {
   ICreateSubjectRequest,
@@ -25,4 +32,4 @@ export type {
   IClassResponse,
   ILearningObjectiveResponse,
   IAcademicStatistics,
-} from '../../../../common/src/types/academic/academic.types';
+} from '@academia-pro/types/academic';

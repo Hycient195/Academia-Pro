@@ -12,23 +12,23 @@ export const getDatabaseConfig = (configService: ConfigService): TypeOrmModuleOp
   password: configService.get('DB_PASSWORD', 'admin'),
   database: configService.get('DB_NAME', 'academia_pro'),
   entities: [
-    'src/users/**/*.entity{.ts,.js}',
-    'src/schools/**/*.entity{.ts,.js}',
-    'src/students/**/*.entity{.ts,.js}',
-    'src/academic/**/*.entity{.ts,.js}',
-    'src/attendance/**/*.entity{.ts,.js}',
-    'src/examination/**/*.entity{.ts,.js}',
-    'src/fee/**/*.entity{.ts,.js}',
-    'src/library/**/*.entity{.ts,.js}',
-    'src/hostel/**/*.entity{.ts,.js}',
-    'src/transportation/**/*.entity{.ts,.js}',
-    'src/inventory/**/*.entity{.ts,.js}',
-    'src/communication/**/*.entity{.ts,.js}',
-    'src/iam/**/*.entity{.ts,.js}',
-    // 'src/parent-portal/**/*.entity{.ts,.js}', // Temporarily excluded due to circular dependency
-    'src/common/**/*.entity{.ts,.js}',
-    'src/auth/**/*.entity{.ts,.js}',
-    'src/security/**/*.entity{.ts,.js}',
+    'dist/users/**/*.entity{.ts,.js}',
+    'dist/schools/**/*.entity{.ts,.js}',
+    'dist/students/**/*.entity{.ts,.js}',
+    'dist/academic/**/*.entity{.ts,.js}',
+    'dist/attendance/**/*.entity{.ts,.js}',
+    'dist/examination/**/*.entity{.ts,.js}',
+    'dist/fee/**/*.entity{.ts,.js}',
+    'dist/library/**/*.entity{.ts,.js}',
+    'dist/hostel/**/*.entity{.ts,.js}',
+    'dist/transportation/**/*.entity{.ts,.js}',
+    'dist/inventory/**/*.entity{.ts,.js}',
+    'dist/communication/**/*.entity{.ts,.js}',
+    'dist/iam/**/*.entity{.ts,.js}',
+    // 'dist/parent-portal/**/*.entity{.ts,.js}', // Temporarily excluded due to circular dependency
+    'dist/common/**/*.entity{.ts,.js}',
+    'dist/auth/**/*.entity{.ts,.js}',
+    'dist/security/**/*.entity{.ts,.js}',
   ],
   migrations: ['dist/migrations/*{.ts,.js}'],
   synchronize: true,
@@ -40,12 +40,12 @@ export const getDatabaseConfig = (configService: ConfigService): TypeOrmModuleOp
     connectionTimeoutMillis: 2000,
   },
   dropSchema: false,
-  cache: {
-    type: 'redis',
-    options: {
-      host: configService.get('REDIS_HOST', 'localhost'),
-      port: configService.get('REDIS_PORT', 6379),
-    },
-    duration: 300000, // 5 minutes
-  },
+  // cache: {
+  //   type: 'redis',
+  //   options: {
+  //     host: configService.get('REDIS_HOST', 'localhost'),
+  //     port: configService.get('REDIS_PORT', 6379),
+  //   },
+  //   duration: 300000, // 5 minutes
+  // },
 });

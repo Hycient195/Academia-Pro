@@ -17,4 +17,4 @@ export type {
   IMaintenanceFilters,
   IAssetReport,
   IAssetDashboardData,
-} from '../../../../common/src/types/inventory/inventory.types';
+} from '@academia-pro/types/inventory/inventory.types';

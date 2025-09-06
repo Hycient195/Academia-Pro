@@ -23,7 +23,8 @@ import {
   IconCircleCheck,
   IconCircleX
 } from "@tabler/icons-react"
-import { apis, type AuditLog } from "@/redux/api"
+import { apis } from "@/redux/api"
+import { IAuditLog } from "@academia-pro/types/super-admin"
 
 function AuditMetricCard({
   title,
@@ -69,7 +70,7 @@ function AuditMetricCard({
   )
 }
 
-function AuditLogTable({ logs, isLoading }: { logs?: AuditLog[], isLoading: boolean }) {
+function AuditLogTable({ logs, isLoading }: { logs?: IAuditLog[], isLoading: boolean }) {
   if (isLoading) {
     return (
       <div className="space-y-4">

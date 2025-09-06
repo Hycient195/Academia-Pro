@@ -1,0 +1,1127 @@
+// Academia Pro - Shared Types
+// Common types used across multiple modules
+
+import { z } from 'zod';
+import { EUserRole, EUserStatus, IUserPermissionRole } from '../users';
+import { IAuthTokens } from '../auth';
+
+
+export interface IDocument {
+  id: string;
+  type: string;
+  fileName: string;
+  fileUrl: string;
+  fileSize: number;
+  mimeType: string;
+  uploadedAt: Date;
+  uploadedBy: string;
+  isVerified: boolean;
+  verificationDate?: Date;
+  verifiedBy?: string;
+}
+
+export interface IEmergencyContact {
+  name: string;
+  relationship: string;
+  phone: string;
+  email?: string;
+  priority: number;
+  address: string
+}
+
+export interface IDepreciationEntry {
+  period: string; // '2024-Q1', '2024-01'
+  depreciationAmount: number;
+  accumulatedDepreciation: number;
+  currentValue: number;
+  calculationDate: Date;
+}
+
+export enum TCommunicationType {
+  ANNOUNCEMENT = 'announcement',
+  ASSIGNMENT = 'assignment',
+  GRADE = 'grade',
+  ATTENDANCE = 'attendance',
+  EVENT = 'event',
+  EMERGENCY = 'emergency',
+  GENERAL = 'general',
+}
+
+export enum TCommunicationChannel {
+  EMAIL = 'email',
+  SMS = 'sms',
+  PUSH = 'push',
+  IN_APP = 'in_app',
+  CALL = 'call',
+}
+
+export interface IAlert {
+  id: string;
+  type: 'warning' | 'error' | 'info' | 'success';
+  title: string;
+  message: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  createdAt: Date;
+  acknowledgedAt?: Date;
+  actionRequired: boolean;
+  actionUrl?: string;
+}
+
+export interface INotification {
+  id: string;
+  type: TCommunicationType;
+  communicationChannel: TCommunicationChannel,
+  title: string;
+  message: string;
+  timestamp: Date;
+  read: boolean;
+  priority: TMessagePriority;
+  studentId?: string;
+  studentName?: string;
+  actionUrl?: string;
+  expiresAt?: Date;
+}
+
+export enum TDepreciationMethod {
+  STRAIGHT_LINE = 'straight_line',
+  DECLINING_BALANCE = 'declining_balance',
+  UNITS_OF_PRODUCTION = 'units_of_production',
+}
+
+export interface IInsuranceInfo {
+  provider: string;
+  policyNumber: string;
+  coverageAmount: number;
+  premium: number;
+  startDate: Date;
+  endDate: Date;
+  deductible: number;
+}
+
+export interface IFinancialInfo {
+  purchasePrice: number;
+  salvageValue: number;
+  usefulLife: number; // years
+  depreciationMethod: TDepreciationMethod;
+  accumulatedDepreciation: number;
+  currentValue: number;
+  depreciationSchedule: IDepreciationEntry[];
+  insurance?: IInsuranceInfo;
+}
+
+// Filter and Query Interfaces
+export interface ISchoolFilters {
+  type?: TSchoolType;
+  status?: TSchoolStatus;
+  city?: string;
+  state?: string;
+  country?: string;
+  establishedAfter?: string;
+  establishedBefore?: string;
+  minStudents?: number;
+  maxStudents?: number;
+  hasFacilities?: string[];
+  search?: string;
+}
+
+export enum TBloodGroup {
+  A_POSITIVE = 'A+',
+  A_NEGATIVE = 'A-',
+  B_POSITIVE = 'B+',
+  B_NEGATIVE = 'B-',
+  AB_POSITIVE = 'AB+',
+  AB_NEGATIVE = 'AB-',
+  O_POSITIVE = 'O+',
+  O_NEGATIVE = 'O-',
+}
+
+export interface IAddress {
+  street: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
+}
+
+// Base Entity Types
+export interface BaseEntity {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+  createdBy?: string;
+  updatedBy?: string;
+}
+
+export interface SoftDeleteEntity extends BaseEntity {
+  deletedAt?: Date;
+  deletedBy?: string;
+  isDeleted: boolean;
+}
+
+// User and Authentication Types
+// export type EUserRole = 'super-admin' | 'school-admin' | 'teacher' | 'student' | 'parent';
+// export type EUserStatus = 'active' | 'inactive' | 'suspended' | 'pending' | 'deleted';
+
+// Base User interface (moved from util.types.ts for consistency)
+export interface User extends BaseEntity {
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: EUserRole;
+  status: EUserStatus;
+  avatar?: string;
+  phone?: string;
+  dateOfBirth?: Date;
+  gender?: 'male' | 'female' | 'other';
+  address?: IAddress;
+  schoolId?: string;
+  isEmailVerified: boolean;
+  lastLoginAt?: Date;
+  preferences: UserPreferences;
+  passwordHash?: string; // Only used in backend
+}
+
+// Entity-specific User Types
+export interface Teacher extends User {
+  role: EUserRole.TEACHER;
+  employeeId: string;
+  department?: string;
+  subjects: string[];
+  qualifications: Qualification[];
+  experience: number; // years
+  specializations: string[];
+  classTeacherOf?: string[]; // Section IDs
+}
+
+export interface Student extends User {
+  role: EUserRole.STUDENT;
+  studentId: string;
+  gradeId: string;
+  sectionId: string;
+  enrollmentDate: Date;
+  parentIds: string[];
+  emergencyContacts: EmergencyContact[];
+  medicalInfo?: MedicalInfo;
+  academicInfo: AcademicInfo;
+}
+
+export interface Parent extends User {
+  role: EUserRole.PARENT;
+  childrenIds: string[];
+  relationship: 'father' | 'mother' | 'guardian' | 'other';
+  occupation?: string;
+  workplace?: string;
+  emergencyContact: boolean;
+}
+
+// Supporting Types for User Entities
+export interface Qualification {
+  id: string;
+  degree: string;
+  institution: string;
+  year: number;
+  grade?: string;
+  specialization?: string;
+}
+
+export interface EmergencyContact {
+  id: string;
+  name: string;
+  relationship: string;
+  phone: string;
+  email?: string;
+  address?: IAddress;
+  isPrimary: boolean;
+}
+
+export interface MedicalInfo {
+  bloodGroup?: string;
+  allergies?: string[];
+  medications?: string[];
+  conditions?: string[];
+  doctorName?: string;
+  doctorPhone?: string;
+  insuranceProvider?: string;
+  insuranceNumber?: string;
+}
+
+export interface AcademicInfo {
+  previousSchool?: string;
+  transferCertificate?: string;
+  achievements?: string[];
+  specialNeeds?: string[];
+  learningStyle?: 'visual' | 'auditory' | 'kinesthetic' | 'reading';
+  languageProficiency?: Record<string, 'beginner' | 'intermediate' | 'advanced' | 'native'>;
+}
+
+export interface UserPreferences {
+  language: string;
+  timezone: string;
+  theme: 'light' | 'dark' | 'auto';
+  notifications: NotificationPreferences;
+  privacy: PrivacySettings;
+}
+
+export interface NotificationPreferences {
+  email: boolean;
+  sms: boolean;
+  push: boolean;
+  marketing: boolean;
+  system: boolean;
+}
+
+export interface PrivacySettings {
+  profileVisibility: 'public' | 'private' | 'school-only';
+  contactVisibility: 'public' | 'private' | 'school-only';
+  dataSharing: boolean;
+}
+
+// IAddress Types
+
+// School Types
+export type SchoolStatus = 'active' | 'inactive' | 'suspended' | 'pending';
+
+export enum TSchoolType {
+  PRESCHOOL = 'preschool',
+  ELEMENTARY = 'elementary',
+  MIDDLE_SCHOOL = 'middle_school',
+  HIGH_SCHOOL = 'high_school',
+  SENIOR_SECONDARY = 'senior_secondary',
+  UNIVERSITY = 'university',
+  COLLEGE = 'college',
+  INSTITUTE = 'institute',
+  TRAINING_CENTER = 'training_center',
+  PRIMARY = 'primary',
+  SECONDARY = 'secondary',
+  MIXED = 'mixed',
+}
+
+export enum TSchoolStatus {
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  SUSPENDED = 'suspended',
+  CLOSED = 'closed',
+}
+
+export interface School {
+  id: string;
+  name: string;
+  code: string;
+  description?: string;
+  address: IAddress;
+  phone?: string;
+  email?: string;
+  website?: string;
+  logo?: string;
+  status: SchoolStatus;
+  type: 'primary' | 'secondary' | 'mixed';
+  establishedYear?: number;
+  accreditation?: string;
+  timezone: string;
+  currency: string;
+  language: string;
+  settings: SchoolSettings;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface SchoolSettings {
+  academicYear: {
+    startMonth: number;
+    endMonth: number;
+  };
+  workingDays: number[];
+  attendance: {
+    requiredPercentage: number;
+    gracePeriodMinutes: number;
+  };
+  grading: {
+    scale: 'percentage' | 'gpa' | 'letter';
+    passingGrade: number;
+  };
+  communication: {
+    primaryLanguage: string;
+    supportedLanguages: string[];
+  };
+}
+
+// Academic Types
+export interface Grade {
+  id: string;
+  name: string;
+  level: number;
+  schoolId: string;
+  description?: string;
+  isActive: boolean;
+  order: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Section {
+  id: string;
+  name: string;
+  gradeId: string;
+  capacity: number;
+  currentEnrollment: number;
+  classTeacherId?: string;
+  roomNumber?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Settings and Configuration
+export interface ISchoolSettings {
+  schoolId: string;
+  generalSettings: {
+    timezone: string;
+    currency: string;
+    language: string;
+    dateFormat: string;
+    timeFormat: string;
+  };
+  academicSettings: {
+    academicYearFormat: string;
+    gradingScale: Array<{
+      grade: string;
+      minScore: number;
+      maxScore: number;
+      description: string;
+    }>;
+    attendanceThreshold: number;
+    promotionCriteria: {
+      minimumAttendance: number;
+      minimumGrade: string;
+      requiredSubjects: string[];
+    };
+  };
+  communicationSettings: {
+    emailNotifications: boolean;
+    smsNotifications: boolean;
+    parentPortalEnabled: boolean;
+    studentPortalEnabled: boolean;
+    emergencyAlertsEnabled: boolean;
+  };
+  securitySettings: {
+    passwordPolicy: {
+      minLength: number;
+      requireUppercase: boolean;
+      requireLowercase: boolean;
+      requireNumbers: boolean;
+      requireSpecialChars: boolean;
+    };
+    sessionTimeout: number;
+    maxLoginAttempts: number;
+    twoFactorEnabled: boolean;
+  };
+}
+
+export enum TGradeLevel {
+  NURSERY = 'nursery',
+  LKG = 'lkg',
+  UKG = 'ukg',
+  GRADE_1 = 'grade_1',
+  GRADE_2 = 'grade_2',
+  GRADE_3 = 'grade_3',
+  GRADE_4 = 'grade_4',
+  GRADE_5 = 'grade_5',
+  GRADE_6 = 'grade_6',
+  GRADE_7 = 'grade_7',
+  GRADE_8 = 'grade_8',
+  GRADE_9 = 'grade_9',
+  GRADE_10 = 'grade_10',
+  GRADE_11 = 'grade_11',
+  GRADE_12 = 'grade_12',
+}
+
+export enum TSubjectType {
+  CORE = 'core',
+  ELECTIVE = 'elective',
+  PRACTICAL = 'practical',
+  LANGUAGE = 'language',
+  ARTS = 'arts',
+  SPORTS = 'sports',
+}
+
+export interface IClassSubject {
+  subjectId: string;
+  subject: ISubject;
+  teacherId: string;
+  schedule: ISubjectSchedule[];
+}
+
+export interface ISubjectSchedule {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  room?: string;
+}
+
+export interface ISubject {
+  id: string;
+  code: string;
+  name: string;
+  type: TSubjectType;
+  description?: string;
+  grade: string;
+  teacherId?: string;
+  credits?: number;
+  prerequisites?: string[];
+  gradeLevels: TGradeLevel[];
+  isActive: boolean;
+  schoolId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IClass {
+  id: string;
+  name: string;
+  gradeLevel: TGradeLevel;
+  section: string;
+  capacity: number;
+  currentEnrollment: number;
+  classTeacherId?: string;
+  academicYear: string;
+  subjects: IClassSubject[];
+  isActive: boolean;
+  schoolId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Common Status Types
+export type Status = 'active' | 'inactive' | 'suspended' | 'pending' | 'archived';
+export type Priority = 'low' | 'medium' | 'high' | 'urgent';
+export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
+
+// Message Priority Enum (moved from communication to avoid circular dependency)
+export enum TMessagePriority {
+  LOW = 'low',
+  NORMAL = 'normal',
+  HIGH = 'high',
+  URGENT = 'urgent',
+}
+
+// Pagination Types
+export interface PaginationOptions {
+  page: number;
+  limit: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}
+
+
+// Search and Filter Types
+export interface SearchOptions {
+  query?: string;
+  filters?: Record<string, any>;
+  dateRange?: {
+    start: Date;
+    end: Date;
+  };
+}
+
+export interface FilterOptions {
+  field: string;
+  operator: 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte' | 'in' | 'nin' | 'contains' | 'startswith';
+  value: any;
+}
+
+// API Response Types
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  errors?: ValidationError[];
+  meta?: {
+    timestamp: Date;
+    version: string;
+    requestId: string;
+  };
+}
+
+export interface ValidationError {
+  field: string;
+  message: string;
+  code?: string;
+}
+
+// File Upload Types
+export interface FileUpload {
+  id: string;
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  url: string;
+  thumbnailUrl?: string;
+  uploadedBy: string;
+  uploadedAt: Date;
+}
+
+export interface FileUploadOptions {
+  maxSize?: number;
+  allowedTypes?: string[];
+  generateThumbnail?: boolean;
+  folder?: string;
+}
+
+// Audit Trail Types
+export interface AuditLog {
+  id: string;
+  entityType: string;
+  entityId: string;
+  action: 'create' | 'update' | 'delete' | 'view' | 'export';
+  oldValues?: Record<string, any>;
+  newValues?: Record<string, any>;
+  userId: string;
+  userRole: IUserPermissionRole;
+  ipAddress: string;
+  userAgent: string;
+  timestamp: Date;
+  metadata?: Record<string, any>;
+}
+
+// Notification Types
+export enum TNotificationType {
+  INFO = 'info',
+  SUCCESS = 'success',
+  WARNING = 'warning',
+  ERROR = 'error',
+}
+export type NotificationChannel = 'email' | 'sms' | 'push' | 'in-app';
+
+export interface Notification {
+  id: string;
+  type: TNotificationType;
+  title: string;
+  message: string;
+  channels: NotificationChannel[];
+  recipients: string[];
+  scheduledAt?: Date;
+  sentAt?: Date;
+  readAt?: Date;
+  metadata?: Record<string, any>;
+  createdAt: Date;
+}
+
+// Common Validation Schemas
+export const addressSchema = z.object({
+  street: z.string().min(1, 'Street is required'),
+  city: z.string().min(1, 'City is required'),
+  state: z.string().min(1, 'State is required'),
+  postalCode: z.string().min(1, 'Postal code is required'),
+  country: z.string().min(1, 'Country is required'),
+  coordinates: z.object({
+    latitude: z.number(),
+    longitude: z.number(),
+  }).optional(),
+});
+
+export const paginationSchema = z.object({
+  page: z.number().min(1).default(1),
+  limit: z.number().min(1).max(100).default(10),
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).default('asc'),
+});
+
+export const searchSchema = z.object({
+  query: z.string().optional(),
+  filters: z.record(z.any()).optional(),
+  dateRange: z.object({
+    start: z.date(),
+    end: z.date(),
+  }).optional(),
+});
+
+// Utility Types
+export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+export type RequiredFields<T, K extends keyof T> = T & Required<Pick<T, K>>;
+export type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
+};
+
+// Export commonly used type unions
+export type AnyEntity = User | School | Grade | Section | ISubject;
+export type AnyStatus = Status | EUserStatus | SchoolStatus | ApprovalStatus;
+export type AnyRole = IUserPermissionRole;
+
+export interface BaseEntity {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+  createdBy?: string;
+  updatedBy?: string;
+}
+
+export interface SoftDeleteEntity extends BaseEntity {
+  deletedAt?: Date;
+  deletedBy?: string;
+  isDeleted: boolean;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: EUserRole;
+  status: EUserStatus;
+  avatar?: string;
+  phone?: string;
+  dateOfBirth?: Date;
+  gender?: 'male' | 'female' | 'other';
+  address?: Address;
+  schoolId?: string;
+  isEmailVerified: boolean;
+  lastLoginAt?: Date;
+  preferences: UserPreferences;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface UserPreferences {
+  language: string;
+  timezone: string;
+  theme: 'light' | 'dark' | 'auto';
+  notifications: NotificationPreferences;
+  privacy: PrivacySettings;
+}
+
+export interface NotificationPreferences {
+  email: boolean;
+  sms: boolean;
+  push: boolean;
+  marketing: boolean;
+  system: boolean;
+}
+
+export interface PrivacySettings {
+  profileVisibility: 'public' | 'private' | 'school-only';
+  contactVisibility: 'public' | 'private' | 'school-only';
+  dataSharing: boolean;
+}
+
+export interface Address {
+  street: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
+}
+
+export interface School {
+  id: string;
+  name: string;
+  code: string;
+  description?: string;
+  address: Address;
+  phone?: string;
+  email?: string;
+  website?: string;
+  logo?: string;
+  status: SchoolStatus;
+  type: 'primary' | 'secondary' | 'mixed';
+  establishedYear?: number;
+  accreditation?: string;
+  timezone: string;
+  currency: string;
+  language: string;
+  settings: SchoolSettings;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface SchoolSettings {
+  academicYear: {
+    startMonth: number;
+    endMonth: number;
+  };
+  workingDays: number[];
+  attendance: {
+    requiredPercentage: number;
+    gracePeriodMinutes: number;
+  };
+  grading: {
+    scale: 'percentage' | 'gpa' | 'letter';
+    passingGrade: number;
+  };
+  communication: {
+    primaryLanguage: string;
+    supportedLanguages: string[];
+  };
+}
+
+export interface Grade {
+  id: string;
+  name: string;
+  level: number;
+  schoolId: string;
+  description?: string;
+  isActive: boolean;
+  order: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Section {
+  id: string;
+  name: string;
+  gradeId: string;
+  capacity: number;
+  currentEnrollment: number;
+  classTeacherId?: string;
+  roomNumber?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Subject {
+  id: string;
+  name: string;
+  code: string;
+  description?: string;
+  category: 'core' | 'elective' | 'practical' | 'language';
+  credits: number;
+  hoursPerWeek: number;
+  isActive: boolean;
+  prerequisites?: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PaginationOptions {
+  page: number;
+  limit: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}
+
+export interface SearchOptions {
+  query?: string;
+  filters?: Record<string, any>;
+  dateRange?: {
+    start: Date;
+    end: Date;
+  };
+}
+
+export interface FilterOptions {
+  field: string;
+  operator: 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte' | 'in' | 'nin' | 'contains' | 'startswith';
+  value: any;
+}
+
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  errors?: ValidationError[];
+  meta?: {
+    timestamp: Date;
+    version: string;
+    requestId: string;
+  };
+}
+
+export interface ValidationError {
+  field: string;
+  message: string;
+  code?: string;
+}
+
+export interface FileUpload {
+  id: string;
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  url: string;
+  thumbnailUrl?: string;
+  uploadedBy: string;
+  uploadedAt: Date;
+}
+
+export interface FileUploadOptions {
+  maxSize?: number;
+  allowedTypes?: string[];
+  generateThumbnail?: boolean;
+  folder?: string;
+}
+
+export interface AuditLog {
+  id: string;
+  entityType: string;
+  entityId: string;
+  action: 'create' | 'update' | 'delete' | 'view' | 'export';
+  oldValues?: Record<string, any>;
+  newValues?: Record<string, any>;
+  userId: string;
+  userRole: IUserPermissionRole;
+  ipAddress: string;
+  userAgent: string;
+  timestamp: Date;
+  metadata?: Record<string, any>;
+}
+
+export type NotificationType = 'info' | 'success' | 'warning' | 'error';
+
+// Authentication Types
+export interface LoginCredentials {
+  email: string;
+  password: string;
+  rememberMe?: boolean;
+}
+
+export interface RefreshTokenRequest {
+  refreshToken: string;
+}
+
+export interface PasswordResetRequest {
+  email: string;
+}
+
+export interface PasswordResetConfirm {
+  token: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+// Profile Management Types
+export interface UpdateProfileRequest {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  dateOfBirth?: Date;
+  gender?: 'male' | 'female' | 'other';
+  address?: Address;
+  avatar?: any; // File upload handled by frontend
+  preferences?: Partial<UserPreferences>;
+}
+
+export interface UpdateTeacherProfileRequest extends UpdateProfileRequest {
+  department?: string;
+  qualifications?: Qualification[];
+  specializations?: string[];
+  experience?: number;
+}
+
+export interface UpdateStudentProfileRequest extends UpdateProfileRequest {
+  emergencyContacts?: EmergencyContact[];
+  medicalInfo?: MedicalInfo;
+}
+
+export interface UpdateParentProfileRequest extends UpdateProfileRequest {
+  occupation?: string;
+  workplace?: string;
+}
+
+// Role and Permission Types
+export interface Permission {
+  id: string;
+  name: string;
+  description: string;
+  resource: string;
+  action: 'create' | 'read' | 'update' | 'delete' | 'manage';
+  module: string;
+}
+
+export interface Role {
+  id: string;
+  name: IUserPermissionRole;
+  displayName: string;
+  description: string;
+  permissions: Permission[];
+  isSystemRole: boolean;
+  schoolId?: string; // For school-specific roles
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface RoleAssignment {
+  userId: string;
+  roleId: string;
+  assignedBy: string;
+  assignedAt: Date;
+  expiresAt?: Date;
+  isActive: boolean;
+}
+
+// User Management Operations
+export interface CreateUserRequest {
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: IUserPermissionRole;
+  phone?: string;
+  schoolId?: string;
+  sendWelcomeEmail?: boolean;
+}
+
+export interface BulkUserOperation {
+  operation: 'create' | 'update' | 'delete' | 'activate' | 'deactivate';
+  users: string[]; // User IDs
+  data?: Record<string, any>; // For update operations
+}
+
+export interface UserSearchFilters {
+  role?: IUserPermissionRole;
+  status?: EUserStatus;
+  schoolId?: string;
+  gradeId?: string;
+  sectionId?: string;
+  searchQuery?: string;
+  dateRange?: {
+    start: Date;
+    end: Date;
+  };
+}
+
+// Audit and Security Types
+export interface UserActivity {
+  id: string;
+  userId: string;
+  action: string;
+  resource: string;
+  resourceId?: string;
+  details?: Record<string, any>;
+  ipAddress: string;
+  userAgent: string;
+  timestamp: Date;
+  schoolId?: string;
+}
+
+export interface LoginAttempt {
+  id: string;
+  email: string;
+  ipAddress: string;
+  userAgent: string;
+  success: boolean;
+  failureReason?: string;
+  timestamp: Date;
+}
+
+export interface SecuritySettings {
+  passwordPolicy: {
+    minLength: number;
+    requireUppercase: boolean;
+    requireLowercase: boolean;
+    requireNumbers: boolean;
+    requireSpecialChars: boolean;
+    preventReuse: number; // Number of previous passwords to prevent
+  };
+  sessionPolicy: {
+    maxConcurrentSessions: number;
+    sessionTimeout: number; // minutes
+    extendOnActivity: boolean;
+  };
+  loginPolicy: {
+    maxFailedAttempts: number;
+    lockoutDuration: number; // minutes
+    requireMFA: boolean;
+  };
+}
+
+// API Response Types
+export interface UserListResponse {
+  users: User[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface UserProfileResponse extends User {
+  roles: Role[];
+  permissions: Permission[];
+  recentActivity: UserActivity[];
+  stats: {
+    loginCount: number;
+    lastLoginAt?: Date;
+    accountAge: number; // days
+  };
+}
+
+export interface AuthResponse {
+  user: User;
+  tokens: IAuthTokens;
+  requiresMFA?: boolean;
+  requiresPasswordChange?: boolean;
+}
+
+// Validation Schemas (using Zod)
+export const createUserSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  firstName: z.string().min(1, 'First name is required').max(50),
+  lastName: z.string().min(1, 'Last name is required').max(50),
+  role: z.enum(['super-admin', 'school-admin', 'teacher', 'student', 'parent']),
+  phone: z.string().optional(),
+  schoolId: z.string().optional(),
+  sendWelcomeEmail: z.boolean().default(true),
+});
+
+export const updateProfileSchema = z.object({
+  firstName: z.string().min(1).max(50).optional(),
+  lastName: z.string().min(1).max(50).optional(),
+  phone: z.string().optional(),
+  dateOfBirth: z.date().optional(),
+  gender: z.enum(['male', 'female', 'other']).optional(),
+  address: z.object({
+    street: z.string(),
+    city: z.string(),
+    state: z.string(),
+    postalCode: z.string(),
+    country: z.string(),
+  }).optional(),
+});
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Password must contain uppercase, lowercase, and number'),
+  confirmPassword: z.string(),
+}).refine((data: { newPassword: string; confirmPassword: string }) => data.newPassword === data.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword'],
+});

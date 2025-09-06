@@ -3,7 +3,7 @@
 
 import { IsString, IsOptional, IsEnum, IsArray, IsNumber, MinLength, MaxLength, Min, Max, IsBoolean } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IUpdateSubjectRequest, TSubjectType, TGradeLevel } from '../../../../common/src/types/academic/academic.types';
+import { IUpdateSubjectRequest, TSubjectType, TGradeLevel } from '@academia-pro/types/academic';
 
 export class UpdateSubjectDto implements IUpdateSubjectRequest {
   @ApiPropertyOptional({

@@ -4,15 +4,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { User } from '../users/user.entity';
 import { Student } from '../students/student.entity';
-
-export enum SchoolType {
-  PRESCHOOL = 'preschool',
-  ELEMENTARY = 'elementary',
-  PRIMARY_SCHOOL = 'primary_school',
-  SECONDARY_SCHOOL = 'secondary_school',
-  INSTITUTE = 'institute',
-  TRAINING_CENTER = 'training_center',
-}
+import { TSchoolType } from '@academia-pro/types/schools';
 
 export enum SchoolStatus {
   ACTIVE = 'active',
@@ -44,11 +36,10 @@ export class School {
   description?: string;
 
   @Column({
-    type: 'enum',
-    enum: SchoolType,
-    default: SchoolType.SECONDARY_SCHOOL,
+    type: 'jsonb',
+    default: [TSchoolType.SECONDARY],
   })
-  type: SchoolType;
+  type: TSchoolType[];
 
   @Column({
     type: 'enum',

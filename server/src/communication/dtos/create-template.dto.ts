@@ -4,7 +4,7 @@
 import { IsString, IsOptional, IsEnum, IsUUID, IsObject, IsBoolean, IsArray, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TTemplateType, ICreateTemplateRequest } from '@academia-pro/common/communication';
+import { TTemplateType, ICreateTemplateRequest } from '@academia-pro/types/communication';
 
 export class TemplateVariableDto {
   @ApiProperty({

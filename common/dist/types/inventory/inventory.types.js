@@ -2,7 +2,9 @@
 // Academia Pro - Inventory & Asset Management Types
 // Shared type definitions for inventory and asset management module
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TAssetCondition = exports.TInventoryMaintenanceStatus = exports.TInventoryMaintenanceType = exports.TProcurementStatus = exports.TAssetStatus = exports.TAssetCategory = void 0;
+exports.TAssetCondition = exports.TMaintenanceStatus = exports.TMaintenanceType = exports.TInventoryMaintenanceStatus = exports.TInventoryMaintenanceType = exports.TProcurementStatus = exports.TAssetStatus = exports.TAssetCategory = exports.TDepreciationMethod = void 0;
+const shared_1 = require("../shared");
+Object.defineProperty(exports, "TDepreciationMethod", { enumerable: true, get: function () { return shared_1.TDepreciationMethod; } });
 // Enums
 var TAssetCategory;
 (function (TAssetCategory) {
@@ -44,7 +46,7 @@ var TInventoryMaintenanceType;
     TInventoryMaintenanceType["CORRECTIVE"] = "corrective";
     TInventoryMaintenanceType["PREDICTIVE"] = "predictive";
     TInventoryMaintenanceType["CONDITION_BASED"] = "condition_based";
-})(TInventoryMaintenanceType || (exports.TInventoryMaintenanceType = TInventoryMaintenanceType = {}));
+})(TInventoryMaintenanceType || (exports.TMaintenanceType = exports.TInventoryMaintenanceType = TInventoryMaintenanceType = {}));
 var TInventoryMaintenanceStatus;
 (function (TInventoryMaintenanceStatus) {
     TInventoryMaintenanceStatus["SCHEDULED"] = "scheduled";
@@ -52,7 +54,7 @@ var TInventoryMaintenanceStatus;
     TInventoryMaintenanceStatus["COMPLETED"] = "completed";
     TInventoryMaintenanceStatus["CANCELLED"] = "cancelled";
     TInventoryMaintenanceStatus["OVERDUE"] = "overdue";
-})(TInventoryMaintenanceStatus || (exports.TInventoryMaintenanceStatus = TInventoryMaintenanceStatus = {}));
+})(TInventoryMaintenanceStatus || (exports.TMaintenanceStatus = exports.TInventoryMaintenanceStatus = TInventoryMaintenanceStatus = {}));
 var TAssetCondition;
 (function (TAssetCondition) {
     TAssetCondition["EXCELLENT"] = "excellent";
@@ -62,4 +64,3 @@ var TAssetCondition;
     TAssetCondition["DAMAGED"] = "damaged";
 })(TAssetCondition || (exports.TAssetCondition = TAssetCondition = {}));
 // All types are exported above with their declarations
-//# sourceMappingURL=inventory.types.js.map

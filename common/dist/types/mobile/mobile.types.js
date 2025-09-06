@@ -62,4 +62,3 @@ var TTransportStatus;
     TTransportStatus["CANCELLED"] = "cancelled";
     TTransportStatus["EMERGENCY"] = "emergency";
 })(TTransportStatus || (exports.TTransportStatus = TTransportStatus = {}));
-//# sourceMappingURL=mobile.types.js.map

@@ -15,7 +15,7 @@ import { SecurityMiddleware } from './auth/middleware/security.middleware';
 // Core modules
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
-import { SchoolsModule } from './schools/schools.module';
+import { SuperAdminModule } from './super-admin/super-admin.module';
 import { StudentsModule } from './students/students.module';
 import { AcademicModule } from './academic/academic.module';
 import { AttendanceModule } from './attendance/attendance.module';
@@ -60,13 +60,16 @@ import { AppService } from './app.service';
     // Database connection
     // TypeOrmModule.forRoot(databaseConfig),
 
-    forwardRef(() => 
+    forwardRef(() =>
       TypeOrmModule.forRootAsync({
         imports: [ConfigModule],
         useFactory: (configService: ConfigService) => getDatabaseConfig(configService),
         inject: [ConfigService],
       }),
     ),
+
+    // Add User entity for global middleware access
+    TypeOrmModule.forFeature([]),
     
 
     // Rate limiting
@@ -84,13 +87,13 @@ import { AppService } from './app.service';
     forwardRef(() => SeedersModule),
     forwardRef(() => AuthModule),
     forwardRef(() => UsersModule),
-    forwardRef(() => SchoolsModule),
+    StaffModule,
+    forwardRef(() => SuperAdminModule),
     forwardRef(() => StudentsModule),
     forwardRef(() => AcademicModule),
     forwardRef(() => AttendanceModule),
     forwardRef(() => ExaminationModule),
     forwardRef(() => TimetableModule),
-    forwardRef(() => StaffModule),
     forwardRef(() => LibraryModule),
     forwardRef(() => HostelModule),
     forwardRef(() => FeeModule),

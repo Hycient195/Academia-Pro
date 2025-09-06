@@ -13,7 +13,7 @@ import {
   ICreateReportRequest,
   IReportParameters,
   IReportSchedule
-} from '@academia-pro/common/reports';
+} from '@academia-pro/types/reports';
 
 export class CreateReportDto implements ICreateReportRequest {
   @ApiProperty({

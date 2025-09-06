@@ -38,6 +38,9 @@ export class Driver {
   @Column({ name: 'last_name', type: 'varchar', length: 50 })
   lastName: string;
 
+  @Column({ name: 'middle_name', type: 'varchar', length: 50, nullable: true })
+  middleName?: string;
+
   @Column({ name: 'full_name', type: 'varchar', length: 100 })
   fullName: string;
 

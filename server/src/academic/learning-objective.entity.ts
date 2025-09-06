@@ -2,7 +2,7 @@
 // Database entity for learning objectives
 
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { TLearningObjectiveType, TGradeLevel } from '../../../common/src/types/academic/academic.types';
+import { TLearningObjectiveType, TGradeLevel } from '@academia-pro/types/academic';
 
 // Forward declarations for circular dependencies
 import type { Subject } from './subject.entity';

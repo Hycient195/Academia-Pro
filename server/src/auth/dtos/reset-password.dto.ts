@@ -3,7 +3,7 @@
 
 import { IsString, IsNotEmpty, MinLength, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { IResetPasswordWithTokenRequest } from '@academia-pro/common/auth';
+import { IResetPasswordWithTokenRequest } from '@academia-pro/types/auth';
 
 export class ResetPasswordDto implements IResetPasswordWithTokenRequest {
   @ApiProperty({

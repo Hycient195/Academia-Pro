@@ -27,7 +27,7 @@ import {
   ClassResponseDto,
   LearningObjectiveResponseDto,
 } from './dtos';
-import { TSubjectType, TGradeLevel, TAcademicYearStatus, ISubjectFilters, ICurriculumFilters, IClassFilters, IAcademicStatistics } from '../../../common/src/types/academic/academic.types';
+import { TSubjectType, TGradeLevel, TAcademicYearStatus, ISubjectFilters, ICurriculumFilters, IClassFilters, IAcademicStatistics } from '@academia-pro/types/academic';
 
 @Injectable()
 export class AcademicService {

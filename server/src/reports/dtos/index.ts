@@ -18,4 +18,4 @@ export type {
   IAnalyticsQueryRequest,
   IAnalyticsResponse,
   IReportTemplate,
-} from '../../../../common/src/types/reports/reports.types';
+} from '@academia-pro/types/reports/reports.types';

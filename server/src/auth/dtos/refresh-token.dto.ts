@@ -3,7 +3,7 @@
 
 import { IsString, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { IRefreshTokenRequest } from '@academia-pro/common/auth';
+import { IRefreshTokenRequest } from '@academia-pro/types/auth';
 
 export class RefreshTokenDto implements IRefreshTokenRequest {
   @ApiProperty({

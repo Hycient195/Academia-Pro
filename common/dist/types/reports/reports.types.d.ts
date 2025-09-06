@@ -457,4 +457,3 @@ export interface IReportTemplate {
     createdAt: Date;
     usageCount: number;
 }
-//# sourceMappingURL=reports.types.d.ts.map

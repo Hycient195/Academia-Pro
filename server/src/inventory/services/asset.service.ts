@@ -5,7 +5,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, Between, MoreThanOrEqual } from 'typeorm';
 import { Asset } from '../entities/asset.entity';
-import { TAssetStatus, TAssetCategory, TAssetCondition, TDepreciationMethod } from '../../../../common/src/types/inventory/inventory.types';
+import { TAssetStatus, TAssetCategory, TAssetCondition, TDepreciationMethod } from '@academia-pro/types/inventory/inventory.types';
 import { AssetCategory } from '../entities/asset-category.entity';
 import { AssetLocation } from '../entities/asset-location.entity';
 import { AssetMaintenance, MaintenanceStatus } from '../entities/asset-maintenance.entity';

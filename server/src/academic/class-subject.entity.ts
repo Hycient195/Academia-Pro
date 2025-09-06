@@ -6,7 +6,7 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMan
 // Type-only imports to avoid circular dependency issues
 import type { Class } from './class.entity';
 import type { Subject } from './subject.entity';
-import { ISubjectSchedule } from '../../../common/src/types/academic/academic.types';
+import { ISubjectSchedule } from '@academia-pro/types/academic';
 
 @Entity('class_subjects')
 export class ClassSubject {

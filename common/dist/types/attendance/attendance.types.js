@@ -35,4 +35,3 @@ var TAttendanceMethod;
     TAttendanceMethod["WEB_PORTAL"] = "web_portal";
     TAttendanceMethod["AUTOMATED"] = "automated";
 })(TAttendanceMethod || (exports.TAttendanceMethod = TAttendanceMethod = {}));
-//# sourceMappingURL=attendance.types.js.map

@@ -3,7 +3,7 @@
 
 import { IsNotEmpty, IsOptional, IsString, IsEnum, IsBoolean, IsNumber, Min, Max, MaxLength, IsArray, IsObject, ValidateNested } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ICreateTimetableEntryRequest, IEquipmentRequirement, ITimetableMetadata, TDayOfWeek, TPeriodType, TRecurrenceType, TPriorityLevel } from '@academia-pro/common/timetable';
+import { ICreateTimetableEntryRequest, IEquipmentRequirement, ITimetableMetadata, TDayOfWeek, TPeriodType, TRecurrenceType, TPriorityLevel } from '@academia-pro/types/timetable';
 import { Type } from 'class-transformer';
 
 export class EquipmentRequirementDto implements IEquipmentRequirement {

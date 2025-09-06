@@ -3,7 +3,7 @@
 
 import { IsString, IsNotEmpty, IsOptional, IsBoolean, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IAddDocumentRequest } from '../../../../common/src/types/student/student.types';
+import { IAddDocumentRequest } from '@academia-pro/types/student';
 
 export class AddDocumentDto implements IAddDocumentRequest {
   @ApiProperty({

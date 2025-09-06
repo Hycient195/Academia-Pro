@@ -52,4 +52,3 @@ var TPriorityLevel;
     TPriorityLevel["URGENT"] = "urgent";
 })(TPriorityLevel || (exports.TPriorityLevel = TPriorityLevel = {}));
 // All types are exported above with their declarations
-//# sourceMappingURL=timetable.types.js.map

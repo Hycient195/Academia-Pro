@@ -3,7 +3,7 @@
 
 import { IsString, IsNotEmpty, IsOptional, IsEnum, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ICreateCurriculumRequest, TGradeLevel } from '../../../../common/src/types/academic/academic.types';
+import { ICreateCurriculumRequest, TGradeLevel } from '@academia-pro/types/academic';
 
 export class CreateCurriculumDto implements ICreateCurriculumRequest {
   @ApiProperty({

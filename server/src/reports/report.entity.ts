@@ -9,7 +9,7 @@ import {
   TChartType,
   TMetricType,
   TTimeRange
-} from '../../../common/src/types/reports/reports.types';
+} from '@academia-pro/types/reports/reports.types';
 
 @Entity('reports')
 @Index(['schoolId', 'type'])

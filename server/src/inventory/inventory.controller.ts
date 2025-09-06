@@ -5,7 +5,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { InventoryService } from './inventory.service';
 import { CreateAssetDto, UpdateAssetDto, AssetResponseDto, AssetListResponseDto, AssetStatisticsResponseDto } from './dtos/index';
-import { IAssetFilters } from '../../../common/src/types/inventory/inventory.types';
+import { IAssetFilters } from '@academia-pro/types/inventory/inventory.types';
 
 @ApiTags('Inventory & Asset Management')
 @Controller('inventory')

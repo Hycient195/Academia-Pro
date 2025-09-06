@@ -4,7 +4,8 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { School, SchoolType, SchoolStatus, SubscriptionPlan } from './school.entity';
+import { School, SchoolStatus, SubscriptionPlan } from './school.entity';
+import { TSchoolType } from '@academia-pro/types/schools';
 import { CreateSchoolDto, UpdateSchoolDto } from './dtos';
 
 @Injectable()
@@ -45,15 +46,15 @@ export class SchoolsService {
       name,
       code: code || this.generateSchoolCode(name),
       description: schoolData.description,
-      type: schoolData.type as unknown as SchoolType,
+      type: schoolData.type,
       phone: schoolData.phone,
       email: schoolData.email,
       website: schoolData.website,
-      address: schoolData.address ? `${schoolData.address.street}, ${schoolData.address.city}, ${schoolData.address.state} ${schoolData.address.postalCode}, ${schoolData.address.country}` : undefined,
-      city: schoolData.address?.city,
-      state: schoolData.address?.state,
-      zipCode: schoolData.address?.postalCode,
-      country: schoolData.address?.country,
+      address: schoolData.address,
+      city: schoolData.city,
+      state: schoolData.state,
+      zipCode: (schoolData as any).zipCode,
+      country: schoolData.country,
       principalName: schoolData.principalName,
       principalPhone: schoolData.principalPhone,
       principalEmail: schoolData.principalEmail,
@@ -72,10 +73,10 @@ export class SchoolsService {
   async findAll(options?: {
     page?: number;
     limit?: number;
-    type?: SchoolType;
+    type?: TSchoolType;
     status?: SchoolStatus;
     search?: string;
-  }): Promise<{ schools: School[]; total: number; page: number; limit: number }> {
+  }): Promise<{ schools: School[]; pagination: { page: number; limit: number; total: number; totalPages: number; hasNext: boolean; hasPrev: boolean } }> {
     const { page = 1, limit = 10, type, status, search } = options || {};
 
     const queryBuilder = this.schoolsRepository.createQueryBuilder('school');
@@ -104,7 +105,21 @@ export class SchoolsService {
 
     const [schools, total] = await queryBuilder.getManyAndCount();
 
-    return { schools, total, page, limit };
+    const totalPages = Math.ceil(total / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
+
+    return {
+      schools,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext,
+        hasPrev,
+      },
+    };
   }
 
   /**
@@ -256,7 +271,7 @@ export class SchoolsService {
    * Search schools
    */
   async search(query: string, options?: {
-    type?: SchoolType;
+    type?: TSchoolType;
     status?: SchoolStatus;
     limit?: number;
   }): Promise<School[]> {
@@ -288,7 +303,7 @@ export class SchoolsService {
   /**
    * Get schools by type
    */
-  async getSchoolsByType(type: SchoolType): Promise<School[]> {
+  async getSchoolsByType(type: TSchoolType): Promise<School[]> {
     return this.schoolsRepository.find({
       where: { type, status: SchoolStatus.ACTIVE },
       order: { name: 'ASC' },

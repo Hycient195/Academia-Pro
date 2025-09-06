@@ -101,4 +101,3 @@ var TAllocationStatus;
     TAllocationStatus["TERMINATED"] = "terminated";
     TAllocationStatus["SUSPENDED"] = "suspended";
 })(TAllocationStatus || (exports.TAllocationStatus = TAllocationStatus = {}));
-//# sourceMappingURL=hostel.types.js.map

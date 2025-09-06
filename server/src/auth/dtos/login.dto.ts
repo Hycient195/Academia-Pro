@@ -3,7 +3,7 @@
 
 import { IsEmail, IsString, IsNotEmpty, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { ILoginRequest } from '@academia-pro/common/auth';
+import { ILoginRequest } from '@academia-pro/types/auth';
 
 export class LoginDto implements ILoginRequest {
   @ApiProperty({

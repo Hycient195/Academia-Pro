@@ -2,7 +2,7 @@
 // Database entity for academic classes
 
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
-import { TGradeLevel } from '../../../common/src/types/academic/academic.types';
+import { TGradeLevel } from '@academia-pro/types/academic';
 
 // Type-only imports to avoid circular dependency issues
 import type { ClassSubject } from './class-subject.entity';

@@ -394,4 +394,3 @@ export interface ITimetableSettings {
         reminderMinutesBefore: number;
     };
 }
-//# sourceMappingURL=timetable.types.d.ts.map

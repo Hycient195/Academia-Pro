@@ -27,7 +27,7 @@ import {
 import { TimetableService } from '../services/timetable.service';
 import { CreateTimetableDto, BulkCreateTimetableDto, UpdateTimetableDto } from '../dtos';
 import { DayOfWeek, TimetableStatus, PeriodType, PriorityLevel } from '../entities/timetable.entity';
-import { TPriorityLevel, TDayOfWeek } from '@academia-pro/common/timetable';
+import { TPriorityLevel, TDayOfWeek } from '@academia-pro/types/timetable';
 
 @ApiTags('Timetable Management')
 @ApiBearerAuth()

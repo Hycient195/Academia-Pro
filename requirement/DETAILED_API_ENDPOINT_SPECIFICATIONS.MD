@@ -86,7 +86,7 @@ interface LoginResponse {
     email: string;
     first_name: string;
     last_name: string;
-    role: UserRole;
+    role: IUserPermissionRole;
     school_id: string;
     permissions: string[];
   };
@@ -215,7 +215,7 @@ interface UserProfileResponse {
   phone?: string;
   date_of_birth?: string;
   avatar_url?: string;
-  role: UserRole;
+  role: IUserPermissionRole;
   school_id: string;
   department?: string;
   employee_id?: string;
@@ -1021,7 +1021,7 @@ interface CreateAnnouncementRequest {
   title: string;
   content: string;
   target_audience: {
-    roles?: UserRole[];
+    roles?: IUserPermissionRole[];
     grades?: string[];
     classes?: string[];
     departments?: string[];

@@ -2,7 +2,10 @@
 // Academia Pro - Academic Management Types
 // Shared type definitions for academic management module
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TLearningObjectiveType = exports.TAcademicYearStatus = void 0;
+exports.TLearningObjectiveType = exports.TAcademicYearStatus = exports.TSubjectType = exports.TGradeLevel = void 0;
+const shared_1 = require("../shared");
+Object.defineProperty(exports, "TGradeLevel", { enumerable: true, get: function () { return shared_1.TGradeLevel; } });
+Object.defineProperty(exports, "TSubjectType", { enumerable: true, get: function () { return shared_1.TSubjectType; } });
 // Enums
 // TSubjectType moved to shared
 // TGradeLevel moved to shared
@@ -20,4 +23,3 @@ var TLearningObjectiveType;
     TLearningObjectiveType["ATTITUDES"] = "attitudes";
     TLearningObjectiveType["VALUES"] = "values";
 })(TLearningObjectiveType || (exports.TLearningObjectiveType = TLearningObjectiveType = {}));
-//# sourceMappingURL=academic.types.js.map

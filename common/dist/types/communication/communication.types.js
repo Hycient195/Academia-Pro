@@ -2,7 +2,10 @@
 // Academia Pro - Communication Management Types
 // Shared type definitions for communication management module
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TTemplateType = exports.TNoticeType = exports.TNotificationStatus = exports.TNotificationTypeChannel = exports.TRecipientType = exports.TMessageStatus = exports.TMessagePriority = exports.TMessageType = void 0;
+exports.TTemplateType = exports.TNoticeType = exports.TNotificationStatus = exports.TNotificationTypeChannel = exports.TRecipientType = exports.TMessageStatus = exports.TMessageType = exports.TMessagePriority = exports.TNotificationType = void 0;
+const shared_1 = require("../shared");
+Object.defineProperty(exports, "TNotificationType", { enumerable: true, get: function () { return shared_1.TNotificationType; } });
+Object.defineProperty(exports, "TMessagePriority", { enumerable: true, get: function () { return shared_1.TMessagePriority; } });
 // Enums
 var TMessageType;
 (function (TMessageType) {
@@ -12,13 +15,6 @@ var TMessageType;
     TMessageType["EMERGENCY"] = "emergency";
     TMessageType["SYSTEM"] = "system";
 })(TMessageType || (exports.TMessageType = TMessageType = {}));
-var TMessagePriority;
-(function (TMessagePriority) {
-    TMessagePriority["LOW"] = "low";
-    TMessagePriority["NORMAL"] = "normal";
-    TMessagePriority["HIGH"] = "high";
-    TMessagePriority["URGENT"] = "urgent";
-})(TMessagePriority || (exports.TMessagePriority = TMessagePriority = {}));
 var TMessageStatus;
 (function (TMessageStatus) {
     TMessageStatus["DRAFT"] = "draft";
@@ -68,4 +64,3 @@ var TTemplateType;
     TTemplateType["NOTIFICATION"] = "notification";
     TTemplateType["EMAIL"] = "email";
 })(TTemplateType || (exports.TTemplateType = TTemplateType = {}));
-//# sourceMappingURL=communication.types.js.map

@@ -275,14 +275,14 @@ export class JwtAuthGuard extends AuthGuard('jwt') {}
 // server/src/common/guards/roles.guard.ts
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { UserRole } from '@academia-pro/common';
+import { IUserPermissionRole } from '@academia-pro';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>('roles', [
+    const requiredRoles = this.reflector.getAllAndOverride<IUserPermissionRole[]>('roles', [
       context.getHandler(),
       context.getClass(),
     ]);
@@ -415,7 +415,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { User } from '../users/user.entity';
-import { LoginCredentials, AuthTokens } from '@academia-pro/common';
+import { LoginCredentials, IAuthTokens } from '@academia-pro';
 
 @Injectable()
 export class AuthService {
@@ -436,7 +436,7 @@ export class AuthService {
     return null;
   }
 
-  async login(user: any): Promise<AuthTokens> {
+  async login(user: any): Promise<IAuthTokens> {
     const payload = {
       email: user.email,
       sub: user.id,
@@ -452,7 +452,7 @@ export class AuthService {
     };
   }
 
-  async refreshToken(refreshToken: string): Promise<AuthTokens> {
+  async refreshToken(refreshToken: string): Promise<IAuthTokens> {
     try {
       const payload = this.jwtService.verify(refreshToken);
       const user = await this.usersRepository.findOne({

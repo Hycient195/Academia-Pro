@@ -1,4 +1,4 @@
-import { UserRole } from '../shared';
+import { EUserRole } from "../users";
 export declare enum TAuthProvider {
     LOCAL = "local",
     GOOGLE = "google",
@@ -22,23 +22,23 @@ export declare enum TLoginAttemptStatus {
     FAILED = "failed",
     BLOCKED = "blocked"
 }
+export interface IAuthTokens {
+    accessToken: string;
+    refreshToken: string;
+    expiresIn: number;
+    tokenType: 'Bearer';
+    issuedAt: Date;
+}
 export interface IAuthUser {
     id: string;
     email: string;
     firstName: string;
     lastName: string;
-    role: UserRole;
+    role: EUserRole;
     schoolId?: string;
     isEmailVerified: boolean;
     mfaEnabled: boolean;
     lastLoginAt?: Date;
-}
-export interface ITokenPair {
-    accessToken: string;
-    refreshToken: string;
-    tokenType: string;
-    expiresIn: number;
-    issuedAt: Date;
 }
 export interface IRefreshToken {
     id: string;
@@ -137,7 +137,8 @@ export interface IRegisterRequest {
     confirmPassword?: string;
     firstName: string;
     lastName: string;
-    role?: UserRole;
+    middleName?: string;
+    role?: EUserRole;
     phone?: string;
     dateOfBirth?: string;
     schoolId?: string;
@@ -207,7 +208,7 @@ export interface IVerifyEmailChangeRequest {
 }
 export interface ILoginResponse {
     user: IAuthUser;
-    tokens: ITokenPair;
+    tokens: IAuthTokens;
     session: ISession;
     requiresMFA?: boolean;
     mfaType?: TMFAType;
@@ -219,7 +220,7 @@ export interface IRegisterResponse {
     emailVerificationSent: boolean;
 }
 export interface IRefreshTokenResponse {
-    tokens: ITokenPair;
+    tokens: IAuthTokens;
     session: ISession;
 }
 export interface ILogoutResponse {
@@ -250,7 +251,7 @@ export interface ISetupMFAResponse {
 }
 export interface IVerifyMFAResponse {
     verified: boolean;
-    tokens?: ITokenPair;
+    tokens?: IAuthTokens;
     session?: ISession;
     message: string;
 }
@@ -265,7 +266,7 @@ export interface IRevokeMFASetupResponse {
 }
 export interface IOAuthLoginResponse {
     user: IAuthUser;
-    tokens: ITokenPair;
+    tokens: IAuthTokens;
     session: ISession;
     isNewUser: boolean;
     profile: IOAuthProfile;
@@ -397,4 +398,3 @@ export interface IAuthStatisticsResponse {
         count: number;
     }>;
 }
-//# sourceMappingURL=auth.types.d.ts.map

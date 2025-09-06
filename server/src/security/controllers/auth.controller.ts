@@ -1,8 +1,9 @@
 import { Controller, Post, Body, Get, UseGuards, Request, HttpCode, HttpStatus, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
-import { AuthService, LoginCredentials, AuthTokens, MfaSetup } from '../services/auth.service';
+import { AuthService, LoginCredentials, MfaSetup } from '../services/auth.service';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { MfaGuard } from '../guards/mfa.guard';
+import { IAuthTokens } from '@academia-pro/types/auth';
 
 @ApiTags('Security - Authentication')
 @Controller('auth')
@@ -246,7 +247,7 @@ export class AuthController {
     status: 401,
     description: 'Invalid refresh token',
   })
-  async refreshToken(@Body() data: { refreshToken: string }): Promise<AuthTokens> {
+  async refreshToken(@Body() data: { refreshToken: string }): Promise<IAuthTokens> {
     this.logger.log('Token refresh request');
 
     return this.authService.refreshToken(data.refreshToken);

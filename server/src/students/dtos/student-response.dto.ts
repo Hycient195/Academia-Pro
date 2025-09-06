@@ -2,7 +2,6 @@
 // Response Data Transfer Object for student data (safe for frontend consumption)
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IStudentResponse, IStudentsListResponse, IStudentStatisticsResponse } from '../../../../common/src/types/student/student.types';
 
 export class StudentResponseDto {
   @ApiProperty({

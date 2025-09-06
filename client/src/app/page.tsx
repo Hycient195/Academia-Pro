@@ -9,7 +9,7 @@ export default function Home() {
 
   useEffect(() => {
     // Redirect to Super Admin dashboard
-    router.push('/super-admin/dashboard');
+    router.push('/super-admin/overview');
   }, [router]);
 
   return (

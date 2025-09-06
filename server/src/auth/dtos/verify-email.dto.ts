@@ -3,7 +3,7 @@
 
 import { IsString, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { IVerifyEmailRequest } from '@academia-pro/common/auth';
+import { IVerifyEmailRequest } from '@academia-pro/types/auth';
 
 export class VerifyEmailDto implements IVerifyEmailRequest {
   @ApiProperty({

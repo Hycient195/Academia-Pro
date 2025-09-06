@@ -2,8 +2,8 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { GLOBAL_API_URL } from '../globalURLs';
 
 // Import types from common package
-import type { LoginRequest, LoginResponse, RegisterRequest } from '@academia-pro/common/client-api';
-import type { IAuthUser } from '@academia-pro/common/auth';
+import type { LoginRequest, LoginResponse, RegisterRequest } from '@academia-pro/client-api';
+import type { IAuthUser } from '@academia-pro/auth';
 
 export const authApi = createApi({
   reducerPath: 'authApi',

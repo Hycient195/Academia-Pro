@@ -12,7 +12,8 @@ import {
   FormPhoneInput,
   FormNumberInput,
   FormCountrySelect,
-  FormRegionSelect
+  FormRegionSelect,
+  FormMultiSelect
 } from "./form-components"
 
 export function FormComponentsExample() {
@@ -26,7 +27,8 @@ export function FormComponentsExample() {
     department: "",
     role: "",
     country: "",
-    region: ""
+    region: "",
+    skills: [] as string[]
   })
 
   const [isLoading, setIsLoading] = useState(false)
@@ -61,6 +63,19 @@ export function FormComponentsExample() {
     { value: "developer", text: "Developer" },
     { value: "designer", text: "Designer" },
     { value: "analyst", text: "Analyst" }
+  ]
+
+  const skillsOptions = [
+    { value: "javascript", text: "JavaScript" },
+    { value: "typescript", text: "TypeScript" },
+    { value: "react", text: "React" },
+    { value: "node", text: "Node.js" },
+    { value: "python", text: "Python" },
+    { value: "java", text: "Java" },
+    { value: "csharp", text: "C#" },
+    { value: "php", text: "PHP" },
+    { value: "html", text: "HTML" },
+    { value: "css", text: "CSS" }
   ]
 
   return (
@@ -144,6 +159,30 @@ export function FormComponentsExample() {
             required
           />
         </div>
+
+        {/* Multi-Select Input */}
+        <FormMultiSelect
+          labelText="Skills"
+          placeholder="Select your skills"
+          options={skillsOptions}
+          value={formData.skills}
+          onChange={(arg) => {
+            if ('target' in arg) {
+              const value = arg.target.value
+              setFormData(prev => ({
+                ...prev,
+                skills: Array.isArray(value) ? value : [value].filter(Boolean)
+              }))
+            } else {
+              setFormData(prev => ({
+                ...prev,
+                skills: Array.isArray(arg) ? arg : [arg].filter(Boolean)
+              }))
+            }
+          }}
+          maxSelection={5}
+          footerText="Select up to 5 skills that best describe your expertise"
+        />
 
         {/* Number Input */}
         <FormNumberInput

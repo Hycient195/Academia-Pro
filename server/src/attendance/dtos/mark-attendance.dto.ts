@@ -3,7 +3,7 @@
 
 import { IsNotEmpty, IsOptional, IsString, IsEnum, IsDateString, IsBoolean, IsNumber, Min, Max, MaxLength, IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IMarkAttendanceRequest, TAttendanceStatus, TAttendanceType, TAttendanceMethod } from '@academia-pro/common/attendance';
+import { IMarkAttendanceRequest, TAttendanceStatus, TAttendanceType, TAttendanceMethod } from '@academia-pro/types/attendance';
 
 export class MarkAttendanceDto implements IMarkAttendanceRequest {
   @ApiProperty({

@@ -35,7 +35,7 @@ export enum ClassroomStatus {
   PAUSED = 'paused'
 }
 
-export enum UserRole {
+export enum IUserPermissionRole {
   INSTRUCTOR = 'instructor',
   STUDENT = 'student',
   GUEST = 'guest',
@@ -105,7 +105,7 @@ export interface IClassroomParticipant {
   classroomId: string;
   userId: string;
   user?: IUser;
-  userType: UserRole;
+  userType: IUserPermissionRole;
   joinTime: Date;
   leaveTime?: Date;
   isMuted: boolean;
@@ -676,7 +676,7 @@ export interface IUpdateClassroomRequest {
 
 export interface IJoinClassroomRequest {
   userId: string;
-  userType: UserRole;
+  userType: IUserPermissionRole;
   deviceInfo: IDeviceInfo;
 }
 

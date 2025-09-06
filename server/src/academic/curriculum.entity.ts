@@ -2,12 +2,12 @@
 // Database entity for academic curricula
 
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable, OneToMany } from 'typeorm';
-import { TGradeLevel, TAcademicYearStatus } from '../../../common/src/types/academic/academic.types';
 
 // Type-only imports to avoid circular dependency issues
 import type { Subject } from './subject.entity';
 import type { CurriculumSubject } from './curriculum-subject.entity';
 import type { LearningObjective } from './learning-objective.entity';
+import { TAcademicYearStatus, TGradeLevel } from '@academia-pro/types/academic';
 
 @Entity('curricula')
 export class Curriculum {

@@ -3,8 +3,8 @@
 
 import { IsEmail, IsString, IsNotEmpty, IsOptional, IsEnum, IsDateString, MinLength, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { UserRole } from '@academia-pro/common';
-import { IRegisterRequest } from '@academia-pro/common/auth';
+import { IRegisterRequest } from '@academia-pro/types/auth';
+import { EUserRole } from '@academia-pro/types/users';
 
 export class RegisterDto implements IRegisterRequest {
   @ApiProperty({
@@ -51,6 +51,16 @@ export class RegisterDto implements IRegisterRequest {
   lastName: string;
 
   @ApiPropertyOptional({
+    description: 'User middle name',
+    example: 'Michael',
+    maxLength: 50,
+  })
+  @IsOptional()
+  @IsString({ message: 'Middle name must be a string' })
+  @MaxLength(50, { message: 'Middle name cannot exceed 50 characters' })
+  middleName?: string;
+
+  @ApiPropertyOptional({
     description: 'User role',
     example: 'student',
     enum: ['super-admin', 'school-admin', 'teacher', 'student', 'parent'],
@@ -59,7 +69,7 @@ export class RegisterDto implements IRegisterRequest {
   @IsEnum(['super-admin', 'school-admin', 'teacher', 'student', 'parent'], {
     message: 'Role must be one of: super-admin, school-admin, teacher, student, parent'
   })
-  role?: UserRole;
+  role?: EUserRole;
 
   @ApiPropertyOptional({
     description: 'User phone number',

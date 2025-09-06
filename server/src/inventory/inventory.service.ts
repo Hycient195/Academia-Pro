@@ -18,7 +18,7 @@ import {
   TAssetStatus,
   IAssetFilters,
   IAssetStatisticsResponse,
-} from '../../../common/src/types/inventory/inventory.types';
+} from '@academia-pro/types/inventory/inventory.types';
 
 @Injectable()
 export class InventoryService {

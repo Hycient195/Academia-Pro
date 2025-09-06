@@ -20,7 +20,7 @@ import {
   IReportFiltersQuery,
   IGenerateReportRequest,
   IReportsStatisticsResponse,
-} from '../../../common/src/types/reports/reports.types';
+} from '@academia-pro/types/reports';
 
 @Injectable()
 export class ReportsService {
@@ -127,12 +127,20 @@ export class ReportsService {
       totalGenerations: reports.reduce((sum, r) => sum + (r.lastGeneratedAt ? 1 : 0), 0),
     };
 
+    const totalPages = Math.ceil(total / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
+
     return new ReportListResponseDto({
-      reports: reportResponseDtos,
-      total,
-      page,
-      limit,
-      summary,
+      data: reportResponseDtos,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext,
+        hasPrev,
+      },
     });
   }
 

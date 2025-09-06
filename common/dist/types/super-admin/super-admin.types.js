@@ -3,8 +3,6 @@
 // Shared type definitions for super admin module
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TAuditStatus = exports.TAuditActionType = void 0;
-// Enums - moved to shared types
-// TUserStatus moved to shared as UserStatus
 var TAuditActionType;
 (function (TAuditActionType) {
     TAuditActionType["LOGIN"] = "LOGIN";
@@ -21,4 +19,3 @@ var TAuditStatus;
     TAuditStatus["FAILED"] = "FAILED";
     TAuditStatus["WARNING"] = "WARNING";
 })(TAuditStatus || (exports.TAuditStatus = TAuditStatus = {}));
-//# sourceMappingURL=super-admin.types.js.map

@@ -8,7 +8,7 @@ importers:
 
   .:
     dependencies:
-      '@academia-pro/common':
+      '@academia-pro':
         specifier: link:../common
         version: link:../common
       '@dnd-kit/core':

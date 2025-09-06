@@ -3,7 +3,8 @@
 
 import { IsString, IsNotEmpty, IsOptional, IsEnum, IsEmail, IsUrl, IsInt, Min, MaxLength, IsObject, ValidateNested } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ICreateSchoolRequest, TSchoolType } from '@academia-pro/common/super-admin';
+import { ICreateSchoolRequest } from '@academia-pro/types/super-admin';
+import { TSchoolType } from '@academia-pro/types/schools';
 import { Type } from 'class-transformer';
 
 export class CreateSchoolDto implements ICreateSchoolRequest {
@@ -36,13 +37,13 @@ export class CreateSchoolDto implements ICreateSchoolRequest {
   description?: string;
 
   @ApiProperty({
-    description: 'School type',
-    example: 'mixed',
+    description: 'School types (array of school types)',
+    example: ['secondary', 'high_school'],
+    type: [String],
     enum: TSchoolType,
   })
-  @IsNotEmpty({ message: 'School type is required' })
-  @IsEnum(TSchoolType, { message: 'Invalid school type' })
-  type: TSchoolType;
+  @IsNotEmpty({ message: 'School types are required' })
+  type: TSchoolType[];
 
   @ApiProperty({
     description: 'School phone number',

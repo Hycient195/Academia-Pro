@@ -14,7 +14,7 @@ class ApiClient {
   constructor(baseURL: string = '') {
     // Use environment variable or default to backend URL
     const defaultUrl = typeof window !== 'undefined'
-      ? (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001')
+      ? (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001')
       : 'http://localhost:3001'
 
     // Ensure we don't have double /api/v1

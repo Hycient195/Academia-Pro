@@ -3,7 +3,7 @@
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Staff } from '../staff.entity';
-import { TDepartment, TPosition, TEmploymentType, TEmploymentStatus } from '@academia-pro/common/staff';
+import { TDepartment, TPosition, TEmploymentType, TEmploymentStatus } from '@academia-pro/types/staff';
 
 export class StaffResponseDto {
   @ApiProperty({

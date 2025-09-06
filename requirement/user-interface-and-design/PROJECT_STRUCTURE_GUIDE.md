@@ -205,7 +205,7 @@ VS Code 1.70.0+               # Recommended IDE
 ### **Environment Variables**
 ```env
 # .env.local
-NEXT_PUBLIC_API_URL=https://api.academia-pro.com
+NEXT_PUBLIC_API_BASE_URL=https://api.academia-pro.com
 NEXT_PUBLIC_ENVIRONMENT=development
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_key_here
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_key_here

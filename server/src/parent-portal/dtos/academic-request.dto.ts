@@ -5,7 +5,7 @@ import {
   IGetAttendanceRequest,
   IGetAssignmentsRequest,
   IGetTimetableRequest
-} from '@academia-pro/common/parent-portal';
+} from '@academia-pro/types/parent-portal';
 
 export class ParentAcademicRequestDto implements Partial<IGetAcademicGradesRequest & IGetAttendanceRequest & IGetAssignmentsRequest & IGetTimetableRequest> {
   @IsUUID()

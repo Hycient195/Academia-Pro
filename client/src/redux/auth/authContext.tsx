@@ -1,6 +1,7 @@
 "use client"
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { GLOBAL_API_URL } from '../globalURLs'
 
 export interface User {
   id: string
@@ -73,8 +74,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const checkAuthStatus = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-      const response = await fetch(`${apiUrl}/auth/me`, {
+      const response = await fetch(`${GLOBAL_API_URL}/auth/me`, {
         credentials: 'include',
       })
 
@@ -109,8 +109,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true }))
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-      const response = await fetch(`${apiUrl}/super-admin/auth/login`, {
+      const response = await fetch(`${GLOBAL_API_URL}/super-admin/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -152,7 +151,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async (): Promise<void> => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001'
       await fetch(`${apiUrl}/auth/logout`, {
         method: 'POST',
         credentials: 'include',
@@ -171,9 +170,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const refreshAuth = async (): Promise<void> => {
     try {
-      // This will trigger the cookie-based refresh through the middleware
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-      const response = await fetch(`${apiUrl}/auth/me`, {
+      const response = await fetch(`${GLOBAL_API_URL}/auth/me`, {
         credentials: 'include',
       })
 
@@ -206,7 +203,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const getCSRFToken = async (): Promise<string | null> => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001'
       const response = await fetch(`${apiUrl}/auth/csrf-token`, {
         credentials: 'include',
       })

@@ -1,10 +1,16 @@
-import { UserRole } from '../shared';
-export declare enum TUserStatus {
+export declare enum EUserStatus {
     ACTIVE = "active",
     INACTIVE = "inactive",
     SUSPENDED = "suspended",
     PENDING = "pending",
     DELETED = "deleted"
+}
+export declare enum EUserRole {
+    SUPER_ADMIN = "super-admin",
+    SCHOOL_ADMIN = "school-admin",
+    TEACHER = "teacher",
+    STUDENT = "student",
+    PARENT = "parent"
 }
 export declare enum TUserGender {
     MALE = "male",
@@ -21,13 +27,14 @@ export interface IUser {
     email: string;
     firstName: string;
     lastName: string;
-    role: UserRole;
+    middleName?: string;
+    role: EUserRole;
     phone?: string;
     dateOfBirth?: string;
     gender?: 'male' | 'female' | 'other';
     schoolId?: string;
     address?: IUserAddress;
-    status: TUserStatus;
+    status: EUserStatus;
     emailVerified: boolean;
     createdAt: Date;
     updatedAt: Date;
@@ -89,14 +96,14 @@ export interface IUserPrivacySettings {
     showActivities: boolean;
 }
 export interface IUserAccountInfo {
-    status: TUserStatus;
+    status: EUserStatus;
     emailVerified: boolean;
     mfaEnabled: boolean;
     lastLogin: Date;
     accountCreated: Date;
     passwordLastChanged: Date;
 }
-export interface IUserRole {
+export interface IUserPermissionRole {
     id: string;
     name: string;
     description: string;
@@ -133,26 +140,30 @@ export interface ICreateUserRequest {
     password?: string;
     firstName: string;
     lastName: string;
-    role?: UserRole;
+    middleName?: string;
+    role?: EUserRole;
     phone?: string;
     dateOfBirth?: string;
     gender?: 'male' | 'female' | 'other';
     schoolId?: string;
     address?: IUserAddress;
+    status?: EUserStatus;
 }
 export interface IUpdateUserRequest {
     email?: string;
     firstName?: string;
     lastName?: string;
+    middleName?: string;
     phone?: string;
     dateOfBirth?: string;
     gender?: 'male' | 'female' | 'other';
     address?: Partial<IUserAddress>;
-    status?: TUserStatus;
+    status?: EUserStatus;
 }
 export interface IUpdateUserProfileRequest {
     firstName?: string;
     lastName?: string;
+    middleName?: string;
     phone?: string;
     dateOfBirth?: string;
     gender?: TUserGender;
@@ -221,7 +232,7 @@ export interface IUsersListResponse {
 export interface IUserRolesResponse {
     userId: string;
     primaryRole: string;
-    roles: IUserRole[];
+    roles: IUserPermissionRole[];
     effectivePermissions: string[];
     restrictions?: string[];
 }
@@ -424,8 +435,8 @@ export interface IDeleteAccountResponse {
 }
 export interface IUserFiltersQuery {
     schoolId?: string;
-    role?: UserRole;
-    status?: TUserStatus;
+    role?: IUserPermissionRole;
+    status?: EUserStatus;
     emailVerified?: boolean;
     createdAfter?: Date;
     createdBefore?: Date;
@@ -449,8 +460,8 @@ export interface IUserNotificationFiltersQuery {
 export interface IUsersStatisticsResponse {
     totalUsers: number;
     activeUsers: number;
-    usersByRole: Record<UserRole, number>;
-    usersByStatus: Record<TUserStatus, number>;
+    usersByRole: Record<EUserRole, number>;
+    usersByStatus: Record<EUserStatus, number>;
     usersByGender: Record<TUserGender, number>;
     registrationTrends: Array<{
         date: Date;
@@ -466,4 +477,3 @@ export interface IUsersStatisticsResponse {
         userCount: number;
     }>;
 }
-//# sourceMappingURL=users.types.d.ts.map

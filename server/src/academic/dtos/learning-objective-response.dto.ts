@@ -3,7 +3,7 @@
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { LearningObjective } from '../learning-objective.entity';
-import { TLearningObjectiveType, TGradeLevel, ILearningObjectiveResponse } from '../../../../common/src/types/academic/academic.types';
+import { TLearningObjectiveType, TGradeLevel, ILearningObjectiveResponse } from '@academia-pro/types/academic';
 
 export class LearningObjectiveResponseDto implements ILearningObjectiveResponse {
   @ApiProperty({

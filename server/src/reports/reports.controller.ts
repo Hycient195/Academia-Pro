@@ -4,8 +4,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { ReportsService } from './reports.service';
-import { CreateReportDto, UpdateReportDto, ReportResponseDto, ReportListResponseDto, ReportGenerationResponseDto, ReportsStatisticsResponseDto } from './dtos/index';
-import { IReportFiltersQuery, IGenerateReportRequest } from '../../../common/src/types/reports/reports.types';
+import { CreateReportDto, UpdateReportDto, ReportResponseDto, ReportListResponseDto, ReportGenerationResponseDto, ReportsStatisticsResponseDto, IReportFiltersQuery, IGenerateReportRequest } from './dtos/index';
 
 @ApiTags('Reports & Analytics')
 @Controller('reports')

@@ -5,8 +5,10 @@ import { Injectable, NotFoundException, ConflictException, BadRequestException }
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThanOrEqual } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
-import { User, UserRole, UserStatus } from './user.entity';
+import { User } from './user.entity';
 import { CreateUserDto, UpdateUserDto } from './dtos';
+import { PaginatedResponse } from '@academia-pro/types/shared';
+import { EUserRole, EUserStatus } from '@academia-pro/types/users';
 
 @Injectable()
 export class UsersService {
@@ -40,7 +42,7 @@ export class UsersService {
     // Prepare user data with correct types
     const userDataPrepared = {
       ...userData,
-      role: userData.role as UserRole | undefined,
+      role: userData.role as EUserRole | undefined,
       dateOfBirth: userData.dateOfBirth ? new Date(userData.dateOfBirth) : undefined,
     };
 
@@ -49,7 +51,7 @@ export class UsersService {
       ...userDataPrepared,
       email,
       passwordHash,
-      status: password ? UserStatus.ACTIVE : UserStatus.PENDING, // Active if password provided, pending otherwise
+      status: password ? EUserStatus.ACTIVE : EUserStatus.PENDING, // Active if password provided, pending otherwise
       isEmailVerified: false,
     });
 
@@ -63,11 +65,11 @@ export class UsersService {
   async findAll(options?: {
     page?: number;
     limit?: number;
-    role?: UserRole;
-    status?: UserStatus;
+    role?: EUserRole;
+    status?: EUserStatus;
     schoolId?: string;
     search?: string;
-  }): Promise<{ users: User[]; total: number; page: number; limit: number }> {
+  }): Promise<PaginatedResponse<User>> {
     const { page = 1, limit = 10, role, status, schoolId, search } = options || {};
 
     const queryBuilder = this.usersRepository.createQueryBuilder('user');
@@ -100,7 +102,21 @@ export class UsersService {
 
     const [users, total] = await queryBuilder.getManyAndCount();
 
-    return { users, total, page, limit };
+    const totalPages = Math.ceil(total / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
+
+    return {
+      data: users,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext,
+        hasPrev,
+      },
+    };
   }
 
   /**
@@ -124,6 +140,36 @@ export class UsersService {
   async findByEmail(email: string): Promise<User | null> {
     return this.usersRepository.findOne({
       where: { email },
+    });
+  }
+
+  /**
+   * Get user by ID with specific fields (for middleware)
+   */
+  async findOneForAuth(id: string): Promise<User | null> {
+    return this.usersRepository.findOne({
+      where: { id },
+      select: ['id', 'email', 'firstName', 'lastName', 'role', 'status', 'schoolId', 'isEmailVerified'],
+    });
+  }
+
+  /**
+   * Get user by ID with refresh token fields (for middleware)
+   */
+  async findOneForRefreshToken(id: string): Promise<User | null> {
+    return this.usersRepository.findOne({
+      where: { id },
+      select: ['id', 'email', 'refreshToken', 'refreshTokenExpires', 'role', 'schoolId'],
+    });
+  }
+
+  /**
+   * Update user refresh token (for middleware)
+   */
+  async updateRefreshToken(id: string, refreshToken: string, refreshTokenExpires: Date): Promise<void> {
+    await this.usersRepository.update(id, {
+      refreshToken: await bcrypt.hash(refreshToken, 10),
+      refreshTokenExpires,
     });
   }
 
@@ -158,7 +204,7 @@ export class UsersService {
     };
 
     if (updateData.role !== undefined) {
-      updateDataPrepared.role = updateData.role as UserRole;
+      updateDataPrepared.role = updateData.role as EUserRole;
     }
 
     if (updateData.dateOfBirth !== undefined) {
@@ -178,7 +224,7 @@ export class UsersService {
     const user = await this.findOne(id);
 
     // Instead of hard delete, change status to inactive
-    user.status = UserStatus.INACTIVE;
+    user.status = EUserStatus.INACTIVE;
 
     await this.usersRepository.save(user);
   }
@@ -189,11 +235,11 @@ export class UsersService {
   async activate(id: string): Promise<User> {
     const user = await this.findOne(id);
 
-    if (user.status === UserStatus.ACTIVE) {
+    if (user.status === EUserStatus.ACTIVE) {
       throw new BadRequestException('User is already active');
     }
 
-    user.status = UserStatus.ACTIVE;
+    user.status = EUserStatus.ACTIVE;
 
     return this.usersRepository.save(user);
   }
@@ -204,11 +250,11 @@ export class UsersService {
   async deactivate(id: string): Promise<User> {
     const user = await this.findOne(id);
 
-    if (user.status === UserStatus.INACTIVE) {
+    if (user.status === EUserStatus.INACTIVE) {
       throw new BadRequestException('User is already inactive');
     }
 
-    user.status = UserStatus.INACTIVE;
+    user.status = EUserStatus.INACTIVE;
 
     return this.usersRepository.save(user);
   }
@@ -219,11 +265,11 @@ export class UsersService {
   async suspend(id: string, reason?: string): Promise<User> {
     const user = await this.findOne(id);
 
-    if (user.status === UserStatus.SUSPENDED) {
+    if (user.status === EUserStatus.SUSPENDED) {
       throw new BadRequestException('User is already suspended');
     }
 
-    user.status = UserStatus.SUSPENDED;
+    user.status = EUserStatus.SUSPENDED;
 
     return this.usersRepository.save(user);
   }
@@ -302,7 +348,7 @@ export class UsersService {
 
     user.isEmailVerified = true;
     user.emailVerifiedAt = new Date();
-    user.status = UserStatus.ACTIVE;
+    user.status = EUserStatus.ACTIVE;
 
     return this.usersRepository.save(user);
   }
@@ -310,9 +356,9 @@ export class UsersService {
   /**
    * Get users by role
    */
-  async getUsersByRole(role: UserRole): Promise<User[]> {
+  async getUsersByRole(role: EUserRole): Promise<User[]> {
     return this.usersRepository.find({
-      where: { role, status: UserStatus.ACTIVE },
+      where: { role, status: EUserStatus.ACTIVE },
       order: { createdAt: 'DESC' },
     });
   }
@@ -322,7 +368,7 @@ export class UsersService {
    */
   async getUsersBySchool(schoolId: string): Promise<User[]> {
     return this.usersRepository.find({
-      where: { schoolId, status: UserStatus.ACTIVE },
+      where: { schoolId, status: EUserStatus.ACTIVE },
       order: { createdAt: 'DESC' },
     });
   }
@@ -331,7 +377,7 @@ export class UsersService {
    * Search users
    */
   async search(query: string, options?: {
-    role?: UserRole;
+    role?: EUserRole;
     schoolId?: string;
     limit?: number;
   }): Promise<User[]> {
@@ -354,7 +400,7 @@ export class UsersService {
     }
 
     queryBuilder
-      .andWhere('user.status = :status', { status: UserStatus.ACTIVE })
+      .andWhere('user.status = :status', { status: EUserStatus.ACTIVE })
       .orderBy('user.firstName', 'ASC')
       .limit(limit);
 
@@ -367,16 +413,16 @@ export class UsersService {
   async getStatistics(): Promise<{
     totalUsers: number;
     activeUsers: number;
-    usersByRole: Record<UserRole, number>;
+    usersByRole: Record<EUserRole, number>;
     recentRegistrations: number;
   }> {
     const totalUsers = await this.usersRepository.count();
     const activeUsers = await this.usersRepository.count({
-      where: { status: UserStatus.ACTIVE },
+      where: { status: EUserStatus.ACTIVE },
     });
 
     // Count users by role
-    const usersByRole: Record<UserRole, number> = {
+    const usersByRole: Record<EUserRole, number> = {
       'super-admin': 0,
       'school-admin': 0,
       'teacher': 0,
@@ -384,9 +430,9 @@ export class UsersService {
       'parent': 0,
     };
 
-    for (const role of Object.keys(usersByRole) as UserRole[]) {
+    for (const role of Object.keys(usersByRole) as EUserRole[]) {
       usersByRole[role] = await this.usersRepository.count({
-        where: { role, status: UserStatus.ACTIVE },
+        where: { role, status: EUserStatus.ACTIVE },
       });
     }
 

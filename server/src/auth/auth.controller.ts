@@ -28,7 +28,7 @@ import {
   ResetPasswordDto,
   VerifyEmailDto,
 } from './dtos';
-import { AuthTokens } from '@academia-pro/common';
+import { IAuthTokens } from '@academia-pro/types/auth';
 
 @ApiTags('authentication')
 @Controller('auth')
@@ -70,7 +70,7 @@ export class AuthController {
   @ApiResponse({ status: 409, description: 'User already exists' })
   async register(@Body() registerDto: RegisterDto): Promise<{
     user: any;
-    tokens: AuthTokens;
+    tokens: IAuthTokens;
   }> {
     const user = await this.authService.register(registerDto);
     const tokens = await this.authService.login(user);

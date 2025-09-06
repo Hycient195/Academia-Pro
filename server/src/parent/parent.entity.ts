@@ -8,7 +8,7 @@ import {
   TCommunicationType,
   TPortalAccessLevel,
   TAppointmentStatus
-} from '../../../common/src/types/parent/parent.types';
+} from '@academia-pro/types/parent/parent.types';
 
 @Entity('parents')
 @Index(['schoolId', 'userId'], { unique: true })
@@ -103,6 +103,7 @@ export class Parent {
   profile: {
     firstName: string;
     lastName: string;
+    middleName?: string;
     dateOfBirth?: Date;
     occupation?: string;
     educationLevel?: string;
@@ -221,6 +222,9 @@ export class Parent {
 
   // Computed properties
   get fullName(): string {
+    if (this.profile.middleName) {
+      return `${this.profile.firstName} ${this.profile.middleName} ${this.profile.lastName}`;
+    }
     return `${this.profile.firstName} ${this.profile.lastName}`;
   }
 

@@ -17,7 +17,8 @@ import {
   IconMapPin
 } from "@tabler/icons-react"
 import { apis } from "@/redux/api"
-import type { Activity, Alert } from "@/redux/api/superAdminApi"
+import { IAlert } from "@academia-pro/types/shared"
+import { IActivity } from "@academia-pro/parent-portal"
 
 function MetricCard({
   title,
@@ -62,7 +63,7 @@ function MetricCard({
   )
 }
 
-function ActivityItem({ activity }: { activity: Activity }) {
+function ActivityItem({ activity }: { activity: IActivity }) {
   return (
     <div className="flex items-center space-x-4 p-3 border rounded-lg">
       <div className="flex-shrink-0">
@@ -76,16 +77,16 @@ function ActivityItem({ activity }: { activity: Activity }) {
           {new Date(activity.timestamp).toLocaleString()}
         </p>
       </div>
-      {activity.schoolId && (
+      {activity.studentId && (
         <Badge variant="outline" className="text-xs">
-          School {activity.schoolId}
+          Student {activity.studentId}
         </Badge>
       )}
     </div>
   )
 }
 
-function AlertItem({ alert }: { alert: Alert }) {
+function AlertItem({ alert }: { alert: IAlert }) {
   const getAlertIcon = (type: string) => {
     switch (type) {
       case 'error':
@@ -117,7 +118,7 @@ function AlertItem({ alert }: { alert: Alert }) {
 export default function SuperAdminDashboard() {
   const { data: overview, isLoading: overviewLoading } = apis.superAdmin.useGetSystemOverviewQuery()
   const activities = overview?.recentActivities?.slice(0, 5) || []
-  const alerts = overview?.alerts?.filter(alert => !alert.acknowledged) || []
+  const alerts = overview?.alerts?.filter(alert => !alert.acknowledgedAt) || []
   const activitiesLoading = overviewLoading
   const alertsLoading = overviewLoading
 

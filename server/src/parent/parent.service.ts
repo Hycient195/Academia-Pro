@@ -17,7 +17,7 @@ import {
   TPortalAccessLevel,
   IParentFilters,
   IParentStatisticsResponse,
-} from '../../../common/src/types/parent/parent.types';
+} from '@academia-pro/types/parent/parent.types';
 
 @Injectable()
 export class ParentService {

@@ -16,7 +16,9 @@ export interface ISchoolAdminOverview {
 }
 export interface ISchoolAdminStudent {
     id: string;
-    name: string;
+    firstName: string;
+    lastName: string;
+    middleName?: string;
     admissionNumber: string;
     grade: string;
     section: string;
@@ -24,7 +26,9 @@ export interface ISchoolAdminStudent {
     status: 'active' | 'inactive' | 'transferred' | 'graduated';
     attendanceRate: number;
     parentContact: {
-        name: string;
+        firstName: string;
+        lastName: string;
+        middleName?: string;
         email: string;
         phone: string;
     };
@@ -47,28 +51,38 @@ export interface ISchoolAdminStudentFilters {
     limit?: number;
 }
 export interface ISchoolAdminCreateStudentRequest {
-    name: string;
+    firstName: string;
+    lastName: string;
+    middleName?: string;
     admissionNumber: string;
     grade: string;
     section: string;
-    parentName: string;
+    parentFirstName: string;
+    parentLastName: string;
+    parentMiddleName?: string;
     parentEmail: string;
     parentPhone: string;
 }
 export interface ISchoolAdminUpdateStudentRequest {
-    name?: string;
+    firstName?: string;
+    lastName?: string;
+    middleName?: string;
     grade?: string;
     section?: string;
     status?: string;
     parentContact?: {
-        name?: string;
+        firstName?: string;
+        lastName?: string;
+        middleName?: string;
         email?: string;
         phone?: string;
     };
 }
 export interface ISchoolAdminStaff {
     id: string;
-    name: string;
+    firstName: string;
+    lastName: string;
+    middleName?: string;
     email: string;
     role: string;
     department: string;
@@ -87,14 +101,18 @@ export interface ISchoolAdminStaffFilters {
     limit?: number;
 }
 export interface ISchoolAdminCreateStaffRequest {
-    name: string;
+    firstName: string;
+    lastName: string;
+    middleName?: string;
     email: string;
     role: string;
     department: string;
     subjects?: string[];
 }
 export interface ISchoolAdminUpdateStaffRequest {
-    name?: string;
+    firstName?: string;
+    lastName?: string;
+    middleName?: string;
     email?: string;
     role?: string;
     department?: string;
@@ -215,9 +233,12 @@ export interface IApiResponse<T> {
 }
 export interface IPaginatedResponse<T> {
     data: T[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
+    pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+        hasNext: boolean;
+        hasPrev: boolean;
+    };
 }
-//# sourceMappingURL=school-admin.types.d.ts.map

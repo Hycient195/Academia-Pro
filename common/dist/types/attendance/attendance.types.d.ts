@@ -336,4 +336,3 @@ export interface IAttendanceAlertResponse {
     recipients: string[];
     deliveryStatus: Record<string, 'sent' | 'failed' | 'pending'>;
 }
-//# sourceMappingURL=attendance.types.d.ts.map

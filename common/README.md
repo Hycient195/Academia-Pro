@@ -1,4 +1,4 @@
-# @academia-pro/common
+# @academia-pro
 
 Shared TypeScript types and interfaces for the Academia Pro school management system.
 
@@ -10,7 +10,7 @@ This package contains all the shared TypeScript types, interfaces, and validatio
 
 ```bash
 # Install as a dependency in your project
-npm install @academia-pro/common
+npm install @academia-pro
 
 # Or for development
 npm install ../common --save-dev
@@ -20,7 +20,7 @@ npm install ../common --save-dev
 
 ### Basic Import
 ```typescript
-import { User, School, Student } from '@academia-pro/common';
+import { User, School, Student } from '@academia-pro';
 
 // Use the types in your code
 const user: User = {
@@ -39,7 +39,7 @@ import {
   CreateUserRequest,
   UpdateProfileRequest,
   UserListResponse
-} from '@academia-pro/common';
+} from '@academia-pro';
 
 // Use in API calls or forms
 const createUser = async (data: CreateUserRequest) => {
@@ -52,7 +52,7 @@ const createUser = async (data: CreateUserRequest) => {
 import {
   createUserSchema,
   updateProfileSchema
-} from '@academia-pro/common';
+} from '@academia-pro';
 
 // Validate data
 const result = createUserSchema.safeParse(userData);
@@ -172,14 +172,14 @@ interface SoftDeleteEntity extends BaseEntity {
 
 ### User Types
 ```typescript
-type UserRole = 'super-admin' | 'school-admin' | 'teacher' | 'student' | 'parent';
+type IUserPermissionRole = 'super-admin' | 'school-admin' | 'teacher' | 'student' | 'parent';
 
 interface User extends BaseEntity {
   email: string;
   firstName: string;
   lastName: string;
-  role: UserRole;
-  status: UserStatus;
+  role: IUserPermissionRole;
+  status: EUserStatus;
   schoolId?: string;
   // ... other properties
 }
@@ -216,7 +216,7 @@ interface PaginatedResponse<T> {
 
 ### Example Usage
 ```typescript
-import { createUserSchema } from '@academia-pro/common';
+import { createUserSchema } from '@academia-pro';
 
 // Validate user creation data
 const validationResult = createUserSchema.safeParse({

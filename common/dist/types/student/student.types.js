@@ -28,4 +28,3 @@ var TTransportationStatus;
     TTransportationStatus["SUSPENDED"] = "suspended";
 })(TTransportationStatus || (exports.TTransportationStatus = TTransportationStatus = {}));
 // All types are exported above with their declarations
-//# sourceMappingURL=student.types.js.map

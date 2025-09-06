@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { FormCountrySelect, FormRegionSelect, FormSelect, FormText, FormTextArea, FormPhoneInput } from "@/components/ui/form-components"
+import { FormCountrySelect, FormRegionSelect, FormSelect, FormText, FormTextArea, FormPhoneInput, FormMultiSelect } from "@/components/ui/form-components"
 import ErrorBlock from "@/components/utilities/ErrorBlock"
-import { apis, type ICreateSchoolRequest, type IUpdateSchoolRequest, type ISuperAdminSchool } from "@/redux/api"
+import { apis } from "@/redux/api"
+import { ICreateSchoolRequest, IUpdateSchoolRequest, ISuperAdminSchool } from "@academia-pro/types/super-admin"
 import { toast } from "sonner"
 
 interface AddSchoolModalProps {
@@ -18,12 +19,22 @@ interface AddSchoolModalProps {
 
 export default function AddSchoolModal({ mode, isOpen, onOpenChange, schoolData, onSuccess }: AddSchoolModalProps) {
   const [createSchool, { isLoading: isCreating, error: createSchoolError }] = apis.superAdmin.useCreateSchoolMutation()
-  const [updateSchool] = apis.superAdmin.useUpdateSchoolMutation()
+  const [updateSchool, { isLoading: isUpdating, error: updateError }] = apis.superAdmin.useUpdateSchoolMutation()
 
-  const [formData, setFormData] = useState<ICreateSchoolRequest | IUpdateSchoolRequest>(
+  const [formData, setFormData] = useState<{
+    name: string;
+    type: string[];
+    address: string;
+    city: string;
+    state: string;
+    country: string;
+    email: string;
+    phone: string;
+    subscriptionPlan: string;
+  }>(
     mode === 'add' ? {
       name: '',
-      type: '',
+      type: [],
       address: '',
       city: '',
       state: '',
@@ -33,7 +44,7 @@ export default function AddSchoolModal({ mode, isOpen, onOpenChange, schoolData,
       subscriptionPlan: ''
     } : {
       name: schoolData?.name || '',
-      type: schoolData?.type || '',
+      type: schoolData?.type || [],
       address: schoolData?.address || '',
       city: schoolData?.city || '',
       state: schoolData?.state || '',
@@ -49,7 +60,7 @@ export default function AddSchoolModal({ mode, isOpen, onOpenChange, schoolData,
     if (mode === 'edit' && schoolData && isOpen) {
       setFormData({
         name: schoolData.name || '',
-        type: schoolData.type || '',
+        type: schoolData.type || [],
         address: schoolData.address || '',
         city: schoolData.city || '',
         state: schoolData.state || '',
@@ -63,7 +74,10 @@ export default function AddSchoolModal({ mode, isOpen, onOpenChange, schoolData,
 
   const handleSubmit = async () => {
     if (mode === 'add') {
-      createSchool(formData as ICreateSchoolRequest)
+      const apiData = {
+        ...formData,
+      }
+      createSchool(apiData as ICreateSchoolRequest)
         .unwrap()
         .then(() => {
           toast.success(`School ${formData.name} created successfully!`)
@@ -79,9 +93,12 @@ export default function AddSchoolModal({ mode, isOpen, onOpenChange, schoolData,
         toast.error("School data not found");
         return
       }
+      const apiData = {
+        ...formData,
+      }
       updateSchool({
         schoolId: schoolData.id,
-        updates: formData as IUpdateSchoolRequest
+        updates: apiData as IUpdateSchoolRequest
       }).unwrap()
       .then(() => {
         toast.success(`School ${formData.name} updated successfully!`)
@@ -98,7 +115,7 @@ export default function AddSchoolModal({ mode, isOpen, onOpenChange, schoolData,
   const resetForm = () => {
     setFormData({
       name: '',
-      type: '',
+      type: [],
       address: '',
       city: '',
       state: '',
@@ -109,7 +126,7 @@ export default function AddSchoolModal({ mode, isOpen, onOpenChange, schoolData,
     })
   }
 
-  const updateFormData = (field: string, value: string) => {
+  const updateFormData = (field: string, value: string | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
@@ -140,19 +157,32 @@ export default function AddSchoolModal({ mode, isOpen, onOpenChange, schoolData,
               }}
               required
             />
-            <FormSelect
-              labelText="School Type *"
-              placeholder="Select type"
+            <FormMultiSelect
+              labelText="School Types *"
+              placeholder="Select school types"
               options={[
                 { text: "Pre School", value: "preschool" },
                 { text: "Elementary", value: "elementary" },
-                { text: "Primary School", value: "primary_school" },
-                { text: "Secondary School", value: "secondary_school" },
+                { text: "Middle School", value: "middle_school" },
+                { text: "High School", value: "high_school" },
+                { text: "Senior Secondary", value: "senior_secondary" },
+                { text: "University", value: "university" },
+                { text: "College", value: "college" },
                 { text: "Institute", value: "institute" },
                 { text: "Training Center", value: "training_center" },
+                { text: "Primary", value: "primary" },
+                { text: "Secondary", value: "secondary" },
+                { text: "Mixed", value: "mixed" },
               ]}
-              value={formData.type || ''}
-              onChange={(arg) => updateFormData('type', arg.target.value as string)}
+              value={formData.type}
+              onChange={(arg) => {
+                if ('target' in arg) {
+                  updateFormData('type', arg.target.value)
+                } else {
+                  updateFormData('type', arg as string[])
+                }
+              }}
+              maxSelection={3}
               required
             />
           </div>
@@ -178,7 +208,13 @@ export default function AddSchoolModal({ mode, isOpen, onOpenChange, schoolData,
               showFlag
               id="country"
               value={formData.country || ''}
-              onChange={(arg) => updateFormData('country', arg.target.value as string)}
+              onChange={(arg) => {
+                if ('target' in arg) {
+                  updateFormData('country', arg.target.value as string)
+                } else {
+                  updateFormData('country', arg as string)
+                }
+              }}
               placeholder="Country"
             />
             <FormRegionSelect
@@ -186,7 +222,13 @@ export default function AddSchoolModal({ mode, isOpen, onOpenChange, schoolData,
               id="state"
               value={formData.state || ''}
               labelText="State *"
-              onChange={(arg) => updateFormData('state', arg.target.value as string)}
+              onChange={(arg) => {
+                if ('target' in arg) {
+                  updateFormData('state', arg.target.value as string)
+                } else {
+                  updateFormData('state', arg as string)
+                }
+              }}
               placeholder="State"
             />
             <FormText
@@ -244,13 +286,13 @@ export default function AddSchoolModal({ mode, isOpen, onOpenChange, schoolData,
             required
           />
         </div>
-        <ErrorBlock error={createSchoolError} />
+        <ErrorBlock error={createSchoolError || updateError} />
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={isCreating}>
-            {isCreating ? 'Saving...' : mode === 'add' ? 'Create School' : 'Update School'}
+            {(isCreating||isUpdating) ? 'Saving...' : mode === 'add' ? 'Create School' : 'Update School'}
           </Button>
         </div>
       </DialogContent>

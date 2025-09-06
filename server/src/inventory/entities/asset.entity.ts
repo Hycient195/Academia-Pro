@@ -10,7 +10,7 @@ import {
   TMaintenanceType,
   TMaintenanceStatus,
   TDepreciationMethod
-} from '@academia-pro/common/inventory';
+} from '@academia-pro/types/inventory';
 
 // Re-export types with names expected by controllers and services
 export { TAssetStatus as AssetStatus, TAssetCondition as AssetCondition, TAssetCategory as AssetType, TDepreciationMethod as DepreciationMethod };

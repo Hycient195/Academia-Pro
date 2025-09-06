@@ -1,9 +1,9 @@
 // Academia Pro - Roles Guard
 // Guard to protect routes based on user roles and permissions
 
+import { EUserRole } from '@academia-pro/types/users';
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { UserRole } from '@academia-pro/common';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -14,7 +14,7 @@ export class RolesGuard implements CanActivate {
    */
   canActivate(context: ExecutionContext): boolean {
     // Get required roles from route metadata
-    const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>('roles', [
+    const requiredRoles = this.reflector.getAllAndOverride<EUserRole[]>('roles', [
       context.getHandler(),
       context.getClass(),
     ]);

@@ -3,7 +3,7 @@
 
 import { IsNotEmpty, IsOptional, IsString, IsEnum, IsDateString, IsBoolean, IsNumber, IsObject, Min, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TPaymentMethod, ICreatePaymentRequest } from '@academia-pro/common/fee';
+import { TPaymentMethod, ICreatePaymentRequest } from '@academia-pro/types/fee';
 
 export class CreatePaymentDto implements ICreatePaymentRequest {
   @ApiProperty({

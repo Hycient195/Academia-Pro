@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { FormSelect } from "@/components/ui/form-components"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -23,7 +24,15 @@ import {
   IconMapPin,
   IconX
 } from "@tabler/icons-react"
-import { apis, type ISchoolFilters, type ISuperAdminSchool } from "@/redux/api"
+import { apis } from "@/redux/api"
+import { ISuperAdminSchool } from "@academia-pro/types/super-admin"
+import { ISchoolFilters as BaseSchoolFilters, TSchoolType, TSchoolStatus } from "@academia-pro/types/shared"
+
+interface ISchoolFilters extends BaseSchoolFilters {
+  page?: number;
+  limit?: number;
+  subscriptionPlan?: string;
+}
 import { toast } from "sonner"
 import AddSchoolModal from "./_components/AddSchoolModal"
 import DeleteSchoolModal from "./_components/DeleteSchoolModal"
@@ -47,11 +56,8 @@ export default function SchoolsPage() {
 
   console.log(schoolsData)
   
-  const schools = schoolsData?.schools || []
-  const total = schoolsData?.total || 0
-  const currentPage = filters.page || 1
-  const pageSize = filters.limit || 10
-  const totalPages = Math.ceil(total / pageSize)
+  const schools = schoolsData?.data || []
+  const pagination = schoolsData?.pagination
 
   const handlePageChange = (page: number) => {
     setFilters({ ...filters, page })
@@ -117,7 +123,7 @@ export default function SchoolsPage() {
 
     return (
       <Badge className={colors[type as keyof typeof colors] || "bg-gray-100 text-gray-800"}>
-        {type}
+        {type?.replace(/_/ig, " ")}
       </Badge>
     )
   }
@@ -174,7 +180,7 @@ export default function SchoolsPage() {
       </div>
     )
   }
-
+// console.log(schools)
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -216,59 +222,44 @@ export default function SchoolsPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Type</label>
-              <Select
-                value={filters.type || ""}
-                onValueChange={(value) => setFilters({ ...filters, type: value === "all" ? undefined : value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All types" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="primary">Primary</SelectItem>
-                  <SelectItem value="secondary">Secondary</SelectItem>
-                  <SelectItem value="mixed">Mixed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <FormSelect
+              labelText="Type"
+              placeholder="All types"
+              value={filters.type || ""}
+              onChange={(e) => setFilters({ ...filters, type: e.target.value === "all" ? undefined : e.target.value as TSchoolType })}
+              options={[
+                { value: "all", text: "All Types" },
+                { value: "primary", text: "Primary" },
+                { value: "secondary", text: "Secondary" },
+                { value: "mixed", text: "Mixed" }
+              ]}
+            />
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Status</label>
-              <Select
-                value={filters.status || ""}
-                onValueChange={(value) => setFilters({ ...filters, status: value === "all" ? undefined : value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="suspended">Suspended</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <FormSelect
+              labelText="Status"
+              placeholder="All statuses"
+              value={filters.status || ""}
+              onChange={(e) => setFilters({ ...filters, status: e.target.value === "all" ? undefined : e.target.value as TSchoolStatus })}
+              options={[
+                { value: "all", text: "All Statuses" },
+                { value: "active", text: "Active" },
+                { value: "inactive", text: "Inactive" },
+                { value: "suspended", text: "Suspended" }
+              ]}
+            />
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Subscription Plan</label>
-              <Select
-                value={filters.subscriptionPlan || ""}
-                onValueChange={(value) => setFilters({ ...filters, subscriptionPlan: value === "all" ? undefined : value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All plans" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Plans</SelectItem>
-                  <SelectItem value="basic">Basic</SelectItem>
-                  <SelectItem value="premium">Premium</SelectItem>
-                  <SelectItem value="enterprise">Enterprise</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <FormSelect
+              labelText="Subscription Plan"
+              placeholder="All plans"
+              value={filters.subscriptionPlan || ""}
+              onChange={(e) => setFilters({ ...filters, subscriptionPlan: e.target.value === "all" ? undefined : e.target.value as string })}
+              options={[
+                { value: "all", text: "All Plans" },
+                { value: "basic", text: "Basic" },
+                { value: "premium", text: "Premium" },
+                { value: "enterprise", text: "Enterprise" }
+              ]}
+            />
           </div>
         </CardContent>
       </Card>
@@ -278,7 +269,7 @@ export default function SchoolsPage() {
         <CardHeader>
           <CardTitle className="flex items-center">
             <IconBuilding className="h-5 w-5 mr-2" />
-            Schools ({total})
+            Schools ({pagination?.total || 0})
           </CardTitle>
           <CardDescription>
             A list of all schools in the system
@@ -306,7 +297,7 @@ export default function SchoolsPage() {
                       <div className="text-sm text-muted-foreground">{school.contact?.email || school.email}</div>
                     </div>
                   </TableCell>
-                  <TableCell>{getTypeBadge(school.type || 'primary')}</TableCell>
+                  <TableCell className="capitalize space-x-1">{school.type?.map((typ) => getTypeBadge(typ))}</TableCell>
                   <TableCell>{getStatusBadge(school.status)}</TableCell>
                   <TableCell>
                     <div className="flex items-center">
@@ -369,13 +360,10 @@ export default function SchoolsPage() {
           )}
 
           {/* Pagination */}
-          {total > 0 && (
+          {(pagination?.total || 0) > 0 && (
             <div className="px-2 py-4">
               <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalItems={total}
-                pageSize={pageSize}
+                pagination={pagination}
                 onPageChange={handlePageChange}
                 onPageSizeChange={handlePageSizeChange}
                 showPageSizeSelector={true}

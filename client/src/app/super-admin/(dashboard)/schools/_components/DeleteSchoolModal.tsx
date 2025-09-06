@@ -4,13 +4,14 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { apis, type School } from "@/redux/api"
+import { apis } from "@/redux/api"
+import { ISuperAdminSchool } from "@academia-pro/types/super-admin"
 import { toast } from "sonner"
 
 interface DeleteSchoolModalProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
-  school: School | null
+  school: ISuperAdminSchool | null
   onSuccess?: () => void
 }
 

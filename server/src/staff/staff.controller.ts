@@ -5,7 +5,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { StaffService } from './staff.service';
 import { CreateStaffDto, UpdateStaffDto, StaffResponseDto, StaffListResponseDto, StaffStatisticsResponseDto } from './dtos/index';
-import { IStaffFilters } from '../../../common/src/types/staff/staff.types';
+import { IStaffFilters } from '@academia-pro/types/staff';
 
 @ApiTags('Staff Management')
 @Controller('staff')

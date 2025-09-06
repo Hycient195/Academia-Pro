@@ -2,7 +2,7 @@
 // DTOs for attendance API responses
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TAttendanceStatus, TAttendanceType, TAttendanceMethod, IAttendanceResponse, IStudentAttendanceReport, IClassAttendanceReport, IAttendanceListResponse, IBulkMarkAttendanceRequest } from '@academia-pro/common/attendance';
+import { TAttendanceStatus, TAttendanceType, TAttendanceMethod, IAttendanceResponse, IStudentAttendanceReport, IClassAttendanceReport, IAttendanceListResponse, IBulkMarkAttendanceRequest } from '@academia-pro/types/attendance';
 
 export class AttendanceResponseDto {
   @ApiProperty({

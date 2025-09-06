@@ -587,11 +587,11 @@ export const FormCountrySelect = ({
   inputSize = "MEDIUM",
   showFlag = false
 }: ICountrySelectProps) => {
-  const onValueChange = (arg: string | number | { target: { value: string | number | boolean; name?: string } } | React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (typeof arg === 'string' || typeof arg === 'number') {
-      if (onChange) onChange({ target: { name, value: arg } })
-    }
-  }
+  // const onValueChange = (arg: string | number | { target: { value: string | number | boolean; name?: string } } | React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>) => {
+  //   if (typeof arg === 'string' || typeof arg === 'number') {
+  //     if (onChange) onChange({ target: { name, value: arg } })
+  //   }
+  // }
 
   const countries = Country.getAllCountries()
   const options = countries.map((country: { isoCode: string; name: string; flag?: string }) => ({
@@ -614,7 +614,13 @@ export const FormCountrySelect = ({
       ref={ref}
       defaultValue={defaultValue as string}
       options={options}
-      onChange={onValueChange}
+      onChange={onChange as (arg: string | number | React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement> | {
+          target: {
+              value: string | number | boolean;
+              name?: string;
+          };
+        }) => void
+      }
       footerText={footerText}
       name={name}
       id={id}
@@ -639,6 +645,14 @@ export const FormCountrySelect = ({
 interface IRegionSelectProps extends Omit<IProps, "onChange">, ISelectProps {
   countryCode: string;
   onChange?: (arg: { target: { value: string | number, name?: string } } | React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>) => void
+}
+
+// FormMultiSelect Component
+interface IMultiSelectProps extends Omit<IProps, "onChange" | "value">, ISelectProps {
+  value?: string[];
+  onChange?: (arg: { target: { value: string[], name?: string } } | React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>) => void
+  maxSelection?: number;
+  placeholder?: string;
 }
 
 export const FormRegionSelect = ({
@@ -666,11 +680,11 @@ export const FormRegionSelect = ({
   inputSize = "MEDIUM",
   countryCode
 }: IRegionSelectProps) => {
-  const onValueChange = (arg: string | number | { target: { value: string | number | boolean; name?: string } } | React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (typeof arg === 'string' || typeof arg === 'number') {
-      if (onChange) onChange({ target: { name, value: arg } })
-    }
-  }
+  // const onValueChange = (arg: string | number | { target: { value: string | number | boolean; name?: string } } | React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>) => {
+  //   if (typeof arg === 'string' || typeof arg === 'number') {
+  //     if (onChange) onChange({ target: { name, value: arg } })
+  //   }
+  // }
 
   const regions = State.getStatesOfCountry(countryCode)
   const options = regions.map((region: { name: string; isoCode: string }) => ({
@@ -686,7 +700,13 @@ export const FormRegionSelect = ({
       ref={ref}
       defaultValue={defaultValue as string}
       options={options}
-      onChange={onValueChange}
+      onChange={onChange as (arg: string | number | React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement> | {
+          target: {
+              value: string | number | boolean;
+              name?: string;
+          };
+        }) => void
+      }
       footerText={footerText}
       name={name}
       id={id}
@@ -704,5 +724,157 @@ export const FormRegionSelect = ({
       showHintText={showHintText}
       inputSize={inputSize}
     />
+  )
+}
+
+// FormMultiSelect Component
+export const FormMultiSelect = ({
+  labelText,
+  errorText,
+  footerTextClassName,
+  ref,
+  onChange,
+  footerText,
+  name,
+  id,
+  placeholder = "Select options",
+  value = [],
+  options,
+  wrapperClassName,
+  labelClassName,
+  isLoading = false,
+  disabled = false,
+  required,
+  inputClassName,
+  triggerClassName,
+  contentClassName,
+  showHintText = true,
+  inputSize = "MEDIUM",
+  maxSelection
+}: IMultiSelectProps) => {
+  const [selectedValues, setSelectedValues] = React.useState<string[]>(Array.isArray(value) ? value : [])
+
+  const onValueChange = (newValues: string[]) => {
+    if (maxSelection && newValues.length > maxSelection) {
+      return // Don't allow more than max selection
+    }
+
+    setSelectedValues(newValues)
+
+    if (onChange) {
+      onChange({ target: { name, value: newValues } })
+    }
+  }
+
+  const handleSelectChange = (optionValue: string) => {
+    const newValues = selectedValues.includes(optionValue)
+      ? selectedValues.filter(v => v !== optionValue)
+      : [...selectedValues, optionValue]
+
+    onValueChange(newValues)
+  }
+
+  const sizeClass = inputSize === "LARGE" ? "!py-4" : "!py-3.5"
+
+  const displayText = selectedValues.length > 0
+    ? selectedValues.length === 1
+      ? options?.find(opt => opt.value === selectedValues[0])?.text || selectedValues[0]
+      : `${selectedValues.length} selected`
+    : placeholder
+
+  return (
+    <label htmlFor={id} className={wrapperClassName}>
+      {labelText && (
+        <p className={cn(
+          "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-1.5",
+          isLoading && "text-muted-foreground",
+          labelClassName
+        )}>
+          {labelText}
+        </p>
+      )}
+      <div className="relative">
+        {showHintText && (
+          <span className={cn(
+            "absolute top-1.5 left-3.5 lg:left-4.5 text-muted text-[10px] animate-fade-in uppercase z-[1]",
+            (showHintText && selectedValues.length === 0) && "!hidden"
+          )}>
+            {placeholder}
+          </span>
+        )}
+        <Select
+          required={required}
+          onValueChange={() => {}} // We'll handle selection manually
+          value=""
+          name={name}
+          disabled={disabled}
+        >
+          <SelectTrigger
+            ref={ref as React.LegacyRef<HTMLButtonElement>}
+            className={cn(
+              "flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50",
+              isLoading && "bg-muted animate-pulse",
+              sizeClass,
+              selectedValues.length > 0 ? "!text-foreground" : "!text-muted-foreground",
+              triggerClassName,
+              inputClassName
+            )}
+          >
+            <span className={cn(
+              selectedValues.length === 0 && "text-muted-foreground"
+            )}>
+              {displayText}
+            </span>
+            <SelectValue placeholder={placeholder} />
+          </SelectTrigger>
+          <SelectContent className={contentClassName}>
+            {options && options.map((option, index: number) => {
+              const isSelected = selectedValues.includes(option.value as string)
+              return (
+                <div
+                  key={`${labelText}-${index}`}
+                  className={cn(
+                    "relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+                    isSelected && "bg-accent"
+                  )}
+                  onClick={() => handleSelectChange(option.value as string)}
+                >
+                  <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+                    <div className={cn(
+                      "h-2 w-2 rounded-sm border border-primary",
+                      isSelected ? "bg-primary" : "bg-transparent"
+                    )} />
+                  </span>
+                  <span className="!font-lexend !font-zinc-600 !font-light">
+                    {option.text}
+                  </span>
+                </div>
+              )
+            })}
+            {maxSelection && (
+              <div className="px-2 py-1 text-xs text-muted-foreground border-t mt-1">
+                {selectedValues.length}/{maxSelection} selected
+              </div>
+            )}
+          </SelectContent>
+        </Select>
+      </div>
+      {footerText && (
+        <p className={cn(
+          "text-xs text-muted-foreground mt-1.5",
+          footerTextClassName
+        )}>
+          {footerText}
+        </p>
+      )}
+      {errorText && (
+        <p className={cn(
+          "text-sm mt-1.5 font-light",
+          isLoading ? "text-zinc-300" : "text-red-600"
+        )}>
+          {errorText}
+        </p>
+      )}
+    </label>
   )
 }

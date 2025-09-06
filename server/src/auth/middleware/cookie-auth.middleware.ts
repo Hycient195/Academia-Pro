@@ -1,9 +1,7 @@
 import { Injectable, NestMiddleware, UnauthorizedException } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { JwtService } from '@nestjs/jwt';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User } from '../../users/user.entity';
+import { UsersService } from '../../users/users.service';
 import * as bcrypt from 'bcryptjs';
 
 export interface AuthenticatedRequest extends Request {
@@ -19,8 +17,7 @@ export interface AuthenticatedRequest extends Request {
 export class CookieAuthMiddleware implements NestMiddleware {
   constructor(
     private readonly jwtService: JwtService,
-    @InjectRepository(User)
-    private readonly usersRepository: Repository<User>,
+    private readonly usersService: UsersService,
   ) {}
 
   async use(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -44,10 +41,7 @@ export class CookieAuthMiddleware implements NestMiddleware {
         // Verify access token
         try {
           const payload = this.jwtService.verify(accessToken);
-          const user = await this.usersRepository.findOne({
-            where: { id: payload.sub },
-            select: ['id', 'email', 'firstName', 'lastName', 'role', 'status', 'schoolId', 'isEmailVerified'],
-          });
+          const user = await this.usersService.findOneForAuth(payload.sub);
 
           if (user && user.status === 'active') {
             req.user = user;
@@ -73,10 +67,7 @@ export class CookieAuthMiddleware implements NestMiddleware {
 
       // Verify refresh token
       const payload = this.jwtService.verify(refreshToken);
-      const user = await this.usersRepository.findOne({
-        where: { id: payload.sub },
-        select: ['id', 'email', 'refreshToken', 'refreshTokenExpires', 'role', 'schoolId'],
-      });
+      const user = await this.usersService.findOneForRefreshToken(payload.sub);
 
       if (!user || !user.refreshToken) return;
 
@@ -99,19 +90,17 @@ export class CookieAuthMiddleware implements NestMiddleware {
       const newRefreshToken = this.jwtService.sign(newPayload, { expiresIn: '7d' });
 
       // Update stored refresh token
-      await this.usersRepository.update(user.id, {
-        refreshToken: await bcrypt.hash(newRefreshToken, 10),
-        refreshTokenExpires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      });
+      await this.usersService.updateRefreshToken(
+        user.id,
+        newRefreshToken,
+        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+      );
 
       // Set new cookies
       this.setAuthCookies(res, newAccessToken, newRefreshToken);
 
       // Set user on request
-      const fullUser = await this.usersRepository.findOne({
-        where: { id: user.id },
-        select: ['id', 'email', 'firstName', 'lastName', 'role', 'status', 'schoolId', 'isEmailVerified'],
-      });
+      const fullUser = await this.usersService.findOneForAuth(user.id);
 
       if (fullUser && fullUser.status === 'active') {
         req.user = fullUser;

@@ -16,7 +16,7 @@ import {
   IEmergencyContact,
   IWorkSchedule,
   IBenefits
-} from '@academia-pro/common/staff';
+} from '@academia-pro/types/staff';
 import { Type } from 'class-transformer';
 
 export class AddressDto {

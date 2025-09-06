@@ -3,7 +3,7 @@
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Subject } from '../subject.entity';
-import { TSubjectType, TGradeLevel, ISubjectResponse } from '../../../../common/src/types/academic/academic.types';
+import { TSubjectType, TGradeLevel, ISubjectResponse } from '@academia-pro/types/academic';
 
 export class SubjectResponseDto implements ISubjectResponse {
   @ApiProperty({
@@ -36,6 +36,12 @@ export class SubjectResponseDto implements ISubjectResponse {
     example: 'Advanced mathematics covering algebra and geometry',
   })
   description?: string;
+
+  @ApiProperty({
+    description: 'Grade level',
+    example: 'grade_10',
+  })
+  grade: string;
 
   @ApiPropertyOptional({
     description: 'Credit hours',
@@ -99,6 +105,7 @@ export class SubjectResponseDto implements ISubjectResponse {
     dto.type = subject.type;
     dto.description = subject.description;
     dto.credits = subject.credits;
+    dto.grade = subject.grade;
     dto.gradeLevels = subject.gradeLevels;
     dto.isActive = subject.isActive;
     dto.schoolId = subject.schoolId;

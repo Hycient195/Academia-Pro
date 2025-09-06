@@ -17,6 +17,7 @@ export declare enum TMobileNotificationType {
     EMERGENCY = "emergency",
     SYSTEM = "system"
 }
+export type { IMobileStudentDashboardResponse as IStudentDashboardResponse, IMobileNotificationSummary as INotificationSummary };
 export declare enum TEmergencyType {
     MEDICAL = "medical",
     SAFETY = "safety",
@@ -634,4 +635,3 @@ export interface IMobileTrackAnalyticsResponse {
     failed: number;
     timestamp: Date;
 }
-//# sourceMappingURL=mobile.types.d.ts.map

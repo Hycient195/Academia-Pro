@@ -3,7 +3,7 @@
 
 import { IsNotEmpty, IsOptional, IsString, IsEnum, IsDateString, IsBoolean, IsNumber, Min, Max, MaxLength, IsArray, IsObject, ValidateNested } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ICreateExamRequest, TExamType, TAssessmentType, TGradingMethod } from '@academia-pro/common/examination';
+import { ICreateExamRequest, TExamType, TAssessmentType, TGradingMethod } from '@academia-pro/types/examination';
 
 export class EligibilityCriteriaDto {
   @ApiPropertyOptional({

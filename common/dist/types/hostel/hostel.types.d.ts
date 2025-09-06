@@ -910,4 +910,3 @@ export interface IHostelNotificationTemplate {
     createdAt: Date;
     updatedAt: Date;
 }
-//# sourceMappingURL=hostel.types.d.ts.map

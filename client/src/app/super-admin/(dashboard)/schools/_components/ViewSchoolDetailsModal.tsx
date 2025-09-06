@@ -1,7 +1,8 @@
 "use client"
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { apis, type ISuperAdminSchool } from "@/redux/api"
+import { apis } from "@/redux/api"
+import { ISuperAdminSchool } from "@academia-pro/types/super-admin"
 
 interface ViewSchoolDetailsModalProps {
   isOpen: boolean

@@ -540,4 +540,3 @@ export interface IPaymentGatewayResponse {
     gatewayResponse: any;
     processedAt: Date;
 }
-//# sourceMappingURL=fee.types.d.ts.map

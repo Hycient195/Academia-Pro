@@ -4,7 +4,7 @@ import {
   ISuperAdminSchool,
   ISuperAdminUser,
   ISystemMetrics,
-  IAnalyticsData,
+  ISuperAdminAnalyticsData,
   ISystemHealth,
   ISubscriptionAnalytics,
   ISchoolComparison,
@@ -25,12 +25,18 @@ import {
   IUpdateDelegatedAccountRequest,
   ISuperAdminLoginRequest,
   ISuperAdminLoginResponse,
-} from '@academia-pro/common/super-admin';
+} from '@academia-pro/types/super-admin';
+// import { IUserPermissionRole, EUserStatus } from '@academia-pro/types/shared';
+import { PaginatedResponse } from '@academia-pro/types/shared';
+import { GLOBAL_API_URL } from '../globalURLs';
+import { EUserRole, EUserStatus } from '@academia-pro/types/users';
+
+console.log(GLOBAL_API_URL)
 
 export const superAdminApi = createApi({
   reducerPath: 'superAdminApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/v1`,
+    baseUrl: GLOBAL_API_URL,
     prepareHeaders: (headers) => {
       headers.set('Content-Type', 'application/json');
       return headers;
@@ -70,7 +76,8 @@ export const superAdminApi = createApi({
     }),
 
     // School Management
-    getAllSchools: builder.query<{ schools: ISuperAdminSchool[]; total: number }, ISchoolFilters>({
+    // getAllSchools: builder.query<{ schools: ISuperAdminSchool[]; pagination: { page: number; limit: number; total: number; totalPages: number; hasNext: boolean; hasPrev: boolean } }, ISchoolFilters>({
+    getAllSchools: builder.query<PaginatedResponse<ISuperAdminSchool>, ISchoolFilters>({
       query: (filters) => ({
         url: '/super-admin/schools',
         params: filters,
@@ -100,6 +107,7 @@ export const superAdminApi = createApi({
       }),
       invalidatesTags: (result, error, { schoolId }) => [
         { type: 'Schools', id: schoolId },
+        'Schools', // Also invalidate the general schools list
         'SystemOverview'
       ],
     }),
@@ -113,6 +121,23 @@ export const superAdminApi = createApi({
     }),
 
     // User Management
+    createUser: builder.mutation<ISuperAdminUser, { firstName: string; lastName: string; middleName?: string; email: string; role?: EUserRole; schoolId?: string; status?: EUserStatus; phone?: string }>({
+      query: (userData) => ({
+        url: '/super-admin/users',
+        method: 'POST',
+        body: userData,
+      }),
+      invalidatesTags: ['Users', 'SystemOverview'],
+    }),
+
+    getAllUsers: builder.query<PaginatedResponse<ISuperAdminUser>, IUserFilters>({
+      query: (filters) => ({
+        url: '/super-admin/users',
+        params: filters,
+      }),
+      providesTags: ['Users'],
+    }),
+
     getCrossSchoolUsers: builder.query<{ users: ISuperAdminUser[]; total: number }, IUserFilters>({
       query: (filters) => ({
         url: '/super-admin/users',
@@ -126,7 +151,7 @@ export const superAdminApi = createApi({
       providesTags: (result, error, userId) => [{ type: 'Users', id: userId }],
     }),
 
-    updateUser: builder.mutation<ISuperAdminUser, { userId: string; updates: Partial<ISuperAdminUser> }>({
+    updateUser: builder.mutation<ISuperAdminUser, { userId: string; updates: { firstName?: string; lastName?: string; middleName?: string; email?: string; role?: EUserRole; schoolId?: string; status?: EUserStatus; phone?: string } }>({
       query: ({ userId, updates }) => ({
         url: `/super-admin/users/${userId}`,
         method: 'PATCH',
@@ -134,6 +159,7 @@ export const superAdminApi = createApi({
       }),
       invalidatesTags: (result, error, { userId }) => [
         { type: 'Users', id: userId },
+        'Users', // Also invalidate the general users list
         'SystemOverview'
       ],
     }),
@@ -156,7 +182,7 @@ export const superAdminApi = createApi({
     }),
 
     // Analytics
-    getSystemAnalytics: builder.query<IAnalyticsData, { period: string }>({
+    getSystemAnalytics: builder.query<ISuperAdminAnalyticsData, { period: string }>({
       query: ({ period }) => ({
         url: '/super-admin/analytics',
         params: { period },

@@ -27,4 +27,3 @@ var TAcademicAlertType;
     TAcademicAlertType["ACADEMIC_IMPROVEMENT"] = "academic_improvement";
     TAcademicAlertType["ACHIEVEMENT"] = "achievement";
 })(TAcademicAlertType || (exports.TAcademicAlertType = TAcademicAlertType = {}));
-//# sourceMappingURL=parent-portal.types.js.map

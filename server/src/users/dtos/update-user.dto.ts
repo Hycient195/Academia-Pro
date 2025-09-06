@@ -3,6 +3,6 @@
 
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateUserDto } from './create-user.dto';
-import { IUpdateUserRequest } from '@academia-pro/common/users';
+import { IUpdateUserRequest } from '@academia-pro/types/users';
 
 export class UpdateUserDto extends PartialType(CreateUserDto) implements Partial<IUpdateUserRequest> {}

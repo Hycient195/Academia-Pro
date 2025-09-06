@@ -2,13 +2,14 @@
 // Database entity for academic subjects
 
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable, OneToMany } from 'typeorm';
-import { TSubjectType, TGradeLevel } from '../../../common/src/types/academic/academic.types';
+// import { TSubjectType, TGradeLevel } from '@academia-pro/types/academic';
 
 // Type-only imports to avoid circular dependency issues
 import type { Curriculum } from './curriculum.entity';
 import type { ClassSubject } from './class-subject.entity';
 import type { CurriculumSubject } from './curriculum-subject.entity';
 import type { LearningObjective } from './learning-objective.entity';
+import { TGradeLevel, TSubjectType } from '@academia-pro/types/academic';
 
 @Entity('subjects')
 export class Subject {
@@ -30,6 +31,9 @@ export class Subject {
 
   @Column({ type: 'text', nullable: true })
   description: string;
+
+  @Column({ length: 20, nullable: true })
+  grade: string;
 
   @Column({ type: 'decimal', precision: 3, scale: 1, nullable: true })
   credits: number;

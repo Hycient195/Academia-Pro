@@ -3,7 +3,7 @@
 
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Index, OneToMany } from 'typeorm';
 import { randomBytes } from 'crypto';
-import { UserRole, UserStatus } from '../../../common/src/types/shared/types';
+import { IUserPermissionRole, EUserStatus } from '@academia-pro/types/users';
 
 @Entity('users')
 @Index(['email'], { unique: true })
@@ -30,14 +30,14 @@ export class User {
     enum: ['super-admin', 'school-admin', 'teacher', 'student', 'parent'],
     default: 'student'
   })
-  role: UserRole;
+  role: IUserPermissionRole;
 
   @Column({
     type: 'enum',
     enum: ['active', 'inactive', 'suspended', 'pending'],
     default: 'active'
   })
-  status: UserStatus;
+  status: EUserStatus;
 
   @Column({ type: 'varchar', length: 20, nullable: true })
   phone: string;

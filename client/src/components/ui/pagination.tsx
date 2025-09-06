@@ -7,11 +7,23 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 
-export interface PaginationProps {
-  currentPage: number
+export interface PaginationData {
+  page: number
+  limit: number
+  total: number
   totalPages: number
-  totalItems: number
-  pageSize: number
+  hasNext: boolean
+  hasPrev: boolean
+}
+
+export interface PaginationProps {
+  // New pagination object (preferred)
+  pagination?: PaginationData
+  // Legacy props (for backward compatibility)
+  currentPage?: number
+  totalPages?: number
+  totalItems?: number
+  pageSize?: number
   pageSizeOptions?: number[]
   onPageChange: (page: number) => void
   onPageSizeChange: (pageSize: number) => void
@@ -20,11 +32,13 @@ export interface PaginationProps {
   className?: string
 }
 
+
 export function Pagination({
-  currentPage,
-  totalPages,
-  totalItems,
-  pageSize,
+  pagination,
+  currentPage: legacyCurrentPage,
+  totalPages: legacyTotalPages,
+  totalItems: legacyTotalItems,
+  pageSize: legacyPageSize,
   pageSizeOptions = [10, 25, 50, 100],
   onPageChange,
   onPageSizeChange,
@@ -32,6 +46,12 @@ export function Pagination({
   showInfo = true,
   className,
 }: PaginationProps) {
+  // Use pagination object if provided, otherwise fall back to legacy props
+  const currentPage = pagination?.page ?? legacyCurrentPage ?? 1
+  const totalPages = pagination?.totalPages ?? legacyTotalPages ?? 1
+  const totalItems = pagination?.total ?? legacyTotalItems ?? 0
+  const pageSize = pagination?.limit ?? legacyPageSize ?? 10
+
   const startItem = (currentPage - 1) * pageSize + 1
   const endItem = Math.min(currentPage * pageSize, totalItems)
 
@@ -92,7 +112,7 @@ export function Pagination({
           variant="outline"
           size="sm"
           onClick={() => onPageChange(1)}
-          disabled={currentPage === 1}
+          disabled={pagination?.hasPrev === false || currentPage === 1}
           className="hidden sm:flex"
         >
           <IconChevronsLeft className="h-4 w-4" />
@@ -103,7 +123,7 @@ export function Pagination({
           variant="outline"
           size="sm"
           onClick={() => onPageChange(currentPage - 1)}
-          disabled={currentPage === 1}
+          disabled={pagination?.hasPrev === false || currentPage === 1}
         >
           <IconChevronLeft className="h-4 w-4" />
           <span className="hidden sm:inline ml-1">Previous</span>
@@ -134,7 +154,7 @@ export function Pagination({
           variant="outline"
           size="sm"
           onClick={() => onPageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
+          disabled={pagination?.hasNext === false || currentPage === totalPages}
         >
           <span className="hidden sm:inline mr-1">Next</span>
           <IconChevronRight className="h-4 w-4" />
@@ -145,7 +165,7 @@ export function Pagination({
           variant="outline"
           size="sm"
           onClick={() => onPageChange(totalPages)}
-          disabled={currentPage === totalPages}
+          disabled={pagination?.hasNext === false || currentPage === totalPages}
           className="hidden sm:flex"
         >
           <IconChevronsRight className="h-4 w-4" />

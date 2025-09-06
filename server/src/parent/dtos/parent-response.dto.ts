@@ -3,7 +3,7 @@
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Parent } from '../parent.entity';
-import { TParentRelationship, TPortalAccessLevel } from '../../../../common/src/types/parent/parent.types';
+import { TParentRelationship, TPortalAccessLevel } from '@academia-pro/types/parent/parent.types';
 
 export class ParentResponseDto {
   @ApiProperty({

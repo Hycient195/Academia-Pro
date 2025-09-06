@@ -4,15 +4,16 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User, UserRole, UserStatus } from '../../users/user.entity';
+import { User } from '../../users/user.entity';
+import { EUserRole, EUserStatus } from '@academia-pro/types/users';
 
 export interface UserProfile {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
-  role: UserRole;
-  status: UserStatus;
+  role: EUserRole;
+  status: EUserStatus;
   phone?: string;
   dateOfBirth?: Date;
   gender?: 'male' | 'female' | 'other';
@@ -36,8 +37,8 @@ export interface UserUpdateData {
 }
 
 export interface UserSearchFilters {
-  role?: UserRole;
-  status?: UserStatus;
+  role?: EUserRole;
+  status?: EUserStatus;
   schoolId?: string;
   email?: string;
   firstName?: string;
@@ -53,7 +54,7 @@ export interface UserStats {
   inactiveUsers: number;
   suspendedUsers: number;
   pendingUsers: number;
-  roleBreakdown: Record<UserRole, number>;
+  roleBreakdown: Record<EUserRole, number>;
   recentRegistrations: number;
   emailVerificationRate: number;
 }
@@ -181,7 +182,7 @@ export class UserManagementService {
   /**
    * Update user role
    */
-  async updateUserRole(userId: string, newRole: UserRole, updatedBy: string): Promise<UserProfile> {
+  async updateUserRole(userId: string, newRole: EUserRole, updatedBy: string): Promise<UserProfile> {
     const user = await this.usersRepository.findOne({
       where: { id: userId },
     });
@@ -213,7 +214,7 @@ export class UserManagementService {
   /**
    * Update user status
    */
-  async updateUserStatus(userId: string, newStatus: UserStatus, updatedBy: string): Promise<UserProfile> {
+  async updateUserStatus(userId: string, newStatus: EUserStatus, updatedBy: string): Promise<UserProfile> {
     const user = await this.usersRepository.findOne({
       where: { id: userId },
     });
@@ -263,7 +264,7 @@ export class UserManagementService {
    */
   async bulkUpdateUsers(
     userIds: string[],
-    updates: Partial<UserUpdateData & { role?: UserRole; status?: UserStatus }>,
+    updates: Partial<UserUpdateData & { role?: EUserRole; status?: EUserStatus }>,
     updatedBy: string
   ): Promise<{ updated: number; failed: number }> {
     let updated = 0;
@@ -374,7 +375,7 @@ export class UserManagementService {
   /**
    * Get users by role
    */
-  async getUsersByRole(role: UserRole): Promise<UserProfile[]> {
+  async getUsersByRole(role: EUserRole): Promise<UserProfile[]> {
     const users = await this.usersRepository.find({
       where: { role },
       order: { createdAt: 'DESC' },
@@ -442,7 +443,7 @@ export class UserManagementService {
     };
   }
 
-  private isValidRoleTransition(currentRole: UserRole, newRole: UserRole): boolean {
+  private isValidRoleTransition(currentRole: EUserRole, newRole: EUserRole): boolean {
     // Define valid role transitions
     const validTransitions: Record<string, string[]> = {
       'super-admin': ['super-admin', 'school-admin'],

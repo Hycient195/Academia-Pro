@@ -14,7 +14,7 @@ import {
   TLanguage,
   TAcquisitionMethod,
   TBookCondition
-} from '@academia-pro/common/library';
+} from '@academia-pro/types/library';
 
 export class AdditionalImageDto implements IAdditionalImage {
   @ApiProperty({

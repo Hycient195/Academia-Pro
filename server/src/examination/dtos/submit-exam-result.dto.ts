@@ -3,7 +3,7 @@
 
 import { IsNotEmpty, IsOptional, IsString, IsNumber, Min, Max, IsArray, IsObject, ValidateNested } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ISubmitExamResultRequest, IGradeExamResultRequest } from '@academia-pro/common/examination';
+import { ISubmitExamResultRequest, IGradeExamResultRequest } from '@academia-pro/types/examination';
 
 export class QuestionScoreDto {
   @ApiProperty({

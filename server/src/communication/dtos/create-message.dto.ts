@@ -3,7 +3,7 @@
 
 import { IsString, IsOptional, IsEnum, IsArray, IsUUID, IsObject } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ICreateMessageRequest, TMessageType, TMessagePriority, TRecipientType } from '@academia-pro/common/communication';
+import { ICreateMessageRequest, TMessageType, TMessagePriority, TRecipientType } from '@academia-pro/types/communication';
 
 export class CreateMessageDto implements ICreateMessageRequest {
   @ApiProperty({

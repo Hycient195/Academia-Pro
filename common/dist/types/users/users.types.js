@@ -2,16 +2,26 @@
 // Academia Pro - Users Types
 // Shared type definitions for users module
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TUserTheme = exports.TUserGender = exports.TUserStatus = void 0;
+exports.TUserTheme = exports.TUserGender = exports.EUserRole = exports.EUserStatus = void 0;
+// import { IUserPermissionRole, EUserStatus } from '../shared';
 // Enums
-var TUserStatus;
-(function (TUserStatus) {
-    TUserStatus["ACTIVE"] = "active";
-    TUserStatus["INACTIVE"] = "inactive";
-    TUserStatus["SUSPENDED"] = "suspended";
-    TUserStatus["PENDING"] = "pending";
-    TUserStatus["DELETED"] = "deleted";
-})(TUserStatus || (exports.TUserStatus = TUserStatus = {}));
+var EUserStatus;
+(function (EUserStatus) {
+    EUserStatus["ACTIVE"] = "active";
+    EUserStatus["INACTIVE"] = "inactive";
+    EUserStatus["SUSPENDED"] = "suspended";
+    EUserStatus["PENDING"] = "pending";
+    EUserStatus["DELETED"] = "deleted";
+})(EUserStatus || (exports.EUserStatus = EUserStatus = {}));
+// Define enums locally since @academia-pro may not be available during development
+var EUserRole;
+(function (EUserRole) {
+    EUserRole["SUPER_ADMIN"] = "super-admin";
+    EUserRole["SCHOOL_ADMIN"] = "school-admin";
+    EUserRole["TEACHER"] = "teacher";
+    EUserRole["STUDENT"] = "student";
+    EUserRole["PARENT"] = "parent";
+})(EUserRole || (exports.EUserRole = EUserRole = {}));
 var TUserGender;
 (function (TUserGender) {
     TUserGender["MALE"] = "male";
@@ -25,4 +35,3 @@ var TUserTheme;
     TUserTheme["AUTO"] = "auto";
 })(TUserTheme || (exports.TUserTheme = TUserTheme = {}));
 // All types are exported above with their declarations
-//# sourceMappingURL=users.types.js.map

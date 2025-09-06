@@ -1,4 +1,3 @@
-import { theme } from 'antd';
 
 // Theme mode types
 export type ThemeMode = 'light' | 'dark';
@@ -33,7 +32,6 @@ export const createAcademiaTheme = (mode: ThemeMode = 'light', customColors?: Pa
   const isDark = mode === 'dark';
 
   return {
-    algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
     token: {
       // Primary Colors (customizable per school)
       colorPrimary: customColors?.primaryColor || '#2196f3',

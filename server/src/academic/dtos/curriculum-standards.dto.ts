@@ -1,6 +1,6 @@
+import { TGradeLevel } from '@academia-pro/types/academic';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsEnum, IsOptional, IsArray, IsDateString, IsBoolean, IsNumber, ValidateNested, Min, Max } from 'class-validator';
-import { TGradeLevel } from '../../../../common/src/types/academic/academic.types';
 
 export enum StandardType {
   NATIONAL = 'national',

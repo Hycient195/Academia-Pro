@@ -2,7 +2,7 @@
 // Database entity for staff and HR management
 
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToOne, JoinColumn, Index } from 'typeorm';
-import { TEmploymentType, TEmploymentStatus, TDepartment, TPosition, TQualificationLevel, TLeaveType, TLeaveStatus } from '../../../common/src/types/staff/staff.types';
+import { TEmploymentType, TEmploymentStatus, TDepartment, TPosition, TQualificationLevel, TLeaveType, TLeaveStatus } from '@academia-pro/types/staff';
 
 @Entity('staff')
 @Index(['schoolId', 'employeeId'], { unique: true })

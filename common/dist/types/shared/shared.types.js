@@ -2,7 +2,7 @@
 // Academia Pro - Shared Types
 // Common types used across multiple modules
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.searchSchema = exports.paginationSchema = exports.addressSchema = exports.TSubjectType = exports.TGradeLevel = exports.TSchoolStatus = exports.TSchoolType = exports.TBloodGroup = exports.TDepreciationMethod = exports.TCommunicationChannel = exports.TCommunicationType = void 0;
+exports.changePasswordSchema = exports.updateProfileSchema = exports.createUserSchema = exports.searchSchema = exports.paginationSchema = exports.addressSchema = exports.TNotificationType = exports.TMessagePriority = exports.TSubjectType = exports.TGradeLevel = exports.TSchoolStatus = exports.TSchoolType = exports.TBloodGroup = exports.TDepreciationMethod = exports.TCommunicationChannel = exports.TCommunicationType = void 0;
 const zod_1 = require("zod");
 var TCommunicationType;
 (function (TCommunicationType) {
@@ -41,6 +41,15 @@ var TBloodGroup;
 })(TBloodGroup || (exports.TBloodGroup = TBloodGroup = {}));
 var TSchoolType;
 (function (TSchoolType) {
+    TSchoolType["PRESCHOOL"] = "preschool";
+    TSchoolType["ELEMENTARY"] = "elementary";
+    TSchoolType["MIDDLE_SCHOOL"] = "middle_school";
+    TSchoolType["HIGH_SCHOOL"] = "high_school";
+    TSchoolType["SENIOR_SECONDARY"] = "senior_secondary";
+    TSchoolType["UNIVERSITY"] = "university";
+    TSchoolType["COLLEGE"] = "college";
+    TSchoolType["INSTITUTE"] = "institute";
+    TSchoolType["TRAINING_CENTER"] = "training_center";
     TSchoolType["PRIMARY"] = "primary";
     TSchoolType["SECONDARY"] = "secondary";
     TSchoolType["MIXED"] = "mixed";
@@ -79,6 +88,22 @@ var TSubjectType;
     TSubjectType["ARTS"] = "arts";
     TSubjectType["SPORTS"] = "sports";
 })(TSubjectType || (exports.TSubjectType = TSubjectType = {}));
+// Message Priority Enum (moved from communication to avoid circular dependency)
+var TMessagePriority;
+(function (TMessagePriority) {
+    TMessagePriority["LOW"] = "low";
+    TMessagePriority["NORMAL"] = "normal";
+    TMessagePriority["HIGH"] = "high";
+    TMessagePriority["URGENT"] = "urgent";
+})(TMessagePriority || (exports.TMessagePriority = TMessagePriority = {}));
+// Notification Types
+var TNotificationType;
+(function (TNotificationType) {
+    TNotificationType["INFO"] = "info";
+    TNotificationType["SUCCESS"] = "success";
+    TNotificationType["WARNING"] = "warning";
+    TNotificationType["ERROR"] = "error";
+})(TNotificationType || (exports.TNotificationType = TNotificationType = {}));
 // Common Validation Schemas
 exports.addressSchema = zod_1.z.object({
     street: zod_1.z.string().min(1, 'Street is required'),
@@ -105,4 +130,37 @@ exports.searchSchema = zod_1.z.object({
         end: zod_1.z.date(),
     }).optional(),
 });
-//# sourceMappingURL=shared.types.js.map
+// Validation Schemas (using Zod)
+exports.createUserSchema = zod_1.z.object({
+    email: zod_1.z.string().email('Invalid email address'),
+    firstName: zod_1.z.string().min(1, 'First name is required').max(50),
+    lastName: zod_1.z.string().min(1, 'Last name is required').max(50),
+    role: zod_1.z.enum(['super-admin', 'school-admin', 'teacher', 'student', 'parent']),
+    phone: zod_1.z.string().optional(),
+    schoolId: zod_1.z.string().optional(),
+    sendWelcomeEmail: zod_1.z.boolean().default(true),
+});
+exports.updateProfileSchema = zod_1.z.object({
+    firstName: zod_1.z.string().min(1).max(50).optional(),
+    lastName: zod_1.z.string().min(1).max(50).optional(),
+    phone: zod_1.z.string().optional(),
+    dateOfBirth: zod_1.z.date().optional(),
+    gender: zod_1.z.enum(['male', 'female', 'other']).optional(),
+    address: zod_1.z.object({
+        street: zod_1.z.string(),
+        city: zod_1.z.string(),
+        state: zod_1.z.string(),
+        postalCode: zod_1.z.string(),
+        country: zod_1.z.string(),
+    }).optional(),
+});
+exports.changePasswordSchema = zod_1.z.object({
+    currentPassword: zod_1.z.string().min(1, 'Current password is required'),
+    newPassword: zod_1.z.string()
+        .min(8, 'Password must be at least 8 characters')
+        .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Password must contain uppercase, lowercase, and number'),
+    confirmPassword: zod_1.z.string(),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+});

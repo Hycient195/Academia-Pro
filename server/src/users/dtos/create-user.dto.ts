@@ -3,8 +3,7 @@
 
 import { IsEmail, IsString, IsNotEmpty, IsOptional, IsEnum, IsDateString, MinLength, MaxLength, IsObject } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { UserRole } from '../../../../common/src/types/shared/types';
-import { ICreateUserRequest } from '../../../../common/src/types/users';
+import { ICreateUserRequest, EUserStatus, EUserRole } from '@academia-pro/types/users';
 
 export class CreateUserDto implements ICreateUserRequest {
   @ApiProperty({
@@ -51,6 +50,16 @@ export class CreateUserDto implements ICreateUserRequest {
   lastName: string;
 
   @ApiPropertyOptional({
+    description: 'User middle name',
+    example: 'Michael',
+    maxLength: 50,
+  })
+  @IsOptional()
+  @IsString({ message: 'Middle name must be a string' })
+  @MaxLength(50, { message: 'Middle name cannot exceed 50 characters' })
+  middleName?: string;
+
+  @ApiPropertyOptional({
     description: 'User role',
     example: 'student',
     enum: ['super-admin', 'school-admin', 'teacher', 'student', 'parent'],
@@ -59,7 +68,18 @@ export class CreateUserDto implements ICreateUserRequest {
   @IsEnum(['super-admin', 'school-admin', 'teacher', 'student', 'parent'], {
     message: 'Role must be one of: super-admin, school-admin, teacher, student, parent'
   })
-  role?: UserRole;
+  role?: EUserRole;
+
+  @ApiPropertyOptional({
+    description: 'User status',
+    example: 'active',
+    enum: ['active', 'inactive', 'suspended', 'pending', 'deleted'],
+  })
+  @IsOptional()
+  @IsEnum(['active', 'inactive', 'suspended', 'pending', 'deleted'], {
+    message: 'Status must be one of: active, inactive, suspended, pending, deleted'
+  })
+  status?: EUserStatus;
 
   @ApiPropertyOptional({
     description: 'User phone number',

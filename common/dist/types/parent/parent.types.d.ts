@@ -1,4 +1,5 @@
 import { IAddress, IAlert, IEmergencyContact, INotification, TCommunicationType } from '../shared';
+export type { TCommunicationType };
 export declare enum TParentRelationship {
     FATHER = "father",
     MOTHER = "mother",
@@ -35,6 +36,7 @@ export interface IParent {
     schoolId: string;
     firstName: string;
     lastName: string;
+    middleName?: string;
     email: string;
     phone: string;
     relationship: TParentRelationship;
@@ -110,6 +112,7 @@ export interface IParentContact {
 export interface IParentProfile {
     firstName: string;
     lastName: string;
+    middleName?: string;
     dateOfBirth?: Date;
     occupation?: string;
     educationLevel?: string;
@@ -474,4 +477,3 @@ export interface IParentPortalConfig {
         loginAlerts: boolean;
     };
 }
-//# sourceMappingURL=parent.types.d.ts.map

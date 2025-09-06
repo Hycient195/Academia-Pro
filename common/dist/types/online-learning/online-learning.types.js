@@ -79,4 +79,3 @@ var TCollaborationType;
     TCollaborationType["STUDY_GROUP"] = "study_group";
     TCollaborationType["TUTORING"] = "tutoring";
 })(TCollaborationType || (exports.TCollaborationType = TCollaborationType = {}));
-//# sourceMappingURL=online-learning.types.js.map

@@ -6,7 +6,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ICreateHostelRequest,
   IUpdateHostelRequest,
-  IAddress,
   IFacility,
   IHostelRules,
   IHostelPricing,
@@ -15,11 +14,11 @@ import {
   THostelType,
   THostelStatus,
   TFacilityType
-} from '@academia-pro/common/hostel';
+} from '@academia-pro/types/hostel';
 
 import {
   IAddress,
-} from '@academia-pro/common/hostel';
+} from '@academia-pro/types/shared';
 
 export class AddressDto implements IAddress {
   @ApiProperty({

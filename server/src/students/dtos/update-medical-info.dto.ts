@@ -3,7 +3,7 @@
 
 import { IsOptional, IsArray, IsString, MaxLength, IsObject } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IUpdateMedicalInfoRequest } from '../../../../common/src/types/student/student.types';
+import { IUpdateMedicalInfoRequest } from '@academia-pro/types/student';
 
 export class UpdateMedicalInfoDto implements IUpdateMedicalInfoRequest {
   @ApiPropertyOptional({
@@ -48,8 +48,11 @@ export class UpdateMedicalInfoDto implements IUpdateMedicalInfoRequest {
   @IsObject({ message: 'Emergency contact must be an object' })
   emergencyContact?: {
     name: string;
+    relationship: string;
     phone: string;
-    relation: string;
+    email?: string;
+    priority: number;
+    address: string;
   };
 
   @ApiPropertyOptional({
@@ -81,6 +84,10 @@ export class UpdateMedicalInfoDto implements IUpdateMedicalInfoRequest {
   insuranceInfo?: {
     provider: string;
     policyNumber: string;
-    expiryDate: Date;
+    coverageAmount: number;
+    premium: number;
+    startDate: Date;
+    endDate: Date;
+    deductible: number;
   };
 }

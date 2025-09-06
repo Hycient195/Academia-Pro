@@ -3,7 +3,7 @@
 
 import { IsString, IsNotEmpty, IsOptional, IsEnum, IsArray, IsNumber, MinLength, MaxLength, Min, Max } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ICreateSubjectRequest, TSubjectType, TGradeLevel } from '../../../../common/src/types/academic/academic.types';
+import { ICreateSubjectRequest, TSubjectType, TGradeLevel } from '@academia-pro/types/academic';
 
 export class CreateSubjectDto implements ICreateSubjectRequest {
   @ApiProperty({

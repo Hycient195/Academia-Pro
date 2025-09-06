@@ -1,9 +1,10 @@
 // Academia Pro - Update School DTO
 // Data Transfer Object for updating school information
 
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsEmail, IsUrl, IsInt, Min, MaxLength, IsObject, ValidateNested } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEnum, IsEmail, IsUrl, IsInt, Min, MaxLength, IsObject, ValidateNested, IsArray } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IUpdateSchoolRequest } from '@academia-pro/common/super-admin';
+import { IUpdateSchoolRequest } from '@academia-pro/types/super-admin';
+import { TSchoolType } from '@academia-pro/types/schools';
 
 export class UpdateSchoolDto implements IUpdateSchoolRequest {
   @ApiPropertyOptional({
@@ -35,12 +36,13 @@ export class UpdateSchoolDto implements IUpdateSchoolRequest {
   description?: string;
 
   @ApiPropertyOptional({
-    description: 'School type',
-    example: 'mixed',
+    description: 'School types (array of school types)',
+    example: ['secondary', 'high_school'],
+    type: [String],
   })
   @IsOptional()
-  @IsString({ message: 'Type must be a string' })
-  type?: string;
+  @IsArray({ message: 'Type must be an array' })
+  type?: TSchoolType[];
 
   @ApiPropertyOptional({
     description: 'School phone number',

@@ -12,11 +12,9 @@ import { Student } from '../students/student.entity';
 // Services
 import { SchoolsService } from './schools.service';
 import { SchoolContextService } from './school-context.service';
-import { CrossSchoolReportingService } from './cross-school-reporting.service';
 
 // Controllers
 import { SchoolsController } from './schools.controller';
-import { SuperAdminController } from './super-admin.controller';
 import { SchoolAdminController } from './school-admin.controller';
 
 // Guards
@@ -40,7 +38,7 @@ import { CommunicationModule } from '../communication/communication.module';
     ]),
     // Import other modules for service injection
     forwardRef(() => StudentsModule),
-    forwardRef(() => StaffModule),
+    StaffModule,
     forwardRef(() => UsersModule),
     forwardRef(() => FeeModule),
     forwardRef(() => AttendanceModule),
@@ -48,13 +46,11 @@ import { CommunicationModule } from '../communication/communication.module';
   ],
   controllers: [
     SchoolsController,
-    SuperAdminController,
     SchoolAdminController,
   ],
   providers: [
     SchoolsService,
     SchoolContextService,
-    CrossSchoolReportingService,
     SchoolContextGuard,
     RolesGuard,
   ],

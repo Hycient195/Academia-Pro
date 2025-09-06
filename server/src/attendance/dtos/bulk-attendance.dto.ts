@@ -3,7 +3,7 @@
 
 import { IsNotEmpty, IsOptional, IsString, IsEnum, IsDateString, IsArray, ValidateNested, IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TAttendanceStatus, TAttendanceType, TAttendanceMethod, IBulkMarkAttendanceRequest } from '@academia-pro/common/attendance';
+import { TAttendanceStatus, TAttendanceType, TAttendanceMethod, IBulkMarkAttendanceRequest } from '@academia-pro/types/attendance';
 
 export class BulkAttendanceItemDto {
   @ApiProperty({

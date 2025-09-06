@@ -5,7 +5,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { ParentService } from './parent.service';
 import { CreateParentDto, UpdateParentDto, ParentResponseDto, ParentListResponseDto, ParentStatisticsResponseDto } from './dtos/index';
-import { IParentFilters } from '../../../common/src/types/parent/parent.types';
+import { IParentFilters } from '@academia-pro/types/parent/parent.types';
 
 @ApiTags('Parent Portal')
 @Controller('parent')

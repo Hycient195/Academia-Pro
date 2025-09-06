@@ -1,5 +1,6 @@
-import { UserRole, TSchoolType, TSchoolStatus, UserStatus, IAlert } from '../shared';
+import { TSchoolType, TSchoolStatus, IAlert } from '../shared';
 import { IActivity } from '../parent-portal';
+import { EUserRole, EUserStatus } from '../users';
 export declare enum TAuditActionType {
     LOGIN = "LOGIN",
     LOGOUT = "LOGOUT",
@@ -32,7 +33,7 @@ export interface ISuperAdminSchool {
     name: string;
     code?: string;
     description?: string;
-    type?: TSchoolType;
+    type?: TSchoolType[];
     status: TSchoolStatus;
     address?: string;
     city?: string;
@@ -80,14 +81,34 @@ export interface ISuperAdminSchool {
 }
 export interface ISuperAdminUser {
     id: string;
-    name: string;
+    name?: string;
+    firstName: string;
+    lastName: string;
+    middleName?: string;
     email: string;
-    role: UserRole;
+    role: EUserRole;
     schoolId?: string;
     schoolName?: string;
-    status: UserStatus;
+    status: EUserStatus;
+    phone?: string;
+    dateOfBirth?: string;
+    gender?: 'male' | 'female' | 'other';
+    address?: {
+        street: string;
+        city: string;
+        state: string;
+        postalCode: string;
+        country: string;
+        coordinates?: {
+            latitude: number;
+            longitude: number;
+        };
+    };
     lastLogin?: string;
+    isEmailVerified?: boolean;
+    emailVerifiedAt?: string;
     createdAt: string;
+    updatedAt: string;
 }
 export interface ISystemMetrics {
     uptime: number;
@@ -248,7 +269,7 @@ export interface IUserFilters {
 }
 export interface ISuperAdminCreateSchoolRequest {
     name: string;
-    type: string;
+    type: TSchoolType[];
     address: string;
     city: string;
     state: string;
@@ -259,7 +280,7 @@ export interface ISuperAdminCreateSchoolRequest {
 }
 export interface ISuperAdminUpdateSchoolRequest {
     name?: string;
-    type?: string;
+    type?: TSchoolType[];
     status?: string;
     subscriptionPlan?: string;
     address?: string;
@@ -273,10 +294,12 @@ export interface ISuperAdminUpdateSchoolRequest {
         phone?: string;
     };
 }
+export type ICreateSchoolRequest = ISuperAdminCreateSchoolRequest;
+export type IUpdateSchoolRequest = ISuperAdminUpdateSchoolRequest;
 export interface IBulkUserUpdateRequest {
     userIds: string[];
     updates: {
-        role?: UserRole;
+        role?: EUserRole;
         status?: string;
         schoolId?: string;
     };
@@ -343,7 +366,7 @@ export interface ISuperAdminLoginResponse {
         email: string;
         firstName: string;
         lastName: string;
-        role: UserRole;
+        role: EUserRole;
         isEmailVerified: boolean;
     };
     tokens: {
@@ -385,7 +408,7 @@ export interface ISuperAdminSchoolListResponse {
         activeSchools: number;
         totalStudents: number;
         totalTeachers: number;
-        byType: Record<TSchoolType, number>;
+        byType: Record<string, number>;
         byStatus: Record<TSchoolStatus, number>;
     };
 }
@@ -447,4 +470,4 @@ export interface IRolesResponse {
     roles: IRole[];
     total: number;
 }
-//# sourceMappingURL=super-admin.types.d.ts.map
+export type { ISchoolFilters } from '../shared';

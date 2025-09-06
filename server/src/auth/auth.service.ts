@@ -7,9 +7,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Response } from 'express';
 import * as bcrypt from 'bcryptjs';
-import { User, UserStatus, UserRole } from '../users/user.entity';
+import { User } from '../users/user.entity';
 import { LoginDto, RegisterDto, RefreshTokenDto, ChangePasswordDto } from './dtos';
-import { AuthTokens } from '@academia-pro/common';
+import { IAuthTokens } from '@academia-pro/types/auth';
+import { EUserRole, EUserStatus } from '@academia-pro/types/users';
 
 @Injectable()
 export class AuthService {
@@ -24,7 +25,7 @@ export class AuthService {
    */
   async validateSuperAdmin(email: string, password: string): Promise<any> {
     const user = await this.usersRepository.findOne({
-      where: { email, role: UserRole.SUPER_ADMIN },
+      where: { email, role: EUserRole.SUPER_ADMIN },
       select: ['id', 'email', 'passwordHash', 'firstName', 'lastName', 'role', 'status', 'isEmailVerified'],
     });
 
@@ -92,7 +93,7 @@ export class AuthService {
   /**
    * Login user and generate tokens
    */
-  async login(user: any): Promise<AuthTokens> {
+  async login(user: any): Promise<IAuthTokens> {
     const payload = {
       email: user.email,
       sub: user.id,
@@ -115,6 +116,7 @@ export class AuthService {
       refreshToken,
       expiresIn: 86400, // 24 hours in seconds
       tokenType: 'Bearer',
+      issuedAt: new Date(),
     };
   }
 
@@ -210,7 +212,7 @@ export class AuthService {
       passwordHash,
       emailVerificationToken,
       emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-      status: UserStatus.PENDING,
+      status: EUserStatus.PENDING,
       isEmailVerified: false,
     };
 
@@ -220,7 +222,7 @@ export class AuthService {
   /**
    * Refresh access token
    */
-  async refreshToken(refreshTokenDto: RefreshTokenDto): Promise<AuthTokens> {
+  async refreshToken(refreshTokenDto: RefreshTokenDto): Promise<IAuthTokens> {
     try {
       const { refreshToken } = refreshTokenDto;
 
@@ -268,6 +270,7 @@ export class AuthService {
         refreshToken: newRefreshToken,
         expiresIn: 86400,
         tokenType: 'Bearer',
+        issuedAt: new Date(),
       };
     } catch (error) {
       throw new UnauthorizedException('Invalid refresh token');
@@ -323,7 +326,7 @@ export class AuthService {
       isEmailVerified: true,
       emailVerificationToken: null,
       emailVerificationExpires: null,
-      status: UserStatus.ACTIVE,
+      status: EUserStatus.ACTIVE,
     });
   }
 

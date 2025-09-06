@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { SecurityService } from './security.service';
 import { AuditAction, AuditSeverity } from '../types/audit.types';
 import { TotpStrategy } from '../strategies/totp.strategy';
+import { IAuthTokens } from '@academia-pro/types/auth';
 
 export interface LoginCredentials {
   email: string;
@@ -19,13 +20,6 @@ export interface JwtPayload {
   schoolId?: string;
   sessionId?: string;
   mfaVerified?: boolean;
-}
-
-export interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
-  tokenType: string;
 }
 
 export interface MfaSetup {
@@ -267,7 +261,7 @@ export class AuthService {
     }
   }
 
-  async refreshToken(refreshToken: string): Promise<AuthTokens> {
+  async refreshToken(refreshToken: string): Promise<IAuthTokens> {
     try {
       this.logger.log('Token refresh attempt');
 
@@ -398,7 +392,7 @@ export class AuthService {
     return mockUsers[userId] || null;
   }
 
-  private async generateTokens(user: any, sessionId: string): Promise<AuthTokens> {
+  private async generateTokens(user: any, sessionId: string): Promise<IAuthTokens> {
     const payload: JwtPayload = {
       sub: user.id,
       userId: user.id,
@@ -421,6 +415,7 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
+      issuedAt: new Date,
       expiresIn: 3600, // 1 hour
       tokenType: 'Bearer',
     };

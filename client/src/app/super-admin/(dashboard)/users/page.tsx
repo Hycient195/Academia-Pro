@@ -5,10 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { FormSelect } from "@/components/ui/form-components"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Pagination } from "@/components/ui/pagination"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   IconUsers,
@@ -23,17 +24,33 @@ import {
   IconMail,
   IconClock
 } from "@tabler/icons-react"
-import { apis, type UserFilters } from "@/redux/api"
+import { apis } from "@/redux/api"
+import { IUserFilters } from "@academia-pro/types/super-admin"
+import { ISuperAdminUser } from "@academia-pro/types/super-admin"
+import { IUserPermissionRole, EUserStatus } from "@academia-pro/types/shared"
+import { toast } from "sonner"
+import AddUserModal from "./_components/AddUserModal"
+import DeleteUserModal from "./_components/DeleteUserModal"
+import ViewUserDetailsModal from "./_components/ViewUserDetailsModal"
 
 export default function UsersPage() {
-  const [filters, setFilters] = useState<UserFilters>({
+  const [filters, setFilters] = useState<IUserFilters>({
     page: 1,
     limit: 10
   })
 
-  const { data: usersData, isLoading } = apis.superAdmin.useGetCrossSchoolUsersQuery(filters)
-  const users = usersData?.users || []
-  const total = usersData?.total || 0
+  const [modals, setModals] = useState({
+    view: { isOpen: false, user: null as ISuperAdminUser | null },
+    add: { isOpen: false },
+    edit: { isOpen: false, user: null as ISuperAdminUser | null },
+    delete: { isOpen: false, user: null as ISuperAdminUser | null }
+  })
+
+  const { data: usersData, isLoading } = apis.superAdmin.useGetAllUsersQuery(filters)
+  const users = usersData?.data || []
+  const pagination = usersData?.pagination
+
+  console.log(usersData)
 
   const getStatusBadge = (status: string) => {
     const variants = {
@@ -69,6 +86,47 @@ export default function UsersPage() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase()
   }
 
+  const handleViewDetails = (user: ISuperAdminUser) => {
+    setModals(prev => ({
+      ...prev,
+      view: { isOpen: true, user }
+    }))
+  }
+
+  const handleEditUser = (user: ISuperAdminUser) => {
+    setModals(prev => ({
+      ...prev,
+      edit: { isOpen: true, user }
+    }))
+  }
+
+  const handleDeleteUser = (user: ISuperAdminUser) => {
+    setModals(prev => ({
+      ...prev,
+      delete: { isOpen: true, user }
+    }))
+  }
+
+  const handlePageChange = (page: number) => {
+    setFilters({ ...filters, page })
+  }
+
+  const handlePageSizeChange = (limit: number) => {
+    setFilters({ ...filters, limit, page: 1 }) // Reset to first page when changing page size
+  }
+
+  const handleModalSuccess = () => {
+    // Close all modals and reset data
+    setModals({
+      view: { isOpen: false, user: null },
+      add: { isOpen: false },
+      edit: { isOpen: false, user: null },
+      delete: { isOpen: false, user: null }
+    })
+    // Refetch or update the users list
+    // For now, we can rely on the mutations invalidating the cache
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -89,6 +147,35 @@ export default function UsersPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Modals */}
+        <ViewUserDetailsModal
+          isOpen={modals.view.isOpen}
+          onOpenChange={(open) => setModals(prev => ({ ...prev, view: { ...prev.view, isOpen: open } }))}
+          user={modals.view.user}
+        />
+
+        <AddUserModal
+          mode="add"
+          isOpen={modals.add.isOpen}
+          onOpenChange={(open) => setModals(prev => ({ ...prev, add: { isOpen: open } }))}
+          onSuccess={handleModalSuccess}
+        />
+
+        <AddUserModal
+          mode="edit"
+          isOpen={modals.edit.isOpen}
+          onOpenChange={(open) => setModals(prev => ({ ...prev, edit: { isOpen: open, user: open ? prev.edit.user : null } }))}
+          userData={modals.edit.user}
+          onSuccess={handleModalSuccess}
+        />
+
+        <DeleteUserModal
+          isOpen={modals.delete.isOpen}
+          onOpenChange={(open) => setModals(prev => ({ ...prev, delete: { isOpen: open, user: open ? prev.delete.user : null } }))}
+          user={modals.delete.user}
+          onSuccess={handleModalSuccess}
+        />
       </div>
     )
   }
@@ -102,7 +189,7 @@ export default function UsersPage() {
             Manage users across all schools in the system
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setModals(prev => ({ ...prev, add: { isOpen: true }}))}>
           <IconPlus className="h-4 w-4 mr-2" />
           Add New User
         </Button>
@@ -131,61 +218,43 @@ export default function UsersPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Role</label>
-              <Select
-                value={filters.role || ""}
-                onValueChange={(value) => setFilters({ ...filters, role: value === "all" ? undefined : value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All roles" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
-                  <SelectItem value="super_admin">Super Admin</SelectItem>
-                  <SelectItem value="school_admin">School Admin</SelectItem>
-                  <SelectItem value="teacher">Teacher</SelectItem>
-                  <SelectItem value="student">Student</SelectItem>
-                  <SelectItem value="parent">Parent</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <FormSelect
+              labelText="Role"
+              placeholder="All roles"
+              value={filters.role || ""}
+              onChange={(e) => setFilters({ ...filters, role: e.target.value === "all" ? undefined : e.target.value as IUserPermissionRole })}
+              options={[
+                { value: "all", text: "All Roles" },
+                { value: "school_admin", text: "School Admin" },
+                { value: "teacher", text: "Teacher" },
+                { value: "student", text: "Student" },
+                { value: "parent", text: "Parent" }
+              ]}
+            />
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Status</label>
-              <Select
-                value={filters.status || ""}
-                onValueChange={(value) => setFilters({ ...filters, status: value === "all" ? undefined : value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="suspended">Suspended</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <FormSelect
+              labelText="Status"
+              placeholder="All statuses"
+              value={filters.status || ""}
+              onChange={(e) => setFilters({ ...filters, status: e.target.value === "all" ? undefined : e.target.value as EUserStatus })}
+              options={[
+                { value: "all", text: "All Statuses" },
+                { value: "active", text: "Active" },
+                { value: "inactive", text: "Inactive" },
+                { value: "suspended", text: "Suspended" }
+              ]}
+            />
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">School</label>
-              <Select
-                value={filters.schoolId || ""}
-                onValueChange={(value) => setFilters({ ...filters, schoolId: value === "all" ? undefined : value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All schools" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Schools</SelectItem>
-                  {/* This would be populated with actual schools */}
-                  <SelectItem value="school1">Springfield Elementary</SelectItem>
-                  <SelectItem value="school2">Riverside High School</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <FormSelect
+              labelText="School"
+              placeholder="All schools"
+              value={filters.schoolId || ""}
+              onChange={(e) => setFilters({ ...filters, schoolId: e.target.value === "all" ? undefined : e.target.value as string })}
+              options={[
+                { value: "all", text: "All Schools" },
+                // This will be populated with actual schools from API
+              ]}
+            />
           </div>
         </CardContent>
       </Card>
@@ -195,7 +264,7 @@ export default function UsersPage() {
         <CardHeader>
           <CardTitle className="flex items-center">
             <IconUsers className="h-5 w-5 mr-2" />
-            Users ({total})
+            Users ({pagination?.total || 0})
           </CardTitle>
           <CardDescription>
             A list of all users across all schools in the system
@@ -220,7 +289,7 @@ export default function UsersPage() {
                     <div className="flex items-center space-x-3">
                       <Avatar className="h-8 w-8">
                         <AvatarImage src="" alt={user.name} />
-                        <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                        <AvatarFallback>{getInitials(user.name as string)}</AvatarFallback>
                       </Avatar>
                       <div>
                         <div className="font-medium">{user.name}</div>
@@ -263,15 +332,18 @@ export default function UsersPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleViewDetails(user)}>
                           <IconEye className="h-4 w-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEditUser(user)}>
                           <IconEdit className="h-4 w-4 mr-2" />
                           Edit User
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteUser(user)}
+                          className="text-red-600"
+                        >
                           <IconTrash className="h-4 w-4 mr-2" />
                           Delete User
                         </DropdownMenuItem>
@@ -294,8 +366,50 @@ export default function UsersPage() {
               </p>
             </div>
           )}
+
+          {/* Pagination */}
+          {(pagination?.total || 0) > 0 && (
+            <div className="px-2 py-4">
+              <Pagination
+                pagination={pagination}
+                onPageChange={handlePageChange}
+                onPageSizeChange={handlePageSizeChange}
+                showPageSizeSelector={true}
+                showInfo={true}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Modals */}
+      <ViewUserDetailsModal
+        isOpen={modals.view.isOpen}
+        onOpenChange={(open) => setModals(prev => ({ ...prev, view: { ...prev.view, isOpen: open } }))}
+        user={modals.view.user}
+      />
+
+      <AddUserModal
+        mode="add"
+        isOpen={modals.add.isOpen}
+        onOpenChange={(open) => setModals(prev => ({ ...prev, add: { isOpen: open } }))}
+        onSuccess={handleModalSuccess}
+      />
+
+      <AddUserModal
+        mode="edit"
+        isOpen={modals.edit.isOpen}
+        onOpenChange={(open) => setModals(prev => ({ ...prev, edit: { isOpen: open, user: open ? prev.edit.user : null } }))}
+        userData={modals.edit.user}
+        onSuccess={handleModalSuccess}
+      />
+
+      <DeleteUserModal
+        isOpen={modals.delete.isOpen}
+        onOpenChange={(open) => setModals(prev => ({ ...prev, delete: { isOpen: open, user: open ? prev.delete.user : null } }))}
+        user={modals.delete.user}
+        onSuccess={handleModalSuccess}
+      />
     </div>
   )
 }

@@ -42,15 +42,15 @@ export interface IAuthTokens {
 
 // Interfaces
 export interface IAuthUser {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: EUserRole;
-  schoolId?: string;
-  isEmailVerified: boolean;
-  mfaEnabled: boolean;
-  lastLoginAt?: Date;
+   id: string;
+   email: string;
+   firstName: string;
+   lastName: string;
+   roles: EUserRole[];
+   schoolId?: string;
+   isEmailVerified: boolean;
+   mfaEnabled: boolean;
+   lastLoginAt?: Date;
 }
 
 export interface IRefreshToken {
@@ -253,6 +253,7 @@ export interface ILoginResponse {
   session: ISession;
   requiresMFA?: boolean;
   mfaType?: TMFAType;
+  requiresPasswordReset?: boolean;
 }
 
 export interface IRegisterResponse {
@@ -322,6 +323,7 @@ export interface IOAuthLoginResponse {
   session: ISession;
   isNewUser: boolean;
   profile: IOAuthProfile;
+  requiresPasswordReset?: boolean;
 }
 
 export interface IForgotPasswordResponse {

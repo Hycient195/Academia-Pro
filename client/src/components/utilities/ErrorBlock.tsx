@@ -1,8 +1,10 @@
+import { SerializedError } from "@reduxjs/toolkit";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 
 interface IProps {
-  error: FetchBaseQueryError;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  error: FetchBaseQueryError | SerializedError | undefined | any;
   className?: string;
   style?: CSSProperties;
   scrollIntoView?: boolean;
@@ -12,19 +14,8 @@ export default function ErrorBlock({ error, className, style, scrollIntoView }: 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isVisible, setIsVisible] = useState(false);
 
-  const getErrorMessage = (err: FetchBaseQueryError): string | string[] | undefined => {
-    const dataMessage = (err as { data: { message: string }}).data?.message;
-    if (dataMessage) return dataMessage;
-    return (err as { error: string }).error;
-  };
-
-  const hasError = (err: FetchBaseQueryError): boolean => {
-    const msg = getErrorMessage(err);
-    return !!msg;
-  };
-
   useEffect(() => {
-    if (hasError(error)) {
+    if (error?.data) {
       setIsVisible(true);
       if (scrollIntoView) containerRef.current?.scrollIntoView({ behavior: "smooth" });
     } else {
@@ -32,11 +23,11 @@ export default function ErrorBlock({ error, className, style, scrollIntoView }: 
     }
   }, [ error, scrollIntoView ]);
 
-  const message = getErrorMessage(error);
+  // const message = getErrorMessage(error);
 
   return (
     <>
-      {message && (
+      {error?.data && (
         <div
           ref={containerRef}
           style={style}
@@ -44,11 +35,11 @@ export default function ErrorBlock({ error, className, style, scrollIntoView }: 
             isVisible ? 'max-h-screen ' : 'max-h-0'
           }`}
         >
-          {typeof message === "string" ? (
-            <p className="text-center text-red-600 font-medium p-3 text-md">{message}</p>
-          ) : Array.isArray(message) ? (
+          {typeof error?.data === "string" ? (
+            <p className="text-center text-red-600 font-medium p-3 text-md">{error?.data}</p>
+          ) : Array.isArray(error?.data) ? (
             <div className="flex flex-col gap-3 p-4 rounded-md text-center">
-              {message.map((res: string, index: number) => (
+              {error?.data.map((res: string, index: number) => (
                 <p key={index} className="capitalize text-red-600 text-md">
                   {res}
                 </p>

@@ -15,6 +15,7 @@ export enum EUserStatus {
 // Define enums locally since @academia-pro may not be available during development
 export enum EUserRole {
   SUPER_ADMIN = 'super-admin',
+  DELEGATED_SUPER_ADMIN = 'delegated-super-admin',
   SCHOOL_ADMIN = 'school-admin',
   TEACHER = 'teacher',
   STUDENT = 'student',
@@ -35,22 +36,22 @@ export enum TUserTheme {
 
 // Interfaces
 export interface IUser {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  middleName?: string;
-  role: EUserRole;
-  phone?: string;
-  dateOfBirth?: string;
-  gender?: 'male' | 'female' | 'other';
-  schoolId?: string;
-  address?: IUserAddress;
-  status: EUserStatus;
-  emailVerified: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  lastLoginAt?: Date;
+   id: string;
+   email: string;
+   firstName: string;
+   lastName: string;
+   middleName?: string;
+   roles: EUserRole[];
+   phone?: string;
+   dateOfBirth?: string;
+   gender?: 'male' | 'female' | 'other';
+   schoolId?: string;
+   address?: IUserAddress;
+   status: EUserStatus;
+   emailVerified: boolean;
+   createdAt: Date;
+   updatedAt: Date;
+   lastLoginAt?: Date;
 }
 
 export interface IUserAddress {
@@ -162,30 +163,31 @@ export interface IUserNotification {
 
 // Request Interfaces
 export interface ICreateUserRequest {
-  email: string;
-  password?: string;
-  firstName: string;
-  lastName: string;
-  middleName?: string;
-  role?: EUserRole;
-  phone?: string;
-  dateOfBirth?: string;
-  gender?: 'male' | 'female' | 'other';
-  schoolId?: string;
-  address?: IUserAddress;
-  status?: EUserStatus;
+   email: string;
+   password?: string;
+   firstName: string;
+   lastName: string;
+   middleName?: string;
+   roles?: EUserRole[];
+   phone?: string;
+   dateOfBirth?: string;
+   gender?: 'male' | 'female' | 'other';
+   schoolId?: string;
+   address?: IUserAddress;
+   status?: EUserStatus;
 }
 
 export interface IUpdateUserRequest {
-  email?: string;
-  firstName?: string;
-  lastName?: string;
-  middleName?: string;
-  phone?: string;
-  dateOfBirth?: string;
-  gender?: 'male' | 'female' | 'other';
-  address?: Partial<IUserAddress>;
-  status?: EUserStatus;
+   email?: string;
+   firstName?: string;
+   lastName?: string;
+   middleName?: string;
+   roles?: EUserRole[];
+   phone?: string;
+   dateOfBirth?: string;
+   gender?: 'male' | 'female' | 'other';
+   address?: Partial<IUserAddress>;
+   status?: EUserStatus;
 }
 
 export interface IUpdateUserProfileRequest {

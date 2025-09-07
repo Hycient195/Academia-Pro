@@ -3,14 +3,14 @@ import { GLOBAL_API_URL } from '../globalURLs';
 
 // Import types from common package
 import type {
-  SchoolAdminOverview,
-  SchoolAdminStudent,
-  SchoolAdminStudentFilters,
-  SchoolAdminStaffFilters,
-  CreateSchoolAdminStudentRequest,
-  UpdateSchoolAdminStudentRequest,
-  SchoolAdminStaff,
-} from '@academia-pro/client-api';
+  ISchoolAdminOverview,
+  ISchoolAdminStudent,
+  ISchoolAdminStudentFilters,
+  ISchoolAdminStaffFilters,
+  ISchoolAdminCreateStudentRequest,
+  ISchoolAdminUpdateStudentRequest,
+  ISchoolAdminStaff,
+} from '@academia-pro/types/school-admin';
 
 export const schoolAdminApi = createApi({
   reducerPath: 'schoolAdminApi',
@@ -32,13 +32,13 @@ export const schoolAdminApi = createApi({
   ],
   endpoints: (builder) => ({
     // Dashboard
-    getSchoolOverview: builder.query<SchoolAdminOverview, void>({
+    getSchoolOverview: builder.query<ISchoolAdminOverview, void>({
       query: () => '/school-admin/dashboard',
       providesTags: ['SchoolOverview'],
     }),
 
     // Student Management
-    getStudents: builder.query<{ students: SchoolAdminStudent[]; total: number }, SchoolAdminStudentFilters>({
+    getStudents: builder.query<{ students: ISchoolAdminStudent[]; total: number }, ISchoolAdminStudentFilters>({
       query: (filters) => ({
         url: '/school-admin/students',
         params: filters,
@@ -46,12 +46,12 @@ export const schoolAdminApi = createApi({
       providesTags: ['Students'],
     }),
 
-    getStudentById: builder.query<SchoolAdminStudent, string>({
+    getStudentById: builder.query<ISchoolAdminStudent, string>({
       query: (studentId) => `/school-admin/students/${studentId}`,
       providesTags: (result, error, studentId) => [{ type: 'Students', id: studentId }],
     }),
 
-    createStudent: builder.mutation<SchoolAdminStudent, CreateSchoolAdminStudentRequest>({
+    createStudent: builder.mutation<ISchoolAdminStudent, ISchoolAdminCreateStudentRequest>({
       query: (studentData) => ({
         url: '/school-admin/students',
         method: 'POST',
@@ -60,7 +60,7 @@ export const schoolAdminApi = createApi({
       invalidatesTags: ['Students', 'SchoolOverview'],
     }),
 
-    updateStudent: builder.mutation<SchoolAdminStudent, { studentId: string; updates: UpdateSchoolAdminStudentRequest }>({
+    updateStudent: builder.mutation<ISchoolAdminStudent, { studentId: string; updates: ISchoolAdminUpdateStudentRequest }>({
       query: ({ studentId, updates }) => ({
         url: `/school-admin/students/${studentId}`,
         method: 'PATCH',
@@ -81,7 +81,7 @@ export const schoolAdminApi = createApi({
     }),
 
     // Staff Management
-    getStaff: builder.query<{ staff: SchoolAdminStaff[]; total: number }, SchoolAdminStaffFilters>({
+    getStaff: builder.query<{ staff: ISchoolAdminStaff[]; total: number }, ISchoolAdminStaffFilters>({
       query: (filters) => ({
         url: '/school-admin/staff',
         params: filters,
@@ -89,12 +89,12 @@ export const schoolAdminApi = createApi({
       providesTags: ['Staff'],
     }),
 
-    getStaffById: builder.query<SchoolAdminStaff, string>({
+    getStaffById: builder.query<ISchoolAdminStaff, string>({
       query: (staffId) => `/school-admin/staff/${staffId}`,
       providesTags: (result, error, staffId) => [{ type: 'Staff', id: staffId }],
     }),
 
-    updateStaff: builder.mutation<SchoolAdminStaff, { staffId: string; updates: Partial<SchoolAdminStaff> }>({
+    updateStaff: builder.mutation<ISchoolAdminStaff, { staffId: string; updates: Partial<ISchoolAdminStaff> }>({
       query: ({ staffId, updates }) => ({
         url: `/school-admin/staff/${staffId}`,
         method: 'PATCH',

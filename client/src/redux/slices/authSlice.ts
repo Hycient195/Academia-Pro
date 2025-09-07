@@ -1,16 +1,16 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 export interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  name?: string; // Computed property for convenience
-  role: 'super-admin' | 'school-admin' | 'teacher' | 'student' | 'parent';
-  schoolId?: string;
-  schoolName?: string;
-  avatar?: string;
-  permissions: string[];
+   id: string;
+   email: string;
+   firstName: string;
+   lastName: string;
+   name?: string; // Computed property for convenience
+   roles: ('super-admin' | 'delegated-super-admin' | 'school-admin' | 'teacher' | 'student' | 'parent')[];
+   schoolId?: string;
+   schoolName?: string;
+   avatar?: string;
+   permissions: string[];
 }
 
 export interface AuthState {

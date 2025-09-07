@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { FormSelect } from "@/components/ui/form-components"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -114,7 +113,7 @@ export default function SchoolsPage() {
     )
   }
 
-  const getTypeBadge = (type: string) => {
+  const getTypeBadge = (type: string, email: string) => {
     const colors = {
       primary: "bg-blue-100 text-blue-800",
       secondary: "bg-green-100 text-green-800",
@@ -122,7 +121,7 @@ export default function SchoolsPage() {
     } as const
 
     return (
-      <Badge className={colors[type as keyof typeof colors] || "bg-gray-100 text-gray-800"}>
+      <Badge key={email} className={colors[type as keyof typeof colors] || "bg-gray-100 text-gray-800"}>
         {type?.replace(/_/ig, " ")}
       </Badge>
     )
@@ -297,8 +296,8 @@ export default function SchoolsPage() {
                       <div className="text-sm text-muted-foreground">{school.contact?.email || school.email}</div>
                     </div>
                   </TableCell>
-                  <TableCell className="capitalize space-x-1">{school.type?.map((typ) => getTypeBadge(typ))}</TableCell>
-                  <TableCell>{getStatusBadge(school.status)}</TableCell>
+                  <TableCell className="capitalize space-x-1">{school.type?.map((typ, index) => getTypeBadge(typ, `${school?.email}-${school?.name}-${school?.id}-${index}`))}</TableCell>
+                  <TableCell>{getStatusBadge(school?.status)}</TableCell>
                   <TableCell>
                     <div className="flex items-center">
                       <IconUsers className="h-4 w-4 mr-1 text-muted-foreground" />

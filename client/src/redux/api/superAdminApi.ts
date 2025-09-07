@@ -26,12 +26,9 @@ import {
   ISuperAdminLoginRequest,
   ISuperAdminLoginResponse,
 } from '@academia-pro/types/super-admin';
-// import { IUserPermissionRole, EUserStatus } from '@academia-pro/types/shared';
 import { PaginatedResponse } from '@academia-pro/types/shared';
 import { GLOBAL_API_URL } from '../globalURLs';
 import { EUserRole, EUserStatus } from '@academia-pro/types/users';
-
-console.log(GLOBAL_API_URL)
 
 export const superAdminApi = createApi({
   reducerPath: 'superAdminApi',
@@ -76,7 +73,6 @@ export const superAdminApi = createApi({
     }),
 
     // School Management
-    // getAllSchools: builder.query<{ schools: ISuperAdminSchool[]; pagination: { page: number; limit: number; total: number; totalPages: number; hasNext: boolean; hasPrev: boolean } }, ISchoolFilters>({
     getAllSchools: builder.query<PaginatedResponse<ISuperAdminSchool>, ISchoolFilters>({
       query: (filters) => ({
         url: '/super-admin/schools',
@@ -121,7 +117,7 @@ export const superAdminApi = createApi({
     }),
 
     // User Management
-    createUser: builder.mutation<ISuperAdminUser, { firstName: string; lastName: string; middleName?: string; email: string; role?: EUserRole; schoolId?: string; status?: EUserStatus; phone?: string }>({
+    createUser: builder.mutation<ISuperAdminUser, { firstName: string; lastName: string; middleName?: string; email: string; roles?: EUserRole[]; schoolId?: string; status?: EUserStatus; phone?: string }>({
       query: (userData) => ({
         url: '/super-admin/users',
         method: 'POST',
@@ -151,7 +147,7 @@ export const superAdminApi = createApi({
       providesTags: (result, error, userId) => [{ type: 'Users', id: userId }],
     }),
 
-    updateUser: builder.mutation<ISuperAdminUser, { userId: string; updates: { firstName?: string; lastName?: string; middleName?: string; email?: string; role?: EUserRole; schoolId?: string; status?: EUserStatus; phone?: string } }>({
+    updateUser: builder.mutation<ISuperAdminUser, { userId: string; updates: { firstName?: string; lastName?: string; middleName?: string; email?: string; roles?: EUserRole[]; schoolId?: string; status?: EUserStatus; phone?: string } }>({
       query: ({ userId, updates }) => ({
         url: `/super-admin/users/${userId}`,
         method: 'PATCH',
@@ -179,6 +175,18 @@ export const superAdminApi = createApi({
         method: 'DELETE',
       }),
       invalidatesTags: ['Users', 'SystemOverview'],
+    }),
+
+    reactivateUser: builder.mutation<ISuperAdminUser, string>({
+      query: (userId) => ({
+        url: `/super-admin/users/${userId}/reactivate`,
+        method: 'POST',
+      }),
+      invalidatesTags: (result, error, userId) => [
+        { type: 'Users', id: userId },
+        'Users',
+        'SystemOverview'
+      ],
     }),
 
     // Analytics

@@ -7,6 +7,7 @@ export declare enum EUserStatus {
 }
 export declare enum EUserRole {
     SUPER_ADMIN = "super-admin",
+    DELEGATED_SUPER_ADMIN = "delegated-super-admin",
     SCHOOL_ADMIN = "school-admin",
     TEACHER = "teacher",
     STUDENT = "student",

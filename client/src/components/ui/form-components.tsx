@@ -11,6 +11,8 @@ import {
 } from "./select"
 import { PhoneInput } from "./phone-input"
 import { Country, State } from "country-state-city";
+import { PaginatedResponse } from "../../../../common/types/shared/shared.types";
+import { IconX } from "@tabler/icons-react"
 
 type TElementTypes = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
 
@@ -72,11 +74,18 @@ export const FormSelect = ({
   inputClassName,
   triggerClassName,
   contentClassName,
-  showHintText = true,
+  showHintText = false,
   inputSize = "MEDIUM"
 }: IProps & ISelectProps & React.InputHTMLAttributes<HTMLInputElement>) => {
   const onValueChange = (e: string | number) => {
     if (onChange) onChange({ target: { name, value: e } })
+  }
+
+  const handleClearValue = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    console.log("fired change")
+    if (onChange) onChange({ target: { name, value: "" } })
   }
 
   const sizeClass = inputSize === "LARGE" ? "!py-4" : "!py-3.5"
@@ -102,13 +111,27 @@ export const FormSelect = ({
           </span>
         )}
         <Select
+          key={`select-${value || 'empty'}`}
           required={required}
           onValueChange={onValueChange}
-          defaultValue={value as string}
-          value={value as string}
+          value={value as string || ""}
           name={name}
           disabled={disabled}
         >
+          {value && !isLoading && !disabled && (
+            <button
+              type="button"
+              onMouseUp={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                handleClearValue(e)
+              }}
+              className="flex absolute top-0 bottom-0 my-auto right-3 items-center justify-center w-4.5 h-4.5 rounded-full bg-muted hover:bg-muted-foreground/20 transition-colors ml-2 z-10"
+              aria-label="Clear selection"
+            >
+              <IconX className="!size-3 !stroke-3 !text-slate-500 !font-bold" />
+            </button>
+          )}
           <SelectTrigger
             ref={ref as React.LegacyRef<HTMLButtonElement>}
             className={cn(
@@ -116,7 +139,7 @@ export const FormSelect = ({
               isLoading && "bg-muted animate-pulse",
               sizeClass,
               isLoading && "[&_*]:!invisible",
-              !!value ? "!text-foreground" : "!text-muted-foreground",
+              !!value ? "!text-foreground [&>svg]:!hidden" : "!text-muted-foreground",
               icon
                 ? (iconPosition === "right" ? "!pr-9 !pl-3 lg:!pl-3.5" : "!pl-10 pr-3 lg:pr-3.5")
                 : "",
@@ -125,6 +148,7 @@ export const FormSelect = ({
             )}
           >
             <SelectValue placeholder={placeholder} />
+            
           </SelectTrigger>
           <SelectContent className={contentClassName}>
             {options && options.map((option, index: number) => (
@@ -199,7 +223,7 @@ export const FormText = ({
   inputMode,
   onFocus,
   onBlur,
-  showHintText = true,
+  showHintText = false,
   inputSize = "MEDIUM"
 }: IProps & IFormTextProps & React.InputHTMLAttributes<HTMLInputElement>) => {
   const sizeClass = inputSize === "LARGE" ? "!py-4" : "!py-3.5"
@@ -298,7 +322,7 @@ export const FormTextArea = ({
   isLoading = false,
   disabled = false,
   required,
-  showHintText = true
+  showHintText = false
 }: IProps & React.InputHTMLAttributes<HTMLInputElement>) => {
   return (
     <label htmlFor={id} className={wrapperClassName}>
@@ -377,7 +401,7 @@ export const FormDateInput = ({
   inputClassName,
   isLoading = false,
   disabled = false,
-  showHintText = true,
+  showHintText = false,
   inputSize = "MEDIUM"
 }: IProps & React.InputHTMLAttributes<HTMLInputElement>) => {
   const sizeClass = inputSize === "LARGE" ? "!py-4" : "!py-3.5"
@@ -456,7 +480,7 @@ export const FormPhoneInput = ({
   isLoading = false,
   disabled = false,
   required,
-  showHintText = true,
+  showHintText = false,
   inputSize = "MEDIUM"
 }: IProps) => {
   const handleChange = (phoneValue: string) => {
@@ -583,7 +607,7 @@ export const FormCountrySelect = ({
   inputClassName,
   triggerClassName,
   contentClassName,
-  showHintText = true,
+  showHintText = false,
   inputSize = "MEDIUM",
   showFlag = false
 }: ICountrySelectProps) => {
@@ -676,7 +700,7 @@ export const FormRegionSelect = ({
   inputClassName,
   triggerClassName,
   contentClassName,
-  showHintText = true,
+  showHintText = false,
   inputSize = "MEDIUM",
   countryCode
 }: IRegionSelectProps) => {
@@ -748,7 +772,7 @@ export const FormMultiSelect = ({
   inputClassName,
   triggerClassName,
   contentClassName,
-  showHintText = true,
+  showHintText = false,
   inputSize = "MEDIUM",
   maxSelection
 }: IMultiSelectProps) => {
@@ -815,7 +839,7 @@ export const FormMultiSelect = ({
               "flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50",
               isLoading && "bg-muted animate-pulse",
               sizeClass,
-              selectedValues.length > 0 ? "!text-foreground" : "!text-muted-foreground",
+              selectedValues.length > 0 ? "!text-foreground [&>svg]:!hidden" : "!text-muted-foreground",
               triggerClassName,
               inputClassName
             )}
@@ -825,7 +849,38 @@ export const FormMultiSelect = ({
             )}>
               {displayText}
             </span>
-            <SelectValue placeholder={placeholder} />
+            {selectedValues.length > 0 && !isLoading && !disabled && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setSelectedValues([])
+                  if (onChange) {
+                    onChange({ target: { name, value: [] } })
+                  }
+                }}
+                className="flex items-center justify-center w-5 h-5 rounded-full bg-muted hover:bg-muted-foreground/20 transition-colors ml-2 z-10"
+                aria-label="Clear all selections"
+              >
+                <svg
+                  width="10"
+                  height="10"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <path
+                    d="M9 3L3 9M3 3L9 9"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            )}
           </SelectTrigger>
           <SelectContent className={contentClassName}>
             {options && options.map((option, index: number) => {
@@ -858,6 +913,205 @@ export const FormMultiSelect = ({
             )}
           </SelectContent>
         </Select>
+      </div>
+      {footerText && (
+        <p className={cn(
+          "text-xs text-muted-foreground mt-1.5",
+          footerTextClassName
+        )}>
+          {footerText}
+        </p>
+      )}
+      {errorText && (
+        <p className={cn(
+          "text-sm mt-1.5 font-light",
+          isLoading ? "text-zinc-300" : "text-red-600"
+        )}>
+          {errorText}
+        </p>
+      )}
+    </label>
+  )
+}
+// FormPaginatedSelect Component
+interface IFormPaginatedSelectProps extends IProps, ISelectProps {
+  searchPlaceholder?: string;
+  pagination?: PaginatedResponse<unknown>['pagination'];
+  onPageChange?: (page: number) => void;
+  onSearchChange?: (search: string) => void;
+}
+
+export const FormPaginatedSelect = ({
+  labelText,
+  errorText,
+  footerTextClassName,
+  ref,
+  defaultValue = "Select Option",
+  options,
+  onChange,
+  footerText,
+  name,
+  id,
+  placeholder,
+  value,
+  wrapperClassName,
+  labelClassName,
+  isLoading = false,
+  disabled = false,
+  icon,
+  iconPosition,
+  required,
+  inputClassName,
+  triggerClassName,
+  contentClassName,
+  showHintText = false,
+  inputSize = "MEDIUM",
+  searchPlaceholder = "Search...",
+  pagination,
+  onPageChange,
+  onSearchChange
+}: IFormPaginatedSelectProps) => {
+  const [searchTerm, setSearchTerm] = React.useState('')
+
+  const onValueChange = (e: string | number) => {
+    if (onChange) onChange({ target: { name, value: e } })
+  }
+
+  const handleClearValue = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (onChange) {
+      onChange({ target: { name, value: "" } })
+    }
+  }
+
+  const filteredOptions = options?.filter(option =>
+    option.text && option.text.toString().toLowerCase().includes(searchTerm.toLowerCase())
+  ) || []
+
+  const paginatedOptions = filteredOptions
+
+  const handlePageChange = (page: number) => {
+    if (onPageChange) onPageChange(page)
+  }
+
+  const sizeClass = inputSize === "LARGE" ? "!py-4" : "!py-3.5"
+
+  return (
+    <label htmlFor={id} className={wrapperClassName}>
+      {labelText && (
+        <p className={cn(
+          "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-1.5",
+          isLoading && "text-muted-foreground",
+          labelClassName
+        )}>
+          {labelText}
+        </p>
+      )}
+      <div className="relative">
+        {showHintText && (
+          <span className={cn(
+            "absolute top-1.5 left-3.5 lg:left-4.5 text-muted text-[10px] animate-fade-in uppercase z-[1]",
+            (showHintText && !value) && "!hidden"
+          )}>
+            {placeholder}
+          </span>
+        )}
+        <Select
+          key={`select-${value || 'empty'}`}
+          required={required}
+          onValueChange={onValueChange}
+          value={value as string || ""}
+          name={name}
+          disabled={disabled}
+        >
+          {value && !isLoading && !disabled && (
+            <button
+              type="button"
+              onMouseUp={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                handleClearValue(e)
+              }}
+              className="flex absolute top-0 bottom-0 my-auto right-3 items-center justify-center w-4.5 h-4.5 rounded-full bg-muted hover:bg-muted-foreground/20 transition-colors ml-2 z-10"
+              aria-label="Clear selection"
+            >
+              <IconX className="!size-3 !stroke-3 !text-slate-500 !font-bold" />
+            </button>
+          )}
+          <SelectTrigger
+            ref={ref as React.LegacyRef<HTMLButtonElement>}
+            className={cn(
+              "flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50",
+              isLoading && "bg-muted animate-pulse",
+              sizeClass,
+              isLoading && "[&_*]:!invisible",
+              !!value ? "!text-foreground [&>svg]:!hidden" : "!text-muted-foreground",
+              icon
+                ? (iconPosition === "right" ? "!pr-9 !pl-3 lg:!pl-3.5" : "!pl-10 pr-3 lg:pr-3.5")
+                : "",
+              triggerClassName,
+              inputClassName
+            )}
+          >
+            <SelectValue placeholder={placeholder} />
+          </SelectTrigger>
+          <SelectContent className={contentClassName}>
+            <div className="p-2">
+              <input
+                type="text"
+                placeholder={searchPlaceholder}
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value)
+                  if (onSearchChange) onSearchChange(e.target.value)
+                }}
+                className="w-full px-2 py-1 border border-input rounded text-sm"
+              />
+            </div>
+            <div className="max-h-60 overflow-y-auto">
+              {paginatedOptions.map((option, index: number) => (
+                <SelectItem
+                  key={`${labelText}-${index}`}
+                  value={option.value as string}
+                  className="!font-lexend !font-zinc-600 !font-light"
+                >
+                  {option.text}
+                </SelectItem>
+              ))}
+            </div>
+            {pagination && pagination.totalPages > 1 && (
+              <div className="p-2 border-t flex justify-between items-center">
+                <button
+                  onClick={() => handlePageChange(Math.max(1, pagination.page - 1))}
+                  disabled={!pagination.hasPrev}
+                  className="px-2 py-1 text-sm disabled:opacity-50"
+                >
+                  Prev
+                </button>
+                <span className="text-sm text-muted-foreground">
+                  {pagination.page} / {pagination.totalPages}
+                </span>
+                <button
+                  onClick={() => handlePageChange(Math.min(pagination.totalPages, pagination.page + 1))}
+                  disabled={!pagination.hasNext}
+                  className="px-2 py-1 text-sm disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </SelectContent>
+        </Select>
+        {icon && (
+          <span className={cn(
+            "absolute top-0 bottom-0 h-max my-auto flex items-center justify-center",
+            isLoading && "invisible",
+            iconPosition === "right" ? "right-3" : "left-3"
+          )}>
+            {icon}
+          </span>
+        )}
       </div>
       {footerText && (
         <p className={cn(

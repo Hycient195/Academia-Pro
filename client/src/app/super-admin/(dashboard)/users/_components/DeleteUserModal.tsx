@@ -25,17 +25,21 @@ export default function DeleteUserModal({ isOpen, onOpenChange, user, onSuccess 
       return
     }
 
-    deleteUser(user.id).unwrap()
-    .then(() => {
-      toast.success(`User ${user.name} deleted successfully!`)
+    try {
+      await deleteUser(user.id).unwrap()
+      toast.success(`User ${user.name} has been suspended successfully!`)
       onOpenChange(false)
       setDeleteConfirmation('')
       onSuccess?.()
-    })
-    .catch((error) => {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-      toast.error(`Failed to delete user: ${errorMessage}`)
-    })
+    } catch (error: unknown) {
+      console.error('Delete user error:', error)
+      let errorMessage = 'Unknown error occurred'
+      if (error && typeof error === 'object') {
+        const err = error as { data?: { message?: string }; message?: string }
+        errorMessage = err.data?.message || err.message || errorMessage
+      }
+      toast.error(`Failed to suspend user: ${errorMessage}`)
+    }
   }
 
   const handleOpenChange = (open: boolean) => {
@@ -51,9 +55,9 @@ export default function DeleteUserModal({ isOpen, onOpenChange, user, onSuccess 
         <DialogHeader>
           <DialogTitle className="text-red-600">Delete User</DialogTitle>
           <DialogDescription>
-            This action cannot be undone. This will permanently delete the user
-            <strong> {user?.name} </strong>
-            and all associated data.
+            This action will suspend the user account for
+            <strong> {user?.name} </strong>.
+            The user will no longer be able to access the system.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
@@ -78,7 +82,7 @@ export default function DeleteUserModal({ isOpen, onOpenChange, user, onSuccess 
             onClick={confirmDeleteUser}
             disabled={deleteConfirmation !== user?.name}
           >
-            Delete User
+            Suspend User
           </Button>
         </div>
       </DialogContent>

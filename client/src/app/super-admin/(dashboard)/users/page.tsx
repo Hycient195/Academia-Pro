@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { FormSelect } from "@/components/ui/form-components"
+import { FormSchoolSelect } from "@/components/ui/FormSchoolSelect"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -27,11 +28,12 @@ import {
 import { apis } from "@/redux/api"
 import { IUserFilters } from "@academia-pro/types/super-admin"
 import { ISuperAdminUser } from "@academia-pro/types/super-admin"
-import { IUserPermissionRole, EUserStatus } from "@academia-pro/types/shared"
 import { toast } from "sonner"
 import AddUserModal from "./_components/AddUserModal"
 import DeleteUserModal from "./_components/DeleteUserModal"
+import ReactivateUserModal from "./_components/ReactivateUserModal"
 import ViewUserDetailsModal from "./_components/ViewUserDetailsModal"
+import { EUserRole, EUserStatus } from "@academia-pro/types/users"
 
 export default function UsersPage() {
   const [filters, setFilters] = useState<IUserFilters>({
@@ -43,14 +45,13 @@ export default function UsersPage() {
     view: { isOpen: false, user: null as ISuperAdminUser | null },
     add: { isOpen: false },
     edit: { isOpen: false, user: null as ISuperAdminUser | null },
-    delete: { isOpen: false, user: null as ISuperAdminUser | null }
+    delete: { isOpen: false, user: null as ISuperAdminUser | null },
+    reactivate: { isOpen: false, user: null as ISuperAdminUser | null }
   })
 
   const { data: usersData, isLoading } = apis.superAdmin.useGetAllUsersQuery(filters)
   const users = usersData?.data || []
   const pagination = usersData?.pagination
-
-  console.log(usersData)
 
   const getStatusBadge = (status: string) => {
     const variants = {
@@ -69,7 +70,7 @@ export default function UsersPage() {
   const getRoleBadge = (role: string) => {
     const colors = {
       super_admin: "bg-red-100 text-red-800",
-      school_admin: "bg-blue-100 text-blue-800",
+      "school-admin": "bg-blue-100 text-blue-800",
       teacher: "bg-green-100 text-green-800",
       student: "bg-purple-100 text-purple-800",
       parent: "bg-orange-100 text-orange-800"
@@ -107,6 +108,13 @@ export default function UsersPage() {
     }))
   }
 
+  const handleReactivateUser = (user: ISuperAdminUser) => {
+    setModals(prev => ({
+      ...prev,
+      reactivate: { isOpen: true, user }
+    }))
+  }
+
   const handlePageChange = (page: number) => {
     setFilters({ ...filters, page })
   }
@@ -116,15 +124,13 @@ export default function UsersPage() {
   }
 
   const handleModalSuccess = () => {
-    // Close all modals and reset data
     setModals({
       view: { isOpen: false, user: null },
       add: { isOpen: false },
       edit: { isOpen: false, user: null },
-      delete: { isOpen: false, user: null }
+      delete: { isOpen: false, user: null },
+      reactivate: { isOpen: false, user: null }
     })
-    // Refetch or update the users list
-    // For now, we can rely on the mutations invalidating the cache
   }
 
   if (isLoading) {
@@ -176,6 +182,13 @@ export default function UsersPage() {
           user={modals.delete.user}
           onSuccess={handleModalSuccess}
         />
+  
+        <ReactivateUserModal
+          isOpen={modals.reactivate.isOpen}
+          onOpenChange={(open) => setModals(prev => ({ ...prev, reactivate: { isOpen: open, user: open ? prev.reactivate.user : null } }))}
+          user={modals.reactivate.user}
+          onSuccess={handleModalSuccess}
+        />
       </div>
     )
   }
@@ -222,10 +235,16 @@ export default function UsersPage() {
               labelText="Role"
               placeholder="All roles"
               value={filters.role || ""}
-              onChange={(e) => setFilters({ ...filters, role: e.target.value === "all" ? undefined : e.target.value as IUserPermissionRole })}
+              onChange={(e) => {
+                const value = e.target.value;
+                setFilters({
+                  ...filters,
+                  role: value === "all" ? undefined : (value as EUserRole)
+                });
+              }}
               options={[
                 { value: "all", text: "All Roles" },
-                { value: "school_admin", text: "School Admin" },
+                { value: "school-admin", text: "School Admin" },
                 { value: "teacher", text: "Teacher" },
                 { value: "student", text: "Student" },
                 { value: "parent", text: "Parent" }
@@ -245,15 +264,17 @@ export default function UsersPage() {
               ]}
             />
 
-            <FormSelect
+            <FormSchoolSelect
               labelText="School"
               placeholder="All schools"
               value={filters.schoolId || ""}
-              onChange={(e) => setFilters({ ...filters, schoolId: e.target.value === "all" ? undefined : e.target.value as string })}
-              options={[
-                { value: "all", text: "All Schools" },
-                // This will be populated with actual schools from API
-              ]}
+              onChange={(e) => {
+                const value = e.target.value;
+                setFilters({
+                  ...filters,
+                  schoolId: value === "all" ? undefined : value
+                });
+              }}
             />
           </div>
         </CardContent>
@@ -340,13 +361,23 @@ export default function UsersPage() {
                           <IconEdit className="h-4 w-4 mr-2" />
                           Edit User
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDeleteUser(user)}
-                          className="text-red-600"
-                        >
-                          <IconTrash className="h-4 w-4 mr-2" />
-                          Delete User
-                        </DropdownMenuItem>
+                        {user.status === 'suspended' ? (
+                          <DropdownMenuItem
+                            onClick={() => handleReactivateUser(user)}
+                            className="text-green-600"
+                          >
+                            <IconUsers className="h-4 w-4 mr-2" />
+                            Reactivate User
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteUser(user)}
+                            className="text-red-600"
+                          >
+                            <IconTrash className="h-4 w-4 mr-2" />
+                            Delete User
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -408,6 +439,13 @@ export default function UsersPage() {
         isOpen={modals.delete.isOpen}
         onOpenChange={(open) => setModals(prev => ({ ...prev, delete: { isOpen: open, user: open ? prev.delete.user : null } }))}
         user={modals.delete.user}
+        onSuccess={handleModalSuccess}
+      />
+
+      <ReactivateUserModal
+        isOpen={modals.reactivate.isOpen}
+        onOpenChange={(open) => setModals(prev => ({ ...prev, reactivate: { isOpen: open, user: open ? prev.reactivate.user : null } }))}
+        user={modals.reactivate.user}
         onSuccess={handleModalSuccess}
       />
     </div>

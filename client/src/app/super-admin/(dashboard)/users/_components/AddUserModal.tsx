@@ -10,6 +10,7 @@ import { ISuperAdminUser } from "@academia-pro/types/super-admin"
 import { EUserRole, EUserStatus } from "@academia-pro/types/users"
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query"
 import { toast } from "sonner"
+import { FormSchoolSelect } from "@/components/ui/FormSchoolSelect"
 
 interface AddUserModalProps {
   mode: 'add' | 'edit'
@@ -22,9 +23,6 @@ interface AddUserModalProps {
 export default function AddUserModal({ mode, isOpen, onOpenChange, userData, onSuccess }: AddUserModalProps) {
   const [createUser, { isLoading: isCreating, error: createUserError }] = apis.superAdmin.useCreateUserMutation()
   const [updateUser, { isLoading: isUpdating, error: updateError }] = apis.superAdmin.useUpdateUserMutation()
-  const { data: schoolsData } = apis.superAdmin.useGetAllSchoolsQuery({})
-
-  const schools = schoolsData?.data || []
 
   const [formData, setFormData] = useState<{
     firstName: string;
@@ -32,7 +30,7 @@ export default function AddUserModal({ mode, isOpen, onOpenChange, userData, onS
     middleName: string;
     email: string;
     phone: string;
-    role: EUserRole;
+    roles: EUserRole[];
     schoolId?: string;
     status: EUserStatus;
   }>(
@@ -42,7 +40,7 @@ export default function AddUserModal({ mode, isOpen, onOpenChange, userData, onS
       middleName: '',
       email: '',
       phone: '',
-      role: 'student' as EUserRole,
+      roles: ['student' as EUserRole],
       schoolId: 'none',
       status: 'active' as EUserStatus
     } : {
@@ -51,7 +49,7 @@ export default function AddUserModal({ mode, isOpen, onOpenChange, userData, onS
       middleName: userData?.middleName || '',
       email: userData?.email || '',
       phone: userData?.phone || '',
-      role: userData?.role || 'student' as EUserRole,
+      roles: userData?.roles || ['student' as EUserRole],
       schoolId: userData?.schoolId || 'none',
       status: userData?.status || 'active' as EUserStatus
     }
@@ -66,7 +64,7 @@ export default function AddUserModal({ mode, isOpen, onOpenChange, userData, onS
         middleName: userData.middleName || '',
         email: userData.email || '',
         phone: userData.phone || '',
-        role: userData.role || 'student' as EUserRole,
+        roles: userData.roles || ['student' as EUserRole],
         schoolId: userData.schoolId || 'none',
         status: userData.status || 'active' as EUserStatus
       })
@@ -94,7 +92,7 @@ export default function AddUserModal({ mode, isOpen, onOpenChange, userData, onS
         middleName: formData.middleName.trim() || undefined,
         email: formData.email.trim(),
         phone: formData.phone.trim() || undefined,
-        role: formData.role,
+        roles: formData.roles,
         schoolId: formData.schoolId === 'none' ? undefined : formData.schoolId,
         status: formData.status
       }
@@ -121,7 +119,7 @@ export default function AddUserModal({ mode, isOpen, onOpenChange, userData, onS
         middleName: formData.middleName.trim() || undefined,
         email: formData.email.trim(),
         phone: formData.phone.trim() || undefined,
-        role: formData.role,
+        roles: formData.roles,
         schoolId: formData.schoolId === 'none' ? undefined : formData.schoolId,
         status: formData.status
       }
@@ -148,13 +146,13 @@ export default function AddUserModal({ mode, isOpen, onOpenChange, userData, onS
       middleName: '',
       email: '',
       phone: '',
-      role: 'student' as EUserRole,
+      roles: ['student' as EUserRole],
       schoolId: 'none',
       status: 'active' as EUserStatus
     })
   }
 
-  const updateFormData = (field: string, value: string) => {
+  const updateFormData = (field: string, value: string | EUserRole[]) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
@@ -212,10 +210,11 @@ export default function AddUserModal({ mode, isOpen, onOpenChange, userData, onS
 
           <FormSelect
             labelText="Role *"
-            value={formData.role || ''}
-            onChange={(arg) => updateFormData('role', arg.target.value as EUserRole)}
+            value={formData.roles[0] || ''}
+            onChange={(arg) => updateFormData('roles', [arg.target.value as EUserRole])}
             options={[
               { value: "super-admin", text: "Super Admin" },
+              { value: "delegated-super-admin", text: "Delegated Admin" },
               { value: "school-admin", text: "School Admin" },
               { value: "teacher", text: "Teacher" },
               { value: "student", text: "Student" },
@@ -225,14 +224,10 @@ export default function AddUserModal({ mode, isOpen, onOpenChange, userData, onS
             required
           />
 
-          <FormSelect
+          <FormSchoolSelect
             labelText="School (Optional)"
             value={formData.schoolId || 'none'}
             onChange={(arg) => updateFormData('schoolId', arg.target.value as string)}
-            options={[
-              { value: "none", text: "No school assignment" },
-              ...schools.map(school => ({ value: school.id, text: school.name }))
-            ]}
             placeholder="Select school"
           />
 

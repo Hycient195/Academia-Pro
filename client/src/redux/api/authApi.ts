@@ -1,9 +1,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { GLOBAL_API_URL } from '../globalURLs';
 
-// Import types from common package
-import type { LoginRequest, LoginResponse, RegisterRequest } from '@academia-pro/client-api';
-import type { IAuthUser } from '@academia-pro/auth';
+import type { IAuthUser, ILoginRequest, ILoginResponse, IRegisterRequest } from '@academia-pro/types/auth';
 
 export const authApi = createApi({
   reducerPath: 'authApi',
@@ -18,7 +16,7 @@ export const authApi = createApi({
   }),
   tagTypes: ['Auth'],
   endpoints: (builder) => ({
-    login: builder.mutation<LoginResponse, LoginRequest>({
+    login: builder.mutation<ILoginResponse, ILoginRequest>({
       query: (credentials) => ({
         url: '/auth/login',
         method: 'POST',
@@ -26,7 +24,7 @@ export const authApi = createApi({
       }),
     }),
 
-    register: builder.mutation<LoginResponse, RegisterRequest>({
+    register: builder.mutation<ILoginResponse, IRegisterRequest>({
       query: (userData) => ({
         url: '/auth/register',
         method: 'POST',

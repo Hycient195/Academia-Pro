@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
   IconMail,
   IconLock,
@@ -28,9 +29,25 @@ import { useDispatch } from "react-redux"
 import { setCredentials } from "@/redux/slices/authSlice"
 import { toast } from "sonner"
 
-type UserType = "school-admin" | "student" | "parent" | "teacher"
+type UserType = "super-admin" | "delegated-super-admin" | "school-admin" | "student" | "parent" | "teacher"
 
 const userTypes = [
+  {
+    id: "super-admin" as UserType,
+    name: "Super Admin",
+    description: "Full system administration and management",
+    icon: IconShield,
+    redirectPath: "/super-admin/dashboard",
+    color: "bg-red-500",
+  },
+  {
+    id: "delegated-super-admin" as UserType,
+    name: "Delegated Admin",
+    description: "Limited administrative access with specific permissions",
+    icon: IconUserShield,
+    redirectPath: "/super-admin/dashboard",
+    color: "bg-orange-500",
+  },
   {
     id: "school-admin" as UserType,
     name: "School Admin",
@@ -75,35 +92,59 @@ export default function SignInPage() {
   const [selectedUserType, setSelectedUserType] = useState<UserType | null>(null)
 
   const [login, { isLoading }] = apis.auth.useLoginMutation()
+  const [showPasswordReset, setShowPasswordReset] = useState(false)
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [resetPasswordLoading, setResetPasswordLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!selectedUserType) {
-      toast.error("Please select a user type")
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match")
       return
     }
 
+    if (newPassword.length < 8) {
+      toast.error("Password must be at least 8 characters long")
+      return
+    }
+
+    setResetPasswordLoading(true)
+
     try {
-      const result = await login({
-        email,
-        password,
-      }).unwrap()
+      // Call the first-time password reset API
+      const response = await fetch('/api/auth/users/reset-first-time-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ newPassword }),
+        credentials: 'include',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to reset password')
+      }
+
+      const result = await response.json()
+
+      toast.success("Password reset successful! Your account is now active.")
 
       // Store credentials in Redux
       dispatch(setCredentials({
         user: {
           ...result.user,
           name: `${result.user.firstName} ${result.user.lastName}`,
-          role: result.user.role as 'super-admin' | 'school-admin' | 'teacher' | 'student' | 'parent',
-          permissions: [], // TODO: Get permissions from API
+          role: result.user.role as 'super-admin' | 'delegated-super-admin' | 'school-admin' | 'teacher' | 'student' | 'parent',
+          permissions: [],
         },
-        token: result.tokens.accessToken,
-        refreshToken: result.tokens.refreshToken,
+        token: result.tokens?.accessToken || '',
+        refreshToken: result.tokens?.refreshToken || '',
       }))
 
-      // Redirect based on user role from API response
-      const userRole = result.user.role
+      // Redirect based on user role (use first role for primary routing)
+      const userRole = result.user.roles[0] || 'student'
       let redirectPath = "/dashboard"
 
       switch (userRole) {
@@ -120,6 +161,77 @@ export default function SignInPage() {
           redirectPath = "/school-admin/dashboard"
           break
         case "super-admin":
+          redirectPath = "/super-admin/dashboard"
+          break
+        case "delegated-super-admin":
+          redirectPath = "/super-admin/dashboard"
+          break
+        default:
+          redirectPath = "/dashboard"
+      }
+
+      router.push(redirectPath)
+    } catch (error) {
+      console.error("Password reset failed:", error)
+      toast.error("Failed to reset password. Please try again.")
+    } finally {
+      setResetPasswordLoading(false)
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!selectedUserType) {
+      toast.error("Please select a user type")
+      return
+    }
+
+    try {
+      const result = await login({
+        email,
+        password,
+      }).unwrap()
+
+      // Check if password reset is required (first-time login)
+      if (result.requiresPasswordReset) {
+        setShowPasswordReset(true)
+        return
+      }
+
+      // Store credentials in Redux
+      dispatch(setCredentials({
+        user: {
+          ...result.user,
+          name: `${result.user.firstName} ${result.user.lastName}`,
+          roles: result.user.roles,
+          permissions: [], // TODO: Get permissions from API
+        },
+        token: result.tokens.accessToken,
+        refreshToken: result.tokens.refreshToken,
+      }))
+
+      // Redirect based on user role from API response (use first role for primary routing)
+      const userRole = result.user.roles[0] || 'student'
+      let redirectPath = "/dashboard"
+
+      switch (userRole) {
+        case "student":
+          redirectPath = "/student/dashboard"
+          break
+        case "parent":
+          redirectPath = "/parent/dashboard"
+          break
+        case "teacher":
+          redirectPath = "/teacher/dashboard"
+          break
+        case "school-admin":
+          redirectPath = "/school-admin/dashboard"
+          break
+        case "super-admin":
+          redirectPath = "/super-admin/dashboard"
+          break
+        case "delegated-super-admin":
           redirectPath = "/super-admin/dashboard"
           break
         default:
@@ -314,6 +426,91 @@ export default function SignInPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Password Reset Modal */}
+        <Dialog open={showPasswordReset} onOpenChange={setShowPasswordReset}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <IconShield className="h-5 w-5 text-blue-600" />
+                Set Your Password
+              </DialogTitle>
+              <DialogDescription>
+                Welcome! This is your first time logging in. Please set a new password for your account.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handlePasswordReset} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">New Password</Label>
+                <div className="relative">
+                  <IconLock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="newPassword"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your new password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="pl-10 pr-10"
+                    required
+                    minLength={8}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <IconEyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <IconEye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Password must be at least 8 characters long
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <div className="relative">
+                  <IconLock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="Confirm your new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+
+              <DialogFooter className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowPasswordReset(false)
+                    setNewPassword("")
+                    setConfirmPassword("")
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={resetPasswordLoading || !newPassword || !confirmPassword}
+                >
+                  {resetPasswordLoading ? "Setting Password..." : "Set Password"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )

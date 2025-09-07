@@ -168,54 +168,54 @@ export interface SoftDeleteEntity extends BaseEntity {
 
 // Base User interface (moved from util.types.ts for consistency)
 export interface User extends BaseEntity {
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: EUserRole;
-  status: EUserStatus;
-  avatar?: string;
-  phone?: string;
-  dateOfBirth?: Date;
-  gender?: 'male' | 'female' | 'other';
-  address?: IAddress;
-  schoolId?: string;
-  isEmailVerified: boolean;
-  lastLoginAt?: Date;
-  preferences: UserPreferences;
-  passwordHash?: string; // Only used in backend
+   email: string;
+   firstName: string;
+   lastName: string;
+   roles: EUserRole[];
+   status: EUserStatus;
+   avatar?: string;
+   phone?: string;
+   dateOfBirth?: Date;
+   gender?: 'male' | 'female' | 'other';
+   address?: IAddress;
+   schoolId?: string;
+   isEmailVerified: boolean;
+   lastLoginAt?: Date;
+   preferences: UserPreferences;
+   passwordHash?: string; // Only used in backend
 }
 
 // Entity-specific User Types
 export interface Teacher extends User {
-  role: EUserRole.TEACHER;
-  employeeId: string;
-  department?: string;
-  subjects: string[];
-  qualifications: Qualification[];
-  experience: number; // years
-  specializations: string[];
-  classTeacherOf?: string[]; // Section IDs
+   roles: EUserRole[];
+   employeeId: string;
+   department?: string;
+   subjects: string[];
+   qualifications: Qualification[];
+   experience: number; // years
+   specializations: string[];
+   classTeacherOf?: string[]; // Section IDs
 }
 
 export interface Student extends User {
-  role: EUserRole.STUDENT;
-  studentId: string;
-  gradeId: string;
-  sectionId: string;
-  enrollmentDate: Date;
-  parentIds: string[];
-  emergencyContacts: EmergencyContact[];
-  medicalInfo?: MedicalInfo;
-  academicInfo: AcademicInfo;
+   roles: EUserRole[];
+   studentId: string;
+   gradeId: string;
+   sectionId: string;
+   enrollmentDate: Date;
+   parentIds: string[];
+   emergencyContacts: EmergencyContact[];
+   medicalInfo?: MedicalInfo;
+   academicInfo: AcademicInfo;
 }
 
 export interface Parent extends User {
-  role: EUserRole.PARENT;
-  childrenIds: string[];
-  relationship: 'father' | 'mother' | 'guardian' | 'other';
-  occupation?: string;
-  workplace?: string;
-  emergencyContact: boolean;
+   roles: EUserRole[];
+   childrenIds: string[];
+   relationship: 'father' | 'mother' | 'guardian' | 'other';
+   occupation?: string;
+   workplace?: string;
+   emergencyContact: boolean;
 }
 
 // Supporting Types for User Entities
@@ -679,23 +679,23 @@ export interface SoftDeleteEntity extends BaseEntity {
 }
 
 export interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: EUserRole;
-  status: EUserStatus;
-  avatar?: string;
-  phone?: string;
-  dateOfBirth?: Date;
-  gender?: 'male' | 'female' | 'other';
-  address?: Address;
-  schoolId?: string;
-  isEmailVerified: boolean;
-  lastLoginAt?: Date;
-  preferences: UserPreferences;
-  createdAt: Date;
-  updatedAt: Date;
+   id: string;
+   email: string;
+   firstName: string;
+   lastName: string;
+   roles: EUserRole[];
+   status: EUserStatus;
+   avatar?: string;
+   phone?: string;
+   dateOfBirth?: Date;
+   gender?: 'male' | 'female' | 'other';
+   address?: Address;
+   schoolId?: string;
+   isEmailVerified: boolean;
+   lastLoginAt?: Date;
+   preferences: UserPreferences;
+   createdAt: Date;
+   updatedAt: Date;
 }
 
 export interface UserPreferences {
@@ -990,13 +990,13 @@ export interface RoleAssignment {
 
 // User Management Operations
 export interface CreateUserRequest {
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: IUserPermissionRole;
-  phone?: string;
-  schoolId?: string;
-  sendWelcomeEmail?: boolean;
+   email: string;
+   firstName: string;
+   lastName: string;
+   roles: EUserRole[];
+   phone?: string;
+   schoolId?: string;
+   sendWelcomeEmail?: boolean;
 }
 
 export interface BulkUserOperation {
@@ -1006,16 +1006,16 @@ export interface BulkUserOperation {
 }
 
 export interface UserSearchFilters {
-  role?: IUserPermissionRole;
-  status?: EUserStatus;
-  schoolId?: string;
-  gradeId?: string;
-  sectionId?: string;
-  searchQuery?: string;
-  dateRange?: {
-    start: Date;
-    end: Date;
-  };
+   roles?: EUserRole[];
+   status?: EUserStatus;
+   schoolId?: string;
+   gradeId?: string;
+   sectionId?: string;
+   searchQuery?: string;
+   dateRange?: {
+     start: Date;
+     end: Date;
+   };
 }
 
 // Audit and Security Types
@@ -1071,15 +1071,32 @@ export interface UserListResponse {
   limit: number;
 }
 
-export interface UserProfileResponse extends User {
-  roles: Role[];
-  permissions: Permission[];
-  recentActivity: UserActivity[];
-  stats: {
-    loginCount: number;
-    lastLoginAt?: Date;
-    accountAge: number; // days
-  };
+export interface UserProfileResponse {
+   id: string;
+   email: string;
+   firstName: string;
+   lastName: string;
+   userRoles: EUserRole[];
+   status: EUserStatus;
+   avatar?: string;
+   phone?: string;
+   dateOfBirth?: Date;
+   gender?: 'male' | 'female' | 'other';
+   address?: Address;
+   schoolId?: string;
+   isEmailVerified: boolean;
+   lastLoginAt?: Date;
+   preferences: UserPreferences;
+   createdAt: Date;
+   updatedAt: Date;
+   roles: Role[];
+   permissions: Permission[];
+   recentActivity: UserActivity[];
+   stats: {
+     loginCount: number;
+     lastLoginAt?: Date;
+     accountAge: number; // days
+   };
 }
 
 export interface AuthResponse {
@@ -1091,13 +1108,13 @@ export interface AuthResponse {
 
 // Validation Schemas (using Zod)
 export const createUserSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  firstName: z.string().min(1, 'First name is required').max(50),
-  lastName: z.string().min(1, 'Last name is required').max(50),
-  role: z.enum(['super-admin', 'school-admin', 'teacher', 'student', 'parent']),
-  phone: z.string().optional(),
-  schoolId: z.string().optional(),
-  sendWelcomeEmail: z.boolean().default(true),
+   email: z.string().email('Invalid email address'),
+   firstName: z.string().min(1, 'First name is required').max(50),
+   lastName: z.string().min(1, 'Last name is required').max(50),
+   roles: z.array(z.enum(['super-admin', 'delegated-super-admin', 'school-admin', 'teacher', 'student', 'parent'])).min(1, 'At least one role is required'),
+   phone: z.string().optional(),
+   schoolId: z.string().optional(),
+   sendWelcomeEmail: z.boolean().default(true),
 });
 
 export const updateProfileSchema = z.object({

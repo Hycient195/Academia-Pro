@@ -93,12 +93,10 @@ export default function AddSchoolModal({ mode, isOpen, onOpenChange, schoolData,
         toast.error("School data not found");
         return
       }
-      const apiData = {
-        ...formData,
-      }
+
       updateSchool({
         schoolId: schoolData.id,
-        updates: apiData as IUpdateSchoolRequest
+        updates: formData as IUpdateSchoolRequest
       }).unwrap()
       .then(() => {
         toast.success(`School ${formData.name} updated successfully!`)

@@ -12,6 +12,7 @@ export const store = configureStore({
     [apis.superAdmin.reducerPath]: apis.superAdmin.reducer,
     [apis.auth.reducerPath]: apis.auth.reducer,
     [apis.schoolAdmin.reducerPath]: apis.schoolAdmin.reducer,
+    [apis.schools.reducerPath]: apis.schools.reducer,
 
     // Feature reducers
     auth: authReducer,
@@ -25,7 +26,8 @@ export const store = configureStore({
     })
     .concat(apis.superAdmin.middleware)
     .concat(apis.auth.middleware)
-    .concat(apis.schoolAdmin.middleware),
+    .concat(apis.schoolAdmin.middleware)
+    .concat(apis.schools.middleware),
   devTools: process.env.NODE_ENV !== 'production',
 });
 

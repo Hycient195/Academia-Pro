@@ -89,35 +89,35 @@ export interface ISuperAdminSchool {
 }
 
 export interface ISuperAdminUser {
-  id: string;
-  name?: string;
-  firstName: string;
-  lastName: string;
-  middleName?: string;
-  email: string;
-  role: EUserRole;
-  schoolId?: string;
-  schoolName?: string;
-  status: EUserStatus;
-  phone?: string;
-  dateOfBirth?: string;
-  gender?: 'male' | 'female' | 'other';
-  address?: {
-    street: string;
-    city: string;
-    state: string;
-    postalCode: string;
-    country: string;
-    coordinates?: {
-      latitude: number;
-      longitude: number;
-    };
-  };
-  lastLogin?: string;
-  isEmailVerified?: boolean;
-  emailVerifiedAt?: string;
-  createdAt: string;
-  updatedAt: string;
+   id: string;
+   name?: string;
+   firstName: string;
+   lastName: string;
+   middleName?: string;
+   email: string;
+   roles: EUserRole[];
+   schoolId?: string;
+   schoolName?: string;
+   status: EUserStatus;
+   phone?: string;
+   dateOfBirth?: string;
+   gender?: 'male' | 'female' | 'other';
+   address?: {
+     street: string;
+     city: string;
+     state: string;
+     postalCode: string;
+     country: string;
+     coordinates?: {
+       latitude: number;
+       longitude: number;
+     };
+   };
+   lastLogin?: string;
+   isEmailVerified?: boolean;
+   emailVerifiedAt?: string;
+   createdAt: string;
+   updatedAt: string;
 }
 
 
@@ -325,7 +325,7 @@ export type IUpdateSchoolRequest = ISuperAdminUpdateSchoolRequest;
 export interface IBulkUserUpdateRequest {
   userIds: string[];
   updates: {
-    role?: EUserRole;
+    roles?: EUserRole[];
     status?: string;
     schoolId?: string;
   };
@@ -368,11 +368,27 @@ export interface IDelegatedAccount {
 }
 
 export interface ICreateDelegatedAccountRequest {
-  email: string;
-  permissions: string[];
-  expiryDate: string;
-  notes?: string;
+  // For creating new user
+  firstName?: string;
+  lastName?: string;
+  middleName?: string;
+  email?: string; // Optional when selecting existing user
+
+  // For selecting existing user
   userId?: string;
+
+  // Permissions
+  permissions: string[];
+
+  // Expiry options
+  startDate?: string;
+  startTime?: string;
+  endDate?: string;
+  endTime?: string;
+  expiryDate?: string; // Optional - for backward compatibility, can be undefined for infinite accounts
+
+  // Notes
+  notes?: string;
 }
 
 export interface IUpdateDelegatedAccountRequest {
@@ -400,7 +416,7 @@ export interface ISuperAdminLoginResponse {
     email: string;
     firstName: string;
     lastName: string;
-    role: EUserRole;
+    roles: EUserRole[];
     isEmailVerified: boolean;
   };
   tokens: {

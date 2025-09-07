@@ -1,21 +1,56 @@
 import { IsEmail, IsArray, IsString, IsDateString, IsOptional, IsUUID } from 'class-validator';
 
 export class CreateDelegatedAccountDto {
-  @IsEmail()
-  email: string;
+  // For creating new user
+  @IsOptional()
+  @IsString()
+  firstName?: string;
 
+  @IsOptional()
+  @IsString()
+  lastName?: string;
+
+  @IsOptional()
+  @IsString()
+  middleName?: string;
+
+  @IsEmail()
+  @IsOptional()
+  email?: string;
+
+  // For selecting existing user
+  @IsOptional()
+  @IsUUID()
+  userId?: string;
+
+  // Permissions
   @IsArray()
   @IsString({ each: true })
   permissions: string[]; // Array of permission names
 
+  // Expiry options
+  @IsOptional()
   @IsDateString()
-  expiryDate: string; // ISO date string
+  startDate?: string;
 
   @IsOptional()
   @IsString()
-  notes?: string;
+  startTime?: string;
 
   @IsOptional()
-  @IsUUID()
-  userId?: string; // If linking to existing user
+  @IsDateString()
+  endDate?: string;
+
+  @IsOptional()
+  @IsString()
+  endTime?: string;
+
+  @IsOptional()
+  @IsDateString()
+  expiryDate?: string; // Optional - for backward compatibility, can be undefined for infinite accounts
+
+  // Notes
+  @IsOptional()
+  @IsString()
+  notes?: string;
 }

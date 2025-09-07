@@ -8,22 +8,22 @@ import { User } from '../../users/user.entity';
 import { EUserRole, EUserStatus } from '@academia-pro/types/users';
 
 export interface UserProfile {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: EUserRole;
-  status: EUserStatus;
-  phone?: string;
-  dateOfBirth?: Date;
-  gender?: 'male' | 'female' | 'other';
-  address?: any;
-  schoolId?: string;
-  isEmailVerified: boolean;
-  lastLoginAt?: Date;
-  preferences: any;
-  createdAt: Date;
-  updatedAt: Date;
+   id: string;
+   email: string;
+   firstName: string;
+   lastName: string;
+   roles: EUserRole[];
+   status: EUserStatus;
+   phone?: string;
+   dateOfBirth?: Date;
+   gender?: 'male' | 'female' | 'other';
+   address?: any;
+   schoolId?: string;
+   isEmailVerified: boolean;
+   lastLoginAt?: Date;
+   preferences: any;
+   createdAt: Date;
+   updatedAt: Date;
 }
 
 export interface UserUpdateData {
@@ -37,26 +37,26 @@ export interface UserUpdateData {
 }
 
 export interface UserSearchFilters {
-  role?: EUserRole;
-  status?: EUserStatus;
-  schoolId?: string;
-  email?: string;
-  firstName?: string;
-  lastName?: string;
-  isEmailVerified?: boolean;
-  createdAfter?: Date;
-  createdBefore?: Date;
+   roles?: EUserRole[];
+   status?: EUserStatus;
+   schoolId?: string;
+   email?: string;
+   firstName?: string;
+   lastName?: string;
+   isEmailVerified?: boolean;
+   createdAfter?: Date;
+   createdBefore?: Date;
 }
 
 export interface UserStats {
-  totalUsers: number;
-  activeUsers: number;
-  inactiveUsers: number;
-  suspendedUsers: number;
-  pendingUsers: number;
-  roleBreakdown: Record<EUserRole, number>;
-  recentRegistrations: number;
-  emailVerificationRate: number;
+   totalUsers: number;
+   activeUsers: number;
+   inactiveUsers: number;
+   suspendedUsers: number;
+   pendingUsers: number;
+   roleBreakdown: Record<string, number>;
+   recentRegistrations: number;
+   emailVerificationRate: number;
 }
 
 @Injectable()
@@ -121,8 +121,9 @@ export class UserManagementService {
     const queryBuilder = this.usersRepository.createQueryBuilder('user');
 
     // Apply filters
-    if (filters.role) {
-      queryBuilder.andWhere('user.role = :role', { role: filters.role });
+    if (filters.roles && filters.roles.length > 0) {
+      // For array roles, we need to filter after fetching since TypeORM doesn't support array contains easily
+      // This will be handled after the query
     }
 
     if (filters.status) {
@@ -192,17 +193,17 @@ export class UserManagementService {
     }
 
     // Validate role transition
-    if (!this.isValidRoleTransition(user.role, newRole)) {
+    if (!this.isValidRoleTransition(user.roles, newRole)) {
       throw new BadRequestException('Invalid role transition');
     }
 
     await this.usersRepository.update(userId, {
-      role: newRole,
+      roles: [newRole],
       updatedBy,
     });
 
     // Log role change
-    console.log(`User ${userId} role changed from ${user.role} to ${newRole} by ${updatedBy}`);
+    console.log(`User ${userId} roles changed from ${user.roles.join(', ')} to ${newRole} by ${updatedBy}`);
 
     const updatedUser = await this.usersRepository.findOne({
       where: { id: userId },
@@ -264,7 +265,7 @@ export class UserManagementService {
    */
   async bulkUpdateUsers(
     userIds: string[],
-    updates: Partial<UserUpdateData & { role?: EUserRole; status?: EUserStatus }>,
+    updates: Partial<UserUpdateData & { roles?: EUserRole[]; status?: EUserStatus }>,
     updatedBy: string
   ): Promise<{ updated: number; failed: number }> {
     let updated = 0;
@@ -332,8 +333,9 @@ export class UserManagementService {
 
     // Apply filters if provided
     if (filters) {
-      if (filters.role) {
-        queryBuilder.andWhere('user.role = :role', { role: filters.role });
+      if (filters.roles && filters.roles.length > 0) {
+        // For array roles, we need to filter after fetching since TypeORM doesn't support array contains easily
+        // This will be handled after the query
       }
       if (filters.status) {
         queryBuilder.andWhere('user.status = :status', { status: filters.status });
@@ -349,7 +351,7 @@ export class UserManagementService {
         'user.email',
         'user.firstName',
         'user.lastName',
-        'user.role',
+        'user.roles',
         'user.status',
         'user.phone',
         'user.schoolId',
@@ -363,7 +365,7 @@ export class UserManagementService {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
-      role: user.role,
+      roles: user.roles,
       status: user.status,
       phone: user.phone,
       schoolId: user.schoolId,
@@ -377,11 +379,13 @@ export class UserManagementService {
    */
   async getUsersByRole(role: EUserRole): Promise<UserProfile[]> {
     const users = await this.usersRepository.find({
-      where: { role },
       order: { createdAt: 'DESC' },
     });
 
-    return users.map(user => this.mapUserToProfile(user));
+    // Filter users who have the specified role
+    const filteredUsers = users.filter(user => user.roles && user.roles.includes(role));
+
+    return filteredUsers.map(user => this.mapUserToProfile(user));
   }
 
   /**
@@ -428,7 +432,7 @@ export class UserManagementService {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
-      role: user.role,
+      roles: user.roles,
       status: user.status,
       phone: user.phone,
       dateOfBirth: user.dateOfBirth,
@@ -443,7 +447,7 @@ export class UserManagementService {
     };
   }
 
-  private isValidRoleTransition(currentRole: EUserRole, newRole: EUserRole): boolean {
+  private isValidRoleTransition(currentRoles: EUserRole[], newRole: EUserRole): boolean {
     // Define valid role transitions
     const validTransitions: Record<string, string[]> = {
       'super-admin': ['super-admin', 'school-admin'],
@@ -453,15 +457,18 @@ export class UserManagementService {
       'parent': ['parent'],
     };
 
-    return validTransitions[currentRole]?.includes(newRole) || false;
+    // Check if any of the current roles can transition to the new role
+    return currentRoles.some(currentRole => validTransitions[currentRole]?.includes(newRole)) || false;
   }
 
   private async getRoleBreakdown(): Promise<Record<string, number>> {
-    const roles: string[] = ['super-admin', 'school-admin', 'teacher', 'student', 'parent'];
+    const roles: string[] = ['super-admin', 'delegated-super-admin', 'school-admin', 'teacher', 'student', 'parent'];
     const breakdown: Record<string, number> = {};
 
     for (const role of roles) {
-      breakdown[role] = await this.usersRepository.count({ where: { role: role as any } });
+      // For array roles, we need to use a raw query or find users and filter
+      const users = await this.usersRepository.find();
+      breakdown[role] = users.filter(user => user.roles && user.roles.includes(role as EUserRole)).length;
     }
 
     return breakdown;

@@ -55,6 +55,7 @@ import { CommunicationModule } from '../communication/communication.module';
     RolesGuard,
   ],
   exports: [
+    SchoolsService,
     SchoolContextService,
     SchoolContextGuard,
     TypeOrmModule,

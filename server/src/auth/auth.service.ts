@@ -25,9 +25,13 @@ export class AuthService {
    */
   async validateSuperAdmin(email: string, password: string): Promise<any> {
     const user = await this.usersRepository.findOne({
-      where: { email, role: EUserRole.SUPER_ADMIN },
-      select: ['id', 'email', 'passwordHash', 'firstName', 'lastName', 'role', 'status', 'isEmailVerified'],
+      where: { email },
+      select: ['id', 'email', 'passwordHash', 'firstName', 'lastName', 'roles', 'status', 'isEmailVerified'],
     });
+
+    if (!user || !user.roles.includes(EUserRole.SUPER_ADMIN)) {
+      throw new UnauthorizedException('Super admin account not found');
+    }
 
     if (!user) {
       throw new UnauthorizedException('Super admin account not found');
@@ -56,19 +60,55 @@ export class AuthService {
   }
 
   /**
+   * Validate delegated admin credentials
+   */
+  async validateDelegatedAdmin(email: string, password: string): Promise<any> {
+    const user = await this.usersRepository.findOne({
+      where: { email },
+      select: ['id', 'email', 'passwordHash', 'firstName', 'lastName', 'roles', 'status', 'isEmailVerified'],
+    });
+
+    if (!user || !user.roles.includes(EUserRole.DELEGATED_SUPER_ADMIN as any)) {
+      throw new UnauthorizedException('Delegated admin account not found');
+    }
+
+    if (user.status !== 'active') {
+      throw new UnauthorizedException('Delegated admin account is not active');
+    }
+
+    if (!user.isEmailVerified) {
+      throw new UnauthorizedException('Delegated admin email is not verified');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isPasswordValid) {
+      // Increment login attempts
+      await this.incrementLoginAttempts(user.id);
+      throw new UnauthorizedException('Invalid delegated admin credentials');
+    }
+
+    // Reset login attempts on successful login
+    await this.resetLoginAttempts(user.id);
+
+    const { passwordHash, ...result } = user;
+    return result;
+  }
+
+  /**
    * Validate user credentials
    */
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.usersRepository.findOne({
       where: { email },
-      select: ['id', 'email', 'passwordHash', 'firstName', 'lastName', 'role', 'status', 'schoolId', 'isEmailVerified'],
+      select: ['id', 'email', 'passwordHash', 'firstName', 'lastName', 'roles', 'status', 'schoolId', 'isEmailVerified', 'isFirstLogin'],
     });
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    if (user.status !== 'active') {
+    // Allow login for INACTIVE users who are doing first-time login
+    if (user.status !== 'active' && user.status !== 'inactive') {
       throw new UnauthorizedException('Account is not active');
     }
 
@@ -93,11 +133,11 @@ export class AuthService {
   /**
    * Login user and generate tokens
    */
-  async login(user: any): Promise<IAuthTokens> {
+  async login(user: any): Promise<IAuthTokens & { requiresPasswordReset?: boolean }> {
     const payload = {
       email: user.email,
       sub: user.id,
-      role: user.role,
+      roles: user.roles,
       schoolId: user.schoolId,
     };
 
@@ -111,19 +151,26 @@ export class AuthService {
       lastLoginAt: new Date(),
     });
 
-    return {
+    const result: IAuthTokens & { requiresPasswordReset?: boolean } = {
       accessToken,
       refreshToken,
       expiresIn: 86400, // 24 hours in seconds
       tokenType: 'Bearer',
       issuedAt: new Date(),
     };
+
+    // Check if user needs to reset password (first-time login)
+    if (user.isFirstLogin) {
+      result.requiresPasswordReset = true;
+    }
+
+    return result;
   }
 
   /**
    * Login user and set authentication cookies
    */
-  async loginWithCookies(user: any, res: Response): Promise<{ user: any }> {
+  async loginWithCookies(user: any, res: Response): Promise<{ user: any; requiresPasswordReset?: boolean }> {
     const tokens = await this.login(user);
 
     // Set authentication cookies
@@ -132,7 +179,14 @@ export class AuthService {
     // Remove sensitive information from response
     const { passwordHash, ...userResponse } = user;
 
-    return { user: userResponse };
+    const result: { user: any; requiresPasswordReset?: boolean } = { user: userResponse };
+
+    // Include password reset requirement if needed
+    if (tokens.requiresPasswordReset) {
+      result.requiresPasswordReset = true;
+    }
+
+    return result;
   }
 
   /**
@@ -230,7 +284,7 @@ export class AuthService {
       const payload = this.jwtService.verify(refreshToken);
       const user = await this.usersRepository.findOne({
         where: { id: payload.sub },
-        select: ['id', 'email', 'refreshToken', 'refreshTokenExpires', 'role', 'schoolId'],
+        select: ['id', 'email', 'refreshToken', 'refreshTokenExpires', 'roles', 'schoolId'],
       });
 
       if (!user || !user.refreshToken) {
@@ -252,7 +306,7 @@ export class AuthService {
       const newPayload = {
         email: user.email,
         sub: user.id,
-        role: user.role,
+        roles: user.roles,
         schoolId: user.schoolId,
       };
 
@@ -392,7 +446,7 @@ export class AuthService {
   async getUserProfile(userId: string): Promise<any> {
     const user = await this.usersRepository.findOne({
       where: { id: userId },
-      select: ['id', 'email', 'firstName', 'lastName', 'role', 'status', 'schoolId', 'isEmailVerified'],
+      select: ['id', 'email', 'firstName', 'lastName', 'roles', 'status', 'schoolId', 'isEmailVerified'],
     });
 
     if (!user) {

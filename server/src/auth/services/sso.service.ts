@@ -5,6 +5,7 @@ import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../../users/user.entity';
+import { EUserRole, EUserStatus } from '@academia-pro/types/users';
 
 export interface SSOProvider {
   id: string;
@@ -178,8 +179,8 @@ export class SSOService {
         email: profile.email,
         firstName: profile.firstName,
         lastName: profile.lastName,
-        role: 'student' as any, // Default role, can be changed later
-        status: 'active' as any,
+        roles: [EUserRole.STUDENT], // Default role, can be changed later
+        status: EUserStatus.ACTIVE,
         isEmailVerified: true, // SSO emails are pre-verified
         // TODO: Store SSO provider information
       });
@@ -211,7 +212,7 @@ export class SSOService {
     const jwtPayload = {
       email: user.email,
       sub: user.id,
-      role: user.role,
+      roles: user.roles,
       schoolId: user.schoolId,
       provider: providerId,
     };

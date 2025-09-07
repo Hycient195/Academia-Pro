@@ -37,6 +37,7 @@ import { LocalStrategy } from './strategies/local.strategy';
 // Guards
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
+import { UsersService } from 'src/users/users.service';
 
 @Module({
   imports: [
@@ -65,6 +66,7 @@ import { RolesGuard } from './guards/roles.guard';
     LocalStrategy,
     JwtAuthGuard,
     RolesGuard,
+    UsersService,
   ],
   exports: [
     AuthService,

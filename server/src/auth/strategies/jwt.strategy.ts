@@ -11,12 +11,12 @@ import { Request } from 'express';
 import { User } from '../../users/user.entity';
 
 export interface JwtPayload {
-  sub: string;      // User ID
-  email: string;    // User email
-  role: string;     // User role
-  schoolId?: string; // School ID (optional)
-  iat?: number;     // Issued at
-  exp?: number;     // Expiration time
+   sub: string;      // User ID
+   email: string;    // User email
+   roles: string[];  // User roles
+   schoolId?: string; // School ID (optional)
+   iat?: number;     // Issued at
+   exp?: number;     // Expiration time
 }
 
 /**
@@ -49,7 +49,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
    * This method is called automatically by Passport after JWT verification
    */
   async validate(payload: JwtPayload): Promise<any> {
-    const { sub: userId, email, role, schoolId } = payload;
+    const { sub: userId, email, roles, schoolId } = payload;
 
     // Fetch user from database to ensure they still exist and are active
     const user = await this.usersRepository.findOne({
@@ -59,11 +59,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         'email',
         'firstName',
         'lastName',
-        'role',
+        'roles',
         'status',
         'schoolId',
         'isEmailVerified',
         'lastLoginAt',
+        'isFirstLogin',
       ],
     });
 
@@ -88,11 +89,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
-      role: user.role,
+      roles: user.roles,
       status: user.status,
       schoolId: user.schoolId,
       isEmailVerified: user.isEmailVerified,
       lastLoginAt: user.lastLoginAt,
+      isFirstLogin: user.isFirstLogin,
     };
   }
 }

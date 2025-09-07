@@ -73,14 +73,14 @@ export class SchoolContextService {
       }
 
       // Determine permissions based on role
-      const permissions = this.getPermissionsForRole(user.role, contextSchoolId);
-      const isSuperAdmin = user.role === 'super-admin';
-      const isSchoolAdmin = user.role === 'school-admin' && user.schoolId === contextSchoolId;
+      const permissions = this.getPermissionsForRole(user.roles[0], contextSchoolId);
+      const isSuperAdmin = user.roles[0] === 'super-admin';
+      const isSchoolAdmin = user.roles[0] === 'school-admin' && user.schoolId === contextSchoolId;
 
       return {
         schoolId: contextSchoolId,
         school: contextSchool,
-        userRole: user.role,
+        userRole: user.roles[0],
         permissions,
         isSuperAdmin,
         isSchoolAdmin,
@@ -105,12 +105,12 @@ export class SchoolContextService {
       }
 
       // Super admins have access to all schools
-      if (user.role === 'super-admin') {
+      if (user.roles[0] === 'super-admin') {
         return true;
       }
 
       // School admins only have access to their own school
-      if (user.role === 'school-admin') {
+      if (user.roles[0] === 'school-admin') {
         return user.schoolId === schoolId;
       }
 
@@ -144,7 +144,7 @@ export class SchoolContextService {
         return [];
       }
 
-      if (user.role === 'super-admin') {
+      if (user.roles[0] === 'super-admin') {
         // Super admin can access all schools
         return this.getAllSchools();
       } else if (user.schoolId) {

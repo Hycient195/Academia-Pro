@@ -82,7 +82,7 @@ export class CookieAuthMiddleware implements NestMiddleware {
       const newPayload = {
         email: user.email,
         sub: user.id,
-        role: user.role,
+        roles: user.roles,
         schoolId: user.schoolId,
       };
 

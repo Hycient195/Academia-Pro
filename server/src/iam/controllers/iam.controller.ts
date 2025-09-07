@@ -8,16 +8,21 @@ import {
   Param,
   UseGuards,
   HttpCode,
-  HttpStatus
+  HttpStatus,
+  Req
 } from '@nestjs/common';
+import { Request } from 'express';
 import { IamService } from '../services/iam.service';
 import { CreateDelegatedAccountDto } from '../dtos/create-delegated-account.dto';
 import { UpdateDelegatedAccountDto } from '../dtos/update-delegated-account.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-// TODO: Add SuperAdmin guard
+import { RolesGuard } from '../../auth/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { EUserRole } from '@academia-pro/types/users';
 
 @Controller('super-admin/iam')
-@UseGuards(JwtAuthGuard) // TODO: Add SuperAdminGuard
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(EUserRole.SUPER_ADMIN)
 export class IamController {
   constructor(private readonly iamService: IamService) {}
 
@@ -26,9 +31,9 @@ export class IamController {
   @HttpCode(HttpStatus.CREATED)
   async createDelegatedAccount(
     @Body() dto: CreateDelegatedAccountDto,
-    // TODO: Get user from request
+    @Req() request: Request
   ) {
-    const createdBy = 'super-admin-id'; // TODO: Get from authenticated user
+    const createdBy = (request.user as any)?.id || null;
     return this.iamService.createDelegatedAccount(dto, createdBy);
   }
 
@@ -46,15 +51,16 @@ export class IamController {
   async updateDelegatedAccount(
     @Param('id') id: string,
     @Body() dto: UpdateDelegatedAccountDto,
+    @Req() request: Request
   ) {
-    const updatedBy = 'super-admin-id'; // TODO: Get from authenticated user
+    const updatedBy = (request.user as any)?.id || null;
     return this.iamService.updateDelegatedAccount(id, dto, updatedBy);
   }
 
   @Post('delegated-accounts/:id/revoke')
   @HttpCode(HttpStatus.OK)
-  async revokeDelegatedAccount(@Param('id') id: string) {
-    const revokedBy = 'super-admin-id'; // TODO: Get from authenticated user
+  async revokeDelegatedAccount(@Param('id') id: string, @Req() request: Request) {
+    const revokedBy = (request.user as any)?.id || null;
     return this.iamService.revokeDelegatedAccount(id, revokedBy);
   }
 

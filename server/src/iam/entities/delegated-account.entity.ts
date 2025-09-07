@@ -23,11 +23,11 @@ export class DelegatedAccount {
   @Column({ type: 'jsonb' })
   permissions: string[]; // Array of permission names, e.g., ["schools:create", "users:read"]
 
-  @Column({ type: 'timestamp' })
-  expiryDate: Date;
+  @Column({ type: 'timestamp', nullable: true })
+  expiryDate: Date | null;
 
-  @Column({ type: 'uuid' })
-  createdBy: string; // Super admin who created this
+  @Column({ type: 'uuid', nullable: true })
+  createdBy: string | null; // Super admin who created this
 
   @Column({
     type: 'enum',

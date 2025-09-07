@@ -76,7 +76,7 @@ export class SchoolsService {
     type?: TSchoolType;
     status?: SchoolStatus;
     search?: string;
-  }): Promise<{ schools: School[]; pagination: { page: number; limit: number; total: number; totalPages: number; hasNext: boolean; hasPrev: boolean } }> {
+  }): Promise<{ data: School[]; pagination: { page: number; limit: number; total: number; totalPages: number; hasNext: boolean; hasPrev: boolean } }> {
     const { page = 1, limit = 10, type, status, search } = options || {};
 
     const queryBuilder = this.schoolsRepository.createQueryBuilder('school');
@@ -110,7 +110,7 @@ export class SchoolsService {
     const hasPrev = page > 1;
 
     return {
-      schools,
+      data: schools,
       pagination: {
         page,
         limit,

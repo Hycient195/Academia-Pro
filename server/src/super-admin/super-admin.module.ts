@@ -6,19 +6,23 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 // Import SchoolsModule
 import { SchoolsModule } from '../schools/schools.module';
+import { UsersModule } from '../users/users.module';
 
 // Controllers
 import { SuperAdminController } from './super-admin.controller';
+import { SuperAdminUsersController } from './controllers/super-admin.controller';
 
 // Services
 import { CrossSchoolReportingService } from './cross-school-reporting.service';
 
 @Module({
   imports: [
-    forwardRef(() => SchoolsModule),
+     forwardRef(() => SchoolsModule),
+     forwardRef(() => UsersModule),
   ],
   controllers: [
     SuperAdminController,
+    SuperAdminUsersController,
   ],
   providers: [
     CrossSchoolReportingService,

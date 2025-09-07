@@ -1,9 +1,11 @@
 // Academia Pro - Super Admin Users Controller
 // Handles multi-school user administration and cross-school user operations
 
-import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, Logger, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, Logger, Patch, Inject, Req, ForbiddenException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBody } from '@nestjs/swagger';
+import { ModuleRef } from '@nestjs/core';
 import { UsersService } from '../../users/users.service';
+import { SchoolsService } from '../../schools/schools.service';
 import { User } from '../../users/user.entity';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../auth/guards/roles.guard';
@@ -14,13 +16,43 @@ import { EUserRole, EUserStatus } from '@academia-pro/types/users';
 @ApiTags('Super Admin - Multi-School User Management')
 @Controller('super-admin')
 @UseGuards(RolesGuard)
-@Roles(EUserRole.SUPER_ADMIN)
+@Roles(EUserRole.SUPER_ADMIN, 'delegated-super-admin' as any)
 export class SuperAdminUsersController {
   private readonly logger = new Logger(SuperAdminUsersController.name);
 
   constructor(
     private readonly usersService: UsersService,
+    private readonly moduleRef: ModuleRef,
   ) {}
+
+  /**
+   * Helper method to get school name by ID
+   */
+  private async getSchoolName(schoolId: string): Promise<string> {
+    try {
+      const schoolsService = this.moduleRef.get(SchoolsService, { strict: false });
+      const school = await schoolsService.findOne(schoolId);
+      return school.name;
+    } catch (error) {
+      this.logger.warn(`Failed to get school name for ID ${schoolId}: ${error.message}`);
+      return 'School Name'; // Fallback to hardcoded value
+    }
+  }
+
+  /**
+   * Helper method to check if user is super admin
+   */
+  private isSuperAdmin(user: any): boolean {
+    return user.role === EUserRole.SUPER_ADMIN;
+  }
+
+  /**
+   * Helper method to check if user can perform restricted operations
+   */
+  private canPerformRestrictedOperation(user: any): boolean {
+    // Only super admins can perform certain operations
+    return this.isSuperAdmin(user);
+  }
 
   // ==================== USER MANAGEMENT ====================
 
@@ -105,22 +137,22 @@ export class SuperAdminUsersController {
     }) as unknown as PaginatedResponse<User>;
 
     // Format users for client
-    const formattedUsers = result.data.map(user => ({
+    const formattedUsers = await Promise.all(result.data.map(async user => ({
       id: user.id,
       name: `${user.firstName} ${user.middleName ? user.middleName + ' ' : ''}${user.lastName}`,
       firstName: user.firstName,
       lastName: user.lastName,
       middleName: user.middleName,
       email: user.email,
-      role: user.role,
+      roles: user.roles,
       status: user.status,
       schoolId: user.schoolId,
-      schoolName: user.schoolId ? 'School Name' : null, // TODO: Get school name from school service
+      schoolName: user.schoolId ? await this.getSchoolName(user.schoolId) : null,
       phone: user.phone,
       lastLogin: user.lastLoginAt?.toISOString(),
       createdAt: user.createdAt.toISOString(),
       updatedAt: user.updatedAt.toISOString(),
-    }));
+    })));
 
     return {
       data: formattedUsers,
@@ -145,7 +177,7 @@ export class SuperAdminUsersController {
         email: { type: 'string', description: 'User email' },
         role: {
           type: 'string',
-          enum: ['super-admin', 'school-admin', 'teacher', 'student', 'parent'],
+          enum: ['super-admin', 'delegated-super-admin', 'school-admin', 'teacher', 'student', 'parent'],
           description: 'User role'
         },
         schoolId: { type: 'string', description: 'School ID (optional)' },
@@ -167,7 +199,7 @@ export class SuperAdminUsersController {
   ): Promise<any> {
     this.logger.log(`Creating new user: ${userData.email}`);
 
-    const createdUser = await this.usersService.create(userData);
+    const createdUser = await this.usersService.create(userData, true); // true = super admin created
 
     // Format the response
     return {
@@ -177,10 +209,11 @@ export class SuperAdminUsersController {
       lastName: createdUser.lastName,
       middleName: createdUser.middleName,
       email: createdUser.email,
-      role: createdUser.role,
+      roles: createdUser.roles,
       status: createdUser.status,
       schoolId: createdUser.schoolId,
       phone: createdUser.phone,
+      isFirstLogin: createdUser.isFirstLogin,
       createdAt: createdUser.createdAt.toISOString(),
       updatedAt: createdUser.updatedAt.toISOString(),
     };
@@ -212,10 +245,10 @@ export class SuperAdminUsersController {
       lastName: user.lastName,
       middleName: user.middleName,
       email: user.email,
-      role: user.role,
+      roles: user.roles,
       status: user.status,
       schoolId: user.schoolId,
-      schoolName: user.schoolId ? 'School Name' : null, // TODO: Get school name
+      schoolName: user.schoolId ? await this.getSchoolName(user.schoolId) : null,
       phone: user.phone,
       dateOfBirth: user.dateOfBirth?.toISOString(),
       gender: user.gender,
@@ -248,7 +281,7 @@ export class SuperAdminUsersController {
         email: { type: 'string', description: 'User email' },
         role: {
           type: 'string',
-          enum: ['super-admin', 'school-admin', 'teacher', 'student', 'parent'],
+          enum: ['super-admin', 'delegated-super-admin', 'school-admin', 'teacher', 'student', 'parent'],
           description: 'User role'
         },
         schoolId: { type: 'string', description: 'School ID' },
@@ -281,7 +314,7 @@ export class SuperAdminUsersController {
       lastName: updatedUser.lastName,
       middleName: updatedUser.middleName,
       email: updatedUser.email,
-      role: updatedUser.role,
+      roles: updatedUser.roles,
       status: updatedUser.status,
       schoolId: updatedUser.schoolId,
       phone: updatedUser.phone,
@@ -302,10 +335,49 @@ export class SuperAdminUsersController {
     status: 200,
     description: 'User deleted successfully',
   })
-  async deleteUser(@Param('userId') userId: string): Promise<void> {
+  async deleteUser(@Param('userId') userId: string, @Req() req: any): Promise<void> {
     this.logger.log(`Deleting user: ${userId}`);
 
+    // Only super admins can delete users
+    if (!this.canPerformRestrictedOperation(req.user)) {
+      throw new ForbiddenException('Only super administrators can delete users');
+    }
+
     await this.usersService.remove(userId);
+  }
+
+  @Post('users/:userId/reactivate')
+  @ApiOperation({
+    summary: 'Reactivate suspended user',
+    description: 'Reactivates a suspended user account.',
+  })
+  @ApiParam({
+    name: 'userId',
+    description: 'Unique identifier of the user',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User reactivated successfully',
+  })
+  async reactivateUser(@Param('userId') userId: string): Promise<any> {
+    this.logger.log(`Reactivating user: ${userId}`);
+
+    const reactivatedUser = await this.usersService.activate(userId);
+
+    // Format the response
+    return {
+      id: reactivatedUser.id,
+      name: `${reactivatedUser.firstName} ${reactivatedUser.middleName ? reactivatedUser.middleName + ' ' : ''}${reactivatedUser.lastName}`,
+      firstName: reactivatedUser.firstName,
+      lastName: reactivatedUser.lastName,
+      middleName: reactivatedUser.middleName,
+      email: reactivatedUser.email,
+      roles: reactivatedUser.roles,
+      status: reactivatedUser.status,
+      schoolId: reactivatedUser.schoolId,
+      phone: reactivatedUser.phone,
+      updatedAt: reactivatedUser.updatedAt.toISOString(),
+    };
   }
 
   // ==================== BULK OPERATIONS ====================
@@ -340,8 +412,14 @@ export class SuperAdminUsersController {
   })
   async bulkUserOperation(
     @Body() bulkData: { operation: string; userIds: string[] },
+    @Req() req: any,
   ): Promise<any> {
     this.logger.log(`Performing bulk ${bulkData.operation} on ${bulkData.userIds.length} users`);
+
+    // Only super admins can perform bulk operations
+    if (!this.canPerformRestrictedOperation(req.user)) {
+      throw new ForbiddenException('Only super administrators can perform bulk operations');
+    }
 
     const results = [];
     for (const userId of bulkData.userIds) {

@@ -63,11 +63,11 @@ export class RegisterDto implements IRegisterRequest {
   @ApiPropertyOptional({
     description: 'User role',
     example: 'student',
-    enum: ['super-admin', 'school-admin', 'teacher', 'student', 'parent'],
+    enum: ['super-admin', 'delegated-super-admin', 'school-admin', 'teacher', 'student', 'parent'],
   })
   @IsOptional()
-  @IsEnum(['super-admin', 'school-admin', 'teacher', 'student', 'parent'], {
-    message: 'Role must be one of: super-admin, school-admin, teacher, student, parent'
+  @IsEnum(['super-admin', 'delegated-super-admin', 'school-admin', 'teacher', 'student', 'parent'], {
+    message: 'Role must be one of: super-admin, delegated-super-admin, school-admin, teacher, student, parent'
   })
   role?: EUserRole;
 

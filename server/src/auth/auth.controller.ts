@@ -115,6 +115,39 @@ export class AuthController {
     res.json(result);
   }
 
+  @Post('super-admin/login')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Authenticate super admin user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Super admin login successful',
+    schema: {
+      type: 'object',
+      properties: {
+        user: { type: 'object' },
+        csrfToken: { type: 'string' },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  @ApiResponse({ status: 403, description: 'Access denied - not a super admin' })
+  async superAdminLogin(@Body() loginDto: LoginDto, @Response() res: any): Promise<void> {
+    const user = await this.authService.validateUser(
+      loginDto.email,
+      loginDto.password,
+    );
+
+    // Check if user is a super admin
+    if (user.role !== 'super-admin') {
+      res.status(403).json({ message: 'Access denied - not a super admin' });
+      return;
+    }
+
+    const result = await this.authService.loginWithCookies(user, res);
+
+    res.json(result);
+  }
+
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Refresh access token using refresh token from cookies' })

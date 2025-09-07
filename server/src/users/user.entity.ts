@@ -7,7 +7,7 @@ import { EUserRole, EUserStatus } from '@academia-pro/types/users';
 
 @Entity('users')
 @Index(['email'], { unique: true })
-@Index(['schoolId', 'role'])
+@Index(['schoolId', 'roles'])
 @Index(['status'])
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -29,15 +29,16 @@ export class User {
   middleName?: string;
 
   @Column({
-    type: 'enum',
-    enum: ['super-admin', 'school-admin', 'teacher', 'student', 'parent'],
-    default: 'student'
+    type: 'simple-array',
+    enum: EUserRole,
+    default: ['student']
   })
-  role: EUserRole;
+  roles: EUserRole[];
 
   @Column({
     type: 'enum',
     enum: ['active', 'inactive', 'suspended', 'pending'],
+    enumName: 'user_status',
     default: 'active'
   })
   status: EUserStatus;
@@ -73,6 +74,9 @@ export class User {
 
   @Column({ type: 'boolean', default: false })
   isEmailVerified: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  isFirstLogin: boolean;
 
   @Column({ type: 'timestamp', nullable: true })
   lastLoginAt: Date;

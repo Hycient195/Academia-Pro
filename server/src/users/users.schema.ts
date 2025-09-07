@@ -27,7 +27,7 @@ export class User {
 
   @Column({
     type: 'enum',
-    enum: ['super-admin', 'school-admin', 'teacher', 'student', 'parent'],
+    enum: ['super-admin', 'delegated-super-admin', 'school-admin', 'teacher', 'student', 'parent'],
     default: 'student'
   })
   role: IUserPermissionRole;

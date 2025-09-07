@@ -20,7 +20,7 @@ export class UsersService {
   /**
    * Create a new user
    */
-  async create(createUserDto: CreateUserDto): Promise<User> {
+  async create(createUserDto: CreateUserDto, isSuperAdminCreated: boolean = false): Promise<User> {
     const { email, password, ...userData } = createUserDto;
 
     // Check if user already exists
@@ -32,17 +32,33 @@ export class UsersService {
       throw new ConflictException('User with this email already exists');
     }
 
-    // Hash password if provided
+    // For super admin created users, set password as email and status as INACTIVE
     let passwordHash: string | undefined;
-    if (password) {
+    let userStatus: EUserStatus;
+    let isFirstLogin: boolean;
+
+    if (isSuperAdminCreated) {
+      // Hash the email as password for super admin created users
       const saltRounds = 12;
-      passwordHash = await bcrypt.hash(password, saltRounds);
+      passwordHash = await bcrypt.hash(email, saltRounds);
+      userStatus = EUserStatus.INACTIVE;
+      isFirstLogin = true;
+    } else {
+      // Hash password if provided for regular user registration
+      if (password) {
+        const saltRounds = 12;
+        passwordHash = await bcrypt.hash(password, saltRounds);
+        userStatus = EUserStatus.ACTIVE;
+      } else {
+        userStatus = EUserStatus.PENDING;
+      }
+      isFirstLogin = false;
     }
 
     // Prepare user data with correct types
     const userDataPrepared = {
       ...userData,
-      role: userData.role as EUserRole | undefined,
+      roles: userData.role ? [userData.role as EUserRole] : ['student' as EUserRole],
       dateOfBirth: userData.dateOfBirth ? new Date(userData.dateOfBirth) : undefined,
     };
 
@@ -51,8 +67,9 @@ export class UsersService {
       ...userDataPrepared,
       email,
       passwordHash,
-      status: password ? EUserStatus.ACTIVE : EUserStatus.PENDING, // Active if password provided, pending otherwise
-      isEmailVerified: false,
+      status: userStatus,
+      isEmailVerified: isSuperAdminCreated ? true : false, // Auto-verify for super admin created users
+      isFirstLogin,
     });
 
     const savedUser = await this.usersRepository.save(user);
@@ -76,7 +93,7 @@ export class UsersService {
 
     // Apply filters
     if (role) {
-      queryBuilder.andWhere('user.role = :role', { role });
+      queryBuilder.andWhere('user.roles @> ARRAY[:role]', { role });
     }
 
     if (status) {
@@ -149,7 +166,7 @@ export class UsersService {
   async findOneForAuth(id: string): Promise<User | null> {
     return this.usersRepository.findOne({
       where: { id },
-      select: ['id', 'email', 'firstName', 'lastName', 'role', 'status', 'schoolId', 'isEmailVerified'],
+      select: ['id', 'email', 'firstName', 'lastName', 'roles', 'status', 'schoolId', 'isEmailVerified'],
     });
   }
 
@@ -159,7 +176,7 @@ export class UsersService {
   async findOneForRefreshToken(id: string): Promise<User | null> {
     return this.usersRepository.findOne({
       where: { id },
-      select: ['id', 'email', 'refreshToken', 'refreshTokenExpires', 'role', 'schoolId'],
+      select: ['id', 'email', 'refreshToken', 'refreshTokenExpires', 'roles', 'schoolId'],
     });
   }
 
@@ -204,7 +221,7 @@ export class UsersService {
     };
 
     if (updateData.role !== undefined) {
-      updateDataPrepared.role = updateData.role as EUserRole;
+      updateDataPrepared.roles = [updateData.role as EUserRole];
     }
 
     if (updateData.dateOfBirth !== undefined) {
@@ -223,8 +240,8 @@ export class UsersService {
   async remove(id: string): Promise<void> {
     const user = await this.findOne(id);
 
-    // Instead of hard delete, change status to inactive
-    user.status = EUserStatus.INACTIVE;
+    // Instead of hard delete, change status to suspended (marked as deleted)
+    user.status = EUserStatus.SUSPENDED;
 
     await this.usersRepository.save(user);
   }
@@ -337,6 +354,29 @@ export class UsersService {
   }
 
   /**
+   * Reset password for first-time login users
+   */
+  async resetFirstTimePassword(id: string, newPassword: string): Promise<User> {
+    const user = await this.findOne(id);
+
+    if (!user.isFirstLogin) {
+      throw new BadRequestException('This user has already completed first-time login');
+    }
+
+    // Hash new password
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+
+    // Update password, set first login to false, and activate account
+    await this.usersRepository.update(id, {
+      passwordHash,
+      isFirstLogin: false,
+      status: EUserStatus.ACTIVE,
+    });
+
+    return this.findOne(id);
+  }
+
+  /**
    * Verify user email
    */
   async verifyEmail(id: string): Promise<User> {
@@ -357,10 +397,11 @@ export class UsersService {
    * Get users by role
    */
   async getUsersByRole(role: EUserRole): Promise<User[]> {
-    return this.usersRepository.find({
-      where: { role, status: EUserStatus.ACTIVE },
-      order: { createdAt: 'DESC' },
-    });
+    return this.usersRepository.createQueryBuilder('user')
+      .where('user.roles @> ARRAY[:role]', { role })
+      .andWhere('user.status = :status', { status: EUserStatus.ACTIVE })
+      .orderBy('user.createdAt', 'DESC')
+      .getMany();
   }
 
   /**
@@ -392,7 +433,7 @@ export class UsersService {
     );
 
     if (role) {
-      queryBuilder.andWhere('user.role = :role', { role });
+      queryBuilder.andWhere('user.roles @> ARRAY[:role]', { role });
     }
 
     if (schoolId) {
@@ -425,15 +466,17 @@ export class UsersService {
     const usersByRole: Record<EUserRole, number> = {
       'super-admin': 0,
       'school-admin': 0,
+      'delegated-super-admin': 0,
       'teacher': 0,
       'student': 0,
       'parent': 0,
     };
 
     for (const role of Object.keys(usersByRole) as EUserRole[]) {
-      usersByRole[role] = await this.usersRepository.count({
-        where: { role, status: EUserStatus.ACTIVE },
-      });
+      usersByRole[role] = await this.usersRepository.createQueryBuilder('user')
+        .where('user.roles @> ARRAY[:role]', { role })
+        .andWhere('user.status = :status', { status: EUserStatus.ACTIVE })
+        .getCount();
     }
 
     // Recent registrations (last 30 days)

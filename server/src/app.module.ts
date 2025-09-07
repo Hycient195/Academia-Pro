@@ -15,6 +15,7 @@ import { SecurityMiddleware } from './auth/middleware/security.middleware';
 // Core modules
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { SchoolsModule } from './schools/schools.module';
 import { SuperAdminModule } from './super-admin/super-admin.module';
 import { StudentsModule } from './students/students.module';
 import { AcademicModule } from './academic/academic.module';
@@ -43,7 +44,6 @@ import { TimeoutInterceptor } from './common/interceptors/timeout.interceptor';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 // Database configuration
-import { DatabaseBootstrapService } from './database.bootstrap';
 import { getDatabaseConfig } from './database.config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -63,7 +63,7 @@ import { AppService } from './app.service';
     forwardRef(() =>
       TypeOrmModule.forRootAsync({
         imports: [ConfigModule],
-        useFactory: (configService: ConfigService) => getDatabaseConfig(configService),
+        useFactory: async (configService: ConfigService) => await getDatabaseConfig(configService),
         inject: [ConfigService],
       }),
     ),
@@ -118,9 +118,6 @@ import { AppService } from './app.service';
     // MobileModule,
   ],
   providers: [
-    // Database bootstrap service
-    DatabaseBootstrapService,
-
     // Global guards
     {
       provide: APP_GUARD,

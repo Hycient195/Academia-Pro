@@ -15,15 +15,16 @@ export class DatabaseBootstrapService implements OnModuleInit {
   private async ensureDatabaseExists(): Promise<void> {
     const dbName = this.configService.get<string>('DB_NAME', 'academia_pro');
     const dbHost = this.configService.get<string>('DB_HOST', 'localhost');
-    const dbPort = this.configService.get<number>('DB_PORT', 5432);
-    const dbUsername = this.configService.get<string>('DB_USERNAME', 'postgres');
     const dbPassword = this.configService.get<string>('DB_PASSWORD', 'admin');
+    const dbPort = this.configService.get<number>('DB_PORT', 5432);
+    // const dbUsername = this.configService.get<string>('DB_ADMIN_USERNAME', 'postgres');
+    // const dbPassword = this.configService.get<string>('DB_ADMIN_PASSWORD', 'admin');
 
     // Connect to postgres database (not the application database)
     const client = new pg.Client({
       host: dbHost,
       port: dbPort,
-      user: dbUsername,
+      user: dbName,
       password: dbPassword,
       database: 'postgres', // Connect to default postgres database
     });

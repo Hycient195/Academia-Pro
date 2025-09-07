@@ -1,18 +1,19 @@
 // Academia Pro - User Management Controller
 // Handles user profiles, roles, permissions, and account management
 
-import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, Request, HttpCode, HttpStatus, Inject } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { UsersService } from '../../users/users.service';
 
 @ApiTags('User Management')
 @Controller('auth/users')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class UserManagementController {
-  constructor() {
-    // Services will be injected here
-  }
+  constructor(
+    private readonly usersService: UsersService,
+  ) {}
 
   @Get('profile')
   @ApiOperation({
@@ -695,6 +696,34 @@ export class UserManagementController {
       deletedAt: new Date(),
       status: 'deletion_initiated',
       message: 'Account deletion process initiated',
+    };
+  }
+
+  @Post('reset-first-time-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Reset first-time login password',
+    description: 'Reset password for users logging in for the first time',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Password reset successfully',
+  })
+  async resetFirstTimePassword(
+    @Request() req: any,
+    @Body() body: { newPassword: string }
+  ) {
+    const userId = req.user.id;
+    const { newPassword } = body;
+
+    const updatedUser = await this.usersService.resetFirstTimePassword(userId, newPassword);
+
+    return {
+      userId,
+      message: 'Password reset successfully. Your account is now active.',
+      status: updatedUser.status,
+      isFirstLogin: updatedUser.isFirstLogin,
+      updatedAt: updatedUser.updatedAt,
     };
   }
 }

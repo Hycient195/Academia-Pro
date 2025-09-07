@@ -7,6 +7,7 @@ import { Role } from '../entities/role.entity';
 import { CreateDelegatedAccountDto } from '../dtos/create-delegated-account.dto';
 import { UpdateDelegatedAccountDto } from '../dtos/update-delegated-account.dto';
 import { User } from '../../users/user.entity';
+import { EUserRole, EUserStatus } from '@academia-pro/types/users';
 
 @Injectable()
 export class IamService {
@@ -24,33 +25,78 @@ export class IamService {
   // Delegated Account methods
   async createDelegatedAccount(
     dto: CreateDelegatedAccountDto,
-    createdBy: string
+    createdBy: string | null
   ): Promise<DelegatedAccount> {
-    // Check if email already exists
-    const existing = await this.delegatedAccountRepository.findOne({
-      where: { email: dto.email }
-    });
+    // Check if email already exists (only if email is provided)
+    if (dto.email) {
+      const existing = await this.delegatedAccountRepository.findOne({
+        where: { email: dto.email }
+      });
 
-    if (existing) {
-      throw new ConflictException('Delegated account with this email already exists');
+      if (existing) {
+        throw new ConflictException('Delegated account with this email already exists');
+      }
     }
 
     // Validate permissions exist
     await this.validatePermissions(dto.permissions);
 
-    // If userId provided, verify user exists
-    if (dto.userId) {
-      const user = await this.userRepository.findOne({ where: { id: dto.userId } });
+    let userId = dto.userId;
+
+    // If userId not provided but user details are, create a new user
+    if (!userId && dto.firstName && dto.lastName) {
+      const newUser = this.userRepository.create({
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        middleName: dto.middleName,
+        email: dto.email,
+        // Set default roles for delegated accounts
+        roles: [EUserRole.SCHOOL_ADMIN], // Delegated accounts typically have admin-level access
+        status: EUserStatus.ACTIVE,
+        // No password for delegated accounts - they use API keys/tokens
+        passwordHash: null,
+        isEmailVerified: true, // Auto-verify since no password setup needed
+      });
+
+      const savedUser = await this.userRepository.save(newUser);
+      userId = savedUser.id;
+    } else if (!userId) {
+      throw new BadRequestException('Either userId or user details (firstName, lastName) must be provided');
+    }
+
+    // If userId provided, verify user exists and get email
+    let userEmail = dto.email;
+    if (userId) {
+      const user = await this.userRepository.findOne({ where: { id: userId } });
       if (!user) {
         throw new NotFoundException('User not found');
       }
+      userEmail = user.email;
     }
 
+    // Handle expiry date logic
+    let expiryDate: Date | undefined;
+
+    // If end date is provided, use it as expiry
+    if (dto.endDate) {
+      expiryDate = new Date(dto.endDate);
+      if (dto.endTime) {
+        const [hours, minutes] = dto.endTime.split(':');
+        expiryDate.setHours(parseInt(hours), parseInt(minutes));
+      }
+    } else if (dto.expiryDate) {
+      // Fallback to provided expiry date for backward compatibility
+      expiryDate = new Date(dto.expiryDate);
+    }
+    // If neither endDate nor expiryDate is provided, expiryDate remains undefined (infinite account)
+
     const delegatedAccount = this.delegatedAccountRepository.create({
-      ...dto,
-      userId: dto.userId || '', // Will be set later if needed
+      userId,
+      email: userEmail,
+      permissions: dto.permissions,
+      expiryDate: expiryDate || null,
       createdBy,
-      expiryDate: new Date(dto.expiryDate),
+      notes: dto.notes,
     });
 
     return this.delegatedAccountRepository.save(delegatedAccount);
@@ -77,7 +123,7 @@ export class IamService {
   async updateDelegatedAccount(
     id: string,
     dto: UpdateDelegatedAccountDto,
-    updatedBy: string
+    updatedBy: string | null
   ): Promise<DelegatedAccount> {
     const account = await this.getDelegatedAccountById(id);
 
@@ -97,7 +143,7 @@ export class IamService {
     return this.getDelegatedAccountById(id);
   }
 
-  async revokeDelegatedAccount(id: string, revokedBy: string): Promise<DelegatedAccount> {
+  async revokeDelegatedAccount(id: string, revokedBy: string | null): Promise<DelegatedAccount> {
     const account = await this.getDelegatedAccountById(id);
 
     await this.delegatedAccountRepository.update(id, {
@@ -179,8 +225,8 @@ export class IamService {
       return false;
     }
 
-    // Check if account is expired
-    if (account.expiryDate < new Date()) {
+    // Check if account is expired (only if expiryDate is set)
+    if (account.expiryDate && account.expiryDate < new Date()) {
       await this.delegatedAccountRepository.update(account.id, {
         status: DelegatedAccountStatus.EXPIRED
       });

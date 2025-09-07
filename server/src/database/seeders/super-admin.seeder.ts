@@ -39,13 +39,11 @@ export class SuperAdminSeeder implements OnModuleInit {
         firstName: 'Super',
         lastName: 'Admin',
         passwordHash,
-        role: EUserRole.SUPER_ADMIN,
+        roles: [EUserRole.SUPER_ADMIN],
         status: EUserStatus.ACTIVE,
         isEmailVerified: true,
         emailVerificationToken: null,
         emailVerificationExpires: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       });
 
       await this.usersRepository.save(superAdmin);

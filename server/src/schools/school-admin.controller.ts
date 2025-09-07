@@ -277,7 +277,7 @@ export class SchoolAdminController {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
-      role: user.role,
+      roles: user.roles,
       status: user.status,
       createdAt: user.createdAt,
     }));

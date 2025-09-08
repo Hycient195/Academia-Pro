@@ -11,19 +11,30 @@ import { User } from '../users/user.entity';
 import { LoginDto, RegisterDto, RefreshTokenDto, ChangePasswordDto } from './dtos';
 import { IAuthTokens } from '@academia-pro/types/auth';
 import { EUserRole, EUserStatus } from '@academia-pro/types/users';
+import { Auditable, AuditAuth, AuditSecurity } from '../common/audit/auditable.decorator';
+import { AuditAction, AuditSeverity } from '../security/types/audit.types';
+import { AuditService } from '../security/services/audit.service';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(User)
-    private usersRepository: Repository<User>,
-    private jwtService: JwtService,
-  ) {}
+     @InjectRepository(User)
+     private usersRepository: Repository<User>,
+     private jwtService: JwtService,
+     private auditService: AuditService,
+   ) {}
 
   /**
-   * Validate super admin credentials
-   */
-  async validateSuperAdmin(email: string, password: string): Promise<any> {
+    * Validate super admin credentials
+    */
+   @AuditAuth(true)
+   @Auditable({
+     resource: 'super_admin_auth',
+     severity: AuditSeverity.HIGH,
+     excludeFields: ['password'],
+     metadata: { authType: 'super_admin' }
+   })
+   async validateSuperAdmin(email: string, password: string): Promise<any> {
     const user = await this.usersRepository.findOne({
       where: { email },
       select: ['id', 'email', 'passwordHash', 'firstName', 'lastName', 'roles', 'status', 'isEmailVerified'],
@@ -60,9 +71,16 @@ export class AuthService {
   }
 
   /**
-   * Validate delegated admin credentials
-   */
-  async validateDelegatedAdmin(email: string, password: string): Promise<any> {
+    * Validate delegated admin credentials
+    */
+   @AuditAuth(true)
+   @Auditable({
+     resource: 'delegated_admin_auth',
+     severity: AuditSeverity.HIGH,
+     excludeFields: ['password'],
+     metadata: { authType: 'delegated_admin' }
+   })
+   async validateDelegatedAdmin(email: string, password: string): Promise<any> {
     const user = await this.usersRepository.findOne({
       where: { email },
       select: ['id', 'email', 'passwordHash', 'firstName', 'lastName', 'roles', 'status', 'isEmailVerified'],
@@ -95,9 +113,16 @@ export class AuthService {
   }
 
   /**
-   * Validate user credentials
-   */
-  async validateUser(email: string, password: string): Promise<any> {
+    * Validate user credentials
+    */
+   @AuditAuth(true)
+   @Auditable({
+     resource: 'user_auth',
+     severity: AuditSeverity.MEDIUM,
+     excludeFields: ['password'],
+     metadata: { authType: 'user' }
+   })
+   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.usersRepository.findOne({
       where: { email },
       select: ['id', 'email', 'passwordHash', 'firstName', 'lastName', 'roles', 'status', 'schoolId', 'isEmailVerified', 'isFirstLogin'],
@@ -131,9 +156,15 @@ export class AuthService {
   }
 
   /**
-   * Login user and generate tokens
-   */
-  async login(user: any): Promise<IAuthTokens & { requiresPasswordReset?: boolean }> {
+    * Login user and generate tokens
+    */
+   @Auditable({
+     action: AuditAction.LOGIN,
+     resource: 'user_session',
+     severity: AuditSeverity.MEDIUM,
+     metadata: { sessionType: 'login' }
+   })
+   async login(user: any): Promise<IAuthTokens & { requiresPasswordReset?: boolean }> {
     const payload = {
       email: user.email,
       sub: user.id,
@@ -241,9 +272,16 @@ export class AuthService {
   }
 
   /**
-   * Register new user
-   */
-  async register(registerDto: RegisterDto): Promise<User> {
+    * Register new user
+    */
+   @Auditable({
+     action: AuditAction.USER_CREATED,
+     resource: 'user_registration',
+     severity: AuditSeverity.MEDIUM,
+     excludeFields: ['password'],
+     metadata: { registrationType: 'user' }
+   })
+   async register(registerDto: RegisterDto): Promise<User> {
     const { email, password, ...userData } = registerDto;
 
     // Check if user already exists
@@ -274,9 +312,16 @@ export class AuthService {
   }
 
   /**
-   * Refresh access token
-   */
-  async refreshToken(refreshTokenDto: RefreshTokenDto): Promise<IAuthTokens> {
+    * Refresh access token
+    */
+   @Auditable({
+     action: AuditAction.AUTHENTICATION_SUCCESS,
+     resource: 'token_refresh',
+     severity: AuditSeverity.LOW,
+     excludeFields: ['refreshToken'],
+     metadata: { tokenOperation: 'refresh' }
+   })
+   async refreshToken(refreshTokenDto: RefreshTokenDto): Promise<IAuthTokens> {
     try {
       const { refreshToken } = refreshTokenDto;
 
@@ -332,9 +377,17 @@ export class AuthService {
   }
 
   /**
-   * Change user password
-   */
-  async changePassword(userId: string, changePasswordDto: ChangePasswordDto): Promise<void> {
+    * Change user password
+    */
+   @Auditable({
+     action: AuditAction.PASSWORD_CHANGED,
+     resource: 'user_password',
+     resourceId: 'userId',
+     severity: AuditSeverity.HIGH,
+     excludeFields: ['currentPassword', 'newPassword'],
+     metadata: { passwordChangeType: 'user_initiated' }
+   })
+   async changePassword(userId: string, changePasswordDto: ChangePasswordDto): Promise<void> {
     const { currentPassword, newPassword } = changePasswordDto;
 
     const user = await this.usersRepository.findOne({
@@ -362,9 +415,16 @@ export class AuthService {
   }
 
   /**
-   * Verify email address
-   */
-  async verifyEmail(token: string): Promise<void> {
+    * Verify email address
+    */
+   @Auditable({
+     action: AuditAction.USER_UPDATED,
+     resource: 'user_email_verification',
+     severity: AuditSeverity.MEDIUM,
+     excludeFields: ['token'],
+     metadata: { verificationType: 'email' }
+   })
+   async verifyEmail(token: string): Promise<void> {
     const user = await this.usersRepository.findOne({
       where: {
         emailVerificationToken: token,
@@ -385,9 +445,15 @@ export class AuthService {
   }
 
   /**
-   * Request password reset
-   */
-  async requestPasswordReset(email: string): Promise<void> {
+    * Request password reset
+    */
+   @Auditable({
+     action: AuditAction.PASSWORD_RESET,
+     resource: 'password_reset_request',
+     severity: AuditSeverity.MEDIUM,
+     metadata: { resetType: 'request' }
+   })
+   async requestPasswordReset(email: string): Promise<void> {
     const user = await this.usersRepository.findOne({ where: { email } });
 
     if (!user) {
@@ -407,9 +473,16 @@ export class AuthService {
   }
 
   /**
-   * Reset password with token
-   */
-  async resetPassword(token: string, newPassword: string): Promise<void> {
+    * Reset password with token
+    */
+   @Auditable({
+     action: AuditAction.PASSWORD_RESET,
+     resource: 'password_reset_completion',
+     severity: AuditSeverity.HIGH,
+     excludeFields: ['token', 'newPassword'],
+     metadata: { resetType: 'completion' }
+   })
+   async resetPassword(token: string, newPassword: string): Promise<void> {
     const user = await this.usersRepository.findOne({
       where: {
         passwordResetToken: token,
@@ -431,9 +504,15 @@ export class AuthService {
   }
 
   /**
-   * Logout user (invalidate refresh token)
-   */
-  async logout(userId: string): Promise<void> {
+    * Logout user (invalidate refresh token)
+    */
+   @Auditable({
+     action: AuditAction.LOGOUT,
+     resource: 'user_session',
+     severity: AuditSeverity.LOW,
+     metadata: { sessionType: 'logout' }
+   })
+   async logout(userId: string): Promise<void> {
     await this.usersRepository.update(userId, {
       refreshToken: null,
       refreshTokenExpires: null,
@@ -441,44 +520,130 @@ export class AuthService {
   }
 
   /**
-   * Get user profile for JWT strategy
-   */
-  async getUserProfile(userId: string): Promise<any> {
-    const user = await this.usersRepository.findOne({
-      where: { id: userId },
-      select: ['id', 'email', 'firstName', 'lastName', 'roles', 'status', 'schoolId', 'isEmailVerified'],
+    * Get user profile for JWT strategy
+    */
+   async getUserProfile(userId: string): Promise<any> {
+     const user = await this.usersRepository.findOne({
+       where: { id: userId },
+       select: ['id', 'email', 'firstName', 'lastName', 'roles', 'status', 'schoolId', 'isEmailVerified'],
+     });
+
+     if (!user) {
+       throw new UnauthorizedException('User not found');
+     }
+
+     return user;
+   }
+
+  // Custom audit methods for auth-specific events
+  private async logAccountLockout(userId: string, attempts: number): Promise<void> {
+    await this.auditService.logActivity({
+      userId,
+      action: AuditAction.SECURITY_ALERT,
+      resource: 'account_security',
+      resourceId: userId,
+      details: {
+        eventType: 'account_lockout',
+        attempts,
+        lockoutDuration: '2_hours'
+      },
+      severity: AuditSeverity.HIGH,
     });
+  }
 
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
+  private async logBruteForceAttempt(email: string, ipAddress?: string): Promise<void> {
+    await this.auditService.logActivity({
+      userId: 'system',
+      action: AuditAction.SECURITY_ALERT,
+      resource: 'authentication_security',
+      details: {
+        eventType: 'brute_force_attempt',
+        targetEmail: email,
+        ipAddress,
+        timestamp: new Date().toISOString()
+      },
+      severity: AuditSeverity.CRITICAL,
+    });
+  }
 
-    return user;
+  private async logSuspiciousLogin(email: string, ipAddress?: string, userAgent?: string): Promise<void> {
+    await this.auditService.logActivity({
+      userId: 'system',
+      action: AuditAction.SUSPICIOUS_ACTIVITY,
+      resource: 'login_security',
+      details: {
+        eventType: 'suspicious_login_attempt',
+        targetEmail: email,
+        ipAddress,
+        userAgent,
+        reason: 'geographic_anomaly_or_unusual_pattern'
+      },
+      severity: AuditSeverity.HIGH,
+    });
+  }
+
+  private async logMfaEvent(userId: string, eventType: string, success: boolean): Promise<void> {
+    await this.auditService.logActivity({
+      userId,
+      action: success ? AuditAction.AUTHENTICATION_SUCCESS : AuditAction.AUTHENTICATION_FAILED,
+      resource: 'mfa_security',
+      resourceId: userId,
+      details: {
+        eventType,
+        success,
+        timestamp: new Date().toISOString()
+      },
+      severity: success ? AuditSeverity.LOW : AuditSeverity.HIGH,
+    });
+  }
+
+  private async logTokenCompromise(userId: string, tokenType: string): Promise<void> {
+    await this.auditService.logActivity({
+      userId,
+      action: AuditAction.SECURITY_ALERT,
+      resource: 'token_security',
+      resourceId: userId,
+      details: {
+        eventType: 'token_compromise_detected',
+        tokenType,
+        timestamp: new Date().toISOString()
+      },
+      severity: AuditSeverity.CRITICAL,
+    });
   }
 
   // Private helper methods
-  private async incrementLoginAttempts(userId: string): Promise<void> {
-    const user = await this.usersRepository.findOne({
-      where: { id: userId },
-      select: ['id', 'loginAttempts', 'lockoutUntil'],
-    });
+   @AuditSecurity('failed_login_attempt')
+   private async incrementLoginAttempts(userId: string): Promise<void> {
+     const user = await this.usersRepository.findOne({
+       where: { id: userId },
+       select: ['id', 'loginAttempts', 'lockoutUntil', 'email'],
+     });
 
-    if (!user) return;
+     if (!user) return;
 
-    const attempts = (user.loginAttempts || 0) + 1;
+     const attempts = (user.loginAttempts || 0) + 1;
 
-    if (attempts >= 5) {
-      // Lock account for 2 hours
-      await this.usersRepository.update(userId, {
-        loginAttempts: attempts,
-        lockoutUntil: new Date(Date.now() + 2 * 60 * 60 * 1000),
-      });
-    } else {
-      await this.usersRepository.update(userId, {
-        loginAttempts: attempts,
-      });
-    }
-  }
+     if (attempts >= 5) {
+       // Lock account for 2 hours
+       await this.usersRepository.update(userId, {
+         loginAttempts: attempts,
+         lockoutUntil: new Date(Date.now() + 2 * 60 * 60 * 1000),
+       });
+
+       // Log account lockout
+       await this.logAccountLockout(userId, attempts);
+
+       // Log brute force attempt if this is the 5th attempt
+       if (attempts === 5) {
+         await this.logBruteForceAttempt(user.email);
+       }
+     } else {
+       await this.usersRepository.update(userId, {
+         loginAttempts: attempts,
+       });
+     }
+   }
 
   private async resetLoginAttempts(userId: string): Promise<void> {
     await this.usersRepository.update(userId, {

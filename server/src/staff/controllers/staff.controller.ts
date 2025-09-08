@@ -24,6 +24,7 @@ import {
   ApiQuery,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import { AuditCreate, AuditUpdate, AuditDelete, AuditRead, SampleAudit, MonitorPerformance } from '../../common/audit/auditable.decorator';
 import { StaffService } from '../services/staff.service';
 import { CreateStaffDto, UpdateStaffDto } from '../dtos';
 import { StaffType, StaffStatus, EmploymentType } from '../entities/staff.entity';
@@ -36,6 +37,7 @@ export class StaffController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @AuditCreate('staff', 'id')
   @ApiOperation({
     summary: 'Create a new staff member',
     description: 'Create a new staff member with complete profile information',
@@ -143,6 +145,7 @@ export class StaffController {
   }
 
   @Put(':id/terminate')
+  @AuditUpdate('staff', 'id')
   @ApiOperation({
     summary: 'Terminate staff member',
     description: 'Terminate a staff member with reason',
@@ -537,6 +540,8 @@ export class StaffController {
 
   @Post('bulk/salary-update')
   @HttpCode(HttpStatus.OK)
+  @SampleAudit(0.1) // Sample 10% of bulk salary updates
+  @AuditUpdate('staff', '0.id')
   @ApiOperation({
     summary: 'Bulk update staff salaries',
     description: 'Update salaries for multiple staff members at once',

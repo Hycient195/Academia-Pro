@@ -7,6 +7,8 @@ import { Repository, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
 import { Attendance, AttendanceStatus, AttendanceType, AttendanceMethod } from '../entities/attendance.entity';
 import { Student } from '../../students/student.entity';
 import { MarkAttendanceDto, BulkMarkAttendanceDto, BulkUpdateAttendanceDto } from '../dtos';
+import { AuditService } from '../../security/services/audit.service';
+import { AuditAction, AuditSeverity } from '../../security/types/audit.types';
 
 @Injectable()
 export class AttendanceService {
@@ -17,6 +19,7 @@ export class AttendanceService {
     private readonly attendanceRepository: Repository<Attendance>,
     @InjectRepository(Student)
     private readonly studentRepository: Repository<Student>,
+    private readonly auditService: AuditService,
   ) {}
 
   /**
@@ -562,5 +565,110 @@ export class AttendanceService {
 
     this.logger.log(`Bulk updated attendance for ${attendanceRecords.length} students`);
     return attendanceRecords;
+  }
+
+  // ==================== CUSTOM AUDIT METHODS ====================
+
+  /**
+   * Audit attendance modifications and policy changes
+   */
+  async auditAttendanceModification(attendanceId: string, modificationType: string, changes: any, userId: string): Promise<void> {
+    await this.auditService.logActivity({
+      action: AuditAction.DATA_UPDATED,
+      resource: 'attendance',
+      resourceId: attendanceId,
+      severity: AuditSeverity.MEDIUM,
+      userId,
+      details: {
+        modificationType,
+        changes: this.sanitizeAuditData(changes),
+        timestamp: new Date(),
+        module: 'attendance',
+        eventType: 'attendance_modification',
+      },
+    });
+  }
+
+  /**
+   * Audit bulk attendance operations with sampling
+   */
+  async auditBulkAttendanceOperation(operation: string, totalRecords: number, successCount: number, userId: string): Promise<void> {
+    // Only audit if operation affects significant number of records or has failures
+    if (totalRecords >= 10 || successCount < totalRecords) {
+      await this.auditService.logActivity({
+        action: AuditAction.DATA_UPDATED,
+        resource: 'bulk_attendance_operation',
+        severity: totalRecords >= 50 ? AuditSeverity.MEDIUM : AuditSeverity.LOW,
+        userId,
+        details: {
+          operation,
+          totalRecords,
+          successCount,
+          failureCount: totalRecords - successCount,
+          timestamp: new Date(),
+          module: 'attendance',
+          eventType: 'bulk_operation',
+          sampled: totalRecords < 50, // Mark as sampled for smaller operations
+        },
+      });
+    }
+  }
+
+  /**
+   * Audit attendance policy changes
+   */
+  async auditAttendancePolicyChange(policyId: string, policyType: string, changes: any, userId: string): Promise<void> {
+    await this.auditService.logActivity({
+      action: AuditAction.SYSTEM_CONFIG_CHANGED,
+      resource: 'attendance_policy',
+      resourceId: policyId,
+      severity: AuditSeverity.HIGH,
+      userId,
+      details: {
+        policyType,
+        changes: this.sanitizeAuditData(changes),
+        timestamp: new Date(),
+        module: 'attendance',
+        eventType: 'policy_change',
+      },
+    });
+  }
+
+  /**
+   * Audit attendance access for sensitive data
+   */
+  async auditAttendanceAccess(studentId: string, accessType: string, userId: string, schoolId?: string): Promise<void> {
+    await this.auditService.logActivity({
+      action: AuditAction.DATA_ACCESSED,
+      resource: 'attendance',
+      resourceId: studentId,
+      severity: AuditSeverity.LOW,
+      userId,
+      schoolId,
+      details: {
+        accessType,
+        timestamp: new Date(),
+        module: 'attendance',
+        eventType: 'data_access',
+      },
+    });
+  }
+
+  /**
+   * Sanitize sensitive data for audit logging
+   */
+  private sanitizeAuditData(data: any): any {
+    if (!data || typeof data !== 'object') return data;
+
+    const sensitiveFields = ['password', 'ssn', 'socialSecurity', 'bankAccount', 'creditCard', 'medicalInfo', 'personalNotes'];
+    const sanitized = { ...data };
+
+    for (const field of sensitiveFields) {
+      if (sanitized[field]) {
+        sanitized[field] = '[REDACTED]';
+      }
+    }
+
+    return sanitized;
   }
 }

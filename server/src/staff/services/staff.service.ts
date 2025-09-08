@@ -6,6 +6,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, MoreThanOrEqual, LessThanOrEqual, In, Like } from 'typeorm';
 import { Staff, StaffType, StaffStatus, EmploymentType, Gender, MaritalStatus, BloodGroup, QualificationLevel } from '../entities/staff.entity';
 import { CreateStaffDto, UpdateStaffDto } from '../dtos';
+import { AuditService } from '../../security/services/audit.service';
+import { AuditAction, AuditSeverity } from '../../security/types/audit.types';
 
 @Injectable()
 export class StaffService {
@@ -14,6 +16,7 @@ export class StaffService {
   constructor(
     @InjectRepository(Staff)
     private readonly staffRepository: Repository<Staff>,
+    private readonly auditService: AuditService,
   ) {}
 
   /**
@@ -642,5 +645,151 @@ export class StaffService {
     const year = new Date().getFullYear();
     const timestamp = Date.now().toString().slice(-4);
     return `EMP${year}${timestamp}`;
+  }
+
+  // ==================== CUSTOM AUDIT METHODS ====================
+
+  /**
+   * Audit staff hiring and role changes
+   */
+  async auditStaffHiring(staffId: string, hiringDetails: any, userId: string, schoolId?: string): Promise<void> {
+    await this.auditService.logActivity({
+      action: AuditAction.DATA_CREATED,
+      resource: 'staff',
+      resourceId: staffId,
+      severity: AuditSeverity.MEDIUM,
+      userId,
+      schoolId,
+      details: {
+        hiringDetails: this.sanitizeAuditData(hiringDetails),
+        timestamp: new Date(),
+        module: 'staff',
+        eventType: 'staff_hiring',
+      },
+    });
+  }
+
+  /**
+   * Audit staff termination and disciplinary actions
+   */
+  async auditStaffTermination(staffId: string, terminationDetails: any, userId: string, schoolId?: string): Promise<void> {
+    await this.auditService.logActivity({
+      action: AuditAction.DATA_UPDATED,
+      resource: 'staff',
+      resourceId: staffId,
+      severity: AuditSeverity.HIGH,
+      userId,
+      schoolId,
+      details: {
+        terminationDetails: this.sanitizeAuditData(terminationDetails),
+        timestamp: new Date(),
+        module: 'staff',
+        eventType: 'staff_termination',
+      },
+    });
+  }
+
+  /**
+   * Audit performance reviews and evaluations
+   */
+  async auditPerformanceReview(staffId: string, reviewDetails: any, userId: string, schoolId?: string): Promise<void> {
+    await this.auditService.logActivity({
+      action: AuditAction.DATA_UPDATED,
+      resource: 'staff_performance',
+      resourceId: staffId,
+      severity: AuditSeverity.MEDIUM,
+      userId,
+      schoolId,
+      details: {
+        reviewDetails: this.sanitizeAuditData(reviewDetails),
+        timestamp: new Date(),
+        module: 'staff',
+        eventType: 'performance_review',
+      },
+    });
+  }
+
+  /**
+   * Audit salary and compensation changes
+   */
+  async auditSalaryChange(staffId: string, salaryDetails: any, userId: string, schoolId?: string): Promise<void> {
+    await this.auditService.logActivity({
+      action: AuditAction.DATA_UPDATED,
+      resource: 'staff_salary',
+      resourceId: staffId,
+      severity: AuditSeverity.HIGH,
+      userId,
+      schoolId,
+      details: {
+        salaryDetails: this.sanitizeAuditData(salaryDetails),
+        timestamp: new Date(),
+        module: 'staff',
+        eventType: 'salary_change',
+      },
+    });
+  }
+
+  /**
+   * Audit bulk staff operations with sampling
+   */
+  async auditBulkStaffOperation(operation: string, totalRecords: number, successCount: number, userId: string, schoolId?: string): Promise<void> {
+    // Only audit if operation affects significant number of staff or has failures
+    if (totalRecords >= 5 || successCount < totalRecords) {
+      await this.auditService.logActivity({
+        action: AuditAction.DATA_UPDATED,
+        resource: 'bulk_staff_operation',
+        severity: totalRecords >= 20 ? AuditSeverity.MEDIUM : AuditSeverity.LOW,
+        userId,
+        schoolId,
+        details: {
+          operation,
+          totalRecords,
+          successCount,
+          failureCount: totalRecords - successCount,
+          timestamp: new Date(),
+          module: 'staff',
+          eventType: 'bulk_operation',
+          sampled: totalRecords < 20, // Mark as sampled for smaller operations
+        },
+      });
+    }
+  }
+
+  /**
+   * Audit leave and attendance policy changes
+   */
+  async auditLeavePolicyChange(policyId: string, policyDetails: any, userId: string, schoolId?: string): Promise<void> {
+    await this.auditService.logActivity({
+      action: AuditAction.SYSTEM_CONFIG_CHANGED,
+      resource: 'leave_policy',
+      resourceId: policyId,
+      severity: AuditSeverity.MEDIUM,
+      userId,
+      schoolId,
+      details: {
+        policyDetails: this.sanitizeAuditData(policyDetails),
+        timestamp: new Date(),
+        module: 'staff',
+        eventType: 'leave_policy_change',
+      },
+    });
+  }
+
+  /**
+   * Sanitize sensitive data for audit logging
+   */
+  private sanitizeAuditData(data: any): any {
+    if (!data || typeof data !== 'object') return data;
+
+    const sensitiveFields = ['password', 'ssn', 'socialSecurity', 'bankAccount', 'creditCard', 'medicalInfo', 'salary', 'bankAccountNumber', 'ifscCode'];
+    const sanitized = { ...data };
+
+    for (const field of sensitiveFields) {
+      if (sanitized[field]) {
+        sanitized[field] = '[REDACTED]';
+      }
+    }
+
+    return sanitized;
   }
 }

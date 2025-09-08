@@ -3,6 +3,7 @@
 
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, ParseUUIDPipe, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { AuditCreate, AuditUpdate, AuditDelete, AuditRead, SampleAudit, MonitorPerformance } from '../common/audit/auditable.decorator';
 import { AcademicService } from './academic.service.js';
 import { CreateSubjectDto, UpdateSubjectDto, CreateCurriculumDto, CreateClassDto, CreateLearningObjectiveDto } from './dtos/index.js';
 import {
@@ -57,6 +58,7 @@ export class AcademicController {
   // Subject Management Endpoints
   @Post('subjects')
   @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
+  @AuditCreate('subject', 'id')
   @ApiOperation({ summary: 'Create a new subject' })
   @ApiResponse({ status: 201, description: 'Subject created successfully', type: Subject })
   @ApiResponse({ status: 409, description: 'Subject code already exists' })
@@ -111,6 +113,7 @@ export class AcademicController {
 
   @Get('subjects/:id')
   @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @AuditRead('subject', 'id')
   @ApiOperation({ summary: 'Get subject by ID' })
   @ApiResponse({ status: 200, description: 'Subject retrieved successfully', type: Subject })
   @ApiResponse({ status: 404, description: 'Subject not found' })
@@ -120,6 +123,7 @@ export class AcademicController {
 
   @Put('subjects/:id')
   @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
+  @AuditUpdate('subject', 'id')
   @ApiOperation({ summary: 'Update subject information' })
   @ApiResponse({ status: 200, description: 'Subject updated successfully', type: Subject })
   @ApiResponse({ status: 404, description: 'Subject not found' })
@@ -133,6 +137,7 @@ export class AcademicController {
 
   @Delete('subjects/:id')
   @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
+  @AuditDelete('subject', 'id')
   @ApiOperation({ summary: 'Delete subject' })
   @ApiResponse({ status: 200, description: 'Subject deleted successfully' })
   @ApiResponse({ status: 404, description: 'Subject not found' })
@@ -144,6 +149,7 @@ export class AcademicController {
   // Curriculum Management Endpoints
   @Post('curricula')
   @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
+  @AuditCreate('curriculum', 'id')
   @ApiOperation({ summary: 'Create a new curriculum' })
   @ApiResponse({ status: 201, description: 'Curriculum created successfully', type: Curriculum })
   async createCurriculum(@Body() createCurriculumDto: CreateCurriculumDto): Promise<Curriculum> {
@@ -179,6 +185,7 @@ export class AcademicController {
 
   @Get('curricula/:id')
   @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @AuditRead('curriculum', 'id')
   @ApiOperation({ summary: 'Get curriculum by ID' })
   @ApiResponse({ status: 200, description: 'Curriculum retrieved successfully', type: Curriculum })
   @ApiResponse({ status: 404, description: 'Curriculum not found' })
@@ -189,6 +196,7 @@ export class AcademicController {
   // Class Management Endpoints
   @Post('classes')
   @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
+  @AuditCreate('class', 'id')
   @ApiOperation({ summary: 'Create a new class' })
   @ApiResponse({ status: 201, description: 'Class created successfully', type: Class })
   async createClass(@Body() createClassDto: CreateClassDto): Promise<Class> {
@@ -464,6 +472,8 @@ export class AcademicController {
 
   @Post('student-enrollments/bulk')
   @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
+  @SampleAudit(0.1) // Sample 10% of bulk operations
+  @AuditCreate('student-enrollment', 'successful.0.id')
   @ApiOperation({ summary: 'Bulk enroll students' })
   @ApiResponse({ status: 200, description: 'Bulk enrollment completed', type: BulkEnrollmentResponseDto })
   async bulkEnrollStudents(@Body() bulkDto: BulkEnrollmentDto) {

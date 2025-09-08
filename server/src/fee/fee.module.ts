@@ -3,6 +3,7 @@
 
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuditSharedModule } from '../common/audit/audit.shared.module';
 
 // Controllers
 import { FeeController } from './controllers/fee.controller';
@@ -31,6 +32,7 @@ import { FeeInterceptor } from './interceptors/fee.interceptor';
       InstallmentPlan,
       InstallmentSchedule,
     ]),
+    AuditSharedModule,
   ],
   controllers: [FeeController],
   providers: [

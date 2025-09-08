@@ -29,6 +29,8 @@ import {
   VerifyEmailDto,
 } from './dtos';
 import { IAuthTokens } from '@academia-pro/types/auth';
+import { Auditable, AuditAuth } from '../common/audit/auditable.decorator';
+import { AuditAction, AuditSeverity } from '../security/types/audit.types';
 
 @ApiTags('authentication')
 @Controller('auth')
@@ -37,6 +39,14 @@ export class AuthController {
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
+  @Auditable({
+    action: AuditAction.USER_CREATED,
+    resource: 'user_registration_endpoint',
+    severity: AuditSeverity.MEDIUM,
+    excludeFields: ['password'],
+    performanceThreshold: 2000, // Alert if registration takes longer than 2 seconds
+    metadata: { endpoint: 'register' }
+  })
   @ApiOperation({ summary: 'Register a new user account' })
   @ApiResponse({
     status: 201,
@@ -83,6 +93,14 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @Auditable({
+    action: AuditAction.LOGIN,
+    resource: 'user_login_endpoint',
+    severity: AuditSeverity.MEDIUM,
+    excludeFields: ['password'],
+    samplingRate: 0.5, // Sample 50% of login attempts for performance
+    metadata: { endpoint: 'login' }
+  })
   @ApiOperation({ summary: 'Authenticate user and get access tokens' })
   @ApiResponse({
     status: 200,
@@ -192,6 +210,12 @@ export class AuthController {
   @Post('logout')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
+  @Auditable({
+    action: AuditAction.LOGOUT,
+    resource: 'user_logout_endpoint',
+    severity: AuditSeverity.LOW,
+    metadata: { endpoint: 'logout' }
+  })
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Logout user and invalidate tokens' })
   @ApiResponse({ status: 200, description: 'Logout successful' })
@@ -205,6 +229,13 @@ export class AuthController {
   @Post('change-password')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
+  @Auditable({
+    action: AuditAction.PASSWORD_CHANGED,
+    resource: 'password_change_endpoint',
+    severity: AuditSeverity.HIGH,
+    excludeFields: ['currentPassword', 'newPassword'],
+    metadata: { endpoint: 'change_password' }
+  })
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Change user password' })
   @ApiResponse({ status: 200, description: 'Password changed successfully' })

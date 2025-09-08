@@ -45,6 +45,13 @@ export enum AuditSeverity {
 @Index(['entityType', 'entityId'])
 @Index(['userId', 'createdAt'])
 @Index(['action', 'createdAt'])
+@Index(['correlationId', 'createdAt'])
+@Index(['schoolId', 'createdAt'])
+@Index(['anomalyScore', 'createdAt'])
+@Index(['isAnomaly', 'createdAt'])
+@Index(['complianceStatus', 'createdAt'])
+@Index(['gdprCompliant', 'createdAt'])
+@Index(['responseTime', 'createdAt'])
 export class StudentAuditLog {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -209,6 +216,52 @@ export class StudentAuditLog {
 
   @Column({ name: 'external_notes', type: 'text', nullable: true })
   externalNotes: string;
+
+  // Additional Audit Fields
+  @Column({ name: 'correlation_id', type: 'varchar', length: 100, nullable: true })
+  correlationId: string;
+
+  @Column({ name: 'school_id', type: 'uuid', nullable: true })
+  schoolId: string;
+
+  @Column({ name: 'processed_at', type: 'timestamp', nullable: true })
+  processedAt: Date;
+
+  @Column({ name: 'is_archived', type: 'boolean', default: false })
+  isArchived: boolean;
+
+  // Performance Metrics
+  @Column({ name: 'response_time', type: 'int', nullable: true })
+  responseTime: number; // milliseconds
+
+  @Column({ name: 'memory_usage', type: 'bigint', nullable: true })
+  memoryUsage: number; // bytes
+
+  @Column({ name: 'cpu_usage', type: 'decimal', precision: 5, scale: 2, nullable: true })
+  cpuUsage: number; // percentage
+
+  @Column({ name: 'query_execution_time', type: 'int', nullable: true })
+  queryExecutionTime: number; // milliseconds
+
+  // Anomaly Detection
+  @Column({ name: 'anomaly_score', type: 'decimal', precision: 5, scale: 4, nullable: true })
+  anomalyScore: number; // 0.0000 to 1.0000
+
+  @Column({ name: 'is_anomaly', type: 'boolean', default: false })
+  isAnomaly: boolean;
+
+  @Column({ name: 'anomaly_type', type: 'varchar', length: 50, nullable: true })
+  anomalyType: string;
+
+  @Column({ name: 'anomaly_reason', type: 'text', nullable: true })
+  anomalyReason: string;
+
+  // Additional Compliance
+  @Column({ name: 'compliance_status', type: 'varchar', length: 50, nullable: true })
+  complianceStatus: string;
+
+  @Column({ name: 'data_retention_policy', type: 'varchar', length: 100, nullable: true })
+  dataRetentionPolicy: string;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

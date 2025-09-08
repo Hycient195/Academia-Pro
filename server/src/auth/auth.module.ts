@@ -5,6 +5,7 @@ import { Module, OnModuleInit } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthJwtModule } from './auth-jwt.module';
+import { AuditSharedModule } from '../common/audit/audit.shared.module';
 
 // Controllers
 import { AuthController } from './auth.controller';
@@ -44,6 +45,7 @@ import { UsersService } from 'src/users/users.service';
     TypeOrmModule.forFeature([User, DelegatedAccount, Permission, Role]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     AuthJwtModule,
+    AuditSharedModule,
   ],
   controllers: [
     AuthController,

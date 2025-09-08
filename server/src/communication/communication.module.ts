@@ -3,6 +3,7 @@
 
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuditSharedModule } from '../common/audit/audit.shared.module';
 
 // Entities
 import { Message } from './entities/message.entity';
@@ -36,6 +37,7 @@ import { CommunicationInterceptor } from './interceptors/communication.intercept
       NoticeComment,
       CommunicationTemplate,
     ]),
+    AuditSharedModule,
   ],
   controllers: [CommunicationController],
   providers: [

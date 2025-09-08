@@ -32,6 +32,8 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../common/decorators';
+import { Auditable, AuditCreate, AuditUpdate, AuditRead, AuditDelete } from '../common/audit/auditable.decorator';
+import { AuditAction, AuditSeverity } from '../security/types/audit.types';
 import { StudentStatus, EnrollmentType } from './student.entity';
 import { EUserRole } from '@academia-pro/types/users';
 
@@ -45,6 +47,7 @@ export class StudentsController {
   @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiBearerAuth()
+  @AuditCreate('student', 'studentId')
   @ApiOperation({ summary: 'Create a new student' })
   @ApiResponse({
     status: 201,
@@ -61,6 +64,7 @@ export class StudentsController {
   @Get()
   @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiBearerAuth()
+  @AuditRead('students')
   @ApiOperation({ summary: 'Get all students with pagination and filtering' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -166,6 +170,7 @@ export class StudentsController {
   @Get(':id')
   @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER, EUserRole.STUDENT, EUserRole.PARENT)
   @ApiBearerAuth()
+  @AuditRead('student', 'id')
   @ApiOperation({ summary: 'Get student by ID' })
   @ApiResponse({
     status: 200,
@@ -193,6 +198,7 @@ export class StudentsController {
   @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
+  @AuditUpdate('student', 'id')
   @ApiOperation({ summary: 'Update student information' })
   @ApiResponse({
     status: 200,
@@ -227,6 +233,13 @@ export class StudentsController {
   @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
+  @Auditable({
+    action: AuditAction.DATA_UPDATED,
+    resource: 'student',
+    resourceId: 'id',
+    severity: AuditSeverity.MEDIUM,
+    customAction: 'student_transfer'
+  })
   @ApiOperation({ summary: 'Transfer student to different grade/section' })
   @ApiResponse({
     status: 200,
@@ -260,6 +273,14 @@ export class StudentsController {
   @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
+  @Auditable({
+    action: AuditAction.DATA_UPDATED,
+    resource: 'student_medical_record',
+    resourceId: 'id',
+    severity: AuditSeverity.HIGH,
+    customAction: 'medical_info_update',
+    excludeFields: ['password', 'token', 'secret']
+  })
   @ApiOperation({ summary: 'Update student medical information' })
   @ApiResponse({
     status: 200,
@@ -288,6 +309,7 @@ export class StudentsController {
   @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiBearerAuth()
+  @AuditCreate('student_document', 'id')
   @ApiOperation({ summary: 'Add document to student record' })
   @ApiResponse({
     status: 201,

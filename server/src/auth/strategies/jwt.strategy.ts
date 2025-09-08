@@ -9,6 +9,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Request } from 'express';
 import { User } from '../../users/user.entity';
+import { Auditable } from '../../common/audit/auditable.decorator';
+import { AuditAction, AuditSeverity } from '../../security/types/audit.types';
 
 export interface JwtPayload {
    sub: string;      // User ID
@@ -45,10 +47,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   /**
-   * Validate JWT payload and return user information
-   * This method is called automatically by Passport after JWT verification
-   */
-  async validate(payload: JwtPayload): Promise<any> {
+    * Validate JWT payload and return user information
+    * This method is called automatically by Passport after JWT verification
+    */
+   @Auditable({
+     action: AuditAction.AUTHENTICATION_SUCCESS,
+     resource: 'jwt_token_validation',
+     severity: AuditSeverity.LOW,
+     metadata: { strategy: 'jwt', validationType: 'token' }
+   })
+   async validate(payload: JwtPayload): Promise<any> {
     const { sub: userId, email, roles, schoolId } = payload;
 
     // Fetch user from database to ensure they still exist and are active

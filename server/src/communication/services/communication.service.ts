@@ -16,6 +16,8 @@ import { EmailProvider } from '../providers/email.provider';
 import { PushProvider } from '../providers/push.provider';
 import { WhatsAppProvider } from '../providers/whatsapp.provider';
 import { TelegramProvider } from '../providers/telegram.provider';
+import { AuditService } from '../../security/services/audit.service';
+import { AuditAction, AuditSeverity } from '../../security/types/audit.types';
 
 @Injectable()
 export class CommunicationService {
@@ -44,6 +46,7 @@ export class CommunicationService {
     private readonly telegramProvider: TelegramProvider,
 
     private readonly dataSource: DataSource,
+    private readonly auditService: AuditService,
   ) {}
 
   // Message Management
@@ -514,5 +517,132 @@ export class CommunicationService {
     if (responseTimes.length === 0) return 0;
 
     return responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length;
+  }
+
+  // ==================== CUSTOM AUDIT METHODS ====================
+
+  /**
+   * Audit communication channel usage and preferences
+   */
+  async auditCommunicationChannelUsage(channelType: string, recipientCount: number, userId: string, schoolId?: string): Promise<void> {
+    await this.auditService.logActivity({
+      action: AuditAction.DATA_ACCESSED,
+      resource: 'communication_channel',
+      severity: recipientCount > 100 ? AuditSeverity.MEDIUM : AuditSeverity.LOW,
+      userId,
+      schoolId,
+      details: {
+        channelType,
+        recipientCount,
+        timestamp: new Date(),
+        module: 'communication',
+        eventType: 'channel_usage',
+      },
+    });
+  }
+
+  /**
+   * Audit bulk communication operations with sampling
+   */
+  async auditBulkCommunicationOperation(operation: string, totalRecipients: number, successCount: number, userId: string, schoolId?: string): Promise<void> {
+    // Only audit if operation affects significant number of recipients or has failures
+    if (totalRecipients >= 20 || successCount < totalRecipients) {
+      await this.auditService.logActivity({
+        action: AuditAction.DATA_UPDATED,
+        resource: 'bulk_communication',
+        severity: totalRecipients >= 100 ? AuditSeverity.MEDIUM : AuditSeverity.LOW,
+        userId,
+        schoolId,
+        details: {
+          operation,
+          totalRecipients,
+          successCount,
+          failureCount: totalRecipients - successCount,
+          timestamp: new Date(),
+          module: 'communication',
+          eventType: 'bulk_operation',
+          sampled: totalRecipients < 100, // Mark as sampled for smaller operations
+        },
+      });
+    }
+  }
+
+  /**
+   * Audit emergency communication alerts
+   */
+  async auditEmergencyCommunication(alertId: string, alertType: string, recipientCount: number, userId: string, schoolId?: string): Promise<void> {
+    await this.auditService.logActivity({
+      action: AuditAction.SECURITY_ALERT,
+      resource: 'emergency_communication',
+      resourceId: alertId,
+      severity: AuditSeverity.HIGH,
+      userId,
+      schoolId,
+      details: {
+        alertType,
+        recipientCount,
+        timestamp: new Date(),
+        module: 'communication',
+        eventType: 'emergency_alert',
+      },
+    });
+  }
+
+  /**
+   * Audit communication template usage
+   */
+  async auditTemplateUsage(templateId: string, usageType: string, userId: string, schoolId?: string): Promise<void> {
+    await this.auditService.logActivity({
+      action: AuditAction.DATA_ACCESSED,
+      resource: 'communication_template',
+      resourceId: templateId,
+      severity: AuditSeverity.LOW,
+      userId,
+      schoolId,
+      details: {
+        usageType,
+        timestamp: new Date(),
+        module: 'communication',
+        eventType: 'template_usage',
+      },
+    });
+  }
+
+  /**
+   * Audit communication settings changes
+   */
+  async auditCommunicationSettingsChange(settingsType: string, changes: any, userId: string, schoolId?: string): Promise<void> {
+    await this.auditService.logActivity({
+      action: AuditAction.SYSTEM_CONFIG_CHANGED,
+      resource: 'communication_settings',
+      severity: AuditSeverity.MEDIUM,
+      userId,
+      schoolId,
+      details: {
+        settingsType,
+        changes: this.sanitizeAuditData(changes),
+        timestamp: new Date(),
+        module: 'communication',
+        eventType: 'settings_change',
+      },
+    });
+  }
+
+  /**
+   * Sanitize sensitive data for audit logging
+   */
+  private sanitizeAuditData(data: any): any {
+    if (!data || typeof data !== 'object') return data;
+
+    const sensitiveFields = ['password', 'apiKey', 'secret', 'token', 'phoneNumber', 'email', 'personalInfo'];
+    const sanitized = { ...data };
+
+    for (const field of sensitiveFields) {
+      if (sanitized[field]) {
+        sanitized[field] = '[REDACTED]';
+      }
+    }
+
+    return sanitized;
   }
 }

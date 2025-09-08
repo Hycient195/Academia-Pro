@@ -20,6 +20,10 @@ import { CreateStaffDto } from '../staff/dtos/create-staff.dto';
 import { UpdateStaffDto } from '../staff/dtos/update-staff.dto';
 import { EUserRole } from '@academia-pro/types/users';
 
+// Audit imports
+import { Auditable, SampleAudit } from '../common/audit/auditable.decorator';
+import { AuditAction, AuditSeverity } from '../security/types/audit.types';
+
 @ApiTags('School Admin - School Management')
 @Controller('school-admin')
 @UseGuards(SchoolContextGuard, RolesGuard)
@@ -65,6 +69,13 @@ export class SchoolAdminController {
   }
 
   @Put('profile')
+  @Auditable({
+    action: AuditAction.DATA_UPDATED,
+    resource: 'school',
+    customAction: 'school_profile_updated',
+    severity: AuditSeverity.HIGH,
+    metadata: { profileUpdate: true }
+  })
   @ApiOperation({
     summary: 'Update school profile',
     description: 'Updates the profile information for the current school.',
@@ -172,6 +183,13 @@ export class SchoolAdminController {
   }
 
   @Put('settings')
+  @Auditable({
+    action: AuditAction.SYSTEM_CONFIG_CHANGED,
+    resource: 'school',
+    customAction: 'school_settings_updated',
+    severity: AuditSeverity.HIGH,
+    metadata: { settingsUpdate: true, systemConfig: true }
+  })
   @ApiOperation({
     summary: 'Update school settings',
     description: 'Updates the configuration settings for the current school.',
@@ -384,6 +402,14 @@ export class SchoolAdminController {
   // ==================== SCHOOL REPORTS ====================
 
   @Get('reports/academic')
+  @SampleAudit(0.2) // Sample 20% of academic report requests
+  @Auditable({
+    action: AuditAction.DATA_ACCESSED,
+    resource: 'school',
+    customAction: 'academic_report_generated',
+    severity: AuditSeverity.LOW,
+    metadata: { reportType: 'academic' }
+  })
   @ApiOperation({
     summary: 'Get academic reports',
     description: 'Returns academic performance reports for the current school.',

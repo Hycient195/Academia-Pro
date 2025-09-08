@@ -17,6 +17,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
+import { AuditCreate, AuditUpdate, AuditDelete, AuditRead, SampleAudit, MonitorPerformance } from '../../common/audit/auditable.decorator';
 import { CommunicationService } from '../services/communication.service';
 
 @ApiTags('Communication Management')
@@ -27,6 +28,7 @@ export class CommunicationController {
 
   // Message Management Endpoints
   @Post('messages')
+  @AuditCreate('message', 'id')
   @ApiOperation({ summary: 'Send a new message' })
   @ApiResponse({ status: 201, description: 'Message sent successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })
@@ -65,6 +67,8 @@ export class CommunicationController {
   }
 
   @Post('notifications/bulk')
+  @SampleAudit(0.1) // Sample 10% of bulk notifications
+  @AuditCreate('notification', '0.id')
   @ApiOperation({ summary: 'Send bulk notifications' })
   @ApiResponse({ status: 201, description: 'Bulk notifications sent successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })
@@ -299,6 +303,7 @@ export class CommunicationController {
   }
 
   @Post('emergency-alert')
+  @AuditCreate('emergency_alert', 'id')
   @ApiOperation({ summary: 'Send emergency alert to all users' })
   @ApiResponse({ status: 201, description: 'Emergency alert sent successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })

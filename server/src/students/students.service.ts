@@ -12,12 +12,15 @@ import {
   StudentsListResponseDto,
   StudentStatisticsResponseDto
 } from './dtos/index';
+import { StudentAuditService } from './services/student-audit.service';
+import { AuditAction, AuditEntityType } from './entities/student-audit-log.entity';
 
 @Injectable()
 export class StudentsService {
   constructor(
     @InjectRepository(Student)
     private studentsRepository: Repository<Student>,
+    private readonly studentAuditService: StudentAuditService,
   ) {}
 
   /**
@@ -74,6 +77,29 @@ export class StudentsService {
     };
 
     const savedStudent = await this.studentsRepository.save(studentToSave as any);
+
+    // Audit logging for student creation
+    try {
+      await this.studentAuditService.logStudentCreated(
+        savedStudent.id,
+        createStudentDto.userId || 'system',
+        'System', // TODO: Get actual user name from context
+        'admin', // TODO: Get actual user role from context
+        {
+          firstName: createStudentDto.firstName,
+          lastName: createStudentDto.lastName,
+          admissionNumber: finalAdmissionNumber,
+          currentGrade: createStudentDto.currentGrade,
+          currentSection: createStudentDto.currentSection,
+          schoolId: createStudentDto.schoolId,
+          enrollmentType: createStudentDto.enrollmentType,
+        },
+      );
+    } catch (auditError) {
+      // Log audit error but don't fail the operation
+      console.error('Failed to log student creation audit:', auditError);
+    }
+
     return StudentResponseDto.fromEntity(savedStudent);
   }
 
@@ -195,10 +221,49 @@ export class StudentsService {
       }
     }
 
+    // Capture old values for audit
+    const oldValues = {
+      firstName: student.firstName,
+      lastName: student.lastName,
+      email: student.email,
+      phone: student.phone,
+      currentGrade: student.currentGrade,
+      currentSection: student.currentSection,
+      status: student.status,
+    };
+
     // Update student
     Object.assign(student, updateStudentDto);
 
     const savedStudent = await this.studentsRepository.save(student);
+
+    // Capture changed fields
+    const changedFields = Object.keys(updateStudentDto).filter(key =>
+      updateStudentDto[key] !== undefined && updateStudentDto[key] !== oldValues[key]
+    );
+
+    // Audit logging for student update
+    if (changedFields.length > 0) {
+      try {
+        await this.studentAuditService.logStudentUpdated(
+          id,
+          updateStudentDto.userId || 'system',
+          'System', // TODO: Get actual user name
+          'admin', // TODO: Get actual user role
+          oldValues,
+          Object.keys(updateStudentDto).reduce((acc, key) => {
+            if (updateStudentDto[key] !== undefined) {
+              acc[key] = updateStudentDto[key];
+            }
+            return acc;
+          }, {} as any),
+          changedFields,
+        );
+      } catch (auditError) {
+        console.error('Failed to log student update audit:', auditError);
+      }
+    }
+
     return StudentResponseDto.fromEntity(savedStudent);
   }
 
@@ -238,6 +303,23 @@ export class StudentsService {
     student.currentSection = newSection;
 
     const savedStudent = await this.studentsRepository.save(student);
+
+    // Audit logging for student transfer
+    try {
+      await this.studentAuditService.logStudentTransfer(
+        id,
+        'system', // TODO: Get actual user ID
+        'System', // TODO: Get actual user name
+        'admin', // TODO: Get actual user role
+        student.currentGrade,
+        student.currentSection,
+        newGrade,
+        newSection,
+      );
+    } catch (auditError) {
+      console.error('Failed to log student transfer audit:', auditError);
+    }
+
     return StudentResponseDto.fromEntity(savedStudent);
   }
 
@@ -254,6 +336,20 @@ export class StudentsService {
     student.status = StudentStatus.GRADUATED;
 
     const savedStudent = await this.studentsRepository.save(student);
+
+    // Audit logging for student graduation
+    try {
+      await this.studentAuditService.logStudentGraduated(
+        id,
+        'system', // TODO: Get actual user ID
+        'System', // TODO: Get actual user name
+        'admin', // TODO: Get actual user role
+        graduationDate,
+      );
+    } catch (auditError) {
+      console.error('Failed to log student graduation audit:', auditError);
+    }
+
     return StudentResponseDto.fromEntity(savedStudent);
   }
 
@@ -266,6 +362,21 @@ export class StudentsService {
     student.updateMedicalInfo(medicalInfo);
 
     const savedStudent = await this.studentsRepository.save(student);
+
+    // Audit logging for medical information update (sensitive data)
+    try {
+      await this.studentAuditService.logMedicalInfoAccess(
+        id,
+        'system', // TODO: Get actual user ID
+        'System', // TODO: Get actual user name
+        'admin', // TODO: Get actual user role
+        'update',
+        medicalInfo,
+      );
+    } catch (auditError) {
+      console.error('Failed to log medical info update audit:', auditError);
+    }
+
     return StudentResponseDto.fromEntity(savedStudent);
   }
 
@@ -287,13 +398,30 @@ export class StudentsService {
   async addDocument(id: string, document: any): Promise<StudentResponseDto> {
     const student = await this.findStudentEntity(id);
 
-    student.addDocument({
+    const documentData = {
       ...document,
       uploadedAt: new Date(),
       verified: false,
-    });
+    };
+
+    student.addDocument(documentData);
 
     const savedStudent = await this.studentsRepository.save(student);
+
+    // Audit logging for document addition
+    try {
+      await this.studentAuditService.logDocumentActivity(
+        id,
+        'system', // TODO: Get actual user ID
+        'System', // TODO: Get actual user name
+        'admin', // TODO: Get actual user role
+        'upload',
+        documentData,
+      );
+    } catch (auditError) {
+      console.error('Failed to log document addition audit:', auditError);
+    }
+
     return StudentResponseDto.fromEntity(savedStudent);
   }
 

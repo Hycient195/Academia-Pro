@@ -26,6 +26,8 @@ import {
 import { StudentHealthService } from '../services/health.service';
 import { CreateHealthRecordDto, UpdateHealthRecordDto } from '../dtos/create-health-record.dto';
 import { StudentManagementGuard } from '../guards/student-management.guard';
+import { Auditable, AuditCreate, AuditUpdate, AuditRead, AuditDelete } from '../../common/audit/auditable.decorator';
+import { AuditAction, AuditSeverity } from '../../security/types/audit.types';
 
 @ApiTags('Student Health Management')
 @ApiBearerAuth()
@@ -35,6 +37,7 @@ export class StudentHealthController {
   constructor(private readonly healthService: StudentHealthService) {}
 
   @Get()
+  @AuditRead('student_medical_record', 'studentId')
   @ApiOperation({
     summary: 'Get student health information',
     description: 'Retrieve basic health information for a specific student',
@@ -57,6 +60,14 @@ export class StudentHealthController {
   }
 
   @Put()
+  @Auditable({
+    action: AuditAction.DATA_UPDATED,
+    resource: 'student_medical_record',
+    resourceId: 'studentId',
+    severity: AuditSeverity.HIGH,
+    customAction: 'health_info_update',
+    excludeFields: ['password', 'token', 'secret']
+  })
   @ApiOperation({
     summary: 'Update student health information',
     description: 'Update basic health information for a specific student',
@@ -89,6 +100,7 @@ export class StudentHealthController {
 
   @Post('records')
   @HttpCode(HttpStatus.CREATED)
+  @AuditCreate('student_medical_record', 'studentId')
   @ApiOperation({
     summary: 'Create medical record',
     description: 'Create a new medical record for a student',

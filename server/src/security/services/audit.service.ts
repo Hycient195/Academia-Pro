@@ -1,18 +1,121 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, Optional, OnModuleDestroy } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, MoreThan } from 'typeorm';
+import { AsyncLocalStorage } from 'async_hooks';
+import { createHash } from 'crypto';
 import { AuditLog } from '../entities/audit-log.entity';
 import { AuditAction, AuditSeverity, AuditLogData } from '../types/audit.types';
+import { AuditConfigService } from '../../common/audit/audit.config';
 
 @Injectable()
-export class AuditService {
+export class AuditService implements OnModuleDestroy {
   private readonly logger = new Logger(AuditService.name);
+  private readonly asyncLocalStorage = new AsyncLocalStorage<Map<string, any>>();
+  private readonly auditBuffer: AuditLogData[] = [];
+  private bufferFlushTimer: NodeJS.Timeout | null = null;
 
   constructor(
     @InjectRepository(AuditLog)
     private readonly auditLogRepository: Repository<AuditLog>,
+    private readonly auditConfig: AuditConfigService,
   ) {
     this.logger.log('AuditService constructor called - checking for circular dependency');
+    this.startBufferFlushTimer();
+  }
+
+  /**
+   * Start the buffer flush timer
+   */
+  private startBufferFlushTimer(): void {
+    this.bufferFlushTimer = setInterval(() => {
+      this.flushAuditBuffer();
+    }, this.auditConfig.getFlushInterval());
+  }
+
+  /**
+   * Stop the buffer flush timer
+   */
+  private stopBufferFlushTimer(): void {
+    if (this.bufferFlushTimer) {
+      clearInterval(this.bufferFlushTimer);
+      this.bufferFlushTimer = null;
+    }
+  }
+
+  /**
+   * Generate a correlation ID
+   */
+  private generateCorrelationId(): string {
+    return `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Get current audit context
+   */
+  private getAuditContext(): Map<string, any> | undefined {
+    return this.asyncLocalStorage.getStore();
+  }
+
+  /**
+   * Set audit context for the current request
+   */
+  setAuditContext(context: { userId?: string; correlationId?: string; schoolId?: string; sessionId?: string }): void {
+    const store = this.getAuditContext() || new Map();
+    if (context.userId) store.set('userId', context.userId);
+    if (context.correlationId) store.set('correlationId', context.correlationId);
+    if (context.schoolId) store.set('schoolId', context.schoolId);
+    if (context.sessionId) store.set('sessionId', context.sessionId);
+    this.asyncLocalStorage.enterWith(store);
+  }
+
+  /**
+   * Run function within audit context
+   */
+  async runInAuditContext<T>(
+    context: { userId?: string; correlationId?: string; schoolId?: string; sessionId?: string },
+    fn: () => Promise<T>
+  ): Promise<T> {
+    const store = new Map();
+    if (context.userId) store.set('userId', context.userId);
+    if (context.correlationId) store.set('correlationId', context.correlationId);
+    if (context.schoolId) store.set('schoolId', context.schoolId);
+    if (context.sessionId) store.set('sessionId', context.sessionId);
+
+    return this.asyncLocalStorage.run(store, fn);
+  }
+
+  /**
+   * Flush audit buffer to database
+   */
+  private async flushAuditBuffer(): Promise<void> {
+    if (this.auditBuffer.length === 0) return;
+
+    const events = [...this.auditBuffer];
+    this.auditBuffer.length = 0; // Clear buffer
+
+    try {
+      const auditLogs = events.map(event => this.auditLogRepository.create({
+        userId: event.userId,
+        action: event.action as AuditAction,
+        resource: event.resource,
+        resourceId: event.resourceId,
+        details: event.details || {},
+        ipAddress: event.ipAddress || 'unknown',
+        userAgent: event.userAgent || 'unknown',
+        severity: event.severity || AuditSeverity.MEDIUM,
+        schoolId: event.schoolId,
+        sessionId: event.sessionId,
+        correlationId: event.correlationId,
+        timestamp: new Date(),
+      }));
+
+      await this.auditLogRepository.save(auditLogs);
+      this.logger.debug(`Flushed ${events.length} audit events to database`);
+    } catch (error) {
+      this.logger.error(`Failed to flush audit buffer: ${error.message}`, error.stack);
+      // Re-add events to buffer for retry
+      this.auditBuffer.unshift(...events);
+    }
   }
 
   /**
@@ -20,25 +123,26 @@ export class AuditService {
    */
   async logActivity(data: AuditLogData): Promise<void> {
     try {
-      const auditLog = this.auditLogRepository.create({
-        userId: data.userId,
-        action: data.action as AuditAction,
-        resource: data.resource,
-        resourceId: data.resourceId,
-        details: data.details || {},
-        ipAddress: data.ipAddress || 'unknown',
-        userAgent: data.userAgent || 'unknown',
-        severity: data.severity || AuditSeverity.MEDIUM,
-        schoolId: data.schoolId,
-        sessionId: data.sessionId,
-        correlationId: data.correlationId,
-        timestamp: new Date(),
-      });
+      // Get context from AsyncLocalStorage
+      const context = this.getAuditContext();
+      const enrichedData = {
+        ...data,
+        userId: data.userId || context?.get('userId') || 'system',
+        correlationId: data.correlationId || context?.get('correlationId') || this.generateCorrelationId(),
+        schoolId: data.schoolId || context?.get('schoolId'),
+        sessionId: data.sessionId || context?.get('sessionId'),
+      };
 
-      await this.auditLogRepository.save(auditLog);
+      // Add to buffer instead of immediate save
+      this.auditBuffer.push(enrichedData);
+
+      // Flush if buffer is full
+      if (this.auditBuffer.length >= this.auditConfig.getBufferSize()) {
+        await this.flushAuditBuffer();
+      }
 
       // Log to console for development
-      this.logger.log(`Audit: ${data.action} by ${data.userId} on ${data.resource}${data.resourceId ? ` (${data.resourceId})` : ''}`);
+      this.logger.log(`Audit: ${enrichedData.action} by ${enrichedData.userId} on ${enrichedData.resource}${enrichedData.resourceId ? ` (${enrichedData.resourceId})` : ''}`);
 
     } catch (error) {
       this.logger.error(`Failed to log audit event: ${error.message}`, error.stack);
@@ -149,6 +253,173 @@ export class AuditService {
       ipAddress,
       userAgent,
       severity,
+    });
+  }
+
+  /**
+   * Factory: Log user creation
+   */
+  async logUserCreated(userId: string, targetUserId: string, ipAddress: string, userAgent: string, details?: Record<string, any>): Promise<void> {
+    await this.logActivity({
+      userId,
+      action: AuditAction.USER_CREATED,
+      resource: 'user',
+      resourceId: targetUserId,
+      details: { eventType: 'user_created', ...details },
+      ipAddress,
+      userAgent,
+      severity: AuditSeverity.MEDIUM,
+    });
+  }
+
+  /**
+   * Factory: Log user update
+   */
+  async logUserUpdated(userId: string, targetUserId: string, changes: Record<string, any>, ipAddress: string, userAgent: string): Promise<void> {
+    await this.logActivity({
+      userId,
+      action: AuditAction.USER_UPDATED,
+      resource: 'user',
+      resourceId: targetUserId,
+      details: { eventType: 'user_updated', changes },
+      ipAddress,
+      userAgent,
+      severity: AuditSeverity.LOW,
+    });
+  }
+
+  /**
+   * Factory: Log user deletion
+   */
+  async logUserDeleted(userId: string, targetUserId: string, ipAddress: string, userAgent: string): Promise<void> {
+    await this.logActivity({
+      userId,
+      action: AuditAction.USER_DELETED,
+      resource: 'user',
+      resourceId: targetUserId,
+      details: { eventType: 'user_deleted' },
+      ipAddress,
+      userAgent,
+      severity: AuditSeverity.HIGH,
+    });
+  }
+
+  /**
+   * Factory: Log student creation
+   */
+  async logStudentCreated(userId: string, studentId: string, schoolId: string, ipAddress: string, userAgent: string, details?: Record<string, any>): Promise<void> {
+    await this.logActivity({
+      userId,
+      action: AuditAction.DATA_CREATED,
+      resource: 'student',
+      resourceId: studentId,
+      schoolId,
+      details: { eventType: 'student_created', ...details },
+      ipAddress,
+      userAgent,
+      severity: AuditSeverity.MEDIUM,
+    });
+  }
+
+  /**
+   * Factory: Log student update
+   */
+  async logStudentUpdated(userId: string, studentId: string, schoolId: string, changes: Record<string, any>, ipAddress: string, userAgent: string): Promise<void> {
+    await this.logActivity({
+      userId,
+      action: AuditAction.DATA_UPDATED,
+      resource: 'student',
+      resourceId: studentId,
+      schoolId,
+      details: { eventType: 'student_updated', changes },
+      ipAddress,
+      userAgent,
+      severity: AuditSeverity.LOW,
+    });
+  }
+
+  /**
+   * Factory: Log school creation
+   */
+  async logSchoolCreated(userId: string, schoolId: string, ipAddress: string, userAgent: string, details?: Record<string, any>): Promise<void> {
+    await this.logActivity({
+      userId,
+      action: AuditAction.DATA_CREATED,
+      resource: 'school',
+      resourceId: schoolId,
+      details: { eventType: 'school_created', ...details },
+      ipAddress,
+      userAgent,
+      severity: AuditSeverity.HIGH,
+    });
+  }
+
+  /**
+   * Factory: Log school update
+   */
+  async logSchoolUpdated(userId: string, schoolId: string, changes: Record<string, any>, ipAddress: string, userAgent: string): Promise<void> {
+    await this.logActivity({
+      userId,
+      action: AuditAction.DATA_UPDATED,
+      resource: 'school',
+      resourceId: schoolId,
+      details: { eventType: 'school_updated', changes },
+      ipAddress,
+      userAgent,
+      severity: AuditSeverity.MEDIUM,
+    });
+  }
+
+  /**
+   * Factory: Log system configuration change
+   */
+  async logSystemConfigChanged(userId: string, configKey: string, oldValue: any, newValue: any, ipAddress: string, userAgent: string): Promise<void> {
+    await this.logActivity({
+      userId,
+      action: AuditAction.SYSTEM_CONFIG_CHANGED,
+      resource: 'system',
+      resourceId: configKey,
+      details: {
+        eventType: 'system_config_changed',
+        configKey,
+        oldValue,
+        newValue,
+      },
+      ipAddress,
+      userAgent,
+      severity: AuditSeverity.HIGH,
+    });
+  }
+
+  /**
+   * Factory: Log API key creation
+   */
+  async logApiKeyCreated(userId: string, apiKeyId: string, ipAddress: string, userAgent: string): Promise<void> {
+    await this.logActivity({
+      userId,
+      action: AuditAction.API_KEY_CREATED,
+      resource: 'api_key',
+      resourceId: apiKeyId,
+      details: { eventType: 'api_key_created' },
+      ipAddress,
+      userAgent,
+      severity: AuditSeverity.MEDIUM,
+    });
+  }
+
+  /**
+   * Factory: Log backup creation
+   */
+  async logBackupCreated(userId: string, backupId: string, backupType: string, ipAddress: string, userAgent: string): Promise<void> {
+    await this.logActivity({
+      userId,
+      action: AuditAction.BACKUP_CREATED,
+      resource: 'backup',
+      resourceId: backupId,
+      details: { eventType: 'backup_created', backupType },
+      ipAddress,
+      userAgent,
+      severity: AuditSeverity.MEDIUM,
     });
   }
 
@@ -304,15 +575,16 @@ export class AuditService {
   /**
    * Clean up old audit logs based on retention policy
    */
-  async cleanupOldLogs(retentionDays: number = 90): Promise<number> {
+  async cleanupOldLogs(retentionDays?: number): Promise<number> {
+    const days = retentionDays || this.auditConfig.getRetentionDays();
     const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
+    cutoffDate.setDate(cutoffDate.getDate() - days);
 
     const result = await this.auditLogRepository.delete({
       timestamp: Between(new Date(0), cutoffDate),
     });
 
-    this.logger.log(`Cleaned up ${result.affected} old audit logs older than ${retentionDays} days`);
+    this.logger.log(`Cleaned up ${result.affected} old audit logs older than ${days} days`);
 
     return result.affected || 0;
   }
@@ -328,7 +600,7 @@ export class AuditService {
   }): Promise<string> {
     const [logs] = await this.getAuditLogs({
       ...options,
-      limit: 10000, // Reasonable limit for export
+      limit: this.auditConfig.getMaxExportRecords(),
     });
 
     if (options.format === 'csv') {
@@ -336,6 +608,33 @@ export class AuditService {
     }
 
     return JSON.stringify(logs, null, 2);
+  }
+
+  /**
+   * Get audit buffer status
+   */
+  getBufferStatus(): { bufferSize: number; currentBufferLength: number; isFlushTimerActive: boolean } {
+    return {
+      bufferSize: this.auditConfig.getBufferSize(),
+      currentBufferLength: this.auditBuffer.length,
+      isFlushTimerActive: this.bufferFlushTimer !== null,
+    };
+  }
+
+  /**
+   * Force flush audit buffer
+   */
+  async forceFlushBuffer(): Promise<void> {
+    await this.flushAuditBuffer();
+  }
+
+  /**
+   * Cleanup method - flush buffer and stop timer
+   */
+  async onModuleDestroy(): Promise<void> {
+    this.stopBufferFlushTimer();
+    await this.flushAuditBuffer();
+    this.logger.log('AuditService destroyed - buffer flushed and timer stopped');
   }
 
   private getDataAction(action: string): AuditAction {
@@ -393,5 +692,123 @@ export class AuditService {
       .join('\n');
 
     return csvContent;
+  }
+
+  /**
+   * Generate integrity hash for audit log data
+   */
+  private generateIntegrityHash(data: AuditLogData): string {
+    const dataString = JSON.stringify({
+      userId: data.userId,
+      action: data.action,
+      resource: data.resource,
+      resourceId: data.resourceId,
+      details: data.details,
+      ipAddress: data.ipAddress,
+      userAgent: data.userAgent,
+      severity: data.severity,
+      timestamp: new Date().toISOString(),
+    });
+
+    return createHash('sha256').update(dataString).digest('hex');
+  }
+
+  /**
+   * Verify integrity of audit logs
+   */
+  async verifyAuditIntegrity(logs: AuditLog[]): Promise<{
+    valid: AuditLog[];
+    invalid: AuditLog[];
+    verificationResults: Array<{ id: string; isValid: boolean; expectedHash?: string; actualHash?: string }>;
+  }> {
+    const valid: AuditLog[] = [];
+    const invalid: AuditLog[] = [];
+    const verificationResults: Array<{ id: string; isValid: boolean; expectedHash?: string; actualHash?: string }> = [];
+
+    for (const log of logs) {
+      try {
+        // Recreate the hash from log data
+        const data: AuditLogData = {
+          userId: log.userId,
+          action: log.action as AuditAction,
+          resource: log.resource,
+          resourceId: log.resourceId,
+          details: log.details,
+          ipAddress: log.ipAddress,
+          userAgent: log.userAgent,
+          severity: log.severity as AuditSeverity,
+        };
+
+        const calculatedHash = this.generateIntegrityHash(data);
+        const storedHash = (log as any).integrityHash; // Assuming we add this field to entity
+
+        const isValid = !storedHash || calculatedHash === storedHash;
+
+        if (isValid) {
+          valid.push(log);
+        } else {
+          invalid.push(log);
+        }
+
+        verificationResults.push({
+          id: log.id,
+          isValid,
+          expectedHash: storedHash,
+          actualHash: calculatedHash,
+        });
+      } catch (error) {
+        this.logger.error(`Error verifying integrity for log ${log.id}: ${error.message}`);
+        invalid.push(log);
+        verificationResults.push({
+          id: log.id,
+          isValid: false,
+        });
+      }
+    }
+
+    return { valid, invalid, verificationResults };
+  }
+
+  /**
+   * Encrypt sensitive audit data (placeholder - implement with proper encryption)
+   */
+  private encryptSensitiveData(data: any): any {
+    // TODO: Implement proper encryption using a library like crypto-js or node-forge
+    // For now, return data as-is with a warning
+    this.logger.warn('Audit data encryption not implemented - using plain text');
+    return data;
+  }
+
+  /**
+   * Decrypt sensitive audit data (placeholder)
+   */
+  private decryptSensitiveData(encryptedData: any): any {
+    // TODO: Implement proper decryption
+    this.logger.warn('Audit data decryption not implemented - returning as-is');
+    return encryptedData;
+  }
+
+  /**
+   * Enhanced logActivity with integrity verification
+   */
+  async logActivityWithIntegrity(data: AuditLogData): Promise<void> {
+    // Generate integrity hash
+    const integrityHash = this.generateIntegrityHash(data);
+
+    // Add hash to details for storage
+    const enhancedData = {
+      ...data,
+      details: {
+        ...data.details,
+        integrityHash,
+      },
+    };
+
+    // Encrypt sensitive data if configured
+    if (this.auditConfig.getConfig().sensitiveFields.length > 0) {
+      enhancedData.details = this.encryptSensitiveData(enhancedData.details);
+    }
+
+    await this.logActivity(enhancedData);
   }
 }

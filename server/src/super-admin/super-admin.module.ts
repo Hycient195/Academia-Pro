@@ -16,11 +16,17 @@ import { SuperAdminUsersController } from './controllers/super-admin.controller'
 // Services
 import { CrossSchoolReportingService } from './cross-school-reporting.service';
 
+// Audit Module
+import { AuditModule } from './audit/audit.module';
+
 @Module({
   imports: [
-     forwardRef(() => SchoolsModule),
-     forwardRef(() => UsersModule),
-     forwardRef(() => IamModule),
+      forwardRef(() => SchoolsModule),
+      forwardRef(() => UsersModule),
+      forwardRef(() => IamModule),
+
+      // Audit functionality
+      AuditModule,
   ],
   controllers: [
     SuperAdminController,
@@ -31,6 +37,9 @@ import { CrossSchoolReportingService } from './cross-school-reporting.service';
   ],
   exports: [
     CrossSchoolReportingService,
+
+    // Export audit module for external access
+    AuditModule,
   ],
 })
 export class SuperAdminModule {}

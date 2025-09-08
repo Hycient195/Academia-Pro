@@ -28,6 +28,8 @@ import { ExaminationService } from '../services/examination.service';
 import { CreateExamDto, SubmitExamResultDto, GradeExamResultDto, RequestReEvaluationDto } from '../dtos';
 import { ExamType, ExamStatus } from '../entities/exam.entity';
 import { ResultStatus } from '../entities/exam-result.entity';
+import { Auditable, AuditCreate, AuditUpdate, AuditRead, SampleAudit } from '../../common/audit/auditable.decorator';
+import { AuditAction, AuditSeverity } from '../../security/types/audit.types';
 
 @ApiTags('Examination Management')
 @ApiBearerAuth()
@@ -229,6 +231,13 @@ export class ExaminationController {
 
   @Post('results/submit')
   @HttpCode(HttpStatus.CREATED)
+  @Auditable({
+    action: AuditAction.DATA_CREATED,
+    resource: 'exam_result',
+    severity: AuditSeverity.MEDIUM,
+    customAction: 'submit_exam_result',
+    metadata: { operationType: 'result_submission' }
+  })
   @ApiOperation({
     summary: 'Submit exam result',
     description: 'Submit a student\'s exam result',
@@ -254,6 +263,13 @@ export class ExaminationController {
   }
 
   @Put('results/grade')
+  @Auditable({
+    action: AuditAction.DATA_UPDATED,
+    resource: 'exam_result',
+    severity: AuditSeverity.MEDIUM,
+    customAction: 'grade_exam_result',
+    metadata: { operationType: 'grading' }
+  })
   @ApiOperation({
     summary: 'Grade exam result',
     description: 'Grade a submitted exam result',
@@ -338,6 +354,8 @@ export class ExaminationController {
   }
 
   @Get('results/student/:studentId')
+  @AuditRead('exam_results')
+  @SampleAudit(0.5) // Sample 50% of requests for performance
   @ApiOperation({
     summary: 'Get student exam results',
     description: 'Retrieve all exam results for a specific student',

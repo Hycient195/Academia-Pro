@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import {
   IconShield,
   IconUsers,
@@ -25,6 +27,13 @@ import {
 } from "@tabler/icons-react"
 import { apis } from "@/redux/api"
 import { IAuditLog } from "@academia-pro/types/super-admin"
+
+interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
 
 function AuditMetricCard({
   title,
@@ -70,7 +79,7 @@ function AuditMetricCard({
   )
 }
 
-function AuditLogTable({ logs, isLoading }: { logs?: IAuditLog[], isLoading: boolean }) {
+function AuditLogTable({ logs, pagination, isLoading }: { logs?: IAuditLog[], pagination?: PaginationInfo, isLoading: boolean }) {
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -143,13 +152,101 @@ export default function AuditPage() {
     period: '24h',
     user: '',
     action: '',
-    status: ''
+    status: '',
+    search: '',
+    page: 1,
+    limit: 50
   })
 
-  const { data: auditLogs, isLoading: logsLoading } = apis.superAdmin.useGetAuditLogsQuery(filters)
-  const { data: auditMetrics, isLoading: metricsLoading } = apis.superAdmin.useGetAuditMetricsQuery({ period: filters.period })
+  const { data: auditLogs, isLoading: logsLoading, refetch: refetchLogs, error: logsError } = apis.superAdmin.useGetAuditLogsQuery(filters)
+  const { data: auditMetrics, isLoading: metricsLoading, refetch: refetchMetrics, error: metricsError } = apis.superAdmin.useGetAuditMetricsQuery({ period: filters.period })
 
   const isLoading = logsLoading || metricsLoading
+  const hasError = logsError || metricsError
+
+  // Retry mechanism
+  const handleRetry = () => {
+    if (logsError) refetchLogs()
+    if (metricsError) refetchMetrics()
+  }
+
+  // Export functionality
+  const handleExport = async () => {
+    try {
+      // Create a download link for the export
+      const exportUrl = `${process.env.NEXT_PUBLIC_API_URL}/super-admin/audit/export`
+      const response = await fetch(exportUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          format: 'csv',
+          filters: filters
+        })
+      })
+
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+      } else {
+        throw new Error('Export failed')
+      }
+    } catch (error) {
+      console.error('Export error:', error)
+      // Could show a toast notification here
+    }
+  }
+
+  // Handle search input with debouncing
+  const [searchTerm, setSearchTerm] = useState('')
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [searchTerm])
+
+  useEffect(() => {
+    setFilters(prev => ({ ...prev, search: debouncedSearchTerm }))
+  }, [debouncedSearchTerm])
+
+  // Refresh data function
+  const handleRefresh = () => {
+    refetchLogs()
+    refetchMetrics()
+  }
+
+  // Real-time updates with polling
+  const [autoRefresh, setAutoRefresh] = useState(false)
+  const [refreshInterval, setRefreshInterval] = useState(30000) // 30 seconds
+
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout | null = null
+
+    if (autoRefresh) {
+      intervalId = setInterval(() => {
+        handleRefresh()
+      }, refreshInterval)
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId)
+      }
+    }
+  }, [autoRefresh, refreshInterval])
 
   return (
     <div className="space-y-6">
@@ -160,13 +257,57 @@ export default function AuditPage() {
             Comprehensive audit trail of all system activities and user operations
           </p>
         </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline">
+        <div className="flex items-center space-x-4">
+          <Button variant="outline" onClick={hasError ? handleRetry : handleRefresh} disabled={isLoading}>
+            {hasError ? <IconAlertTriangle className="h-4 w-4 mr-2" /> : <IconClock className="h-4 w-4 mr-2" />}
+            {hasError ? 'Retry' : 'Refresh'}
+          </Button>
+          <Button variant="outline" onClick={handleExport}>
             <IconDownload className="h-4 w-4 mr-2" />
             Export Logs
           </Button>
+
+          {/* Auto-refresh controls */}
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="auto-refresh"
+              checked={autoRefresh}
+              onCheckedChange={setAutoRefresh}
+            />
+            <Label htmlFor="auto-refresh" className="text-sm">Auto-refresh</Label>
+            {autoRefresh && (
+              <Select value={refreshInterval.toString()} onValueChange={(value) => setRefreshInterval(parseInt(value))}>
+                <SelectTrigger className="w-24">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="15000">15s</SelectItem>
+                  <SelectItem value="30000">30s</SelectItem>
+                  <SelectItem value="60000">1m</SelectItem>
+                  <SelectItem value="300000">5m</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Error Display */}
+      {hasError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center">
+            <IconAlertTriangle className="h-5 w-5 text-red-500 mr-2" />
+            <div>
+              <h3 className="text-sm font-medium text-red-800">Failed to load audit data</h3>
+              <p className="text-sm text-red-600 mt-1">
+                {logsError && 'Failed to load audit logs. '}
+                {metricsError && 'Failed to load audit metrics. '}
+                Please try again.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Audit Metrics */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -272,7 +413,12 @@ export default function AuditPage() {
               <label className="text-sm font-medium">Search</label>
               <div className="relative">
                 <IconSearch className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search logs..." className="pl-8" />
+                <Input
+                  placeholder="Search logs..."
+                  className="pl-8"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
             </div>
           </div>
@@ -291,8 +437,40 @@ export default function AuditPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <AuditLogTable logs={auditLogs?.logs} isLoading={isLoading} />
+          <AuditLogTable logs={auditLogs?.logs} pagination={auditLogs?.pagination} isLoading={isLoading} />
         </CardContent>
+
+        {/* Pagination Controls */}
+        {auditLogs?.pagination && auditLogs.pagination.totalPages > 1 && (
+          <div className="flex items-center justify-between px-6 py-4 border-t">
+            <div className="text-sm text-muted-foreground">
+              Showing {((auditLogs.pagination.page - 1) * auditLogs.pagination.limit) + 1} to{' '}
+              {Math.min(auditLogs.pagination.page * auditLogs.pagination.limit, auditLogs.pagination.total)} of{' '}
+              {auditLogs.pagination.total} results
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setFilters(prev => ({ ...prev, page: prev.page - 1 }))}
+                disabled={auditLogs.pagination.page <= 1}
+              >
+                Previous
+              </Button>
+              <span className="text-sm">
+                Page {auditLogs.pagination.page} of {auditLogs.pagination.totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setFilters(prev => ({ ...prev, page: prev.page + 1 }))}
+                disabled={auditLogs.pagination.page >= auditLogs.pagination.totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* Recent Security Events */}

@@ -43,6 +43,10 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { TimeoutInterceptor } from './common/interceptors/timeout.interceptor';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
+// Audit components
+import { AuditInterceptor } from './common/audit/audit.interceptor';
+import { AuditMiddleware } from './common/audit/audit.middleware';
+
 // Database configuration
 import { getDatabaseConfig } from './database.config';
 import { AppController } from './app.controller';
@@ -133,6 +137,10 @@ import { AppService } from './app.service';
       provide: APP_INTERCEPTOR,
       useClass: TimeoutInterceptor,
     },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditInterceptor,
+    },
 
     // Global exception filter
     {
@@ -145,6 +153,11 @@ import { AppService } from './app.service';
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
+    // Apply audit middleware globally (before other middleware)
+    consumer
+      .apply(AuditMiddleware)
+      .forRoutes({ path: '*', method: RequestMethod.ALL });
+
     // Apply security middleware globally
     consumer
       .apply(SecurityMiddleware)

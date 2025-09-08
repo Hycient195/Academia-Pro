@@ -3,6 +3,7 @@
 
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuditSharedModule } from '../common/audit/audit.shared.module';
 import { AcademicController } from './academic.controller';
 import { AcademicService } from './academic.service';
 import { Subject } from './subject.entity';
@@ -34,6 +35,7 @@ import { SectionAssignment } from './entities/section-assignment.entity';
       Syllabus,
       SectionAssignment,
     ]),
+    AuditSharedModule,
   ],
   controllers: [AcademicController],
   providers: [AcademicService],

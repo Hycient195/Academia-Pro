@@ -4,6 +4,8 @@
 import { Injectable, NotFoundException, BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
+import { AuditService } from '../security/services/audit.service';
+import { AuditAction, AuditSeverity } from '../security/types/audit.types';
 import { Subject } from './subject.entity';
 import { Curriculum } from './curriculum.entity';
 import { Class } from './class.entity';
@@ -57,6 +59,7 @@ export class AcademicService {
     @InjectRepository(SectionAssignment)
     private sectionAssignmentRepository: Repository<SectionAssignment>,
     private dataSource: DataSource,
+    private auditService: AuditService,
   ) {}
 
   // Subject Management
@@ -1607,5 +1610,130 @@ export class AcademicService {
       substituteRequests,
       syllabi,
     };
+  }
+
+  // ==================== CUSTOM AUDIT METHODS ====================
+
+  /**
+   * Audit curriculum changes and academic policy updates
+   */
+  async auditCurriculumChange(curriculumId: string, changeType: string, changes: any, userId: string): Promise<void> {
+    await this.auditService.logActivity({
+      action: AuditAction.DATA_UPDATED,
+      resource: 'curriculum',
+      resourceId: curriculumId,
+      severity: AuditSeverity.MEDIUM,
+      userId,
+      details: {
+        changeType,
+        changes: this.sanitizeAuditData(changes),
+        timestamp: new Date(),
+        module: 'academic',
+        eventType: 'curriculum_change',
+      },
+    });
+  }
+
+  /**
+   * Audit course management operations
+   */
+  async auditCourseManagement(courseId: string, operation: string, details: any, userId: string): Promise<void> {
+    await this.auditService.logActivity({
+      action: AuditAction.DATA_UPDATED,
+      resource: 'course',
+      resourceId: courseId,
+      severity: AuditSeverity.LOW,
+      userId,
+      details: {
+        operation,
+        courseDetails: this.sanitizeAuditData(details),
+        timestamp: new Date(),
+        module: 'academic',
+        eventType: 'course_management',
+      },
+    });
+  }
+
+  /**
+   * Audit academic policy changes
+   */
+  async auditAcademicPolicyChange(policyId: string, policyType: string, changes: any, userId: string): Promise<void> {
+    await this.auditService.logActivity({
+      action: AuditAction.SYSTEM_CONFIG_CHANGED,
+      resource: 'academic_policy',
+      resourceId: policyId,
+      severity: AuditSeverity.HIGH,
+      userId,
+      details: {
+        policyType,
+        changes: this.sanitizeAuditData(changes),
+        timestamp: new Date(),
+        module: 'academic',
+        eventType: 'policy_change',
+      },
+    });
+  }
+
+  /**
+   * Audit bulk academic operations with sampling
+   */
+  async auditBulkAcademicOperation(operation: string, totalRecords: number, successCount: number, userId: string): Promise<void> {
+    // Only audit if operation affects significant number of records or has failures
+    if (totalRecords >= 10 || successCount < totalRecords) {
+      await this.auditService.logActivity({
+        action: AuditAction.DATA_UPDATED,
+        resource: 'bulk_academic_operation',
+        severity: totalRecords >= 100 ? AuditSeverity.MEDIUM : AuditSeverity.LOW,
+        userId,
+        details: {
+          operation,
+          totalRecords,
+          successCount,
+          failureCount: totalRecords - successCount,
+          timestamp: new Date(),
+          module: 'academic',
+          eventType: 'bulk_operation',
+          sampled: totalRecords < 100, // Mark as sampled for smaller operations
+        },
+      });
+    }
+  }
+
+  /**
+   * Audit teacher workload changes
+   */
+  async auditTeacherWorkloadChange(teacherId: string, academicYear: string, changes: any, userId: string): Promise<void> {
+    await this.auditService.logActivity({
+      action: AuditAction.DATA_UPDATED,
+      resource: 'teacher_workload',
+      resourceId: teacherId,
+      severity: AuditSeverity.LOW,
+      userId,
+      details: {
+        academicYear,
+        changes: this.sanitizeAuditData(changes),
+        timestamp: new Date(),
+        module: 'academic',
+        eventType: 'workload_change',
+      },
+    });
+  }
+
+  /**
+   * Sanitize sensitive data for audit logging
+   */
+  private sanitizeAuditData(data: any): any {
+    if (!data || typeof data !== 'object') return data;
+
+    const sensitiveFields = ['password', 'ssn', 'socialSecurity', 'bankAccount', 'creditCard'];
+    const sanitized = { ...data };
+
+    for (const field of sensitiveFields) {
+      if (sanitized[field]) {
+        sanitized[field] = '[REDACTED]';
+      }
+    }
+
+    return sanitized;
   }
 }

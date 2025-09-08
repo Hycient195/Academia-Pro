@@ -5,6 +5,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AuditSharedModule } from '../common/audit/audit.shared.module';
 
 // Entities
 import { Attendance } from './entities/attendance.entity';
@@ -35,6 +36,7 @@ import { AttendanceInterceptor } from './interceptors/attendance.interceptor';
       }),
       inject: [ConfigService],
     }),
+    AuditSharedModule,
   ],
   controllers: [AttendanceController],
   providers: [

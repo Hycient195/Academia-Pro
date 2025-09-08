@@ -11,6 +11,7 @@ import {
   Delete,
   Query,
   UseGuards,
+  UseInterceptors,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -28,10 +29,14 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../common/decorators';
 import { User } from './user.entity';
 import { EUserRole, EUserStatus } from '@academia-pro/types/users';
+import { AuditInterceptor } from '../common/audit/audit.interceptor';
+import { Auditable, AuditCreate, AuditUpdate, AuditDelete, AuditRead, AuditSecurity } from '../common/audit/auditable.decorator';
+import { AuditAction, AuditSeverity } from '../security/types/audit.types';
 
 @ApiTags('users')
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
+@UseInterceptors(AuditInterceptor)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
@@ -48,6 +53,7 @@ export class UsersController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
   @ApiResponse({ status: 409, description: 'User already exists' })
+  @AuditCreate('user')
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
@@ -65,6 +71,12 @@ export class UsersController {
   @ApiResponse({
     status: 200,
     description: 'Users retrieved successfully',
+  })
+  @Auditable({
+    action: AuditAction.DATA_ACCESSED,
+    resource: 'user',
+    severity: AuditSeverity.LOW,
+    samplingRate: 0.1, // Sample 10% of user list requests for performance
   })
   findAll(
     @Query('page') page?: number,
@@ -150,6 +162,7 @@ export class UsersController {
     description: 'User retrieved successfully',
   })
   @ApiResponse({ status: 404, description: 'User not found' })
+  @AuditRead('user', 'id')
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
   }
@@ -166,6 +179,7 @@ export class UsersController {
   @ApiResponse({ status: 400, description: 'Bad request - validation error' })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 409, description: 'User with this email already exists' })
+  @AuditUpdate('user', 'id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(id, updateUserDto);
   }
@@ -211,6 +225,7 @@ export class UsersController {
   })
   @ApiResponse({ status: 400, description: 'User is already suspended' })
   @ApiResponse({ status: 404, description: 'User not found' })
+  @AuditSecurity('user_suspension')
   suspend(@Param('id') id: string) {
     return this.usersService.suspend(id);
   }
@@ -286,6 +301,7 @@ export class UsersController {
     description: 'User deleted successfully',
   })
   @ApiResponse({ status: 404, description: 'User not found' })
+  @AuditDelete('user', 'id')
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
   }

@@ -9,12 +9,17 @@ import { User } from './user.entity';
 import { CreateUserDto, UpdateUserDto } from './dtos';
 import { PaginatedResponse } from '@academia-pro/types/shared';
 import { EUserRole, EUserStatus } from '@academia-pro/types/users';
+import { AuditService } from '../security/services/audit.service';
+import { AuditSeverity } from '../security/types/audit.types';
+import { AuditConfigService } from '../common/audit/audit.config';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    private readonly auditService: AuditService,
+    private readonly auditConfig: AuditConfigService,
   ) {}
 
   /**
@@ -73,6 +78,21 @@ export class UsersService {
     });
 
     const savedUser = await this.usersRepository.save(user);
+
+    // Audit logging for user creation
+    await this.auditService.logUserCreated(
+      isSuperAdminCreated ? 'system' : 'anonymous', // userId - system for super admin created users
+      savedUser.id,
+      '127.0.0.1', // ipAddress - placeholder, should be passed from controller
+      'system', // userAgent - placeholder
+      {
+        createdBySuperAdmin: isSuperAdminCreated,
+        userRole: savedUser.roles[0],
+        schoolId: savedUser.schoolId,
+        emailVerified: savedUser.isEmailVerified,
+      }
+    );
+
     return savedUser;
   }
 
@@ -231,7 +251,18 @@ export class UsersService {
     // Update user
     Object.assign(user, updateDataPrepared);
 
-    return this.usersRepository.save(user);
+    const updatedUser = await this.usersRepository.save(user);
+
+    // Audit logging for user update
+    await this.auditService.logUserUpdated(
+      'system', // userId - should be passed from controller context
+      updatedUser.id,
+      updateDataPrepared, // changes
+      '127.0.0.1', // ipAddress - placeholder
+      'system', // userAgent - placeholder
+    );
+
+    return updatedUser;
   }
 
   /**
@@ -244,6 +275,14 @@ export class UsersService {
     user.status = EUserStatus.SUSPENDED;
 
     await this.usersRepository.save(user);
+
+    // Audit logging for user deletion
+    await this.auditService.logUserDeleted(
+      'system', // userId - should be passed from controller context
+      id,
+      '127.0.0.1', // ipAddress - placeholder
+      'system', // userAgent - placeholder
+    );
   }
 
   /**
@@ -256,9 +295,29 @@ export class UsersService {
       throw new BadRequestException('User is already active');
     }
 
+    const oldStatus = user.status;
     user.status = EUserStatus.ACTIVE;
 
-    return this.usersRepository.save(user);
+    const updatedUser = await this.usersRepository.save(user);
+
+    // Audit logging for user activation
+    await this.auditService.logActivity({
+      userId: 'system', // should be passed from controller context
+      action: 'USER_STATUS_CHANGED',
+      resource: 'user',
+      resourceId: id,
+      details: {
+        eventType: 'user_activated',
+        oldStatus,
+        newStatus: EUserStatus.ACTIVE,
+        userRole: updatedUser.roles[0],
+      },
+      ipAddress: '127.0.0.1', // placeholder
+      userAgent: 'system', // placeholder
+      severity: AuditSeverity.MEDIUM,
+    });
+
+    return updatedUser;
   }
 
   /**
@@ -271,9 +330,29 @@ export class UsersService {
       throw new BadRequestException('User is already inactive');
     }
 
+    const oldStatus = user.status;
     user.status = EUserStatus.INACTIVE;
 
-    return this.usersRepository.save(user);
+    const updatedUser = await this.usersRepository.save(user);
+
+    // Audit logging for user deactivation
+    await this.auditService.logActivity({
+      userId: 'system',
+      action: 'USER_STATUS_CHANGED',
+      resource: 'user',
+      resourceId: id,
+      details: {
+        eventType: 'user_deactivated',
+        oldStatus,
+        newStatus: EUserStatus.INACTIVE,
+        userRole: updatedUser.roles[0],
+      },
+      ipAddress: '127.0.0.1',
+      userAgent: 'system',
+      severity: AuditSeverity.MEDIUM,
+    });
+
+    return updatedUser;
   }
 
   /**
@@ -286,9 +365,30 @@ export class UsersService {
       throw new BadRequestException('User is already suspended');
     }
 
+    const oldStatus = user.status;
     user.status = EUserStatus.SUSPENDED;
 
-    return this.usersRepository.save(user);
+    const updatedUser = await this.usersRepository.save(user);
+
+    // Audit logging for user suspension
+    await this.auditService.logActivity({
+      userId: 'system',
+      action: 'USER_STATUS_CHANGED',
+      resource: 'user',
+      resourceId: id,
+      details: {
+        eventType: 'user_suspended',
+        oldStatus,
+        newStatus: EUserStatus.SUSPENDED,
+        userRole: updatedUser.roles[0],
+        reason,
+      },
+      ipAddress: '127.0.0.1',
+      userAgent: 'system',
+      severity: AuditSeverity.HIGH, // Suspension is a high-severity event
+    });
+
+    return updatedUser;
   }
 
   /**
@@ -336,6 +436,21 @@ export class UsersService {
     await this.usersRepository.update(id, {
       passwordHash: newPasswordHash,
     });
+
+    // Audit logging for password change
+    await this.auditService.logActivity({
+      userId: 'system', // should be the user who initiated the change
+      action: 'PASSWORD_CHANGED',
+      resource: 'user',
+      resourceId: id,
+      details: {
+        eventType: 'password_changed',
+        method: 'admin_reset', // or 'user_change' depending on context
+      },
+      ipAddress: '127.0.0.1',
+      userAgent: 'system',
+      severity: AuditSeverity.HIGH, // Password changes are high severity
+    });
   }
 
   /**
@@ -350,6 +465,21 @@ export class UsersService {
     // Update password
     await this.usersRepository.update(id, {
       passwordHash,
+    });
+
+    // Audit logging for password reset
+    await this.auditService.logActivity({
+      userId: 'system',
+      action: 'PASSWORD_RESET',
+      resource: 'user',
+      resourceId: id,
+      details: {
+        eventType: 'password_reset_admin',
+        method: 'admin_reset',
+      },
+      ipAddress: '127.0.0.1',
+      userAgent: 'system',
+      severity: AuditSeverity.HIGH,
     });
   }
 
@@ -446,6 +576,125 @@ export class UsersService {
       .limit(limit);
 
     return queryBuilder.getMany();
+  }
+
+  /**
+   * Data sanitization and sampling utilities
+   */
+  private sanitizeUserData(userData: any): any {
+    if (!userData) return userData;
+
+    const sanitized = { ...userData };
+
+    // Remove sensitive fields
+    const sensitiveFields = ['passwordHash', 'refreshToken', 'mfaSecret', 'emailVerificationToken', 'passwordResetToken'];
+    sensitiveFields.forEach(field => {
+      if (sanitized[field]) {
+        sanitized[field] = '[REDACTED]';
+      }
+    });
+
+    // Sanitize nested objects
+    if (sanitized.preferences) {
+      // Keep preferences but sanitize any sensitive data within
+      sanitized.preferences = this.auditConfig.sanitizeDetails(sanitized.preferences);
+    }
+
+    if (sanitized.address) {
+      // Address might contain sensitive location data, sanitize coordinates
+      if (sanitized.address.coordinates) {
+        sanitized.address.coordinates = '[LOCATION_DATA_REDACTED]';
+      }
+    }
+
+    return sanitized;
+  }
+
+  private shouldSampleAudit(operation: string, userCount?: number): boolean {
+    // Sample high-volume operations
+    if (operation === 'findAll' && (!userCount || userCount > 100)) {
+      return Math.random() > 0.1; // Sample 10% of large user lists
+    }
+
+    if (operation === 'search') {
+      return Math.random() > 0.2; // Sample 20% of search operations
+    }
+
+    if (operation === 'getStatistics') {
+      return Math.random() > 0.5; // Sample 50% of statistics requests
+    }
+
+    return false; // Don't sample by default
+  }
+
+  /**
+   * Custom audit methods for user-specific events
+   */
+  private async logUserRoleChange(userId: string, targetUserId: string, oldRole: EUserRole, newRole: EUserRole, ipAddress: string, userAgent: string): Promise<void> {
+    await this.auditService.logActivity({
+      userId,
+      action: 'USER_ROLE_CHANGED',
+      resource: 'user',
+      resourceId: targetUserId,
+      details: {
+        eventType: 'user_role_changed',
+        oldRole,
+        newRole,
+        roleChange: true,
+      },
+      ipAddress,
+      userAgent,
+      severity: AuditSeverity.HIGH, // Role changes are high severity
+    });
+  }
+
+  private async logUserBulkOperation(userId: string, operation: string, count: number, ipAddress: string, userAgent: string, details?: any): Promise<void> {
+    await this.auditService.logActivity({
+      userId,
+      action: 'BULK_USER_OPERATION',
+      resource: 'user',
+      details: {
+        eventType: 'bulk_user_operation',
+        operation,
+        count,
+        ...details,
+      },
+      ipAddress,
+      userAgent,
+      severity: AuditSeverity.MEDIUM,
+    });
+  }
+
+  private async logUserDataAccess(userId: string, targetUserId: string, accessType: 'read' | 'search' | 'export', ipAddress: string, userAgent: string, details?: any): Promise<void> {
+    const auditAction = accessType === 'search' ? 'read' : accessType;
+    await this.auditService.logDataAccess(
+      userId,
+      auditAction as 'read' | 'export' | 'create' | 'update' | 'delete',
+      'user',
+      targetUserId,
+      ipAddress,
+      userAgent,
+      {
+        eventType: 'user_data_access',
+        originalAccessType: accessType,
+        ...details,
+      }
+    );
+  }
+
+  private async logUserSecurityEvent(userId: string, eventType: string, targetUserId: string, severity: AuditSeverity, ipAddress: string, userAgent: string, details?: any): Promise<void> {
+    await this.auditService.logSecurityEvent(
+      userId,
+      eventType,
+      severity,
+      ipAddress,
+      userAgent,
+      {
+        targetUserId,
+        eventType: 'user_security_event',
+        ...details,
+      }
+    );
   }
 
   /**

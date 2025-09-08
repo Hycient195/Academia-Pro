@@ -16,6 +16,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { AuditCreate, AuditUpdate, AuditDelete, AuditRead, SampleAudit, MonitorPerformance } from '../../common/audit/auditable.decorator';
 import { FeeService } from '../services/fee.service';
 import { CreateFeeStructureDto, UpdateFeeStructureDto } from '../dtos/create-fee-structure.dto';
 import { CreatePaymentDto, ProcessPaymentDto, RefundPaymentDto } from '../dtos/create-payment.dto';
@@ -85,6 +86,7 @@ export class FeeController {
 
   // Payment Processing
   @Post('payments')
+  @AuditCreate('fee_payment', 'id')
   @ApiOperation({ summary: 'Create a new payment' })
   @ApiResponse({ status: 201, description: 'Payment created successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })
@@ -93,6 +95,7 @@ export class FeeController {
   }
 
   @Put('payments/:id/process')
+  @AuditUpdate('fee_payment', 'id')
   @ApiOperation({ summary: 'Process a payment' })
   @ApiResponse({ status: 200, description: 'Payment processed successfully' })
   @ApiResponse({ status: 404, description: 'Payment not found' })
@@ -106,6 +109,7 @@ export class FeeController {
   }
 
   @Put('payments/:id/refund')
+  @AuditCreate('fee_refund', 'id')
   @ApiOperation({ summary: 'Refund a payment' })
   @ApiResponse({ status: 200, description: 'Payment refunded successfully' })
   @ApiResponse({ status: 404, description: 'Payment not found' })

@@ -5,9 +5,10 @@ import { SuperAdminUsersController } from '../super-admin/controllers/super-admi
 import { UsersService } from './users.service';
 import { User } from './user.entity';
 import { IamModule } from '../iam/iam.module';
+import { AuditSharedModule } from '../common/audit/audit.shared.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User]), IamModule],
+  imports: [TypeOrmModule.forFeature([User]), IamModule, AuditSharedModule],
   controllers: [UsersController, SuperAdminUsersController],
   providers: [UsersService],
   exports: [UsersService],

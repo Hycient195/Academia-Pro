@@ -4,6 +4,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthJwtModule } from '../auth/auth-jwt.module';
+import { AuditSharedModule } from '../common/audit/audit.shared.module';
 
 // Controllers
 import { StudentsController } from './students.controller';
@@ -18,6 +19,7 @@ import { StudentAlumniController } from './controllers/alumni.controller';
 
 // Services
 import { StudentsService } from './students.service';
+import { StudentAuditService } from './services/student-audit.service';
 import { StudentEnrollmentService } from './services/enrollment.service';
 import { StudentProfileService } from './services/profile.service';
 import { StudentTransferService } from './services/transfer.service';
@@ -54,6 +56,7 @@ import { DocumentAccessGuard } from './guards/document-access.guard';
       StudentAuditLog,
     ]),
     AuthJwtModule,
+    AuditSharedModule,
   ],
   controllers: [
     StudentsController,
@@ -68,6 +71,7 @@ import { DocumentAccessGuard } from './guards/document-access.guard';
   ],
   providers: [
     StudentsService,
+    StudentAuditService,
     StudentEnrollmentService,
     StudentProfileService,
     StudentTransferService,
@@ -81,6 +85,7 @@ import { DocumentAccessGuard } from './guards/document-access.guard';
   ],
   exports: [
     StudentsService,
+    StudentAuditService,
     StudentEnrollmentService,
     StudentProfileService,
     StudentTransferService,

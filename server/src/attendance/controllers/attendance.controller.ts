@@ -24,6 +24,7 @@ import {
   ApiQuery,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import { AuditCreate, AuditUpdate, AuditDelete, AuditRead, SampleAudit, MonitorPerformance } from '../../common/audit/auditable.decorator';
 import { AttendanceService } from '../services/attendance.service';
 import {
   MarkAttendanceDto,
@@ -45,6 +46,7 @@ export class AttendanceController {
 
   @Post('mark')
   @HttpCode(HttpStatus.CREATED)
+  @AuditCreate('attendance', 'id')
   @ApiOperation({
     summary: 'Mark attendance for a student',
     description: 'Mark attendance for an individual student',
@@ -75,6 +77,8 @@ export class AttendanceController {
 
   @Post('bulk-mark')
   @HttpCode(HttpStatus.CREATED)
+  @SampleAudit(0.1) // Sample 10% of bulk attendance operations
+  @AuditCreate('attendance', '0.id')
   @ApiOperation({
     summary: 'Mark attendance for multiple students',
     description: 'Mark attendance for multiple students in bulk',
@@ -133,6 +137,7 @@ export class AttendanceController {
   }
 
   @Put(':id')
+  @AuditUpdate('attendance', 'id')
   @ApiOperation({
     summary: 'Update attendance record',
     description: 'Update an existing attendance record',
@@ -155,6 +160,7 @@ export class AttendanceController {
   }
 
   @Delete(':id')
+  @AuditDelete('attendance', 'id')
   @ApiOperation({
     summary: 'Delete attendance record',
     description: 'Delete an attendance record',

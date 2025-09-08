@@ -21,6 +21,9 @@ import { SchoolAdminController } from './school-admin.controller';
 import { SchoolContextGuard } from '../common/guards/school-context.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 
+// Audit Module
+import { AuditSharedModule } from '../common/audit/audit.shared.module';
+
 // Import other modules for service injection
 import { StudentsModule } from '../students/students.module';
 import { StaffModule } from '../staff/staff.module';
@@ -36,6 +39,8 @@ import { CommunicationModule } from '../communication/communication.module';
       User,
       Student,
     ]),
+    // Audit module for comprehensive audit logging
+    AuditSharedModule,
     // Import other modules for service injection
     forwardRef(() => StudentsModule),
     StaffModule,

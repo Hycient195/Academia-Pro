@@ -13,6 +13,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Req,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -20,6 +21,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiQuery,
+  ApiBody,
 } from '@nestjs/swagger';
 import { SchoolsService } from './schools.service';
 import { CreateSchoolDto, UpdateSchoolDto } from './dtos';
@@ -27,6 +29,11 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../common/decorators';
 import { EUserRole } from '@academia-pro/types/users';
+import { SchoolStatus } from './school.entity';
+
+// Audit imports
+import { Auditable, SampleAudit } from '../common/audit/auditable.decorator';
+import { AuditAction, AuditSeverity } from '../security/types/audit.types';
 
 @ApiTags('schools')
 @Controller('schools')
@@ -53,6 +60,7 @@ export class SchoolsController {
 
   @Get()
   @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
+  @SampleAudit(0.5) // Sample 50% of requests for high-volume school listing
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all schools with pagination and filtering' })
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -94,6 +102,7 @@ export class SchoolsController {
 
   @Get('search')
   @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
+  @SampleAudit(0.3) // Sample 30% of search requests
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Search schools' })
   @ApiQuery({ name: 'query', required: true, type: String })
@@ -225,5 +234,76 @@ export class SchoolsController {
   @ApiResponse({ status: 404, description: 'School not found' })
   remove(@Param('id') id: string) {
     return this.schoolsService.remove(id);
+  }
+
+  @Post('bulk/status')
+  @Roles(EUserRole.SUPER_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Bulk update school status' })
+  @ApiBody({
+    description: 'Bulk status update data',
+    schema: {
+      type: 'object',
+      required: ['schoolIds', 'status'],
+      properties: {
+        schoolIds: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Array of school IDs'
+        },
+        status: {
+          type: 'string',
+          enum: ['active', 'inactive', 'suspended', 'under_maintenance'],
+          description: 'New status for schools'
+        }
+      }
+    }
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Bulk status update completed',
+  })
+  async bulkUpdateStatus(
+    @Body() body: { schoolIds: string[]; status: SchoolStatus },
+    @Req() request: any
+  ) {
+    const userId = request.user?.id;
+    return this.schoolsService.bulkUpdateStatus(body.schoolIds, body.status, userId);
+  }
+
+  @Post('bulk/settings')
+  @Roles(EUserRole.SUPER_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Bulk update school settings' })
+  @ApiBody({
+    description: 'Bulk settings update data',
+    schema: {
+      type: 'object',
+      required: ['schoolIds', 'settings'],
+      properties: {
+        schoolIds: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Array of school IDs'
+        },
+        settings: {
+          type: 'object',
+          description: 'Settings to apply to schools'
+        }
+      }
+    }
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Bulk settings update completed',
+  })
+  async bulkUpdateSettings(
+    @Body() body: { schoolIds: string[]; settings: any },
+    @Req() request: any
+  ) {
+    const userId = request.user?.id;
+    return this.schoolsService.bulkUpdateSettings(body.schoolIds, body.settings, userId);
   }
 }

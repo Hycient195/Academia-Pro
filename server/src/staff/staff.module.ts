@@ -5,6 +5,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AuditSharedModule } from '../common/audit/audit.shared.module';
 
 // Controllers
 import { StaffController } from './controllers/staff.controller';
@@ -34,6 +35,7 @@ import { StaffInterceptor } from './interceptors/staff.interceptor';
       }),
       inject: [ConfigService],
     }),
+    AuditSharedModule,
   ],
   controllers: [StaffController],
   providers: [

@@ -10,6 +10,8 @@ import { FeeDiscount, DiscountStatus } from '../entities/fee-discount.entity';
 import { InstallmentPlan, InstallmentSchedule } from '../entities/installment-plan.entity';
 import { CreateFeeStructureDto, UpdateFeeStructureDto } from '../dtos/create-fee-structure.dto';
 import { CreatePaymentDto, ProcessPaymentDto, RefundPaymentDto } from '../dtos/create-payment.dto';
+import { AuditService } from '../../security/services/audit.service';
+import { AuditAction, AuditSeverity } from '../../security/types/audit.types';
 
 @Injectable()
 export class FeeService {
@@ -30,6 +32,7 @@ export class FeeService {
     private readonly installmentScheduleRepository: Repository<InstallmentSchedule>,
 
     private readonly dataSource: DataSource,
+    private readonly auditService: AuditService,
   ) {}
 
   // Fee Structure Management
@@ -428,5 +431,153 @@ export class FeeService {
     }
 
     await this.installmentScheduleRepository.save(schedules);
+  }
+
+  // ==================== CUSTOM AUDIT METHODS ====================
+
+  /**
+   * Audit fee structure changes and financial adjustments
+   */
+  async auditFeeStructureChange(feeStructureId: string, changeType: string, changes: any, userId: string, schoolId?: string): Promise<void> {
+    await this.auditService.logActivity({
+      action: AuditAction.DATA_UPDATED,
+      resource: 'fee_structure',
+      resourceId: feeStructureId,
+      severity: AuditSeverity.HIGH,
+      userId,
+      schoolId,
+      details: {
+        changeType,
+        changes: this.sanitizeAuditData(changes),
+        timestamp: new Date(),
+        module: 'fee',
+        eventType: 'fee_structure_change',
+      },
+    });
+  }
+
+  /**
+   * Audit payment processing and financial transactions
+   */
+  async auditPaymentProcessing(paymentId: string, paymentDetails: any, userId: string, schoolId?: string): Promise<void> {
+    await this.auditService.logActivity({
+      action: AuditAction.DATA_UPDATED,
+      resource: 'fee_payment',
+      resourceId: paymentId,
+      severity: AuditSeverity.HIGH,
+      userId,
+      schoolId,
+      details: {
+        paymentDetails: this.sanitizeAuditData(paymentDetails),
+        timestamp: new Date(),
+        module: 'fee',
+        eventType: 'payment_processing',
+      },
+    });
+  }
+
+  /**
+   * Audit refunds and financial adjustments
+   */
+  async auditRefundProcessing(refundId: string, refundDetails: any, userId: string, schoolId?: string): Promise<void> {
+    await this.auditService.logActivity({
+      action: AuditAction.DATA_CREATED,
+      resource: 'fee_refund',
+      resourceId: refundId,
+      severity: AuditSeverity.CRITICAL,
+      userId,
+      schoolId,
+      details: {
+        refundDetails: this.sanitizeAuditData(refundDetails),
+        timestamp: new Date(),
+        module: 'fee',
+        eventType: 'refund_processing',
+      },
+    });
+  }
+
+  /**
+   * Audit bulk financial operations with sampling
+   */
+  async auditBulkFinancialOperation(operation: string, totalRecords: number, totalAmount: number, successCount: number, userId: string, schoolId?: string): Promise<void> {
+    // Only audit if operation affects significant financial amounts or number of records
+    if (totalRecords >= 10 || totalAmount >= 1000 || successCount < totalRecords) {
+      await this.auditService.logActivity({
+        action: AuditAction.DATA_UPDATED,
+        resource: 'bulk_financial_operation',
+        severity: totalAmount >= 10000 ? AuditSeverity.CRITICAL : AuditSeverity.HIGH,
+        userId,
+        schoolId,
+        details: {
+          operation,
+          totalRecords,
+          totalAmount,
+          successCount,
+          failureCount: totalRecords - successCount,
+          timestamp: new Date(),
+          module: 'fee',
+          eventType: 'bulk_financial_operation',
+          sampled: totalRecords < 50, // Mark as sampled for smaller operations
+        },
+      });
+    }
+  }
+
+  /**
+   * Audit fee calculation and financial adjustments
+   */
+  async auditFeeCalculation(studentId: string, calculationDetails: any, userId: string, schoolId?: string): Promise<void> {
+    await this.auditService.logActivity({
+      action: AuditAction.DATA_ACCESSED,
+      resource: 'fee_calculation',
+      resourceId: studentId,
+      severity: AuditSeverity.MEDIUM,
+      userId,
+      schoolId,
+      details: {
+        calculationDetails: this.sanitizeAuditData(calculationDetails),
+        timestamp: new Date(),
+        module: 'fee',
+        eventType: 'fee_calculation',
+      },
+    });
+  }
+
+  /**
+   * Audit installment plan creation and modifications
+   */
+  async auditInstallmentPlanChange(planId: string, planDetails: any, userId: string, schoolId?: string): Promise<void> {
+    await this.auditService.logActivity({
+      action: AuditAction.DATA_CREATED,
+      resource: 'installment_plan',
+      resourceId: planId,
+      severity: AuditSeverity.MEDIUM,
+      userId,
+      schoolId,
+      details: {
+        planDetails: this.sanitizeAuditData(planDetails),
+        timestamp: new Date(),
+        module: 'fee',
+        eventType: 'installment_plan_change',
+      },
+    });
+  }
+
+  /**
+   * Sanitize sensitive financial data for audit logging
+   */
+  private sanitizeAuditData(data: any): any {
+    if (!data || typeof data !== 'object') return data;
+
+    const sensitiveFields = ['bankAccountNumber', 'ifscCode', 'cardNumber', 'cvv', 'password', 'apiKey', 'secret', 'bankDetails', 'paymentToken'];
+    const sanitized = { ...data };
+
+    for (const field of sensitiveFields) {
+      if (sanitized[field]) {
+        sanitized[field] = '[REDACTED]';
+      }
+    }
+
+    return sanitized;
   }
 }

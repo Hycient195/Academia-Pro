@@ -7,6 +7,12 @@ import { AuditAction, AuditSeverity } from '../types/audit.types';
 @Index(['resource', 'timestamp'])
 @Index(['severity', 'timestamp'])
 @Index(['schoolId', 'timestamp'])
+@Index(['anomalyScore', 'timestamp'])
+@Index(['isAnomaly', 'timestamp'])
+@Index(['complianceStatus', 'timestamp'])
+@Index(['gdprCompliant', 'timestamp'])
+@Index(['responseTime', 'timestamp'])
+@Index(['correlationId', 'timestamp'])
 export class AuditLog {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -61,6 +67,63 @@ export class AuditLog {
 
   @Column({ name: 'new_values', type: 'jsonb', nullable: true })
   newValues: Record<string, any>;
+
+  // Performance Metrics
+  @Column({ name: 'response_time', type: 'int', nullable: true })
+  responseTime: number; // milliseconds
+
+  @Column({ name: 'memory_usage', type: 'bigint', nullable: true })
+  memoryUsage: number; // bytes
+
+  @Column({ name: 'cpu_usage', type: 'decimal', precision: 5, scale: 2, nullable: true })
+  cpuUsage: number; // percentage
+
+  @Column({ name: 'query_execution_time', type: 'int', nullable: true })
+  queryExecutionTime: number; // milliseconds
+
+  // Anomaly Detection
+  @Column({ name: 'anomaly_score', type: 'decimal', precision: 5, scale: 4, nullable: true })
+  anomalyScore: number; // 0.0000 to 1.0000
+
+  @Column({ name: 'is_anomaly', type: 'boolean', default: false })
+  isAnomaly: boolean;
+
+  @Column({ name: 'anomaly_type', type: 'varchar', length: 50, nullable: true })
+  anomalyType: string;
+
+  @Column({ name: 'anomaly_reason', type: 'text', nullable: true })
+  anomalyReason: string;
+
+  // Compliance and Retention
+  @Column({ name: 'retention_period', type: 'int', nullable: true })
+  retentionPeriod: number; // days
+
+  @Column({ name: 'compliance_status', type: 'varchar', length: 50, nullable: true })
+  complianceStatus: string;
+
+  @Column({ name: 'gdpr_compliant', type: 'boolean', default: true })
+  gdprCompliant: boolean;
+
+  @Column({ name: 'data_retention_policy', type: 'varchar', length: 100, nullable: true })
+  dataRetentionPolicy: string;
+
+  // Additional Context
+  @Column({ name: 'device_info', type: 'jsonb', nullable: true })
+  deviceInfo: {
+    deviceType: string;
+    browser: string;
+    os: string;
+    screenResolution: string;
+  };
+
+  @Column({ name: 'location_info', type: 'jsonb', nullable: true })
+  locationInfo: {
+    country?: string;
+    region?: string;
+    city?: string;
+    latitude?: number;
+    longitude?: number;
+  };
 
   @Column({ name: 'timestamp', type: 'timestamp' })
   timestamp: Date;

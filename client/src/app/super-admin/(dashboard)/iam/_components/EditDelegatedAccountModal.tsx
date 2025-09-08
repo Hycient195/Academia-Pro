@@ -17,7 +17,7 @@ import { IconX, IconSearch } from "@tabler/icons-react"
 import { useState, useEffect, useMemo } from "react"
 import { apis } from "@/redux/api"
 import ErrorBlock from "@/components/utilities/ErrorBlock"
-import { FormText } from "@/components/ui/form-components"
+import { FormText, FormTextArea } from "@/components/ui/form-components"
 
 interface DelegatedAccount {
   id: string
@@ -221,16 +221,13 @@ export function EditDelegatedAccountModal({
           </div>
 
           {/* Notes */}
-          <div className="space-y-2">
-            <Label htmlFor="notes" className="text-sm font-medium">Notes</Label>
-            <Textarea
-              id="notes"
-              placeholder="Optional notes about this delegated account..."
-              value={formData.notes}
-              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-              rows={3}
-            />
-          </div>
+          <FormTextArea
+            labelText="Notes"
+            placeholder="Optional notes about this delegated account..."
+            value={formData.notes}
+            onChange={(e) => setFormData(prev => ({ ...prev, notes: String(e.target.value) }))}
+            rows={3}
+          />
         </div>
 
         <ErrorBlock error={error} />

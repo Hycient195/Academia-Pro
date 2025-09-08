@@ -232,6 +232,57 @@ export class IamService {
     return this.roleRepository.save(role);
   }
 
+  async getRoleById(id: string): Promise<Role> {
+    const role = await this.roleRepository.findOne({
+      where: { id },
+      relations: ['permissions']
+    });
+
+    if (!role) {
+      throw new NotFoundException('Role not found');
+    }
+
+    return role;
+  }
+
+  async updateRole(id: string, name?: string, description?: string, permissionIds?: string[]): Promise<Role> {
+    const role = await this.getRoleById(id);
+
+    if (name) {
+      // Check if another role with the same name exists
+      const existingRole = await this.roleRepository.findOne({
+        where: { name }
+      });
+
+      if (existingRole && existingRole.id !== id) {
+        throw new ConflictException('Role with this name already exists');
+      }
+      role.name = name;
+    }
+
+    if (description !== undefined) {
+      role.description = description;
+    }
+
+    if (permissionIds !== undefined) {
+      if (permissionIds.length > 0) {
+        const permissions = await this.permissionRepository.findByIds(permissionIds);
+        role.permissions = permissions;
+      } else {
+        role.permissions = [];
+      }
+    }
+
+    role.updatedAt = new Date();
+
+    return this.roleRepository.save(role);
+  }
+
+  async deleteRole(id: string): Promise<void> {
+    const role = await this.getRoleById(id);
+    await this.roleRepository.remove(role);
+  }
+
   // Helper methods
   private async validatePermissions(permissionNames: string[]): Promise<void> {
     for (const name of permissionNames) {

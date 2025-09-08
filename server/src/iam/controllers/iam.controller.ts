@@ -110,4 +110,23 @@ export class IamController {
   ) {
     return this.iamService.createRole(body.name, body.description, body.permissionIds);
   }
+
+  @Get('roles/:id')
+  async getRoleById(@Param('id') id: string) {
+    return this.iamService.getRoleById(id);
+  }
+
+  @Put('roles/:id')
+  async updateRole(
+    @Param('id') id: string,
+    @Body() body: { name?: string; description?: string; permissionIds?: string[] }
+  ) {
+    return this.iamService.updateRole(id, body.name, body.description, body.permissionIds);
+  }
+
+  @Delete('roles/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteRole(@Param('id') id: string) {
+    await this.iamService.deleteRole(id);
+  }
 }

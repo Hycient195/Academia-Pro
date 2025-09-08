@@ -7,8 +7,12 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { IconTrash, IconKey, IconShield, IconUsers, IconEdit, IconPlayerPause, IconPlayerPlay, IconSearch } from "@tabler/icons-react"
 import { apis } from "@/redux/api"
+import type { IRole } from '@academia-pro/types/super-admin'
 import { CreateDelegatedAccountModal } from "./_components/CreateDelegatedAccountModal"
 import { EditDelegatedAccountModal } from "./_components/EditDelegatedAccountModal"
+import { CreateRoleModal } from "./_components/CreateRoleModal"
+import { EditRoleModal } from "./_components/EditRoleModal"
+import { DeleteRoleModal } from "./_components/DeleteRoleModal"
 import { useState, useMemo } from "react"
 import { SuspendConfirmationModal } from "./_components/SuspendConfirmationModal"
 import { DeleteConfirmationModal } from "./_components/DeleteConfirmationModal"
@@ -29,6 +33,15 @@ interface DelegatedAccount {
   status: 'active' | 'inactive' | 'suspended' | 'expired' | 'revoked'
   createdAt: string
   notes?: string
+}
+
+interface Role {
+  id: string
+  name: string
+  description?: string
+  permissions: Permission[]
+  createdAt: string
+  updatedAt: string
 }
 
 const defaultPermissions: Permission[] = [
@@ -106,6 +119,8 @@ const defaultPermissions: Permission[] = [
 
 export default function IAMPage() {
   const { data: delegatedAccounts, isLoading, refetch } = apis.superAdmin.useGetDelegatedAccountsQuery()
+  const { data: roles, isLoading: rolesLoading, refetch: refetchRoles } = apis.superAdmin.useGetRolesQuery()
+  const { data: permissions } = apis.superAdmin.useGetPermissionsQuery()
 
   // Modal states
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; account: DelegatedAccount | null }>({
@@ -119,6 +134,16 @@ export default function IAMPage() {
   const [editModal, setEditModal] = useState<{ isOpen: boolean; account: DelegatedAccount | null }>({
     isOpen: false,
     account: null
+  })
+
+  // Role modal states
+  const [editRoleModal, setEditRoleModal] = useState<{ isOpen: boolean; role: IRole | null }>({
+    isOpen: false,
+    role: null
+  })
+  const [deleteRoleModal, setDeleteRoleModal] = useState<{ isOpen: boolean; role: IRole | null }>({
+    isOpen: false,
+    role: null
   })
 
   // Search states
@@ -157,6 +182,24 @@ export default function IAMPage() {
   const closeEditModal = () => {
     setEditModal({ isOpen: false, account: null })
     refetch()
+  }
+
+  const openEditRoleModal = (role: IRole) => {
+    setEditRoleModal({ isOpen: true, role })
+  }
+
+  const closeEditRoleModal = () => {
+    setEditRoleModal({ isOpen: false, role: null })
+    refetchRoles()
+  }
+
+  const openDeleteRoleModal = (role: IRole) => {
+    setDeleteRoleModal({ isOpen: true, role })
+  }
+
+  const closeDeleteRoleModal = () => {
+    setDeleteRoleModal({ isOpen: false, role: null })
+    refetchRoles()
   }
 
   const getStatusBadge = (status: string) => {
@@ -340,9 +383,74 @@ export default function IAMPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                Roles feature coming soon...
+              <div className="flex items-center justify-between mb-6">
+                <div></div>
+                <CreateRoleModal
+                  defaultPermissions={permissions || []}
+                  onRoleCreated={refetchRoles}
+                />
               </div>
+
+              {rolesLoading ? (
+                <div className="text-center py-4">Loading roles...</div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Permissions</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {roles?.map((role: IRole) => (
+                      <TableRow key={role.id}>
+                        <TableCell className="font-medium">{role.name}</TableCell>
+                        <TableCell>{role.description || 'No description'}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {role.permissions.slice(0, 3).map((permission) => (
+                              <Badge key={permission.id} variant="outline" className="text-xs">
+                                {permission.name}
+                              </Badge>
+                            ))}
+                            {role.permissions.length > 3 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{role.permissions.length - 3} more
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openEditRoleModal(role)}
+                            >
+                              <IconEdit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openDeleteRoleModal(role)}
+                            >
+                              <IconTrash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+
+              {roles && roles.length === 0 && !rolesLoading && (
+                <div className="text-center py-8 text-muted-foreground">
+                  No roles found. Create your first role to get started.
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -369,6 +477,21 @@ export default function IAMPage() {
         onClose={closeEditModal}
         account={editModal.account}
         availablePermissions={defaultPermissions}
+      />
+
+      <EditRoleModal
+        isOpen={editRoleModal.isOpen}
+        onClose={closeEditRoleModal}
+        role={editRoleModal.role}
+        availablePermissions={permissions || []}
+        onRoleUpdated={refetchRoles}
+      />
+
+      <DeleteRoleModal
+        isOpen={deleteRoleModal.isOpen}
+        onClose={closeDeleteRoleModal}
+        role={deleteRoleModal.role}
+        onRoleDeleted={refetchRoles}
       />
     </div>
   )

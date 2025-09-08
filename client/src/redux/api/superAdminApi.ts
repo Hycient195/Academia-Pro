@@ -329,5 +329,39 @@ export const superAdminApi = createApi({
       query: () => '/super-admin/iam/roles',
       providesTags: ['Roles'],
     }),
+
+    getRoleById: builder.query<IRole, string>({
+      query: (id) => `/super-admin/iam/roles/${id}`,
+      providesTags: (result, error, id) => [{ type: 'Roles', id }],
+    }),
+
+    createRole: builder.mutation<IRole, { name: string; description?: string; permissionIds?: string[] }>({
+      query: (roleData) => ({
+        url: '/super-admin/iam/roles',
+        method: 'POST',
+        body: roleData,
+      }),
+      invalidatesTags: ['Roles'],
+    }),
+
+    updateRole: builder.mutation<IRole, { id: string; name?: string; description?: string; permissionIds?: string[] }>({
+      query: ({ id, ...updates }) => ({
+        url: `/super-admin/iam/roles/${id}`,
+        method: 'PUT',
+        body: updates,
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: 'Roles', id },
+        'Roles'
+      ],
+    }),
+
+    deleteRole: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/super-admin/iam/roles/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Roles'],
+    }),
   }),
 });

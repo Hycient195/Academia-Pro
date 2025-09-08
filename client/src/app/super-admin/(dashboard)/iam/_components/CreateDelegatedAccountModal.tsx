@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch"
 import { IconPlus, IconSearch } from "@tabler/icons-react"
-import { FormText, FormDateInput } from "@/components/ui/form-components"
+import { FormText, FormDateInput, FormTextArea } from "@/components/ui/form-components"
 import { FormUserSelect } from "@/components/ui/FormUserSelect"
 import { apis } from "@/redux/api"
 import ErrorBlock from "@/components/utilities/ErrorBlock"
@@ -339,16 +339,13 @@ export function CreateDelegatedAccountModal({ defaultPermissions }: CreateDelega
           </div>
 
           {/* Notes Section */}
-          <div>
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-              placeholder="Optional notes about this delegated account"
-              rows={3}
-            />
-          </div>
+          <FormTextArea
+            labelText="Notes"
+            value={formData.notes}
+            onChange={(e) => setFormData(prev => ({ ...prev, notes: String(e.target.value) }))}
+            placeholder="Optional notes about this delegated account"
+            rows={3}
+          />
         </div>
         <ErrorBlock error={createDelegationError} />
         <DialogFooter>

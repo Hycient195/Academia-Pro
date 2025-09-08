@@ -24,6 +24,7 @@ import {
   IconCheck,
   IconAlertTriangle,
 } from "@tabler/icons-react"
+import { FormTextArea } from "@/components/ui/form-components"
 
 interface StudentModalProps {
   isOpen: boolean
@@ -40,8 +41,8 @@ export function StudentModal({ isOpen, onClose, student, mode }: StudentModalPro
     phone: student?.phone || '',
     dateOfBirth: student?.dateOfBirth || '',
     gender: student?.gender || '',
-    grade: student?.grade || '',
-    rollNumber: student?.rollNumber || '',
+    currentGrade: student?.currentGrade || '',
+    admissionNumber: student?.admissionNumber || '',
     address: student?.address || '',
     emergencyContact: student?.emergencyContact || '',
     medicalInfo: student?.medicalInfo || '',
@@ -100,8 +101,8 @@ export function StudentModal({ isOpen, onClose, student, mode }: StudentModalPro
                 }
               </h3>
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant="outline">{formData.grade || 'Grade'}</Badge>
-                <Badge variant="secondary">{formData.rollNumber || 'Roll No'}</Badge>
+                <Badge variant="outline">{formData.currentGrade || 'Grade'}</Badge>
+                <Badge variant="secondary">{formData.admissionNumber || 'Admission No'}</Badge>
                 {formData.scholarship && <Badge className="bg-green-100 text-green-800">Scholarship</Badge>}
               </div>
             </div>
@@ -175,29 +176,26 @@ export function StudentModal({ isOpen, onClose, student, mode }: StudentModalPro
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="medicalInfo">Medical Information</Label>
-                <Textarea
-                  id="medicalInfo"
-                  placeholder="Any medical conditions, allergies, or special needs..."
-                  value={formData.medicalInfo}
-                  onChange={(e) => handleInputChange('medicalInfo', e.target.value)}
-                  disabled={mode === 'view'}
-                  rows={3}
-                />
-              </div>
+              <FormTextArea
+                labelText="Medical Information"
+                placeholder="Any medical conditions, allergies, or special needs..."
+                value={formData.medicalInfo}
+                onChange={(e) => handleInputChange('medicalInfo', String(e.target.value))}
+                disabled={mode === 'view'}
+                rows={3}
+              />
             </TabsContent>
 
             <TabsContent value="academic" className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="grade">Grade *</Label>
+                  <Label htmlFor="currentGrade">Grade *</Label>
                   <Select
-                    value={formData.grade}
-                    onValueChange={(value) => handleInputChange('grade', value)}
+                    value={formData.currentGrade}
+                    onValueChange={(value) => handleInputChange('currentGrade', value)}
                     disabled={mode === 'view'}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="currentGrade">
                       <SelectValue placeholder="Select grade" />
                     </SelectTrigger>
                     <SelectContent>
@@ -209,11 +207,11 @@ export function StudentModal({ isOpen, onClose, student, mode }: StudentModalPro
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="rollNumber">Roll Number *</Label>
+                  <Label htmlFor="admissionNumber">Admission Number *</Label>
                   <Input
-                    id="rollNumber"
-                    value={formData.rollNumber}
-                    onChange={(e) => handleInputChange('rollNumber', e.target.value)}
+                    id="admissionNumber"
+                    value={formData.admissionNumber}
+                    onChange={(e) => handleInputChange('admissionNumber', e.target.value)}
                     disabled={mode === 'view'}
                     placeholder="e.g., 2024001"
                     required
@@ -285,29 +283,23 @@ export function StudentModal({ isOpen, onClose, student, mode }: StudentModalPro
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="address">Home Address</Label>
-                <Textarea
-                  id="address"
-                  placeholder="Complete home address..."
-                  value={formData.address}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
-                  disabled={mode === 'view'}
-                  rows={3}
-                />
-              </div>
+              <FormTextArea
+                labelText="Home Address"
+                placeholder="Complete home address..."
+                value={formData.address}
+                onChange={(e) => handleInputChange('address', String(e.target.value))}
+                disabled={mode === 'view'}
+                rows={3}
+              />
 
-              <div className="space-y-2">
-                <Label htmlFor="emergencyContact">Emergency Contact</Label>
-                <Textarea
-                  id="emergencyContact"
-                  placeholder="Parent/Guardian name and contact information..."
-                  value={formData.emergencyContact}
-                  onChange={(e) => handleInputChange('emergencyContact', e.target.value)}
-                  disabled={mode === 'view'}
-                  rows={3}
-                />
-              </div>
+              <FormTextArea
+                labelText="Emergency Contact"
+                placeholder="Parent/Guardian name and contact information..."
+                value={formData.emergencyContact}
+                onChange={(e) => handleInputChange('emergencyContact', String(e.target.value))}
+                disabled={mode === 'view'}
+                rows={3}
+              />
             </TabsContent>
 
             <TabsContent value="additional" className="space-y-4">
@@ -324,11 +316,11 @@ export function StudentModal({ isOpen, onClose, student, mode }: StudentModalPro
                     </div>
                     <div>
                       <span className="font-medium">Grade:</span>
-                      <p>{formData.grade || 'Not selected'}</p>
+                      <p>{formData.currentGrade || 'Not selected'}</p>
                     </div>
                     <div>
-                      <span className="font-medium">Roll Number:</span>
-                      <p>{formData.rollNumber || 'Not provided'}</p>
+                      <span className="font-medium">Admission Number:</span>
+                      <p>{formData.admissionNumber || 'Not provided'}</p>
                     </div>
                     <div>
                       <span className="font-medium">Email:</span>

@@ -2,6 +2,7 @@
 // Shared types and interfaces for student management across frontend and backend
 
 import { IAddress, IDocument, IEmergencyContact, IInsuranceInfo, TBloodGroup, Student } from '../shared';
+import { IUser, EUserStatus } from '../users';
 
 // Re-export for convenience
 export type { TBloodGroup };
@@ -25,30 +26,19 @@ export enum TEnrollmentType {
 }
 
 // Interfaces
-export interface IStudent {
-  id: string;
-  firstName: string;
-  lastName: string;
-  middleName?: string;
-  dateOfBirth: Date;
-  gender: 'male' | 'female' | 'other';
-  bloodGroup?: TBloodGroup;
-  email?: string;
-  phone?: string;
-  address?: IAddress;
+export interface IStudent extends IUser {
   admissionNumber: string;
   currentGrade: string;
   currentSection: string;
-  admissionDate: Date;
+  admissionDate: string;
   enrollmentType: TEnrollmentType;
-  schoolId: string;
   userId?: string;
-  status: TStudentStatus;
+  status: EUserStatus;
   parents?: IParentsInfo;
   medicalInfo?: IMedicalInfo;
   transportation?: ITransportationInfo;
   hostel?: IHostelInfo;
-  financialInfo: IStucentFinancialInfo;
+  financialInfo: IStudentFinancialInfo;
   documents: IDocument[];
   preferences: IStudentPreferences;
   gpa?: number;
@@ -59,8 +49,6 @@ export interface IStudent {
   createdBy?: string;
   updatedBy?: string;
 }
-
-// IAddress interface moved to shared types
 
 export interface IParentsInfo {
   father?: IParentInfo;
@@ -151,7 +139,7 @@ export interface IHostelInfo {
   fee?: number;
 }
 
-export interface IStucentFinancialInfo {
+export interface IStudentFinancialInfo {
   feeCategory: string;
   scholarship?: IScholarshipInfo;
   outstandingBalance: number;
@@ -193,14 +181,14 @@ export interface ICreateStudentRequest {
   dateOfBirth: string;
   gender: 'male' | 'female' | 'other';
   bloodGroup?: TBloodGroup;
-  email?: string;
+  email: string;
   phone?: string;
   address?: IAddress;
-  admissionNumber?: string;
+  admissionNumber: string;
   currentGrade: string;
   currentSection: string;
   admissionDate: string;
-  enrollmentType?: TEnrollmentType;
+  enrollmentType: TEnrollmentType;
   schoolId: string;
   userId?: string;
   parents?: IParentsInfo;
@@ -226,12 +214,12 @@ export interface IUpdateStudentRequest {
   enrollmentType?: TEnrollmentType;
   schoolId?: string;
   userId?: string;
-  status?: TStudentStatus;
+  status?: EUserStatus;
   parents?: IParentsInfo;
   medicalInfo?: IMedicalInfo;
   transportation?: ITransportationInfo;
   hostel?: IHostelInfo;
-  financialInfo?: Partial<IStucentFinancialInfo>;
+  financialInfo?: Partial<IStudentFinancialInfo>;
   documents?: IDocument[];
   preferences?: Partial<IStudentPreferences>;
   gpa?: number;
@@ -243,7 +231,7 @@ export interface IStudentFilters {
   schoolId?: string;
   grade?: string;
   section?: string;
-  status?: TStudentStatus;
+  status?: EUserStatus;
   enrollmentType?: TEnrollmentType;
   search?: string;
   page?: number;
@@ -294,7 +282,7 @@ export interface IStudentStatisticsResponse {
   totalStudents: number;
   activeStudents: number;
   studentsByGrade: Record<string, number>;
-  studentsByStatus: Record<TStudentStatus, number>;
+  studentsByStatus: Record<EUserStatus, number>;
   studentsByEnrollmentType: Record<TEnrollmentType, number>;
 }
 
@@ -308,7 +296,7 @@ export interface IStudentQuery {
   schoolId?: string;
   grade?: string;
   section?: string;
-  status?: TStudentStatus;
+  status?: EUserStatus;
   enrollmentType?: TEnrollmentType;
   search?: string;
   page?: number;

@@ -8,10 +8,12 @@ export interface User {
   email: string
   firstName: string
   lastName: string
-  role: string
+  roles: string[]
   schoolId?: string
   isEmailVerified: boolean
   status: string
+  lastLoginAt?: string
+  isFirstLogin?: boolean
 }
 
 export interface AuthState {

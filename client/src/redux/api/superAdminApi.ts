@@ -290,6 +290,28 @@ export const superAdminApi = createApi({
       ],
     }),
 
+    suspendDelegatedAccount: builder.mutation<IDelegatedAccount, string>({
+      query: (id) => ({
+        url: `/super-admin/iam/delegated-accounts/${id}/suspend`,
+        method: 'POST',
+      }),
+      invalidatesTags: (result, error, id) => [
+        { type: 'DelegatedAccounts', id },
+        'DelegatedAccounts'
+      ],
+    }),
+
+    unsuspendDelegatedAccount: builder.mutation<IDelegatedAccount, string>({
+      query: (id) => ({
+        url: `/super-admin/iam/delegated-accounts/${id}/unsuspend`,
+        method: 'POST',
+      }),
+      invalidatesTags: (result, error, id) => [
+        { type: 'DelegatedAccounts', id },
+        'DelegatedAccounts'
+      ],
+    }),
+
     deleteDelegatedAccount: builder.mutation<void, string>({
       query: (id) => ({
         url: `/super-admin/iam/delegated-accounts/${id}`,

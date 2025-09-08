@@ -35,7 +35,7 @@ export default function ViewUserDetailsModal({ isOpen, onOpenChange, user }: Vie
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium">Role</label>
-                <p className="text-sm text-muted-foreground">{user.role.replace('_', ' ')}</p>
+                <p className="text-sm text-muted-foreground">{user.roles?.[0]?.replace('_', ' ') || 'No role assigned'}</p>
               </div>
               <div>
                 <label className="text-sm font-medium">Status</label>

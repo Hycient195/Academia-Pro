@@ -136,7 +136,7 @@ export default function SignInPage() {
         user: {
           ...result.user,
           name: `${result.user.firstName} ${result.user.lastName}`,
-          role: result.user.role as 'super-admin' | 'delegated-super-admin' | 'school-admin' | 'teacher' | 'student' | 'parent',
+          roles: result.user.roles,
           permissions: [],
         },
         token: result.tokens?.accessToken || '',

@@ -9,16 +9,17 @@ export class SuperAdminAuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async superAdminLogin(@Body() loginDto: LoginDto, @Response() res: any): Promise<void> {
-    // Validate that this is a super admin login attempt
-    const user = await this.authService.validateSuperAdmin(loginDto.email, loginDto.password);
+    try {
+      // Validate that this is a super admin login attempt
+      const user = await this.authService.validateSuperAdmin(loginDto.email, loginDto.password);
 
-    if (!user) {
-      throw new Error('Invalid super admin credentials');
+      // Use cookie-based authentication
+      const result = await this.authService.loginWithCookies(user, res);
+
+      res.json(result);
+    } catch (error) {
+      // Re-throw the error to maintain proper HTTP status codes
+      throw error;
     }
-
-    // Use cookie-based authentication
-    const result = await this.authService.loginWithCookies(user, res);
-
-    res.json(result);
   }
 }

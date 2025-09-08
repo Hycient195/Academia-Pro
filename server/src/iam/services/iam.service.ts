@@ -156,6 +156,32 @@ export class IamService {
     return this.getDelegatedAccountById(id);
   }
 
+  async suspendDelegatedAccount(id: string, suspendedBy: string | null): Promise<DelegatedAccount> {
+    const account = await this.getDelegatedAccountById(id);
+
+    await this.delegatedAccountRepository.update(id, {
+      status: DelegatedAccountStatus.SUSPENDED,
+      updatedAt: new Date(),
+    });
+
+    return this.getDelegatedAccountById(id);
+  }
+
+  async unsuspendDelegatedAccount(id: string): Promise<DelegatedAccount> {
+    const account = await this.getDelegatedAccountById(id);
+
+    // Calculate the effective status after unsuspension
+    // Pass true for isUnsuspended to force status recalculation
+    const effectiveStatus = this.calculateEffectiveStatus(account, false, true);
+
+    await this.delegatedAccountRepository.update(id, {
+      status: effectiveStatus,
+      updatedAt: new Date(),
+    });
+
+    return this.getDelegatedAccountById(id);
+  }
+
   async deleteDelegatedAccount(id: string): Promise<void> {
     const account = await this.getDelegatedAccountById(id);
     await this.delegatedAccountRepository.remove(account);
@@ -218,18 +244,18 @@ export class IamService {
 
   async checkDelegatedAccountAccess(email: string, requiredPermission: string): Promise<boolean> {
     const account = await this.delegatedAccountRepository.findOne({
-      where: { email, status: DelegatedAccountStatus.ACTIVE }
+      where: { email }
     });
 
     if (!account) {
       return false;
     }
 
-    // Check if account is expired (only if expiryDate is set)
-    if (account.expiryDate && account.expiryDate < new Date()) {
-      await this.delegatedAccountRepository.update(account.id, {
-        status: DelegatedAccountStatus.EXPIRED
-      });
+    // Get the effective status and update if necessary
+    const effectiveStatus = await this.getEffectiveStatus(account);
+
+    // Only allow access if account is active
+    if (effectiveStatus !== DelegatedAccountStatus.ACTIVE) {
       return false;
     }
 
@@ -245,5 +271,53 @@ export class IamService {
 
     return (grantedResource === '*' || grantedResource === requiredResource) &&
            (grantedAction === '*' || grantedAction === requiredAction);
+  }
+
+  /**
+   * Calculate the effective status of a delegated account based on dates and current status
+   */
+  private calculateEffectiveStatus(account: DelegatedAccount, isSuspended: boolean = false, isUnsuspended: boolean = false): DelegatedAccountStatus {
+    const now = new Date();
+
+    // If manually suspended and not being unsuspended, return suspended status
+    if ((isSuspended || account.status === DelegatedAccountStatus.SUSPENDED) && !isUnsuspended) {
+      return DelegatedAccountStatus.SUSPENDED;
+    }
+
+    // If account is revoked or expired, keep that status
+    if (account.status === DelegatedAccountStatus.REVOKED || account.status === DelegatedAccountStatus.EXPIRED) {
+      return account.status;
+    }
+
+    // Check if start date hasn't passed yet
+    if (account.startDate && account.startDate > now) {
+      return DelegatedAccountStatus.INACTIVE;
+    }
+
+    // Check if expiry date has passed
+    if (account.expiryDate && account.expiryDate < now) {
+      return DelegatedAccountStatus.EXPIRED;
+    }
+
+    // If all checks pass, account is active
+    return DelegatedAccountStatus.ACTIVE;
+  }
+
+  /**
+   * Get the effective status of a delegated account, updating it if necessary
+   */
+  async getEffectiveStatus(account: DelegatedAccount): Promise<DelegatedAccountStatus> {
+    const effectiveStatus = this.calculateEffectiveStatus(account);
+
+    // If the effective status is different from the current status, update it
+    if (effectiveStatus !== account.status) {
+      await this.delegatedAccountRepository.update(account.id, {
+        status: effectiveStatus,
+        updatedAt: new Date(),
+      });
+      account.status = effectiveStatus;
+    }
+
+    return effectiveStatus;
   }
 }

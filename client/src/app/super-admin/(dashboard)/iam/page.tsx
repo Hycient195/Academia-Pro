@@ -5,9 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { IconTrash, IconKey, IconShield, IconUsers } from "@tabler/icons-react"
+import { IconTrash, IconKey, IconShield, IconUsers, IconEdit, IconPlayerPause, IconPlayerPlay, IconSearch } from "@tabler/icons-react"
 import { apis } from "@/redux/api"
 import { CreateDelegatedAccountModal } from "./_components/CreateDelegatedAccountModal"
+import { EditDelegatedAccountModal } from "./_components/EditDelegatedAccountModal"
+import { useState, useMemo } from "react"
+import { SuspendConfirmationModal } from "./_components/SuspendConfirmationModal"
+import { DeleteConfirmationModal } from "./_components/DeleteConfirmationModal"
+import { FormText } from "@/components/ui/form-components"
 
 interface Permission {
   id: string
@@ -19,8 +24,9 @@ interface DelegatedAccount {
   id: string
   email: string
   permissions: string[]
-  expiryDate: string
-  status: 'active' | 'expired' | 'revoked'
+  startDate?: string
+  expiryDate?: string
+  status: 'active' | 'inactive' | 'suspended' | 'expired' | 'revoked'
   createdAt: string
   notes?: string
 }
@@ -99,21 +105,68 @@ const defaultPermissions: Permission[] = [
 ]
 
 export default function IAMPage() {
-  const { data: delegatedAccounts, isLoading } = apis.superAdmin.useGetDelegatedAccountsQuery()
-  const [revokeDelegatedAccount] = apis.superAdmin.useRevokeDelegatedAccountMutation()
+  const { data: delegatedAccounts, isLoading, refetch } = apis.superAdmin.useGetDelegatedAccountsQuery()
 
-  const handleRevokeAccount = async (accountId: string) => {
-    try {
-      await revokeDelegatedAccount(accountId).unwrap()
-    } catch (error) {
-      console.error("Failed to revoke account:", error)
-    }
+  // Modal states
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; account: DelegatedAccount | null }>({
+    isOpen: false,
+    account: null
+  })
+  const [suspendModal, setSuspendModal] = useState<{ isOpen: boolean; account: DelegatedAccount | null }>({
+    isOpen: false,
+    account: null
+  })
+  const [editModal, setEditModal] = useState<{ isOpen: boolean; account: DelegatedAccount | null }>({
+    isOpen: false,
+    account: null
+  })
+
+  // Search states
+  const [permissionsSearchTerm, setPermissionsSearchTerm] = useState("")
+
+  // Filter permissions based on search term
+  const filteredPermissions = useMemo(() => {
+    return defaultPermissions.filter(permission =>
+      permission.name.toLowerCase().includes(permissionsSearchTerm.toLowerCase()) ||
+      permission.description.toLowerCase().includes(permissionsSearchTerm.toLowerCase())
+    )
+  }, [permissionsSearchTerm])
+
+  const openDeleteModal = (account: DelegatedAccount) => {
+    setDeleteModal({ isOpen: true, account })
+  }
+
+  const openSuspendModal = (account: DelegatedAccount) => {
+    setSuspendModal({ isOpen: true, account })
+  }
+
+  const closeDeleteModal = () => {
+    setDeleteModal({ isOpen: false, account: null })
+    refetch()
+  }
+
+  const closeSuspendModal = () => {
+    setSuspendModal({ isOpen: false, account: null })
+    refetch()
+  }
+
+  const openEditModal = (account: DelegatedAccount) => {
+    setEditModal({ isOpen: true, account })
+  }
+
+  const closeEditModal = () => {
+    setEditModal({ isOpen: false, account: null })
+    refetch()
   }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
         return <Badge variant="default" className="bg-green-100 text-green-800">Active</Badge>
+      case 'inactive':
+        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Inactive</Badge>
+      case 'suspended':
+        return <Badge variant="secondary" className="bg-orange-100 text-orange-800">Suspended</Badge>
       case 'expired':
         return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Expired</Badge>
       case 'revoked':
@@ -191,8 +244,26 @@ export default function IAMPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleRevokeAccount(account.id)}
-                              disabled={account.status === 'revoked'}
+                              onClick={() => openSuspendModal(account)}
+                              disabled={account.status === 'revoked' || account.status === 'expired'}
+                            >
+                              {account.status === 'suspended' ? (
+                                <IconPlayerPlay className="h-4 w-4" />
+                              ) : (
+                                <IconPlayerPause className="h-4 w-4" />
+                              )}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openEditModal(account)}
+                            >
+                              <IconEdit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openDeleteModal(account)}
                             >
                               <IconTrash className="h-4 w-4" />
                             </Button>
@@ -219,8 +290,20 @@ export default function IAMPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Search Input */}
+              <div className="relative mb-6">
+                <FormText
+                  labelText=""
+                  placeholder="Search permissions..."
+                  value={permissionsSearchTerm}
+                  onChange={(e) => setPermissionsSearchTerm(String(e.target.value))}
+                  className="pl-10"
+                />
+                <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              </div>
+
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {defaultPermissions.map((permission) => (
+                {filteredPermissions.map((permission) => (
                   <Card key={permission.id}>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium">
@@ -235,6 +318,12 @@ export default function IAMPage() {
                   </Card>
                 ))}
               </div>
+
+              {filteredPermissions.length === 0 && permissionsSearchTerm && (
+                <div className="text-center py-8 text-muted-foreground">
+                  No permissions found matching {`"${permissionsSearchTerm}"`}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -258,6 +347,29 @@ export default function IAMPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Confirmation Modals */}
+      <DeleteConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={closeDeleteModal}
+        accountId={deleteModal.account?.id || ''}
+        accountEmail={deleteModal.account?.email || ''}
+      />
+
+      <SuspendConfirmationModal
+        isOpen={suspendModal.isOpen}
+        onClose={closeSuspendModal}
+        accountId={suspendModal.account?.id || ''}
+        accountEmail={suspendModal.account?.email || ''}
+        isCurrentlySuspended={suspendModal.account?.status === 'suspended'}
+      />
+
+      <EditDelegatedAccountModal
+        isOpen={editModal.isOpen}
+        onClose={closeEditModal}
+        account={editModal.account}
+        availablePermissions={defaultPermissions}
+      />
     </div>
   )
 }

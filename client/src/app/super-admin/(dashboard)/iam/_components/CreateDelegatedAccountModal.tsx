@@ -1,13 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch"
-import { IconPlus } from "@tabler/icons-react"
+import { IconPlus, IconSearch } from "@tabler/icons-react"
 import { FormText, FormDateInput } from "@/components/ui/form-components"
 import { FormUserSelect } from "@/components/ui/FormUserSelect"
 import { apis } from "@/redux/api"
@@ -25,53 +25,68 @@ interface CreateDelegatedAccountModalProps {
 }
 
 export function CreateDelegatedAccountModal({ defaultPermissions }: CreateDelegatedAccountModalProps) {
-  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([])
-  const [isCreateMode, setIsCreateMode] = useState(true) // true = create new user, false = select existing
+  const [formData, setFormData] = useState({
+    selectedPermissions: [] as string[],
+    isCreateMode: true, // true = create new user, false = select existing
 
-  // For creating new user
-  const [firstName, setFirstName] = useState("")
-  const [lastName, setLastName] = useState("")
-  const [middleName, setMiddleName] = useState("")
-  const [email, setEmail] = useState("")
+    // For creating new user
+    firstName: "",
+    lastName: "",
+    middleName: "",
+    email: "",
 
-  // For selecting existing user
-  const [selectedUserId, setSelectedUserId] = useState("")
+    // For selecting existing user
+    selectedUserId: "",
 
-  // Expiry options
-  const [useStartDate, setUseStartDate] = useState(false)
-  const [startDate, setStartDate] = useState("")
-  const [startTime, setStartTime] = useState("")
-  const [useEndDate, setUseEndDate] = useState(false)
-  const [endDate, setEndDate] = useState("")
-  const [endTime, setEndTime] = useState("")
+    // Expiry options
+    useStartDate: false,
+    startDate: "",
+    startTime: "",
+    useEndDate: false,
+    endDate: "",
+    endTime: "",
 
-  const [notes, setNotes] = useState("")
+    notes: "",
+    searchTerm: ""
+  })
+
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
 
   const [createDelegatedAccount, { error: createDelegationError }] = apis.superAdmin.useCreateDelegatedAccountMutation()
 
+  // Filter and sort permissions based on search term
+  const filteredAndSortedPermissions = useMemo(() => {
+    return defaultPermissions
+      .filter(permission =>
+        permission.name.toLowerCase().includes(formData.searchTerm.toLowerCase()) ||
+        permission.description.toLowerCase().includes(formData.searchTerm.toLowerCase())
+      )
+      .sort((a, b) => a.name.localeCompare(b.name))
+  }, [defaultPermissions, formData.searchTerm])
+
   const handlePermissionChange = (permissionName: string, checked: boolean) => {
-    if (checked) {
-      setSelectedPermissions([...selectedPermissions, permissionName])
-    } else {
-      setSelectedPermissions(selectedPermissions.filter(p => p !== permissionName))
-    }
+    setFormData(prev => ({
+      ...prev,
+      selectedPermissions: checked
+        ? [...prev.selectedPermissions, permissionName]
+        : prev.selectedPermissions.filter((p: string) => p !== permissionName)
+    }))
   }
 
   const handleCreateDelegatedAccount = async () => {
     // Validation
-    if (selectedPermissions.length === 0) {
+    if (formData.selectedPermissions.length === 0) {
       toast.error("Please select at least one permission")
       return
     }
 
-    if (isCreateMode) {
-      if (!firstName || !lastName || !email) {
+    if (formData.isCreateMode) {
+      if (!formData.firstName || !formData.lastName || !formData.email) {
         toast.error("Please fill in all required fields for new user")
         return
       }
     } else {
-      if (!selectedUserId) {
+      if (!formData.selectedUserId) {
         toast.error("Please select a user")
         return
       }
@@ -80,27 +95,27 @@ export function CreateDelegatedAccountModal({ defaultPermissions }: CreateDelega
     // No expiry date validation needed - accounts can be infinite if no end date is set
 
     try {
-      const accountData = isCreateMode ? {
-        firstName,
-        lastName,
-        middleName: middleName || undefined,
-        email,
-        permissions: selectedPermissions,
-        startDate: useStartDate ? startDate : undefined,
-        startTime: useStartDate ? startTime : undefined,
-        endDate: useEndDate ? endDate : undefined,
-        endTime: useEndDate ? endTime : undefined,
-        expiryDate: useEndDate ? endDate : undefined,
-        notes: notes || undefined,
+      const accountData = formData.isCreateMode ? {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        middleName: formData.middleName || undefined,
+        email: formData.email,
+        permissions: formData.selectedPermissions,
+        startDate: formData.useStartDate ? formData.startDate : undefined,
+        startTime: formData.useStartDate ? formData.startTime : undefined,
+        endDate: formData.useEndDate ? formData.endDate : undefined,
+        endTime: formData.useEndDate ? formData.endTime : undefined,
+        expiryDate: formData.useEndDate ? formData.endDate : undefined,
+        notes: formData.notes || undefined,
       } : {
-        userId: selectedUserId,
-        permissions: selectedPermissions,
-        startDate: useStartDate ? startDate : undefined,
-        startTime: useStartDate ? startTime : undefined,
-        endDate: useEndDate ? endDate : undefined,
-        endTime: useEndDate ? endTime : undefined,
-        expiryDate: useEndDate ? endDate : undefined,
-        notes: notes || undefined,
+        userId: formData.selectedUserId,
+        permissions: formData.selectedPermissions,
+        startDate: formData.useStartDate ? formData.startDate : undefined,
+        startTime: formData.useStartDate ? formData.startTime : undefined,
+        endDate: formData.useEndDate ? formData.endDate : undefined,
+        endTime: formData.useEndDate ? formData.endTime : undefined,
+        expiryDate: formData.useEndDate ? formData.endDate : undefined,
+        notes: formData.notes || undefined,
       }
 
       await createDelegatedAccount(accountData).unwrap()
@@ -108,19 +123,23 @@ export function CreateDelegatedAccountModal({ defaultPermissions }: CreateDelega
       toast.success("Delegated account created successfully!")
 
       // Reset form
-      setFirstName("")
-      setLastName("")
-      setMiddleName("")
-      setEmail("")
-      setSelectedUserId("")
-      setUseStartDate(false)
-      setStartDate("")
-      setStartTime("")
-      setUseEndDate(false)
-      setEndDate("")
-      setEndTime("")
-      setNotes("")
-      setSelectedPermissions([])
+      setFormData({
+        selectedPermissions: [],
+        isCreateMode: true,
+        firstName: "",
+        lastName: "",
+        middleName: "",
+        email: "",
+        selectedUserId: "",
+        useStartDate: false,
+        startDate: "",
+        startTime: "",
+        useEndDate: false,
+        endDate: "",
+        endTime: "",
+        notes: "",
+        searchTerm: ""
+      })
       setIsCreateDialogOpen(false)
     } catch (error) {
       console.error("Failed to create delegated account:", error)
@@ -158,34 +177,34 @@ export function CreateDelegatedAccountModal({ defaultPermissions }: CreateDelega
               </Label>
               <Switch
                 id="create-mode"
-                checked={isCreateMode}
-                onCheckedChange={setIsCreateMode}
+                checked={formData.isCreateMode}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isCreateMode: checked }))}
               />
             </div>
           </div>
 
           {/* User Details Section */}
-          {isCreateMode ? (
+          {formData.isCreateMode ? (
             <div className="space-y-4">
               <h3 className="text-lg font-medium">New User Details</h3>
               <div className="grid grid-cols-3 gap-4">
                 <FormText
                   labelText="First Name *"
-                  value={firstName}
-                  onChange={(e) => setFirstName(String(e.target.value))}
+                  value={formData.firstName}
+                  onChange={(e) => setFormData(prev => ({ ...prev, firstName: String(e.target.value) }))}
                   placeholder="John"
                   required
                 />
                 <FormText
                   labelText="Middle Name"
-                  value={middleName}
-                  onChange={(e) => setMiddleName(String(e.target.value))}
+                  value={formData.middleName}
+                  onChange={(e) => setFormData(prev => ({ ...prev, middleName: String(e.target.value) }))}
                   placeholder="Robert"
                 />
                 <FormText
                   labelText="Last Name *"
-                  value={lastName}
-                  onChange={(e) => setLastName(String(e.target.value))}
+                  value={formData.lastName}
+                  onChange={(e) => setFormData(prev => ({ ...prev, lastName: String(e.target.value) }))}
                   placeholder="Doe"
                   required
                 />
@@ -193,8 +212,8 @@ export function CreateDelegatedAccountModal({ defaultPermissions }: CreateDelega
               <FormText
                 labelText="Email *"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(String(e.target.value))}
+                value={formData.email}
+                onChange={(e) => setFormData(prev => ({ ...prev, email: String(e.target.value) }))}
                 placeholder="john.doe@example.com"
                 required
               />
@@ -205,8 +224,8 @@ export function CreateDelegatedAccountModal({ defaultPermissions }: CreateDelega
               <div>
                 <Label htmlFor="user-select">User *</Label>
                 <FormUserSelect
-                  value={selectedUserId}
-                  onChange={(e) => setSelectedUserId(String(e.target.value))}
+                  value={formData.selectedUserId}
+                  onChange={(e) => setFormData(prev => ({ ...prev, selectedUserId: String(e.target.value) }))}
                   placeholder="Search and select a user"
                   required
                 />
@@ -227,22 +246,22 @@ export function CreateDelegatedAccountModal({ defaultPermissions }: CreateDelega
                 </p>
               </div>
               <Switch
-                checked={useStartDate}
-                onCheckedChange={setUseStartDate}
+                checked={formData.useStartDate}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, useStartDate: checked }))}
               />
             </div>
-            {useStartDate && (
+            {formData.useStartDate && (
               <div className="grid grid-cols-2 gap-4 ml-4">
                 <FormDateInput
                   labelText="Start Date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(String(e.target.value))}
+                  value={formData.startDate}
+                  onChange={(e) => setFormData(prev => ({ ...prev, startDate: String(e.target.value) }))}
                 />
                 <FormText
                   labelText="Start Time"
                   type="time"
-                  value={startTime}
-                  onChange={(e) => setStartTime(String(e.target.value))}
+                  value={formData.startTime}
+                  onChange={(e) => setFormData(prev => ({ ...prev, startTime: String(e.target.value) }))}
                 />
               </div>
             )}
@@ -256,22 +275,22 @@ export function CreateDelegatedAccountModal({ defaultPermissions }: CreateDelega
                 </p>
               </div>
               <Switch
-                checked={useEndDate}
-                onCheckedChange={setUseEndDate}
+                checked={formData.useEndDate}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, useEndDate: checked }))}
               />
             </div>
-            {useEndDate && (
+            {formData.useEndDate && (
               <div className="grid grid-cols-2 gap-4 ml-4">
                 <FormDateInput
                   labelText="End Date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(String(e.target.value))}
+                  value={formData.endDate}
+                  onChange={(e) => setFormData(prev => ({ ...prev, endDate: String(e.target.value) }))}
                 />
                 <FormText
                   labelText="End Time"
                   type="time"
-                  value={endTime}
-                  onChange={(e) => setEndTime(String(e.target.value))}
+                  value={formData.endTime}
+                  onChange={(e) => setFormData(prev => ({ ...prev, endTime: String(e.target.value) }))}
                 />
               </div>
             )}
@@ -280,13 +299,26 @@ export function CreateDelegatedAccountModal({ defaultPermissions }: CreateDelega
           {/* Permissions Section */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Permissions</h3>
+
+            {/* Search Input */}
+            <div className="relative">
+              <FormText
+                labelText=""
+                placeholder="Search permissions..."
+                value={formData.searchTerm}
+                onChange={(e) => setFormData(prev => ({ ...prev, searchTerm: String(e.target.value) }))}
+                className="pl-10"
+              />
+              <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            </div>
+
             <div className="max-h-64 overflow-y-auto border rounded-lg p-4">
               <div className="grid gap-3">
-                {defaultPermissions.map((permission) => (
+                {filteredAndSortedPermissions.map((permission) => (
                   <div key={permission.id} className="flex items-start space-x-3">
                     <Checkbox
                       id={permission.id}
-                      checked={selectedPermissions.includes(permission.name)}
+                      checked={formData.selectedPermissions.includes(permission.name)}
                       onCheckedChange={(checked) =>
                         handlePermissionChange(permission.name, checked as boolean)
                       }
@@ -311,8 +343,8 @@ export function CreateDelegatedAccountModal({ defaultPermissions }: CreateDelega
             <Label htmlFor="notes">Notes</Label>
             <Textarea
               id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              value={formData.notes}
+              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
               placeholder="Optional notes about this delegated account"
               rows={3}
             />

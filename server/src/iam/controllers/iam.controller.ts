@@ -64,6 +64,19 @@ export class IamController {
     return this.iamService.revokeDelegatedAccount(id, revokedBy);
   }
 
+  @Post('delegated-accounts/:id/suspend')
+  @HttpCode(HttpStatus.OK)
+  async suspendDelegatedAccount(@Param('id') id: string, @Req() request: Request) {
+    const suspendedBy = (request.user as any)?.id || null;
+    return this.iamService.suspendDelegatedAccount(id, suspendedBy);
+  }
+
+  @Post('delegated-accounts/:id/unsuspend')
+  @HttpCode(HttpStatus.OK)
+  async unsuspendDelegatedAccount(@Param('id') id: string) {
+    return this.iamService.unsuspendDelegatedAccount(id);
+  }
+
   @Delete('delegated-accounts/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteDelegatedAccount(@Param('id') id: string) {

@@ -321,7 +321,7 @@ export default function UsersPage() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>{getRoleBadge(user.role)}</TableCell>
+                  <TableCell>{getRoleBadge(user.roles?.[0] || 'unknown')}</TableCell>
                   <TableCell>{getStatusBadge(user.status)}</TableCell>
                   <TableCell>
                     {user.schoolName ? (

@@ -7,6 +7,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 // Import SchoolsModule
 import { SchoolsModule } from '../schools/schools.module';
 import { UsersModule } from '../users/users.module';
+import { IamModule } from '../iam/iam.module';
 
 // Controllers
 import { SuperAdminController } from './super-admin.controller';
@@ -19,6 +20,7 @@ import { CrossSchoolReportingService } from './cross-school-reporting.service';
   imports: [
      forwardRef(() => SchoolsModule),
      forwardRef(() => UsersModule),
+     forwardRef(() => IamModule),
   ],
   controllers: [
     SuperAdminController,

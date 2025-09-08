@@ -45,7 +45,8 @@ export default function ErrorBlock({ error, className, style, scrollIntoView }: 
                 </p>
               ))}
             </div>
-          ) : null}
+          ) : <p className="text-center text-red-600 font-medium p-3 text-md">{error?.data?.message}</p>
+          }
         </div>
       )}
     </>

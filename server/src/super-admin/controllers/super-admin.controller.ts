@@ -9,13 +9,15 @@ import { SchoolsService } from '../../schools/schools.service';
 import { User } from '../../users/user.entity';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../auth/guards/roles.guard';
+import { PermissionGuard } from '../../iam/guards/permission.guard';
+import { Permissions } from '../../iam/decorators/permissions.decorator';
 import { CreateUserDto, UpdateUserDto } from '../../users/dtos';
 import { PaginatedResponse } from '@academia-pro/types/shared';
 import { EUserRole, EUserStatus } from '@academia-pro/types/users';
 
 @ApiTags('Super Admin - Multi-School User Management')
 @Controller('super-admin')
-@UseGuards(RolesGuard)
+@UseGuards(RolesGuard, PermissionGuard)
 @Roles(EUserRole.SUPER_ADMIN, 'delegated-super-admin' as any)
 export class SuperAdminUsersController {
   private readonly logger = new Logger(SuperAdminUsersController.name);
@@ -43,7 +45,7 @@ export class SuperAdminUsersController {
    * Helper method to check if user is super admin
    */
   private isSuperAdmin(user: any): boolean {
-    return user.role === EUserRole.SUPER_ADMIN;
+    return user.roles && Array.isArray(user.roles) && user.roles.includes(EUserRole.SUPER_ADMIN);
   }
 
   /**

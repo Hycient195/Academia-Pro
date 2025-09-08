@@ -2,6 +2,8 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateCol
 
 export enum DelegatedAccountStatus {
   ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  SUSPENDED = 'suspended',
   EXPIRED = 'expired',
   REVOKED = 'revoked'
 }
@@ -22,6 +24,9 @@ export class DelegatedAccount {
 
   @Column({ type: 'jsonb' })
   permissions: string[]; // Array of permission names, e.g., ["schools:create", "users:read"]
+
+  @Column({ type: 'timestamp', nullable: true })
+  startDate: Date | null; // When the delegated account becomes active
 
   @Column({ type: 'timestamp', nullable: true })
   expiryDate: Date | null;

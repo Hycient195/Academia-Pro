@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { Response } from 'express';
 import * as bcrypt from 'bcryptjs';
 import { User } from '../users/user.entity';
+import { UserSession } from '../security/entities/user-session.entity';
 import { LoginDto, RegisterDto, RefreshTokenDto, ChangePasswordDto } from './dtos';
 import { IAuthTokens } from '@academia-pro/types/auth';
 import { EUserRole, EUserStatus } from '@academia-pro/types/users';
@@ -18,11 +19,13 @@ import { AuditService } from '../security/services/audit.service';
 @Injectable()
 export class AuthService {
   constructor(
-     @InjectRepository(User)
-     private usersRepository: Repository<User>,
-     private jwtService: JwtService,
-     private auditService: AuditService,
-   ) {}
+      @InjectRepository(User)
+      private usersRepository: Repository<User>,
+      @InjectRepository(UserSession)
+      private userSessionRepository: Repository<UserSession>,
+      private jwtService: JwtService,
+      private auditService: AuditService,
+    ) {}
 
   /**
     * Validate super admin credentials
@@ -122,7 +125,7 @@ export class AuthService {
      excludeFields: ['password'],
      metadata: { authType: 'user' }
    })
-   async validateUser(email: string, password: string): Promise<any> {
+   async validateUser(email: string, password: string): Promise<Partial<User>> {
     const user = await this.usersRepository.findOne({
       where: { email },
       select: ['id', 'email', 'passwordHash', 'firstName', 'lastName', 'roles', 'status', 'schoolId', 'isEmailVerified', 'isFirstLogin'],
@@ -165,11 +168,35 @@ export class AuthService {
      metadata: { sessionType: 'login' }
    })
    async login(user: any): Promise<IAuthTokens & { requiresPasswordReset?: boolean }> {
+    // Set audit context for the login operation with real user ID
+    this.auditService.setAuditContext({
+      userId: user.id,
+      correlationId: this.generateCorrelationId(),
+      schoolId: user.schoolId,
+      sessionId: this.generateSessionId(),
+    });
+
+    // Create user session
+    const sessionId = this.generateSessionId();
+    const session = await this.userSessionRepository.save({
+      userId: user.id,
+      sessionToken: this.generateSessionId(),
+      ipAddress: '127.0.0.1', // This should be passed from request
+      userAgent: 'Unknown', // This should be passed from request
+      lastActivityAt: new Date(),
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+      createdAt: new Date(),
+      loginAt: new Date(),
+      isActive: true,
+    });
+
     const payload = {
       email: user.email,
       sub: user.id,
+      userId: user.id, // Ensure userId is included in payload
       roles: user.roles,
       schoolId: user.schoolId,
+      sessionId: session.id,
     };
 
     const accessToken = this.jwtService.sign(payload);
@@ -228,7 +255,8 @@ export class AuthService {
     const cookieOptions = {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'strict' as const,
+      sameSite: "lax" as const,
+      // sameSite: isProduction ? 'strict' as const : 'lax' as const, // Use 'lax' in development for cross-origin
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     };
 
@@ -308,7 +336,17 @@ export class AuthService {
       isEmailVerified: false,
     };
 
-    return this.usersRepository.save(userDataToSave as any);
+    const newUser = await this.usersRepository.save(userDataToSave as any);
+
+    // Update audit context with the real user ID after creation
+    this.auditService.setAuditContext({
+      userId: newUser.id,
+      correlationId: this.generateCorrelationId(),
+      schoolId: newUser.schoolId,
+      sessionId: this.generateSessionId(),
+    });
+
+    return newUser;
   }
 
   /**
@@ -347,10 +385,19 @@ export class AuthService {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
+      // Set audit context for token refresh
+      this.auditService.setAuditContext({
+        userId: user.id,
+        correlationId: this.generateCorrelationId(),
+        schoolId: user.schoolId,
+        sessionId: this.generateSessionId(),
+      });
+
       // Generate new tokens
       const newPayload = {
         email: user.email,
         sub: user.id,
+        userId: user.id, // Ensure userId is included in payload
         roles: user.roles,
         schoolId: user.schoolId,
       };
@@ -392,12 +439,20 @@ export class AuthService {
 
     const user = await this.usersRepository.findOne({
       where: { id: userId },
-      select: ['id', 'passwordHash'],
+      select: ['id', 'passwordHash', 'schoolId'],
     });
 
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
+
+    // Set audit context for password change
+    this.auditService.setAuditContext({
+      userId: userId,
+      correlationId: this.generateCorrelationId(),
+      schoolId: user.schoolId,
+      sessionId: this.generateSessionId(),
+    });
 
     // Verify current password
     const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
@@ -435,6 +490,14 @@ export class AuthService {
     if (!user) {
       throw new BadRequestException('Invalid or expired verification token');
     }
+
+    // Set audit context for email verification
+    this.auditService.setAuditContext({
+      userId: user.id,
+      correlationId: this.generateCorrelationId(),
+      schoolId: user.schoolId,
+      sessionId: this.generateSessionId(),
+    });
 
     await this.usersRepository.update(user.id, {
       isEmailVerified: true,
@@ -494,6 +557,14 @@ export class AuthService {
       throw new BadRequestException('Invalid or expired reset token');
     }
 
+    // Set audit context for password reset
+    this.auditService.setAuditContext({
+      userId: user.id,
+      correlationId: this.generateCorrelationId(),
+      schoolId: user.schoolId,
+      sessionId: this.generateSessionId(),
+    });
+
     const passwordHash = await bcrypt.hash(newPassword, 12);
 
     await this.usersRepository.update(user.id, {
@@ -513,6 +584,22 @@ export class AuthService {
      metadata: { sessionType: 'logout' }
    })
    async logout(userId: string): Promise<void> {
+    // Get user details for audit context
+    const user = await this.usersRepository.findOne({
+      where: { id: userId },
+      select: ['id', 'schoolId'],
+    });
+
+    if (user) {
+      // Set audit context for logout
+      this.auditService.setAuditContext({
+        userId: userId,
+        correlationId: this.generateCorrelationId(),
+        schoolId: user.schoolId,
+        sessionId: this.generateSessionId(),
+      });
+    }
+
     await this.usersRepository.update(userId, {
       refreshToken: null,
       refreshTokenExpires: null,
@@ -660,5 +747,13 @@ export class AuthService {
   private generatePasswordResetToken(): string {
     return Math.random().toString(36).substring(2, 15) +
            Math.random().toString(36).substring(2, 15);
+  }
+
+  private generateCorrelationId(): string {
+    return `auth-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  private generateSessionId(): string {
+    return `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 }

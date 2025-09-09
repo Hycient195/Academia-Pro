@@ -43,10 +43,20 @@ async function bootstrap() {
       disableErrorMessages: process.env.NODE_ENV === 'production',
     }));
 
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:3001',
+      process.env.CORS_ORIGIN,
+    ]
+
     // Enable CORS
     app.enableCors({
-      origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+      origin: allowedOrigins,
       credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
     });
 
     // Enable cookie parsing
@@ -114,6 +124,7 @@ process.on('uncaughtException', (error) => {
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
+  console.log(promise)
   logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
   process.exit(1);
 });
@@ -124,3 +135,4 @@ process.on('warning', (warning) => {
 });
 
 bootstrap();
+

@@ -234,12 +234,12 @@ export default function UsersPage() {
             <FormSelect
               labelText="Role"
               placeholder="All roles"
-              value={filters.role || ""}
+              value={filters.roles?.[0] || ""}
               onChange={(e) => {
                 const value = e.target.value;
                 setFilters({
                   ...filters,
-                  role: value === "all" ? undefined : (value as EUserRole)
+                  roles: value === "all" ? undefined : [value as EUserRole]
                 });
               }}
               options={[
@@ -391,7 +391,7 @@ export default function UsersPage() {
               <IconUsers className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold">No users found</h3>
               <p className="text-muted-foreground">
-                {filters.search || filters.role || filters.status
+                {filters.search || filters.roles || filters.status
                   ? "Try adjusting your filters"
                   : "Get started by adding your first user"}
               </p>

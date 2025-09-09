@@ -69,10 +69,11 @@ export class SuperAdminUsersController {
     description: 'Search users by name or email',
   })
   @ApiQuery({
-    name: 'role',
+    name: 'roles',
     required: false,
+    type: [String],
     enum: ['super-admin', 'school-admin', 'teacher', 'student', 'parent'],
-    description: 'Filter by user role',
+    description: 'Filter by user roles (array)',
   })
   @ApiQuery({
     name: 'status',
@@ -118,7 +119,7 @@ export class SuperAdminUsersController {
   })
   async getAllUsers(
     @Query('search') search?: string,
-    @Query('role') role?: EUserRole,
+    @Query('roles') roles?: EUserRole[],
     @Query('status') status?: EUserStatus,
     @Query('schoolId') schoolId?: string,
     @Query('page') page?: string,
@@ -132,7 +133,7 @@ export class SuperAdminUsersController {
     const result = await this.usersService.findAll({
       page: pageNum,
       limit: limitNum,
-      role,
+      roles,
       status,
       schoolId,
       search,
@@ -171,16 +172,17 @@ export class SuperAdminUsersController {
     description: 'User creation data',
     schema: {
       type: 'object',
-      required: ['firstName', 'lastName', 'email', 'role'],
+      required: ['firstName', 'lastName', 'email', 'roles'],
       properties: {
         firstName: { type: 'string', description: 'User first name' },
         lastName: { type: 'string', description: 'User last name' },
         middleName: { type: 'string', description: 'User middle name (optional)' },
         email: { type: 'string', description: 'User email' },
-        role: {
-          type: 'string',
+        roles: {
+          type: 'array',
+          items: { type: 'string' },
           enum: ['super-admin', 'delegated-super-admin', 'school-admin', 'teacher', 'student', 'parent'],
-          description: 'User role'
+          description: 'User roles (array)'
         },
         schoolId: { type: 'string', description: 'School ID (optional)' },
         phone: { type: 'string', description: 'Phone number' },
@@ -281,10 +283,11 @@ export class SuperAdminUsersController {
         lastName: { type: 'string', description: 'User last name' },
         middleName: { type: 'string', description: 'User middle name (optional)' },
         email: { type: 'string', description: 'User email' },
-        role: {
-          type: 'string',
+        roles: {
+          type: 'array',
+          items: { type: 'string' },
           enum: ['super-admin', 'delegated-super-admin', 'school-admin', 'teacher', 'student', 'parent'],
-          description: 'User role'
+          description: 'User roles (array)'
         },
         schoolId: { type: 'string', description: 'School ID' },
         phone: { type: 'string', description: 'Phone number' },

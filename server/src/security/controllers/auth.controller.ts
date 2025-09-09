@@ -284,33 +284,6 @@ export class AuthController {
     await this.authService.logout(req.user.userId, data.sessionId);
   }
 
-  @Get('me')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Get current user profile',
-    description: 'Retrieve current authenticated user profile information.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'User profile retrieved successfully',
-  })
-  async getProfile(@Request() req: any): Promise<any> {
-    this.logger.log(`Profile request for user: ${req.user.userId}`);
-
-    // Return user profile (in real implementation, fetch from database)
-    return {
-      id: req.user.userId,
-      email: req.user.email,
-      firstName: req.user.firstName,
-      lastName: req.user.lastName,
-      roles: req.user.roles,
-      schoolId: req.user.schoolId,
-      mfaEnabled: req.user.mfaEnabled,
-      lastLogin: req.user.lastLogin,
-      profileComplete: req.user.profileComplete,
-    };
-  }
 
   @Post('mfa/test')
   @UseGuards(JwtAuthGuard)

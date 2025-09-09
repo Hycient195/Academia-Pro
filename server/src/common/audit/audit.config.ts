@@ -75,12 +75,14 @@ export class AuditConfigService {
 
   // Sanitize sensitive data from audit details
   sanitizeDetails(details: Record<string, any>): Record<string, any> {
-    if (!details) return details;
+    if (!details || typeof details !== 'object') return details;
 
     const sanitized = { ...details };
-    for (const field of this.config.sensitiveFields) {
-      if (sanitized[field]) {
-        sanitized[field] = '[REDACTED]';
+    if (this.config && this.config.sensitiveFields && Array.isArray(this.config.sensitiveFields)) {
+      for (const field of this.config.sensitiveFields) {
+        if (sanitized[field]) {
+          sanitized[field] = '[REDACTED]';
+        }
       }
     }
     return sanitized;

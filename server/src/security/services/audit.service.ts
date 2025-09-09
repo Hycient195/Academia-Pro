@@ -1,11 +1,14 @@
-import { Injectable, Logger, Inject, Optional, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, Inject, Optional, OnModuleDestroy, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { MissingUserIdException, InvalidUserIdFormatException } from '../../common/exceptions/user-id.exception';
 import { Repository, Between, MoreThan } from 'typeorm';
 import { AsyncLocalStorage } from 'async_hooks';
 import { createHash } from 'crypto';
 import { AuditLog } from '../entities/audit-log.entity';
+import { SYSTEM_USER_ID } from '../entities/audit-log.entity';
 import { AuditAction, AuditSeverity, AuditLogData } from '../types/audit.types';
 import { AuditConfigService } from '../../common/audit/audit.config';
+import { AuditGateway } from '../../common/audit/audit.gateway';
 
 @Injectable()
 export class AuditService implements OnModuleDestroy {
@@ -19,7 +22,7 @@ export class AuditService implements OnModuleDestroy {
     private readonly auditLogRepository: Repository<AuditLog>,
     private readonly auditConfig: AuditConfigService,
   ) {
-    this.logger.log('AuditService constructor called - checking for circular dependency');
+    // AuditService initialized successfully
     this.startBufferFlushTimer();
   }
 
@@ -47,6 +50,34 @@ export class AuditService implements OnModuleDestroy {
    */
   private generateCorrelationId(): string {
     return `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Validate user ID format and presence
+   */
+  private validateUserId(userId: string | null | undefined): string {
+    if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+      throw new MissingUserIdException();
+    }
+
+    // Allow system user IDs for authentication endpoints
+    if (userId.trim() === 'auth-system' || userId.trim() === SYSTEM_USER_ID) {
+      return userId.trim();
+    }
+
+    // Skip validation for system user IDs
+    if (userId === '00000000-0000-0000-0000-000000000000' || userId === SYSTEM_USER_ID) {
+      return;
+    }
+
+
+    // Basic UUID format validation
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(userId.trim())) {
+      throw new InvalidUserIdFormatException(userId.trim());
+    }
+
+    return userId.trim();
   }
 
   /**
@@ -127,11 +158,14 @@ export class AuditService implements OnModuleDestroy {
       const context = this.getAuditContext();
       const enrichedData = {
         ...data,
-        userId: data.userId || context?.get('userId') || 'system',
+        userId: data.userId ?? context?.get('userId') ?? null,
         correlationId: data.correlationId || context?.get('correlationId') || this.generateCorrelationId(),
         schoolId: data.schoolId || context?.get('schoolId'),
         sessionId: data.sessionId || context?.get('sessionId'),
       };
+
+      // Validate user ID - required for all audit logging
+      enrichedData.userId = this.validateUserId(enrichedData.userId);
 
       // Add to buffer instead of immediate save
       this.auditBuffer.push(enrichedData);
@@ -143,6 +177,17 @@ export class AuditService implements OnModuleDestroy {
 
       // Log to console for development
       this.logger.log(`Audit: ${enrichedData.action} by ${enrichedData.userId} on ${enrichedData.resource}${enrichedData.resourceId ? ` (${enrichedData.resourceId})` : ''}`);
+
+      // Broadcast the event to WebSocket clients (disabled to break circular dependency)
+      // TODO: Re-enable when circular dependency is resolved
+      // if (this.auditGateway) {
+      //   try {
+      //     await this.auditGateway.broadcastAuditEvent(enrichedData);
+      //   } catch (broadcastError) {
+      //     this.logger.error(`Failed to broadcast audit event: ${broadcastError.message}`, broadcastError.stack);
+      //     // Don't throw error to avoid breaking the main flow
+      //   }
+      // }
 
     } catch (error) {
       this.logger.error(`Failed to log audit event: ${error.message}`, error.stack);
@@ -259,7 +304,7 @@ export class AuditService implements OnModuleDestroy {
   /**
    * Factory: Log user creation
    */
-  async logUserCreated(userId: string, targetUserId: string, ipAddress: string, userAgent: string, details?: Record<string, any>): Promise<void> {
+  async logUserCreated(userId: string | null, targetUserId: string, ipAddress: string, userAgent: string, details?: Record<string, any>): Promise<void> {
     await this.logActivity({
       userId,
       action: AuditAction.USER_CREATED,
@@ -792,23 +837,60 @@ export class AuditService implements OnModuleDestroy {
    * Enhanced logActivity with integrity verification
    */
   async logActivityWithIntegrity(data: AuditLogData): Promise<void> {
-    // Generate integrity hash
-    const integrityHash = this.generateIntegrityHash(data);
+    try {
+      // Generate integrity hash
+      const integrityHash = this.generateIntegrityHash(data);
 
-    // Add hash to details for storage
-    const enhancedData = {
-      ...data,
-      details: {
-        ...data.details,
-        integrityHash,
-      },
-    };
+      // Add hash to details for storage
+      const enhancedData = {
+        ...data,
+        details: {
+          ...data.details,
+          integrityHash,
+        },
+      };
 
-    // Encrypt sensitive data if configured
-    if (this.auditConfig.getConfig().sensitiveFields.length > 0) {
-      enhancedData.details = this.encryptSensitiveData(enhancedData.details);
+      // Encrypt sensitive data if configured
+      if (this.auditConfig && this.auditConfig.getConfig) {
+        try {
+          const config = this.auditConfig.getConfig();
+          if (config && config.sensitiveFields && config.sensitiveFields.length > 0) {
+            enhancedData.details = this.encryptSensitiveData(enhancedData.details);
+          }
+        } catch (error) {
+          this.logger.error(`Error in sensitive data encryption: ${error.message}`, error.stack);
+        }
+      }
+
+      await this.logActivity(enhancedData);
+    } catch (error) {
+      this.logger.error(`Failed to log activity with integrity: ${error.message}`, error.stack);
+      // Fallback to regular logging if integrity verification fails
+      await this.logActivity(data);
     }
+  }
 
-    await this.logActivity(enhancedData);
+  /**
+   * Broadcast metrics update to WebSocket clients
+   */
+  async broadcastMetricsUpdate(metrics: {
+    totalActivities: number;
+    activeUsers: number;
+    apiRequests: number;
+    securityEvents: number;
+    activitiesGrowth?: number;
+    usersGrowth?: number;
+    apiGrowth?: number;
+    securityGrowth?: number;
+  }): Promise<void> {
+    // Disabled to break circular dependency
+    // TODO: Re-enable when circular dependency is resolved
+    // if (this.auditGateway) {
+    //   try {
+    //     await this.auditGateway.broadcastMetricsUpdate(metrics);
+    //   } catch (error) {
+    //     this.logger.error(`Failed to broadcast metrics update: ${error.message}`, error.stack);
+    //   }
+    // }
   }
 }

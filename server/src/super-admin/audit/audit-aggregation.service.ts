@@ -256,7 +256,7 @@ export class AuditAggregationService implements OnModuleInit, OnModuleDestroy {
       .addSelect('COUNT(*)', 'logCount')
       .addSelect('MAX(audit.timestamp)', 'lastActivity')
       .groupBy('audit.userId')
-      .orderBy('logCount', 'DESC')
+      .orderBy('"logCount"', 'DESC')
       .limit(10)
       .getRawMany();
 
@@ -283,7 +283,7 @@ export class AuditAggregationService implements OnModuleInit, OnModuleDestroy {
       .addSelect('COUNT(DISTINCT audit.userId)', 'userCount')
       .addSelect('AVG(CASE WHEN audit.severity = \'critical\' THEN 3 WHEN audit.severity = \'high\' THEN 2 WHEN audit.severity = \'medium\' THEN 1 ELSE 0 END)', 'avgSeverity')
       .groupBy('audit.schoolId')
-      .orderBy('logCount', 'DESC')
+      .orderBy('"logCount"', 'DESC')
       .limit(10)
       .getRawMany();
 
@@ -499,7 +499,7 @@ export class AuditAggregationService implements OnModuleInit, OnModuleDestroy {
 
     // Get data access events
     const dataAccessEvents = await queryBuilder
-      .andWhere('audit.action LIKE :pattern', { pattern: '%data_%' })
+      .andWhere('CAST(audit.action AS TEXT) LIKE :pattern', { pattern: '%data_%' })
       .getCount();
 
     // Get security events
@@ -822,7 +822,7 @@ export class AuditAggregationService implements OnModuleInit, OnModuleDestroy {
       .addSelect('audit.action', 'action')
       .addSelect('COUNT(*)', 'count')
       .where('audit.timestamp >= :lookbackDate', { lookbackDate })
-      .andWhere('audit.action LIKE :pattern', { pattern: '%failed%' })
+      .andWhere('CAST(audit.action AS TEXT) LIKE :pattern', { pattern: '%failed%' })
       .groupBy('audit.userId, audit.action')
       .having('COUNT(*) > :threshold', { threshold: 3 })
       .orderBy('COUNT(*)', 'DESC')

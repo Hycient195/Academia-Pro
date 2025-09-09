@@ -64,7 +64,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Get all users with pagination and filtering' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'role', required: false, enum: EUserRole })
+  @ApiQuery({ name: 'roles', required: false, type: [String], enum: EUserRole })
   @ApiQuery({ name: 'status', required: false, enum: EUserStatus })
   @ApiQuery({ name: 'schoolId', required: false, type: String })
   @ApiQuery({ name: 'search', required: false, type: String })
@@ -81,7 +81,7 @@ export class UsersController {
   findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
-    @Query('role') role?: EUserRole,
+    @Query('roles') roles?: EUserRole[],
     @Query('status') status?: EUserStatus,
     @Query('schoolId') schoolId?: string,
     @Query('search') search?: string,
@@ -89,7 +89,7 @@ export class UsersController {
     return this.usersService.findAll({
       page,
       limit,
-      role,
+      roles,
       status,
       schoolId,
       search,
@@ -101,7 +101,7 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Search users' })
   @ApiQuery({ name: 'query', required: true, type: String })
-  @ApiQuery({ name: 'role', required: false, enum: EUserRole })
+  @ApiQuery({ name: 'roles', required: false, type: [String], enum: EUserRole })
   @ApiQuery({ name: 'schoolId', required: false, type: String })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({
@@ -110,23 +110,24 @@ export class UsersController {
   })
   search(
     @Query('query') query: string,
-    @Query('role') role?: EUserRole,
+    @Query('roles') roles?: EUserRole[],
     @Query('schoolId') schoolId?: string,
     @Query('limit') limit?: number,
   ) {
-    return this.usersService.search(query, { role, schoolId, limit });
+    return this.usersService.search(query, { roles, schoolId, limit });
   }
 
-  @Get('by-role/:role')
+  @Get('by-roles/:roles')
   @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get users by role' })
+  @ApiOperation({ summary: 'Get users by roles' })
   @ApiResponse({
     status: 200,
     description: 'Users retrieved successfully',
   })
-  getUsersByRole(@Param('role') role: EUserRole) {
-    return this.usersService.getUsersByRole(role);
+  getUsersByRoles(@Param('roles') rolesParam: string) {
+    const roles = rolesParam.split(',').map(role => role.trim() as EUserRole);
+    return this.usersService.getUsersByRoles(roles);
   }
 
   @Get('by-school/:schoolId')

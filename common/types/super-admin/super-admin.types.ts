@@ -282,7 +282,7 @@ export interface IAuditFilters {
 
 export interface IUserFilters {
   search?: string;
-  role?: string;
+  roles?: EUserRole[];
   status?: string;
   schoolId?: string;
   page?: number;

@@ -25,12 +25,13 @@ export class StaffGuard implements CanActivate {
     const path = request.path;
 
     // Check user role permissions
-    switch (user.role) {
-      case 'super_admin':
+    const userRole = user.roles?.[0] || 'unknown';
+    switch (userRole) {
+      case 'super-admin':
         // Full access to all staff operations
         return true;
 
-      case 'school_admin':
+      case 'school-admin':
       case 'principal':
         // Full access to staff operations within their school
         return true;

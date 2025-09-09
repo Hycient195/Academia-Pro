@@ -9,10 +9,12 @@ import { RolesGuard } from './guards/roles.guard';
 
 // Services
 import { SecurityService } from './services/security.service';
-import { AuditService } from './services/audit.service';
 import { ComplianceService } from './services/compliance.service';
 import { PolicyService } from './services/policy.service';
 import { ThreatDetectionService } from './services/threat-detection.service';
+
+// Config
+import { AuditConfigService } from '../common/audit/audit.config';
 
 // Entities
 import { AuditLog } from './entities/audit-log.entity';
@@ -56,10 +58,12 @@ import { SecurityPolicy } from './entities/security-policy.entity';
 
     // Services
     SecurityService,
-    AuditService,
     ComplianceService,
     PolicyService,
     ThreatDetectionService,
+
+    // Config
+    AuditConfigService,
   ],
   exports: [
     // Guards
@@ -68,7 +72,6 @@ import { SecurityPolicy } from './entities/security-policy.entity';
 
     // Services
     SecurityService,
-    AuditService,
     ComplianceService,
     PolicyService,
     ThreatDetectionService,

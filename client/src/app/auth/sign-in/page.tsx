@@ -113,13 +113,16 @@ export default function SignInPage() {
     setResetPasswordLoading(true)
 
     try {
-      // Call the first-time password reset API
-      const response = await fetch('/api/auth/users/reset-first-time-password', {
+      // Call the back-end password reset API
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001'}/api/v1/auth/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ newPassword }),
+        body: JSON.stringify({
+          token: 'first-time-reset-token', // This should come from the login response
+          newPassword
+        }),
         credentials: 'include',
       })
 

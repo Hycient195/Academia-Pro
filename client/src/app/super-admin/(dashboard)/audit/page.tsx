@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,10 +23,14 @@ import {
   IconServer,
   IconAlertTriangle,
   IconCircleCheck,
-  IconCircleX
+  IconCircleX,
+  IconWifi,
+  IconWifiOff,
+  IconRefresh
 } from "@tabler/icons-react"
 import { apis } from "@/redux/api"
 import { IAuditLog } from "@academia-pro/types/super-admin"
+import { useWebSocket } from "@/hooks/useWebSocket"
 
 interface PaginationInfo {
   page: number;
@@ -164,6 +168,107 @@ export default function AuditPage() {
   const isLoading = logsLoading || metricsLoading
   const hasError = logsError || metricsError
 
+  console.log(auditLogs)
+  console.log(auditMetrics)
+
+  // WebSocket integration for real-time updates
+  const {
+    isConnected,
+    isConnecting,
+    connectionError,
+    connect,
+    disconnect,
+    subscribe,
+    onMessage,
+    offMessage
+  } = useWebSocket({
+    namespace: '/audit',
+    autoConnect: true,
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
+  })
+
+  // Real-time data state
+  const [realTimeLogs, setRealTimeLogs] = useState<IAuditLog[]>([])
+  const [realTimeMetrics, setRealTimeMetrics] = useState(auditMetrics)
+  const [newEventsCount, setNewEventsCount] = useState(0)
+  const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null)
+
+  // WebSocket event handlers
+  const handleAuditEvent = useCallback((data: unknown) => {
+    try {
+      const eventData = data as { event: IAuditLog; timestamp: string; broadcastId: string }
+      const newLog: IAuditLog = {
+        ...eventData.event,
+        timestamp: eventData.timestamp,
+        id: eventData.broadcastId,
+      } as IAuditLog
+
+      setRealTimeLogs(prev => [newLog, ...prev.slice(0, 49)]) // Keep last 50 events
+      setNewEventsCount(prev => prev + 1)
+      setLastUpdateTime(new Date())
+    } catch (error) {
+      console.error('Failed to process audit event:', error)
+    }
+  }, [])
+
+  const handleMetricsUpdate = useCallback((data: unknown) => {
+    try {
+      const metricsData = data as {
+        metrics: typeof auditMetrics;
+        timestamp: string;
+        updateId: string;
+      }
+      setRealTimeMetrics(metricsData.metrics)
+      setLastUpdateTime(new Date())
+    } catch (error) {
+      console.error('Failed to process metrics update:', error)
+    }
+  }, [auditMetrics])
+
+  // WebSocket connection and subscription management
+  useEffect(() => {
+    if (isConnected) {
+      // Subscribe to audit events
+      subscribe({
+        eventTypes: ['*'], // All event types
+        severities: ['high', 'critical'], // Only high-priority events
+        minSeverity: 'medium',
+      })
+
+      // Set up event listeners
+      onMessage('audit_event', handleAuditEvent)
+      onMessage('metrics_update', handleMetricsUpdate)
+      onMessage('connected', (data) => {
+        console.log('WebSocket connected:', data)
+      })
+      onMessage('error', (data) => {
+        console.error('WebSocket error:', data)
+      })
+    }
+
+    return () => {
+      if (isConnected) {
+        offMessage('audit_event', handleAuditEvent)
+        offMessage('metrics_update', handleMetricsUpdate)
+      }
+    }
+  }, [isConnected, subscribe, onMessage, offMessage, handleAuditEvent, handleMetricsUpdate])
+
+  // Update real-time metrics when API data changes
+  useEffect(() => {
+    if (auditMetrics) {
+      setRealTimeMetrics(auditMetrics)
+    }
+  }, [auditMetrics])
+
+  // Function to clear real-time events
+  const clearRealTimeEvents = useCallback(() => {
+    setRealTimeLogs([])
+    setNewEventsCount(0)
+  }, [])
+
   // Retry mechanism
   const handleRetry = () => {
     if (logsError) refetchLogs()
@@ -248,6 +353,32 @@ export default function AuditPage() {
     }
   }, [autoRefresh, refreshInterval])
 
+  // Connection status component
+  const ConnectionStatus = () => (
+    <div className="flex items-center space-x-2">
+      {isConnected ? (
+        <IconWifi className="h-4 w-4 text-green-500" />
+      ) : isConnecting ? (
+        <IconRefresh className="h-4 w-4 text-yellow-500 animate-spin" />
+      ) : (
+        <IconWifiOff className="h-4 w-4 text-red-500" />
+      )}
+      <span className="text-sm">
+        {isConnected ? 'Real-time' : isConnecting ? 'Connecting...' : 'Offline'}
+      </span>
+      {newEventsCount > 0 && (
+        <Badge variant="secondary" className="text-xs">
+          {newEventsCount} new
+        </Badge>
+      )}
+      {lastUpdateTime && (
+        <span className="text-xs text-muted-foreground">
+          Last update: {lastUpdateTime.toLocaleTimeString()}
+        </span>
+      )}
+    </div>
+  )
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -256,6 +387,7 @@ export default function AuditPage() {
           <p className="text-muted-foreground">
             Comprehensive audit trail of all system activities and user operations
           </p>
+          <ConnectionStatus />
         </div>
         <div className="flex items-center space-x-4">
           <Button variant="outline" onClick={hasError ? handleRetry : handleRefresh} disabled={isLoading}>
@@ -266,6 +398,22 @@ export default function AuditPage() {
             <IconDownload className="h-4 w-4 mr-2" />
             Export Logs
           </Button>
+
+          {/* WebSocket controls */}
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="websocket"
+              checked={isConnected}
+              onCheckedChange={(checked) => {
+                if (checked) {
+                  connect()
+                } else {
+                  disconnect()
+                }
+              }}
+            />
+            <Label htmlFor="websocket" className="text-sm">Real-time</Label>
+          </div>
 
           {/* Auto-refresh controls */}
           <div className="flex items-center space-x-2">
@@ -313,37 +461,94 @@ export default function AuditPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <AuditMetricCard
           title="Total Activities"
-          value={auditMetrics?.totalActivities || 0}
-          change={auditMetrics?.activitiesGrowth}
+          value={realTimeMetrics?.totalActivities || auditMetrics?.totalActivities || 0}
+          change={realTimeMetrics?.activitiesGrowth || auditMetrics?.activitiesGrowth}
           changeType="increase"
           icon={IconActivity}
           description="All system activities"
         />
         <AuditMetricCard
           title="Active Users"
-          value={auditMetrics?.activeUsers || 0}
-          change={auditMetrics?.usersGrowth}
+          value={realTimeMetrics?.activeUsers || auditMetrics?.activeUsers || 0}
+          change={realTimeMetrics?.usersGrowth || auditMetrics?.usersGrowth}
           changeType="increase"
           icon={IconUsers}
           description="Users with recent activity"
         />
         <AuditMetricCard
           title="API Requests"
-          value={auditMetrics?.apiRequests || 0}
-          change={auditMetrics?.apiGrowth}
+          value={realTimeMetrics?.apiRequests || auditMetrics?.apiRequests || 0}
+          change={realTimeMetrics?.apiGrowth || auditMetrics?.apiGrowth}
           changeType="increase"
           icon={IconServer}
           description="Total API calls made"
         />
         <AuditMetricCard
           title="Security Events"
-          value={auditMetrics?.securityEvents || 0}
-          change={auditMetrics?.securityGrowth}
+          value={realTimeMetrics?.securityEvents || auditMetrics?.securityEvents || 0}
+          change={realTimeMetrics?.securityGrowth || auditMetrics?.securityGrowth}
           changeType="decrease"
           icon={IconShield}
           description="Security-related activities"
         />
       </div>
+
+      {/* Real-time Events Section */}
+      {realTimeLogs.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center">
+                  <IconActivity className="h-5 w-5 mr-2" />
+                  Real-time Events
+                  {newEventsCount > 0 && (
+                    <Badge variant="secondary" className="ml-2">
+                      {newEventsCount} new
+                    </Badge>
+                  )}
+                </CardTitle>
+                <CardDescription>
+                  Live audit events as they occur
+                </CardDescription>
+              </div>
+              {realTimeLogs.length > 0 && (
+                <Button variant="outline" size="sm" onClick={clearRealTimeEvents}>
+                  Clear
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {realTimeLogs.slice(0, 10).map((log, index) => (
+                <div key={`${log.id}-${index}`} className="flex items-center justify-between p-3 border rounded-lg bg-green-50 border-green-200">
+                  <div className="flex items-center space-x-3">
+                    <IconCircleCheck className="h-4 w-4 text-green-500" />
+                    <div>
+                      <p className="text-sm font-medium">{log.action}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {log.userId} • {new Date(log.timestamp).toLocaleTimeString()}
+                      </p>
+                    </div>
+                  </div>
+                  <Badge variant={
+                    log.status === 'FAILED' ? 'destructive' :
+                    log.status === 'WARNING' ? 'secondary' : 'default'
+                  }>
+                    {log.status}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+            {realTimeLogs.length > 10 && (
+              <p className="text-xs text-muted-foreground mt-2">
+                And {realTimeLogs.length - 10} more events...
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filters */}
       <Card>

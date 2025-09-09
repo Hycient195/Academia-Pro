@@ -9,6 +9,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { UserIdException, MissingUserIdException, InvalidUserIdFormatException } from '../exceptions/user-id.exception';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -23,9 +24,22 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
-      message = typeof exceptionResponse === 'string'
-        ? exceptionResponse
-        : (exceptionResponse as any).message || message;
+
+      // Handle custom user ID exceptions with enhanced messages
+      if (exception instanceof UserIdException) {
+        const response = exception.getResponse() as any;
+        message = response.message || exception.message;
+        // Add additional context for user ID validation errors
+        if (exception instanceof MissingUserIdException) {
+          message = 'Authentication required: User ID is missing from request context';
+        } else if (exception instanceof InvalidUserIdFormatException) {
+          message = 'Authentication failed: Invalid user ID format provided';
+        }
+      } else {
+        message = typeof exceptionResponse === 'string'
+          ? exceptionResponse
+          : (exceptionResponse as any).message || message;
+      }
     } else if (exception instanceof Error) {
       message = exception.message;
     }

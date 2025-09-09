@@ -9,7 +9,6 @@ export const authApi = createApi({
     baseUrl: GLOBAL_API_URL,
     prepareHeaders: (headers) => {
       headers.set('Content-Type', 'application/json');
-
       return headers;
     },
     credentials: 'include',
@@ -48,7 +47,7 @@ export const authApi = createApi({
     }),
 
     getProfile: builder.query<IAuthUser, void>({
-      query: () => '/auth/profile',
+      query: () => '/auth/me',
       providesTags: ['Auth'],
     }),
   }),

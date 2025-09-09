@@ -46,6 +46,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 // Audit components
 import { AuditInterceptor } from './common/audit/audit.interceptor';
 import { AuditMiddleware } from './common/audit/audit.middleware';
+import { AuditSharedModule } from './common/audit/audit.shared.module';
 
 // Database configuration
 import { getDatabaseConfig } from './database.config';
@@ -87,6 +88,7 @@ import { AppService } from './app.service';
 
     // Feature modules
     forwardRef(() => CommonModule),
+    AuditSharedModule,
     // forwardRef(() => RedisModule),
     forwardRef(() => SeedersModule),
     forwardRef(() => AuthModule),

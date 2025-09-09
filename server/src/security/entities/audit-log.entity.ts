@@ -1,6 +1,9 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index } from 'typeorm';
 import { AuditAction, AuditSeverity } from '../types/audit.types';
 
+// System user ID for audit events that don't have a specific user
+export const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000';
+
 @Entity('audit_logs')
 @Index(['userId', 'timestamp'])
 @Index(['action', 'timestamp'])
@@ -17,13 +20,13 @@ export class AuditLog {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'user_id', type: 'uuid' })
+  @Column({ name: 'user_id', type: 'uuid', nullable: false })
   userId: string;
 
   @Column({ name: 'school_id', type: 'uuid', nullable: true })
   schoolId: string;
 
-  @Column({ name: 'session_id', type: 'uuid', nullable: true })
+  @Column({ name: 'session_id', type: 'varchar', length: 255, nullable: true })
   sessionId: string;
 
   @Column({ name: 'correlation_id', type: 'varchar', length: 100, nullable: true })
@@ -239,7 +242,7 @@ export class AuditLog {
     details?: Record<string, any>,
   ): Partial<AuditLog> {
     return {
-      userId: 'system',
+      userId: SYSTEM_USER_ID,
       action,
       severity,
       resource: 'system',

@@ -76,6 +76,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const checkAuthStatus = async () => {
     try {
+      // Only check auth status if we have cookies (indicating a potential previous session)
+      // const hasCookies = document.cookie.includes('accessToken') || document.cookie.includes('refreshToken')
+
+      // if (!hasCookies) {
+      //   setAuthState({
+      //     user: null,
+      //     isAuthenticated: false,
+      //     isLoading: false,
+      //     csrfToken: null,
+      //   })
+      //   return
+      // }
+
       const response = await fetch(`${GLOBAL_API_URL}/auth/me`, {
         credentials: 'include',
       })
@@ -89,6 +102,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           csrfToken: authState.csrfToken,
         })
       } else {
+        // Clear any invalid cookies
         setAuthState({
           user: null,
           isAuthenticated: false,
@@ -111,7 +125,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true }))
 
-      const response = await fetch(`${GLOBAL_API_URL}/super-admin/auth/login`, {
+      const response = await fetch(`${GLOBAL_API_URL}/auth/super-admin/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

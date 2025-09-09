@@ -27,6 +27,8 @@ import { UserManagementService } from './services/user-management.service';
 
 // Entities
 import { User } from '../users/user.entity';
+import { UserSession } from '../security/entities/user-session.entity';
+import { SecurityEvent } from '../security/entities/security-event.entity';
 import { DelegatedAccount } from '../iam/entities/delegated-account.entity';
 import { Permission } from '../iam/entities/permission.entity';
 import { Role } from '../iam/entities/role.entity';
@@ -42,7 +44,7 @@ import { UsersService } from 'src/users/users.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, DelegatedAccount, Permission, Role]),
+    TypeOrmModule.forFeature([User, UserSession, SecurityEvent, DelegatedAccount, Permission, Role]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     AuthJwtModule,
     AuditSharedModule,

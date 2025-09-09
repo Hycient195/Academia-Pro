@@ -63,7 +63,7 @@ export class UsersService {
     // Prepare user data with correct types
     const userDataPrepared = {
       ...userData,
-      roles: userData.role ? [userData.role as EUserRole] : ['student' as EUserRole],
+      roles: userData.roles && userData.roles.length > 0 ? userData.roles : ['student' as EUserRole],
       dateOfBirth: userData.dateOfBirth ? new Date(userData.dateOfBirth) : undefined,
     };
 
@@ -81,7 +81,7 @@ export class UsersService {
 
     // Audit logging for user creation
     await this.auditService.logUserCreated(
-      isSuperAdminCreated ? 'system' : 'anonymous', // userId - system for super admin created users
+      isSuperAdminCreated ? 'system' : null, // userId - system for super admin created users, null for anonymous
       savedUser.id,
       '127.0.0.1', // ipAddress - placeholder, should be passed from controller
       'system', // userAgent - placeholder
@@ -102,18 +102,18 @@ export class UsersService {
   async findAll(options?: {
     page?: number;
     limit?: number;
-    role?: EUserRole;
+    roles?: EUserRole[];
     status?: EUserStatus;
     schoolId?: string;
     search?: string;
   }): Promise<PaginatedResponse<User>> {
-    const { page = 1, limit = 10, role, status, schoolId, search } = options || {};
+    const { page = 1, limit = 10, roles, status, schoolId, search } = options || {};
 
     const queryBuilder = this.usersRepository.createQueryBuilder('user');
 
     // Apply filters
-    if (role) {
-      queryBuilder.andWhere('user.roles @> ARRAY[:role]', { role });
+    if (roles && roles.length > 0) {
+      queryBuilder.andWhere('user.roles && ARRAY[:roles]', { roles });
     }
 
     if (status) {
@@ -240,8 +240,8 @@ export class UsersService {
       ...updateData,
     };
 
-    if (updateData.role !== undefined) {
-      updateDataPrepared.roles = [updateData.role as EUserRole];
+    if (updateData.roles !== undefined) {
+      updateDataPrepared.roles = updateData.roles;
     }
 
     if (updateData.dateOfBirth !== undefined) {
@@ -524,11 +524,15 @@ export class UsersService {
   }
 
   /**
-   * Get users by role
+   * Get users by roles
    */
-  async getUsersByRole(role: EUserRole): Promise<User[]> {
+  async getUsersByRoles(roles: EUserRole[]): Promise<User[]> {
+    if (!roles || roles.length === 0) {
+      return [];
+    }
+
     return this.usersRepository.createQueryBuilder('user')
-      .where('user.roles @> ARRAY[:role]', { role })
+      .where('user.roles && ARRAY[:roles]', { roles })
       .andWhere('user.status = :status', { status: EUserStatus.ACTIVE })
       .orderBy('user.createdAt', 'DESC')
       .getMany();
@@ -548,11 +552,11 @@ export class UsersService {
    * Search users
    */
   async search(query: string, options?: {
-    role?: EUserRole;
+    roles?: EUserRole[];
     schoolId?: string;
     limit?: number;
   }): Promise<User[]> {
-    const { role, schoolId, limit = 20 } = options || {};
+    const { roles, schoolId, limit = 20 } = options || {};
 
     const queryBuilder = this.usersRepository.createQueryBuilder('user');
 
@@ -562,8 +566,8 @@ export class UsersService {
       { query: `%${query}%` },
     );
 
-    if (role) {
-      queryBuilder.andWhere('user.roles @> ARRAY[:role]', { role });
+    if (roles && roles.length > 0) {
+      queryBuilder.andWhere('user.roles && ARRAY[:roles]', { roles });
     }
 
     if (schoolId) {
@@ -630,7 +634,7 @@ export class UsersService {
   /**
    * Custom audit methods for user-specific events
    */
-  private async logUserRoleChange(userId: string, targetUserId: string, oldRole: EUserRole, newRole: EUserRole, ipAddress: string, userAgent: string): Promise<void> {
+  private async logUserRoleChange(userId: string, targetUserId: string, oldRoles: EUserRole[], newRoles: EUserRole[], ipAddress: string, userAgent: string): Promise<void> {
     await this.auditService.logActivity({
       userId,
       action: 'USER_ROLE_CHANGED',
@@ -638,8 +642,8 @@ export class UsersService {
       resourceId: targetUserId,
       details: {
         eventType: 'user_role_changed',
-        oldRole,
-        newRole,
+        oldRoles,
+        newRoles,
         roleChange: true,
       },
       ipAddress,

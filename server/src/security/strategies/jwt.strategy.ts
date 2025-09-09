@@ -2,8 +2,13 @@ import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '../../users/user.entity';
 import { SecurityService } from '../services/security.service';
 import { AuditAction, AuditSeverity } from '../types/audit.types';
+import { SYSTEM_USER_ID } from '../entities/audit-log.entity';
+import { MissingUserIdException, InvalidUserIdFormatException } from '../../common/exceptions/user-id.exception';
 
 export interface JwtPayload {
   sub: string;
@@ -23,10 +28,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   constructor(
     private configService: ConfigService,
+    @InjectRepository(User)
+    private usersRepository: Repository<User>,
     private securityService: SecurityService,
   ) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+        (request: any) => {
+          return request?.cookies?.accessToken;
+        },
+      ]),
       ignoreExpiration: false,
       secretOrKey: configService.get<string>('JWT_SECRET'),
       passReqToCallback: true,
@@ -42,6 +54,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         throw new UnauthorizedException('Invalid token payload');
       }
 
+      // Validate userId format
+      this.validateUserId(payload.userId);
+
       // Check token expiration
       if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
         throw new UnauthorizedException('Token has expired');
@@ -55,7 +70,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       }
 
       // Validate user roles
-      if (!payload.roles || payload.roles.length === 0) {
+      if (!payload.roles || !Array.isArray(payload.roles) || payload.roles.length === 0) {
         await this.logInvalidRoles(request, payload);
         throw new UnauthorizedException('No valid roles found');
       }
@@ -90,39 +105,29 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   private async validateUser(payload: JwtPayload): Promise<any> {
-    // Mock user validation - in real implementation, this would query the database
-    const mockUsers = {
-      'user-001': {
-        id: 'user-001',
-        email: 'admin@school.com',
-        roles: ['super-admin', 'school-admin'],
-        schoolId: 'school-001',
-        isActive: true,
-        lastLogin: new Date('2024-08-29T10:00:00Z'),
-        profileComplete: true,
-      },
-      'user-002': {
-        id: 'user-002',
-        email: 'teacher@school.com',
-        roles: ['teacher'],
-        schoolId: 'school-001',
-        isActive: true,
-        lastLogin: new Date('2024-08-29T08:30:00Z'),
-        profileComplete: true,
-      },
-      'user-003': {
-        id: 'user-003',
-        email: 'student@school.com',
-        roles: ['student'],
-        schoolId: 'school-001',
-        isActive: true,
-        lastLogin: new Date('2024-08-29T07:15:00Z'),
-        profileComplete: false,
-      },
-    };
+    const user = await this.usersRepository.findOne({
+      where: { id: payload.sub },
+      select: ['id', 'email', 'roles', 'schoolId', 'status', 'lastLoginAt', 'isEmailVerified'],
+    });
 
-    const user = mockUsers[payload.sub];
-    return user && user.isActive ? user : null;
+    if (!user) {
+      return null;
+    }
+
+    // Check if user is active
+    if (user.status !== 'active') {
+      return null;
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      roles: user.roles,
+      schoolId: user.schoolId,
+      isActive: user.status === 'active',
+      lastLogin: user.lastLoginAt,
+      profileComplete: user.isEmailVerified, // Simple check for profile completeness
+    };
   }
 
   private async validateSchoolAccess(payload: JwtPayload): Promise<boolean> {
@@ -177,11 +182,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     };
 
     const permissions: string[] = [];
-    payload.roles.forEach(role => {
-      if (rolePermissions[role]) {
-        permissions.push(...rolePermissions[role]);
-      }
-    });
+    if (payload.roles && Array.isArray(payload.roles)) {
+      payload.roles.forEach(role => {
+        if (rolePermissions[role]) {
+          permissions.push(...rolePermissions[role]);
+        }
+      });
+    }
 
     return [...new Set(permissions)]; // Remove duplicates
   }
@@ -282,6 +289,28 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
   }
 
+  private validateUserId(userId: string): void {
+    if (!userId) {
+      throw new MissingUserIdException();
+    }
+
+    // Allow system user IDs for authentication endpoints
+    if (userId === 'auth-system' || userId === SYSTEM_USER_ID) {
+      return;
+    }
+
+    // Skip validation for system user IDs
+    if (userId === '00000000-0000-0000-0000-000000000000' || userId === SYSTEM_USER_ID) {
+      return;
+    }
+
+
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(userId)) {
+      throw new InvalidUserIdFormatException(userId);
+    }
+  }
+
   private getClientIp(request: any): string {
     const forwarded = request.headers['x-forwarded-for'];
     if (forwarded) {
@@ -294,8 +323,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     return request.connection?.remoteAddress ||
-           request.socket?.remoteAddress ||
-           request.connection?.socket?.remoteAddress ||
-           'unknown';
+            request.socket?.remoteAddress ||
+            request.connection?.socket?.remoteAddress ||
+            'unknown';
   }
 }

@@ -60,7 +60,7 @@ export const superAdminApi = createApi({
     // Super Admin Authentication
     superAdminLogin: builder.mutation<ISuperAdminLoginResponse, ISuperAdminLoginRequest>({
       query: (credentials) => ({
-        url: '/super-admin/auth/login',
+        url: '/auth/super-admin/login',
         method: 'POST',
         body: credentials,
       }),

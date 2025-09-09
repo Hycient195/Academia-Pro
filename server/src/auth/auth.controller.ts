@@ -11,15 +11,22 @@ import {
   HttpCode,
   HttpStatus,
   Response,
+  UnauthorizedException,
+  BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiBody,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { MfaService } from './services/mfa.service';
+import { SessionService } from './services/session.service';
+import { JwtAuthGuard } from '../security/guards/jwt-auth.guard';
+import { MfaGuard } from '../security/guards/mfa.guard';
 import {
   LoginDto,
   RegisterDto,
@@ -29,13 +36,32 @@ import {
   VerifyEmailDto,
 } from './dtos';
 import { IAuthTokens } from '@academia-pro/types/auth';
+import { EUserRole } from '@academia-pro/types/users';
 import { Auditable, AuditAuth } from '../common/audit/auditable.decorator';
 import { AuditAction, AuditSeverity } from '../security/types/audit.types';
+
+interface MfaSetup {
+  secret: string;
+  otpauthUrl: string;
+  qrCodeUrl: string;
+}
+
+interface LoginCredentials {
+  email: string;
+  password: string;
+  rememberMe?: boolean;
+}
 
 @ApiTags('authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  private readonly logger = new Logger(AuthController.name);
+
+  constructor(
+    private readonly authService: AuthService,
+    private readonly mfaService: MfaService,
+    private readonly sessionService: SessionService,
+  ) {}
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
@@ -156,7 +182,7 @@ export class AuthController {
     );
 
     // Check if user is a super admin
-    if (user.role !== 'super-admin') {
+    if (!user.roles.includes(EUserRole.SUPER_ADMIN)) {
       res.status(403).json({ message: 'Access denied - not a super admin' });
       return;
     }
@@ -291,6 +317,16 @@ export class AuthController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   getProfile(@Request() req: any): any {
+    // Ensure user context is available
+    if (!req.user) {
+      throw new UnauthorizedException('Authentication required');
+    }
+
+    // Validate user ID format
+    if (!req.user.sub) {
+      throw new BadRequestException('User ID is missing from request context');
+    }
+
     return req.user;
   }
 
@@ -304,5 +340,216 @@ export class AuthController {
   async resendVerification(@Request() req: any): Promise<{ message: string }> {
     // TODO: Implement resend verification logic
     return { message: 'Verification email sent' };
+  }
+
+  // MFA endpoints from Security Auth Controller
+  @Post('mfa/setup')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Setup MFA',
+    description: 'Initialize multi-factor authentication setup for the current user.',
+  })
+  @ApiBody({
+    description: 'MFA setup request',
+    schema: {
+      type: 'object',
+      required: ['method'],
+      properties: {
+        method: { type: 'string', enum: ['totp', 'sms', 'email'], example: 'totp' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'MFA setup initiated',
+    schema: {
+      type: 'object',
+      properties: {
+        secret: { type: 'string' },
+        otpauthUrl: { type: 'string' },
+        qrCodeUrl: { type: 'string' },
+      },
+    },
+  })
+  async setupMfa(
+    @Body() data: { method: string },
+    @Request() req: any,
+  ): Promise<any> {
+    this.logger.log(`MFA setup for user: ${req.user.userId}, method: ${data.method}`);
+
+    if (data.method === 'totp') {
+      return this.mfaService.setupTotp(req.user.userId);
+    } else if (data.method === 'sms') {
+      // For SMS, we need phone number from request body
+      const phoneNumber = req.body.phoneNumber;
+      if (!phoneNumber) {
+        throw new BadRequestException('Phone number required for SMS MFA');
+      }
+      return this.mfaService.setupSms(req.user.userId, phoneNumber);
+    } else {
+      throw new BadRequestException('Unsupported MFA method');
+    }
+  }
+
+  @Post('mfa/enable')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Enable MFA',
+    description: 'Complete MFA setup and enable multi-factor authentication.',
+  })
+  @ApiBody({
+    description: 'MFA enable request',
+    schema: {
+      type: 'object',
+      required: ['method', 'verificationToken'],
+      properties: {
+        method: { type: 'string', enum: ['totp', 'sms', 'email'], example: 'totp' },
+        verificationToken: { type: 'string', example: '123456' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'MFA enabled successfully',
+  })
+  async enableMfa(
+    @Body() data: { method: string; verificationToken: string },
+    @Request() req: any,
+  ): Promise<void> {
+    this.logger.log(`Enabling MFA for user: ${req.user.userId}, method: ${data.method}`);
+
+    if (data.method === 'totp') {
+      await this.mfaService.verifyAndEnableTotp(req.user.userId, data.verificationToken);
+    } else if (data.method === 'sms') {
+      await this.mfaService.verifySmsSetup(req.user.userId, data.verificationToken);
+    } else {
+      throw new BadRequestException('Unsupported MFA method');
+    }
+  }
+
+  @Post('mfa/disable')
+  @UseGuards(JwtAuthGuard, MfaGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Disable MFA',
+    description: 'Disable multi-factor authentication for the current user.',
+  })
+  @ApiBody({
+    description: 'MFA disable request',
+    schema: {
+      type: 'object',
+      required: ['verificationToken'],
+      properties: {
+        verificationToken: { type: 'string', example: '123456' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'MFA disabled successfully',
+  })
+  async disableMfa(
+    @Body() data: { verificationToken: string },
+    @Request() req: any,
+  ): Promise<void> {
+    this.logger.log(`Disabling MFA for user: ${req.user.userId}`);
+    await this.mfaService.disableMfa(req.user.userId);
+  }
+
+  @Post('mfa/verify')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Verify MFA token',
+    description: 'Verify multi-factor authentication token for login completion.',
+  })
+  @ApiBody({
+    description: 'MFA verification data',
+    schema: {
+      type: 'object',
+      required: ['userId', 'token', 'method', 'tempToken'],
+      properties: {
+        userId: { type: 'string', example: 'user-001' },
+        token: { type: 'string', example: '123456' },
+        method: { type: 'string', enum: ['totp', 'sms', 'email'], example: 'totp' },
+        tempToken: { type: 'string', description: 'Temporary token from login response' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'MFA verification successful',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid MFA token',
+  })
+  async verifyMfa(
+    @Body() data: { userId: string; token: string; method: string; tempToken: string },
+    @Request() req: any,
+  ): Promise<any> {
+    this.logger.log(`MFA verification for user: ${data.userId}, method: ${data.method}`);
+
+    if (data.method === 'totp') {
+      const isValid = await this.mfaService.verifyTotp(data.userId, data.token);
+      return { verified: isValid, message: isValid ? 'MFA verified successfully' : 'Invalid MFA token' };
+    } else if (data.method === 'sms') {
+      const isValid = await this.mfaService.verifySmsCode(data.userId, data.token);
+      return { verified: isValid, message: isValid ? 'SMS MFA verified successfully' : 'Invalid SMS code' };
+    } else {
+      throw new BadRequestException('Unsupported MFA method');
+    }
+  }
+
+  @Post('mfa/test')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Test MFA token',
+    description: 'Test MFA token generation without enabling MFA.',
+  })
+  @ApiBody({
+    description: 'MFA test request',
+    schema: {
+      type: 'object',
+      required: ['method'],
+      properties: {
+        method: { type: 'string', enum: ['totp', 'sms', 'email'], example: 'totp' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'MFA test token generated',
+  })
+  async testMfa(
+    @Body() data: { method: string },
+    @Request() req: any,
+  ): Promise<any> {
+    this.logger.log(`MFA test for user: ${req.user.userId}, method: ${data.method}`);
+    return {
+      method: data.method,
+      testToken: '123456',
+      message: `Test ${data.method} token generated. Use this token to verify MFA functionality.`,
+      expiresIn: 300,
+    };
+  }
+
+  // Session management endpoint
+  @Get('session/status')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get session status',
+    description: 'Check current session status and validity.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Session status retrieved',
+  })
+  async getSessionStatus(@Request() req: any): Promise<any> {
+    this.logger.log(`Session status check for user: ${req.user.userId}`);
+    return this.sessionService.getSessionStats(req.user.userId);
   }
 }

@@ -181,9 +181,9 @@ export class UserManagementService {
   }
 
   /**
-   * Update user role
+   * Update user roles
    */
-  async updateUserRole(userId: string, newRole: EUserRole, updatedBy: string): Promise<UserProfile> {
+  async updateUserRoles(userId: string, newRoles: EUserRole[], updatedBy: string): Promise<UserProfile> {
     const user = await this.usersRepository.findOne({
       where: { id: userId },
     });
@@ -192,18 +192,20 @@ export class UserManagementService {
       throw new NotFoundException('User not found');
     }
 
-    // Validate role transition
-    if (!this.isValidRoleTransition(user.roles, newRole)) {
-      throw new BadRequestException('Invalid role transition');
+    // Validate role transitions for each new role
+    for (const newRole of newRoles) {
+      if (!this.isValidRoleTransition(user.roles, newRole)) {
+        throw new BadRequestException(`Invalid role transition for role: ${newRole}`);
+      }
     }
 
     await this.usersRepository.update(userId, {
-      roles: [newRole],
+      roles: newRoles,
       updatedBy,
     });
 
     // Log role change
-    console.log(`User ${userId} roles changed from ${user.roles.join(', ')} to ${newRole} by ${updatedBy}`);
+    console.log(`User ${userId} roles changed from ${user.roles.join(', ')} to ${newRoles.join(', ')} by ${updatedBy}`);
 
     const updatedUser = await this.usersRepository.findOne({
       where: { id: userId },
@@ -375,15 +377,21 @@ export class UserManagementService {
   }
 
   /**
-   * Get users by role
+   * Get users by roles
    */
-  async getUsersByRole(role: EUserRole): Promise<UserProfile[]> {
+  async getUsersByRoles(roles: EUserRole[]): Promise<UserProfile[]> {
+    if (!roles || roles.length === 0) {
+      return [];
+    }
+
     const users = await this.usersRepository.find({
       order: { createdAt: 'DESC' },
     });
 
-    // Filter users who have the specified role
-    const filteredUsers = users.filter(user => user.roles && user.roles.includes(role));
+    // Filter users who have any of the specified roles
+    const filteredUsers = users.filter(user =>
+      user.roles && user.roles.some(userRole => roles.includes(userRole))
+    );
 
     return filteredUsers.map(user => this.mapUserToProfile(user));
   }

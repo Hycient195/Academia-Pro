@@ -285,7 +285,7 @@ export class SchoolAdminController {
     // Use the UsersService to get users for this school
     const result = await this.usersService.findAll({
       schoolId,
-      role: role as any,
+      roles: role ? [role as EUserRole] : undefined,
       status: status as any,
     });
     const users = result.data;

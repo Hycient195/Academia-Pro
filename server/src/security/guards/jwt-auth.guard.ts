@@ -8,18 +8,19 @@ import { Repository } from 'typeorm';
 import { UserSession } from '../entities/user-session.entity';
 import { SecurityEvent, SecurityEventType, SecurityEventSeverity } from '../entities/security-event.entity';
 import { AuditService } from '../services/audit.service';
-import { AuditSeverity } from '../types/audit.types';
+import { AuditSeverity, AuditAction } from '../types/audit.types';
+import { SYSTEM_USER_ID } from '../entities/audit-log.entity';
+import { MissingUserIdException, InvalidUserIdFormatException } from '../../common/exceptions/user-id.exception';
 
 export interface JwtPayload {
   sub: string; // user ID
+  userId: string;
   email: string;
-  role: string;
+  roles: string[];
   schoolId?: string;
   sessionId: string;
   iat: number;
   exp: number;
-  iss: string;
-  aud: string;
 }
 
 export interface RequestWithUser extends Request {
@@ -35,6 +36,8 @@ export interface RequestWithUser extends Request {
 export class JwtAuthGuard extends AuthGuard('jwt') {
   private readonly logger = new Logger(JwtAuthGuard.name);
 
+
+
   constructor(
     private reflector: Reflector,
     private jwtService: JwtService,
@@ -46,6 +49,24 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     private auditService: AuditService,
   ) {
     super();
+  }
+
+  private isAuthenticationEndpoint(url: string, method: string): boolean {
+    // Define authentication endpoints that don't require user context
+    const authEndpoints = [
+      '/auth/login',
+      '/auth/me',
+      '/auth/super-admin/login',
+      '/auth/register',
+      '/auth/refresh',
+      '/auth/reset-password-request',
+      '/auth/reset-password',
+      '/auth/verify-email',
+      '/auth/csrf-token'
+    ];
+
+    // Check if the URL matches any authentication endpoint
+    return authEndpoints.some(endpoint => url.includes(endpoint)) && (method === 'POST' || method === 'GET');
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -69,11 +90,13 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         throw new UnauthorizedException('No token provided');
       }
 
+
       // Verify JWT token
       const payload = await this.verifyToken(token);
 
       // Validate session
       const session = await this.validateSession(payload);
+
       if (!session) {
         await this.logSecurityEvent(SecurityEventType.SESSION_INVALID, payload.sub, request);
         throw new UnauthorizedException('Invalid session');
@@ -93,6 +116,14 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
       // Update session activity
       await this.updateSessionActivity(session, request);
+
+      const isAuthEndpoint = this.isAuthenticationEndpoint(request.url, request.method);
+
+      // Validate userId format
+      if (!isAuthEndpoint && payload.sub) {
+        this.validateUserId(payload.sub);
+      }
+      console.log(payload)
 
       // Attach user to request
       request.user = {
@@ -125,24 +156,28 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     } catch (error) {
       // Log authentication failure
       const token = this.extractTokenFromHeader(request);
-      let userId = 'unknown';
+      let userId: string | null = null;
 
       if (token) {
         try {
           const payload = this.jwtService.decode(token) as JwtPayload;
-          userId = payload?.sub || 'unknown';
+          userId = payload?.sub || null;
         } catch (decodeError) {
           // Token is malformed
         }
       }
 
-      await this.logSecurityEvent(SecurityEventType.AUTHENTICATION_FAILED, userId, request);
+      // Log security event with nullable userId
+      await this.logSecurityEvent(SecurityEventType.AUTHENTICATION_FAILED, userId || null, request);
+
+      // Use system user ID for audit logging when user is unknown
+      const auditUserId = userId || SYSTEM_USER_ID;
 
       await this.auditService.logActivity({
-        userId,
-        action: 'AUTHENTICATION_FAILED',
+        userId: auditUserId,
+        action: AuditAction.AUTHENTICATION_FAILED,
         resource: 'authentication',
-        resourceId: userId,
+        resourceId: userId || 'unknown',
         details: {
           error: error.message,
           method: request.method,
@@ -160,8 +195,19 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   }
 
   private extractTokenFromHeader(request: Request): string | undefined {
+    // First try to get token from Authorization header
     const [type, token] = request.headers['authorization']?.split(' ') ?? [];
-    return type === 'Bearer' ? token : undefined;
+    if (type === 'Bearer' && token) {
+      return token;
+    }
+
+    // If not found in header, try to get from cookies
+    const cookies = (request as any).cookies;
+    if (cookies?.accessToken) {
+      return cookies.accessToken;
+    }
+
+    return undefined;
   }
 
   private async verifyToken(token: string): Promise<JwtPayload> {
@@ -200,7 +246,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
           userId: payload.sub,
           isActive: true,
         },
-        relations: ['user'],
+        // Removed relations: ['user'] since UserSession entity doesn't have a user relation
       });
 
       return session;
@@ -223,13 +269,13 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
   private async logSecurityEvent(
     eventType: SecurityEventType,
-    userId: string,
+    userId: string | null,
     request: Request,
   ): Promise<void> {
     try {
       const securityEvent = new SecurityEvent();
       securityEvent.eventType = eventType;
-      securityEvent.userId = userId;
+      securityEvent.userId = userId; // Now accepts null
       securityEvent.ipAddress = this.getClientIp(request);
       securityEvent.userAgent = request.headers['user-agent'] || 'Unknown';
       securityEvent.details = {
@@ -261,6 +307,28 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
            (request as any).ip ||
            (request as any).connection?.remoteAddress ||
            'unknown';
+  }
+
+  private validateUserId(userId: string): void {
+    if (!userId) {
+      throw new MissingUserIdException();
+    }
+
+    // Allow system user IDs for authentication endpoints
+    if (userId === 'auth-system' || userId === SYSTEM_USER_ID) {
+      return;
+    }
+
+    // Skip validation for system user IDs
+    if (userId === '00000000-0000-0000-0000-000000000000' || userId === SYSTEM_USER_ID) {
+      return;
+    }
+
+
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(userId)) {
+      throw new InvalidUserIdFormatException(userId);
+    }
   }
 
   private sanitizeHeaders(headers: any): Record<string, string> {

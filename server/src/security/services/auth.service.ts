@@ -1,10 +1,15 @@
 import { Injectable, UnauthorizedException, BadRequestException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '../../users/user.entity';
 import { SecurityService } from './security.service';
 import { AuditAction, AuditSeverity } from '../types/audit.types';
 import { TotpStrategy } from '../strategies/totp.strategy';
 import { IAuthTokens } from '@academia-pro/types/auth';
+import { EUserRole, EUserStatus } from '@academia-pro/types/users';
+import * as bcrypt from 'bcryptjs';
 
 export interface LoginCredentials {
   email: string;
@@ -35,6 +40,8 @@ export class AuthService {
   constructor(
     private jwtService: JwtService,
     private configService: ConfigService,
+    @InjectRepository(User)
+    private usersRepository: Repository<User>,
     private securityService: SecurityService,
     private totpStrategy: TotpStrategy,
   ) {}
@@ -323,73 +330,44 @@ export class AuthService {
 
   // Private helper methods
   private async validateCredentials(email: string, password: string): Promise<any> {
-    // Mock user validation - in real implementation, this would query the database
-    const mockUsers = {
-      'admin@school.com': {
-        id: 'user-001',
-        email: 'admin@school.com',
-        password: 'hashed_password_123', // In real implementation, use bcrypt
-        firstName: 'Admin',
-        lastName: 'User',
-        roles: ['super-admin', 'school-admin'],
-        schoolId: 'school-001',
-        isActive: true,
-        mfaEnabled: true,
-        mfaMethod: 'totp',
-        lastLogin: new Date('2024-08-29T10:00:00Z'),
-      },
-      'teacher@school.com': {
-        id: 'user-002',
-        email: 'teacher@school.com',
-        password: 'hashed_password_456',
-        firstName: 'John',
-        lastName: 'Teacher',
-        roles: ['teacher'],
-        schoolId: 'school-001',
-        isActive: true,
-        mfaEnabled: false,
-        lastLogin: new Date('2024-08-29T08:30:00Z'),
-      },
-    };
+    const user = await this.usersRepository.findOne({
+      where: { email },
+      select: ['id', 'email', 'passwordHash', 'firstName', 'lastName', 'roles', 'status', 'schoolId', 'isEmailVerified', 'mfaEnabled', 'mfaMethod', 'lastLoginAt'],
+    });
 
-    const user = mockUsers[email];
-    if (!user) return null;
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
 
-    // In real implementation, compare hashed passwords
-    // const isValidPassword = await bcrypt.compare(password, user.password);
-    const isValidPassword = password === 'password123'; // Mock validation
+    // Check if user is active
+    if (user.status !== 'active') {
+      throw new UnauthorizedException('Account is not active');
+    }
 
-    return isValidPassword ? user : null;
+    if (!user.isEmailVerified) {
+      throw new UnauthorizedException('Please verify your email before logging in');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const { passwordHash, ...result } = user;
+    return result;
   }
 
   private async getUserById(userId: string): Promise<any> {
-    // Mock user lookup
-    const mockUsers = {
-      'user-001': {
-        id: 'user-001',
-        email: 'admin@school.com',
-        firstName: 'Admin',
-        lastName: 'User',
-        roles: ['super-admin', 'school-admin'],
-        schoolId: 'school-001',
-        isActive: true,
-        mfaEnabled: true,
-        mfaMethod: 'totp',
-        mfaSecret: 'JBSWY3DPEHPK3PXP',
-      },
-      'user-002': {
-        id: 'user-002',
-        email: 'teacher@school.com',
-        firstName: 'John',
-        lastName: 'Teacher',
-        roles: ['teacher'],
-        schoolId: 'school-001',
-        isActive: true,
-        mfaEnabled: false,
-      },
-    };
+    const user = await this.usersRepository.findOne({
+      where: { id: userId },
+      select: ['id', 'email', 'firstName', 'lastName', 'roles', 'schoolId', 'mfaEnabled', 'mfaMethod', 'mfaSecret'],
+    });
 
-    return mockUsers[userId] || null;
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    return user;
   }
 
   private async generateTokens(user: any, sessionId: string): Promise<IAuthTokens> {

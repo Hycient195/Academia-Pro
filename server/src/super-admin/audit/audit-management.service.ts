@@ -7,6 +7,7 @@ import { AuditService } from '../../security/services/audit.service';
 import { AuditFiltersDto, AuditTimelineFiltersDto, AuditSearchDto } from './audit-filters.dto';
 import { AuditAction, AuditSeverity } from '../../security/types/audit.types';
 import { AuditAction as StudentAuditAction, AuditEntityType, AuditSeverity as StudentAuditSeverity } from '../../students/entities/student-audit-log.entity';
+import { AuditMetricsService } from '../../common/audit/audit-metrics.service';
 
 @Injectable()
 export class AuditManagementService {
@@ -18,6 +19,7 @@ export class AuditManagementService {
     @InjectRepository(StudentAuditLog)
     private readonly studentAuditLogRepository: Repository<StudentAuditLog>,
     private readonly auditService: AuditService,
+    private readonly auditMetricsService: AuditMetricsService,
   ) {}
 
   /**
@@ -357,6 +359,31 @@ export class AuditManagementService {
       : 30; // Default 30 days
 
     const averageLogsPerDay = totalLogs / Math.max(dateRange, 1);
+
+    // Broadcast metrics update to WebSocket clients using the metrics service
+    const metricsUpdate = {
+      totalActivities: totalLogs,
+      activeUsers: topUsers.length,
+      apiRequests: (logsByAction as any)['api_request'] || 0,
+      securityEvents: ((logsBySeverity as any)['high'] || 0) + ((logsBySeverity as any)['critical'] || 0),
+      recentActivityCount: recentActivity.length,
+      criticalEventsCount: (logsBySeverity as any)['critical'] || 0,
+      topResources: Object.entries(logsByResource)
+        .map(([resource, count]) => ({ resource, count: count as number }))
+        .sort((a, b) => (b.count as number) - (a.count as number))
+        .slice(0, 5),
+      severityBreakdown: logsBySeverity as any,
+    };
+
+    // Broadcast the metrics update asynchronously with throttling
+    setImmediate(() => {
+      this.auditMetricsService.updateMetrics(metricsUpdate, {
+        priority: 'medium',
+        throttleMs: 5000, // Throttle updates to every 5 seconds
+      }).catch(error => {
+        this.logger.error(`Failed to broadcast metrics update: ${error.message}`, error.stack);
+      });
+    });
 
     return {
       totalLogs,

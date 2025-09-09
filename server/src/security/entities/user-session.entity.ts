@@ -62,7 +62,7 @@ export class UserSession {
   @Column({ name: 'expires_at', type: 'timestamp' })
   expiresAt: Date;
 
-  @Column({ name: 'created_at', type: 'timestamp' })
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
   @Column({ name: 'login_at', type: 'timestamp' })

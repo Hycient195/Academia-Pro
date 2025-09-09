@@ -60,15 +60,13 @@ export class CreateUserDto implements ICreateUserRequest {
   middleName?: string;
 
   @ApiPropertyOptional({
-    description: 'User role',
-    example: 'student',
+    description: 'User roles',
+    example: ['student'],
+    type: [String],
     enum: ['super-admin', 'delegated-super-admin', 'school-admin', 'teacher', 'student', 'parent'],
   })
   @IsOptional()
-  @IsEnum(['super-admin', 'delegated-super-admin', 'school-admin', 'teacher', 'student', 'parent'], {
-    message: 'Role must be one of: super-admin, delegated-super-admin, school-admin, teacher, student, parent'
-  })
-  role?: EUserRole;
+  roles?: EUserRole[];
 
   @ApiPropertyOptional({
     description: 'User status',

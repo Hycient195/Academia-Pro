@@ -3,6 +3,8 @@ import { Request, Response, NextFunction } from 'express';
 import { AuditService } from '../../security/services/audit.service';
 import { AuditConfigService } from './audit.config';
 import { AuditAction, AuditSeverity } from '../../security/types/audit.types';
+import { SYSTEM_USER_ID } from '../../security/entities/audit-log.entity';
+import { MissingUserIdException, InvalidUserIdFormatException } from '../exceptions/user-id.exception';
 
 @Injectable()
 export class AuditMiddleware implements NestMiddleware {
@@ -13,125 +15,49 @@ export class AuditMiddleware implements NestMiddleware {
     private readonly auditConfig: AuditConfigService,
   ) {}
 
-  async use(req: Request, res: Response, next: NextFunction): Promise<void> {
-    const startTime = Date.now();
+  private validateUserId(userId: string): void {
+    if (!userId) {
+      throw new MissingUserIdException();
+    }
 
+    // Skip validation for system user IDs
+    if (userId === '00000000-0000-0000-0000-000000000000' || userId === SYSTEM_USER_ID) {
+      return;
+    }
+
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(userId)) {
+      throw new InvalidUserIdFormatException(userId);
+    }
+  }
+
+  async use(req: Request, res: Response, next: NextFunction): Promise<void> {
     // Skip audit for excluded endpoints
     if (this.auditConfig.isExcludedEndpoint(req.url)) {
       return next();
     }
 
-    // Extract request details
-    const user = req.user as any; // Cast to any to access JWT payload properties
-    const userId = user?.sub || user?.id || user?.userId || 'anonymous';
+    // Capture early request data before authentication
+    // IMPORTANT: Do NOT access req.user here as it's not yet set by guards
+    const startTime = Date.now();
     const correlationId = req.headers['x-correlation-id'] as string || this.generateCorrelationId();
-    const schoolId = user?.schoolId || req.headers['x-school-id'] as string;
-    const sessionId = user?.sessionId || req.headers['x-session-id'] as string;
     const ipAddress = this.getClientIp(req);
     const userAgent = req.headers['user-agent'] || 'unknown';
 
-    // Set audit context
-    this.auditService.setAuditContext({
-      userId,
+    // Stash audit data on request for later use by interceptor
+    (req as any).auditData = {
+      startTime,
       correlationId,
-      schoolId,
-      sessionId,
-    });
-
-    // Capture request body for logging (before it might be modified)
-    const requestBody = this.sanitizeRequestBody(req.body);
-
-    // Override response methods to capture response details
-    const originalSend = res.send;
-    const originalJson = res.json;
-    let responseBody: any = null;
-    let responseSize = 0;
-
-    const captureResponse = (body: any) => {
-      responseBody = body;
-      responseSize = Buffer.isBuffer(body) ? body.length : JSON.stringify(body).length;
-      return body;
+      ipAddress,
+      userAgent,
+      method: req.method,
+      url: req.url,
+      requestBody: this.sanitizeRequestBody(req.body),
+      requestHeaders: this.sanitizeHeaders(req.headers),
+      requestSize: req.headers['content-length'] ? parseInt(req.headers['content-length'] as string) : 0,
     };
 
-    res.send = function(body: any) {
-      return originalSend.call(this, captureResponse(body));
-    };
-
-    res.json = function(body: any) {
-      return originalJson.call(this, captureResponse(body));
-    };
-
-    // Handle response finish
-    res.on('finish', async () => {
-      try {
-        const duration = Date.now() - startTime;
-        const statusCode = res.statusCode;
-        const method = req.method;
-        const url = req.url;
-
-        // Get geolocation (async, non-blocking)
-        const geolocation = await this.getGeolocation(ipAddress);
-
-        // Log request/response details with integrity verification
-        await this.auditService.logActivityWithIntegrity({
-          userId,
-          action: AuditAction.DATA_ACCESSED,
-          resource: 'api',
-          resourceId: `${method} ${url}`,
-          details: {
-            method,
-            url,
-            statusCode,
-            duration,
-            requestSize: req.headers['content-length'] ? parseInt(req.headers['content-length'] as string) : 0,
-            responseSize,
-            requestHeaders: this.sanitizeHeaders(req.headers),
-            responseHeaders: this.sanitizeHeaders(res.getHeaders()),
-            requestBody,
-            responseBody: this.shouldLogResponseBody(statusCode) ? this.sanitizeResponseBody(responseBody) : '[RESPONSE_BODY_EXCLUDED]',
-            geolocation,
-            memoryUsage: this.getMemoryUsage(),
-            performanceMetrics: this.getPerformanceMetrics(duration),
-          },
-          ipAddress,
-          userAgent,
-          severity: this.getSeverityFromStatus(statusCode),
-          correlationId,
-          schoolId,
-          sessionId,
-        });
-
-        this.logger.debug(`Audited ${method} ${url} - ${statusCode} (${duration}ms)`);
-      } catch (error) {
-        this.logger.error(`Failed to log audit event: ${error.message}`, error.stack);
-      }
-    });
-
-    // Handle response errors
-    res.on('error', async (error) => {
-      try {
-        const duration = Date.now() - startTime;
-        await this.auditService.logActivity({
-          userId,
-          action: AuditAction.SECURITY_ALERT,
-          resource: 'api',
-          resourceId: `${req.method} ${req.url}`,
-          details: {
-            error: error.message,
-            stack: error.stack,
-            duration,
-          },
-          ipAddress,
-          userAgent,
-          severity: AuditSeverity.HIGH,
-          correlationId,
-          schoolId,
-          sessionId,
-        });
-      } catch (auditError) {
-        this.logger.error(`Failed to log error audit: ${auditError.message}`, auditError.stack);
-      }
-    });
+    this.logger.debug(`Audit middleware: Captured early data for ${req.method} ${req.url} from IP ${ipAddress}`);
 
     next();
   }
@@ -215,5 +141,22 @@ export class AuditMiddleware implements NestMiddleware {
       isSlow: duration > 1000, // Flag slow requests > 1s
       timestamp: new Date().toISOString(),
     };
+  }
+
+  private isAuthenticationEndpoint(url: string, method: string): boolean {
+    // Define authentication endpoints that don't require user context
+    const authEndpoints = [
+      '/auth/login',
+      '/auth/super-admin/login',
+      '/auth/register',
+      '/auth/refresh',
+      '/auth/reset-password-request',
+      '/auth/reset-password',
+      '/auth/verify-email',
+      '/auth/csrf-token'
+    ];
+
+    // Check if the URL matches any authentication endpoint
+    return authEndpoints.some(endpoint => url.includes(endpoint)) && (method === 'POST' || method === 'GET');
   }
 }

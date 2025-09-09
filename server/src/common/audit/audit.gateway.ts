@@ -1,9 +1,13 @@
-import { Injectable, Logger, Inject, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, Inject, Optional, OnModuleDestroy, UseGuards, UseInterceptors } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ThrottlerGuard, ThrottlerModuleOptions, ThrottlerStorageService } from '@nestjs/throttler';
 import { AuditService } from '../../security/services/audit.service';
 import { AuditAction, AuditSeverity, AuditLogData } from '../../security/types/audit.types';
 import { AuditConfigService } from './audit.config';
+import { AuditSubscriptionService, ClientSubscription, SubscriptionFilter } from './audit-subscription.service';
+import { AuditSocketGuard } from './audit-socket.guard';
+import { AuditSocketInterceptor } from './audit-socket.interceptor';
+import { WebSocketGateway } from '@nestjs/websockets';
 
 // Temporary interface until WebSocket packages are installed
 interface Socket {
@@ -40,13 +44,7 @@ interface SubscriptionData {
   minSeverity?: string;
 }
 
-interface ClientSubscription {
-  socketId: string;
-  userId: string;
-  subscription: SubscriptionData;
-  connectedAt: Date;
-  lastActivity: Date;
-}
+// Using ClientSubscription from audit-subscription.service.ts
 
 interface AuditEventPayload {
   event: AuditLogData;
@@ -70,8 +68,20 @@ interface MetricsUpdatePayload {
 }
 
 @Injectable()
+@UseGuards(AuditSocketGuard)
+@UseInterceptors(AuditSocketInterceptor)
+@WebSocketGateway({
+  namespace: '/audit',
+  cors: {
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true,
+  },
+  transports: ['websocket', 'polling'],
+})
 export class AuditGateway implements OnModuleDestroy {
   private server: Server | null = null;
+
+  // TODO: Once @nestjs/websockets is installed, uncomment and use these decorators:
 
   private readonly logger = new Logger(AuditGateway.name);
   private readonly connectedClients = new Map<string, ClientSubscription>();
@@ -88,12 +98,13 @@ export class AuditGateway implements OnModuleDestroy {
 
   constructor(
     private readonly jwtService: JwtService,
-    private readonly auditService: AuditService,
     private readonly auditConfig: AuditConfigService,
+    @Optional()
+    private readonly auditService?: AuditService,
     @Inject('ThrottlerStorageService')
-    private readonly throttlerStorage: ThrottlerStorageService,
+    @Optional()
+    private readonly throttlerStorage?: ThrottlerStorageService,
   ) {}
-
   /**
    * Initialize the gateway with a WebSocket server instance
    * This will be called when WebSocket packages are available
@@ -182,6 +193,23 @@ export class AuditGateway implements OnModuleDestroy {
   /**
    * Placeholder methods for WebSocket functionality
    * These will be implemented when WebSocket packages are installed
+   *
+   * TODO: Uncomment and use these decorators once @nestjs/websockets is installed:
+   *
+   * @SubscribeMessage('subscribe')
+   * async handleSubscribe(
+   *   @MessageBody() data: SubscriptionData,
+   *   @ConnectedSocket() client: AuthenticatedSocket,
+   * ): Promise<void> { ... }
+   *
+   * @SubscribeMessage('unsubscribe')
+   * async handleUnsubscribe(@ConnectedSocket() client: AuthenticatedSocket): Promise<void> { ... }
+   *
+   * @SubscribeMessage('ping')
+   * async handlePing(@ConnectedSocket() client: AuthenticatedSocket): Promise<void> { ... }
+   *
+   * @SubscribeMessage('get_connection_info')
+   * async handleGetConnectionInfo(@ConnectedSocket() client: AuthenticatedSocket): Promise<void> { ... }
    */
   async handleConnection(client: any): Promise<void> {
     this.logger.log('WebSocket connection handling not implemented yet');
@@ -203,7 +231,7 @@ export class AuditGateway implements OnModuleDestroy {
    * Check if event should be sent to specific client based on subscription
    */
   private shouldSendEventToClient(event: AuditLogData, subscription: ClientSubscription): boolean {
-    const { subscription: sub } = subscription;
+    const { filters: sub } = subscription;
 
     // Check event types
     if (sub.eventTypes && sub.eventTypes.length > 0 && !sub.eventTypes.includes('*')) {
@@ -366,17 +394,21 @@ export class AuditGateway implements OnModuleDestroy {
    */
   addClient(clientId: string, userId: string, subscription?: Partial<SubscriptionData>): void {
     const clientSubscription: ClientSubscription = {
-      socketId: clientId,
+      id: `sub-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      clientId,
       userId,
-      subscription: {
+      filters: {
         eventTypes: subscription?.eventTypes || ['*'],
         severities: subscription?.severities || ['*'],
         resources: subscription?.resources || ['*'],
         users: subscription?.users || ['*'],
         minSeverity: subscription?.minSeverity || 'low',
       },
-      connectedAt: new Date(),
+      createdAt: new Date(),
       lastActivity: new Date(),
+      isActive: true,
+      messageCount: 0,
+      preferences: {},
     };
 
     this.connectedClients.set(clientId, clientSubscription);
@@ -399,6 +431,19 @@ export class AuditGateway implements OnModuleDestroy {
       this.connectedClients.delete(clientId);
       this.connectionMetrics.activeConnections--;
       this.logger.log(`Client removed: ${clientId}`);
+    }
+  }
+
+  /**
+   * Force disconnect a client
+   */
+  disconnectClient(clientId: string): void {
+    if (!this.server) return;
+
+    const socket = this.server.sockets.sockets.get(clientId);
+    if (socket) {
+      socket.disconnect();
+      this.logger.log(`Force disconnected client: ${clientId}`);
     }
   }
 

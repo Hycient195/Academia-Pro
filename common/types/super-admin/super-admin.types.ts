@@ -270,14 +270,43 @@ export interface IAuditMetrics {
 }
 
 export interface IAuditFilters {
-  period?: string;
-  user?: string;
-  action?: string;
-  status?: string;
-  resourceType?: string;
+  userId?: string;
   schoolId?: string;
+  resource?: string;
+  resourceId?: string;
+  action?: string;
+  severity?: string;
+  startDate?: string;
+  endDate?: string;
+  period?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  sessionId?: string;
+  correlationId?: string;
+  searchTerm?: string;
+  tags?: string[];
+  isArchived?: boolean;
+  isConfidential?: boolean;
+  studentId?: string;
+  studentAction?: string;
+  entityType?: string;
+  studentSeverity?: string;
+  academicYear?: string;
+  gradeLevel?: string;
+  section?: string;
+  userRole?: string;
+  userDepartment?: string;
   page?: number;
   limit?: number;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
+  changedFields?: string[];
+  businessRulesViolated?: string[];
+  complianceIssues?: string[];
+  riskLevel?: string;
+  gdprCompliant?: boolean;
+  requiresParentConsent?: boolean;
+  parentConsentObtained?: boolean;
 }
 
 export interface IUserFilters {

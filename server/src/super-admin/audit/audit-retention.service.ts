@@ -5,6 +5,7 @@ import { AuditLog } from '../../security/entities/audit-log.entity';
 import { StudentAuditLog } from '../../students/entities/student-audit-log.entity';
 import { AuditService } from '../../security/services/audit.service';
 import { AuditSeverity } from '../../security/types/audit.types';
+import { SYSTEM_USER_ID } from '../../security/entities/audit-log.entity';
 
 export interface RetentionPolicy {
   id: string;
@@ -147,7 +148,7 @@ export class AuditRetentionService {
 
       // Log the retention execution
       await this.auditService.logActivity({
-        userId: 'system',
+        userId: SYSTEM_USER_ID,
         action: 'retention_policy_executed',
         resource: 'audit_retention',
         resourceId: policyId,
@@ -171,7 +172,7 @@ export class AuditRetentionService {
 
       // Log the failed retention execution
       await this.auditService.logActivity({
-        userId: 'system',
+        userId: SYSTEM_USER_ID,
         action: 'retention_policy_failed',
         resource: 'audit_retention',
         resourceId: policyId,

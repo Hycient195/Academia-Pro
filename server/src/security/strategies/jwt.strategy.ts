@@ -294,8 +294,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new MissingUserIdException();
     }
 
-    // Allow system user IDs for authentication endpoints
-    if (userId === 'auth-system' || userId === SYSTEM_USER_ID) {
+    // Allow system user IDs for authentication endpoints and system operations
+    if (userId === 'auth-system' || userId === SYSTEM_USER_ID || userId === 'system') {
       return;
     }
 

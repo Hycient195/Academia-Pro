@@ -15,6 +15,7 @@ import { EUserRole, EUserStatus } from '@academia-pro/types/users';
 import { Auditable, AuditAuth, AuditSecurity } from '../common/audit/auditable.decorator';
 import { AuditAction, AuditSeverity } from '../security/types/audit.types';
 import { AuditService } from '../security/services/audit.service';
+import { SYSTEM_USER_ID } from '../security/entities/audit-log.entity';
 
 @Injectable()
 export class AuthService {
@@ -168,13 +169,6 @@ export class AuthService {
      metadata: { sessionType: 'login' }
    })
    async login(user: any): Promise<IAuthTokens & { requiresPasswordReset?: boolean }> {
-    // Set audit context for the login operation with real user ID
-    this.auditService.setAuditContext({
-      userId: user.id,
-      correlationId: this.generateCorrelationId(),
-      schoolId: user.schoolId,
-      sessionId: this.generateSessionId(),
-    });
 
     // Create user session
     const sessionId = this.generateSessionId();
@@ -338,14 +332,6 @@ export class AuthService {
 
     const newUser = await this.usersRepository.save(userDataToSave as any);
 
-    // Update audit context with the real user ID after creation
-    this.auditService.setAuditContext({
-      userId: newUser.id,
-      correlationId: this.generateCorrelationId(),
-      schoolId: newUser.schoolId,
-      sessionId: this.generateSessionId(),
-    });
-
     return newUser;
   }
 
@@ -384,14 +370,6 @@ export class AuthService {
       if (!isRefreshTokenValid) {
         throw new UnauthorizedException('Invalid refresh token');
       }
-
-      // Set audit context for token refresh
-      this.auditService.setAuditContext({
-        userId: user.id,
-        correlationId: this.generateCorrelationId(),
-        schoolId: user.schoolId,
-        sessionId: this.generateSessionId(),
-      });
 
       // Generate new tokens
       const newPayload = {
@@ -446,14 +424,6 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
-    // Set audit context for password change
-    this.auditService.setAuditContext({
-      userId: userId,
-      correlationId: this.generateCorrelationId(),
-      schoolId: user.schoolId,
-      sessionId: this.generateSessionId(),
-    });
-
     // Verify current password
     const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
     if (!isCurrentPasswordValid) {
@@ -490,14 +460,6 @@ export class AuthService {
     if (!user) {
       throw new BadRequestException('Invalid or expired verification token');
     }
-
-    // Set audit context for email verification
-    this.auditService.setAuditContext({
-      userId: user.id,
-      correlationId: this.generateCorrelationId(),
-      schoolId: user.schoolId,
-      sessionId: this.generateSessionId(),
-    });
 
     await this.usersRepository.update(user.id, {
       isEmailVerified: true,
@@ -557,14 +519,6 @@ export class AuthService {
       throw new BadRequestException('Invalid or expired reset token');
     }
 
-    // Set audit context for password reset
-    this.auditService.setAuditContext({
-      userId: user.id,
-      correlationId: this.generateCorrelationId(),
-      schoolId: user.schoolId,
-      sessionId: this.generateSessionId(),
-    });
-
     const passwordHash = await bcrypt.hash(newPassword, 12);
 
     await this.usersRepository.update(user.id, {
@@ -591,14 +545,8 @@ export class AuthService {
     });
 
     if (user) {
-      // Set audit context for logout
-      this.auditService.setAuditContext({
-        userId: userId,
-        correlationId: this.generateCorrelationId(),
-        schoolId: user.schoolId,
-        sessionId: this.generateSessionId(),
-      });
-    }
+       // Audit context is handled by the interceptor
+     }
 
     await this.usersRepository.update(userId, {
       refreshToken: null,
@@ -640,7 +588,7 @@ export class AuthService {
 
   private async logBruteForceAttempt(email: string, ipAddress?: string): Promise<void> {
     await this.auditService.logActivity({
-      userId: 'system',
+      userId: SYSTEM_USER_ID,
       action: AuditAction.SECURITY_ALERT,
       resource: 'authentication_security',
       details: {
@@ -655,7 +603,7 @@ export class AuthService {
 
   private async logSuspiciousLogin(email: string, ipAddress?: string, userAgent?: string): Promise<void> {
     await this.auditService.logActivity({
-      userId: 'system',
+      userId: SYSTEM_USER_ID,
       action: AuditAction.SUSPICIOUS_ACTIVITY,
       resource: 'login_security',
       details: {

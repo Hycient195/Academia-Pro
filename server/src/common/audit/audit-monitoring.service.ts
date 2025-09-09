@@ -4,6 +4,7 @@ import { AuditSeverity } from '../../security/types/audit.types';
 import { AuditConnectionManagerService } from './audit-connection-manager.service';
 import { AuditMetricsService } from './audit-metrics.service';
 import { AuditFallbackService } from './audit-fallback.service';
+import { SYSTEM_USER_ID } from '../../security/entities/audit-log.entity';
 
 export interface WebSocketMetrics {
   timestamp: Date;
@@ -226,7 +227,7 @@ export class AuditMonitoringService implements OnModuleDestroy {
    */
   private async logHealthAlert(severity: 'warning' | 'critical', health: ConnectionHealth): Promise<void> {
     await this.auditService.logActivity({
-      userId: 'system',
+      userId: SYSTEM_USER_ID,
       action: 'websocket_health_alert',
       resource: 'websocket_monitoring',
       resourceId: 'health_check',

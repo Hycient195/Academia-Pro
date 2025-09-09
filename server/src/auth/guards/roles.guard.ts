@@ -41,7 +41,6 @@ export class RolesGuard implements CanActivate {
         `Access denied. Required roles: ${requiredRoles.join(', ')}`
       );
     }
-
     return true;
   }
 }

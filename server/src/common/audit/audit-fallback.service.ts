@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { AuditService } from '../../security/services/audit.service';
 import { AuditAction, AuditSeverity, AuditLogData } from '../../security/types/audit.types';
+import { SYSTEM_USER_ID } from '../../security/entities/audit-log.entity';
 
 export interface FallbackMessage {
   id: string;
@@ -146,7 +147,7 @@ export class AuditFallbackService implements OnModuleDestroy {
   private async processAuditEvent(eventData: any): Promise<void> {
     // Store the event in a fallback table or log it
     await this.auditService.logActivity({
-      userId: eventData.userId || 'system',
+      userId: eventData.userId || SYSTEM_USER_ID,
       action: AuditAction.DATA_ACCESSED,
       resource: 'websocket_fallback',
       resourceId: 'audit_event',
@@ -165,7 +166,7 @@ export class AuditFallbackService implements OnModuleDestroy {
   private async processMetricsUpdate(metricsData: any): Promise<void> {
     // Store metrics in cache or database
     await this.auditService.logActivity({
-      userId: 'system',
+      userId: SYSTEM_USER_ID,
       action: AuditAction.DATA_ACCESSED,
       resource: 'websocket_fallback',
       resourceId: 'metrics_update',

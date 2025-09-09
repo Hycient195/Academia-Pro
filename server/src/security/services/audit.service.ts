@@ -60,8 +60,8 @@ export class AuditService implements OnModuleDestroy {
       throw new MissingUserIdException();
     }
 
-    // Allow system user IDs for authentication endpoints
-    if (userId.trim() === 'auth-system' || userId.trim() === SYSTEM_USER_ID) {
+    // Allow system user IDs for authentication endpoints and system operations
+    if (userId.trim() === 'auth-system' || userId.trim() === SYSTEM_USER_ID || userId.trim() === 'system') {
       return userId.trim();
     }
 
@@ -87,17 +87,6 @@ export class AuditService implements OnModuleDestroy {
     return this.asyncLocalStorage.getStore();
   }
 
-  /**
-   * Set audit context for the current request
-   */
-  setAuditContext(context: { userId?: string; correlationId?: string; schoolId?: string; sessionId?: string }): void {
-    const store = this.getAuditContext() || new Map();
-    if (context.userId) store.set('userId', context.userId);
-    if (context.correlationId) store.set('correlationId', context.correlationId);
-    if (context.schoolId) store.set('schoolId', context.schoolId);
-    if (context.sessionId) store.set('sessionId', context.sessionId);
-    this.asyncLocalStorage.enterWith(store);
-  }
 
   /**
    * Run function within audit context
@@ -125,20 +114,39 @@ export class AuditService implements OnModuleDestroy {
     this.auditBuffer.length = 0; // Clear buffer
 
     try {
-      const auditLogs = events.map(event => this.auditLogRepository.create({
-        userId: event.userId,
-        action: event.action as AuditAction,
-        resource: event.resource,
-        resourceId: event.resourceId,
-        details: event.details || {},
-        ipAddress: event.ipAddress || 'unknown',
-        userAgent: event.userAgent || 'unknown',
-        severity: event.severity || AuditSeverity.MEDIUM,
-        schoolId: event.schoolId,
-        sessionId: event.sessionId,
-        correlationId: event.correlationId,
-        timestamp: new Date(),
-      }));
+      const auditLogs = events.map(event => {
+        // Ensure VARCHAR(100) fields don't exceed length limits
+        const correlationId = event.correlationId ? event.correlationId.substring(0, 100) : null;
+        const resource = event.resource ? event.resource.substring(0, 100) : 'unknown';
+        const resourceId = event.resourceId ? event.resourceId.substring(0, 100) : null;
+        const sessionId = event.sessionId ? event.sessionId.substring(0, 255) : null; // sessionId is VARCHAR(255)
+
+        // Log truncation warnings for debugging
+        if (event.correlationId && event.correlationId.length > 100) {
+          this.logger.warn(`CorrelationId truncated from ${event.correlationId.length} to 100 chars: ${event.correlationId.substring(0, 50)}...`);
+        }
+        if (event.resource && event.resource.length > 100) {
+          this.logger.warn(`Resource truncated from ${event.resource.length} to 100 chars: ${event.resource.substring(0, 50)}...`);
+        }
+        if (event.resourceId && event.resourceId.length > 100) {
+          this.logger.warn(`ResourceId truncated from ${event.resourceId.length} to 100 chars: ${event.resourceId.substring(0, 50)}...`);
+        }
+
+        return this.auditLogRepository.create({
+          userId: event.userId,
+          action: event.action as AuditAction,
+          resource,
+          resourceId,
+          details: event.details || {},
+          ipAddress: (event.ipAddress || 'unknown').substring(0, 45), // ipAddress is VARCHAR(45)
+          userAgent: event.userAgent || 'unknown',
+          severity: event.severity || AuditSeverity.MEDIUM,
+          schoolId: event.schoolId,
+          sessionId,
+          correlationId,
+          timestamp: new Date(),
+        });
+      });
 
       await this.auditLogRepository.save(auditLogs);
       this.logger.debug(`Flushed ${events.length} audit events to database`);
@@ -156,6 +164,7 @@ export class AuditService implements OnModuleDestroy {
     try {
       // Get context from AsyncLocalStorage
       const context = this.getAuditContext();
+
       const enrichedData = {
         ...data,
         userId: data.userId ?? context?.get('userId') ?? null,

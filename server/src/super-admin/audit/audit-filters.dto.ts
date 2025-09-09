@@ -38,6 +38,10 @@ export class AuditFiltersDto {
 
   @IsOptional()
   @IsString()
+  period?: string; // e.g., '24h', '7d', '30d', '1y'
+
+  @IsOptional()
+  @IsString()
   ipAddress?: string;
 
   @IsOptional()

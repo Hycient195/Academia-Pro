@@ -6,6 +6,7 @@ import { StudentAuditLog } from '../../students/entities/student-audit-log.entit
 import { AuditService } from '../../security/services/audit.service';
 import { AuditFiltersDto, AuditTimelineFiltersDto, AuditSearchDto } from './audit-filters.dto';
 import { AuditAction, AuditSeverity } from '../../security/types/audit.types';
+import { SYSTEM_USER_ID } from '../../security/entities/audit-log.entity';
 import { AuditAction as StudentAuditAction, AuditEntityType, AuditSeverity as StudentAuditSeverity } from '../../students/entities/student-audit-log.entity';
 import { AuditMetricsService } from '../../common/audit/audit-metrics.service';
 
@@ -50,8 +51,11 @@ export class AuditManagementService {
     queryBuilder.skip(offset).take(limit);
 
     // Execute query
+    this.logger.debug(`Executing audit logs query with page: ${page}, limit: ${limit}`);
     const [logs, total] = await queryBuilder.getManyAndCount();
     const totalPages = Math.ceil(total / limit);
+
+    this.logger.debug(`Query executed successfully - found ${total} total logs, returning ${logs.length} logs for page ${page}`);
 
     return {
       logs,
@@ -77,7 +81,7 @@ export class AuditManagementService {
 
     // Log the access for audit trail
     await this.auditService.logActivity({
-      userId: 'system', // This should be the current user ID
+      userId: SYSTEM_USER_ID, // This should be the current user ID
       action: AuditAction.AUDIT_LOG_ACCESSED,
       resource: 'audit_log',
       resourceId: id,
@@ -401,55 +405,108 @@ export class AuditManagementService {
    * Apply audit log filters to query builder
    */
   private applyAuditFilters(queryBuilder: SelectQueryBuilder<AuditLog>, filters: AuditFiltersDto): void {
-    if (filters.userId) {
-      queryBuilder.andWhere('audit.userId = :userId', { userId: filters.userId });
+    this.logger.debug('Applying audit filters:', filters);
+
+    // Handle period parameter by converting to date range
+    if (filters.period && !filters.startDate && !filters.endDate) {
+      const { startDate, endDate } = this.parsePeriodToDateRange(filters.period);
+      filters.startDate = startDate;
+      filters.endDate = endDate;
+      this.logger.debug(`Parsed period ${filters.period} to date range: ${startDate} - ${endDate}`);
     }
 
-    if (filters.schoolId) {
-      queryBuilder.andWhere('audit.schoolId = :schoolId', { schoolId: filters.schoolId });
+    if (filters.userId && filters.userId.trim()) {
+      queryBuilder.andWhere('audit.userId = :userId', { userId: filters.userId.trim() });
+      this.logger.debug(`Applied userId filter: ${filters.userId}`);
     }
 
-    if (filters.resource) {
-      queryBuilder.andWhere('audit.resource = :resource', { resource: filters.resource });
+    if (filters.schoolId && filters.schoolId.trim()) {
+      queryBuilder.andWhere('audit.schoolId = :schoolId', { schoolId: filters.schoolId.trim() });
+      this.logger.debug(`Applied schoolId filter: ${filters.schoolId}`);
     }
 
-    if (filters.resourceId) {
-      queryBuilder.andWhere('audit.resourceId = :resourceId', { resourceId: filters.resourceId });
+    if (filters.resource && filters.resource.trim()) {
+      queryBuilder.andWhere('audit.resource = :resource', { resource: filters.resource.trim() });
+      this.logger.debug(`Applied resource filter: ${filters.resource}`);
     }
 
-    if (filters.action) {
-      queryBuilder.andWhere('audit.action = :action', { action: filters.action });
+    if (filters.resourceId && filters.resourceId.trim()) {
+      queryBuilder.andWhere('audit.resourceId = :resourceId', { resourceId: filters.resourceId.trim() });
+      this.logger.debug(`Applied resourceId filter: ${filters.resourceId}`);
     }
 
-    if (filters.severity) {
-      queryBuilder.andWhere('audit.severity = :severity', { severity: filters.severity });
+    if (filters.action && filters.action.trim()) {
+      // Use ILIKE for case-insensitive matching of action strings
+      queryBuilder.andWhere('audit.action ILIKE :action', { action: filters.action.trim() });
+      this.logger.debug(`Applied action filter: ${filters.action}`);
+    }
+
+    if (filters.severity && filters.severity.trim()) {
+      // Use ILIKE for case-insensitive matching of severity strings
+      queryBuilder.andWhere('audit.severity ILIKE :severity', { severity: filters.severity.trim() });
+      this.logger.debug(`Applied severity filter: ${filters.severity}`);
     }
 
     if (filters.startDate && filters.endDate) {
-      queryBuilder.andWhere('audit.timestamp BETWEEN :startDate AND :endDate', {
-        startDate: new Date(filters.startDate),
-        endDate: new Date(filters.endDate),
-      });
+      try {
+        const startDate = new Date(filters.startDate);
+        const endDate = new Date(filters.endDate);
+        if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+          queryBuilder.andWhere('audit.timestamp BETWEEN :startDate AND :endDate', {
+            startDate,
+            endDate,
+          });
+          this.logger.debug(`Applied date range filter: ${startDate} - ${endDate}`);
+        } else {
+          this.logger.warn(`Invalid date range: ${filters.startDate} - ${filters.endDate}`);
+        }
+      } catch (error) {
+        this.logger.error(`Error parsing date range: ${error.message}`);
+      }
     } else if (filters.startDate) {
-      queryBuilder.andWhere('audit.timestamp >= :startDate', { startDate: new Date(filters.startDate) });
+      try {
+        const startDate = new Date(filters.startDate);
+        if (!isNaN(startDate.getTime())) {
+          queryBuilder.andWhere('audit.timestamp >= :startDate', { startDate });
+          this.logger.debug(`Applied start date filter: ${startDate}`);
+        } else {
+          this.logger.warn(`Invalid start date: ${filters.startDate}`);
+        }
+      } catch (error) {
+        this.logger.error(`Error parsing start date: ${error.message}`);
+      }
     } else if (filters.endDate) {
-      queryBuilder.andWhere('audit.timestamp <= :endDate', { endDate: new Date(filters.endDate) });
+      try {
+        const endDate = new Date(filters.endDate);
+        if (!isNaN(endDate.getTime())) {
+          queryBuilder.andWhere('audit.timestamp <= :endDate', { endDate });
+          this.logger.debug(`Applied end date filter: ${endDate}`);
+        } else {
+          this.logger.warn(`Invalid end date: ${filters.endDate}`);
+        }
+      } catch (error) {
+        this.logger.error(`Error parsing end date: ${error.message}`);
+      }
     }
 
-    if (filters.ipAddress) {
-      queryBuilder.andWhere('audit.ipAddress = :ipAddress', { ipAddress: filters.ipAddress });
+    if (filters.ipAddress && filters.ipAddress.trim()) {
+      queryBuilder.andWhere('audit.ipAddress = :ipAddress', { ipAddress: filters.ipAddress.trim() });
+      this.logger.debug(`Applied ipAddress filter: ${filters.ipAddress}`);
     }
 
-    if (filters.userAgent) {
-      queryBuilder.andWhere('audit.userAgent ILIKE :userAgent', { userAgent: `%${filters.userAgent}%` });
+    if (filters.userAgent && filters.userAgent.trim()) {
+      queryBuilder.andWhere('audit.userAgent ILIKE :userAgent', { userAgent: `%${filters.userAgent.trim()}%` });
+      this.logger.debug(`Applied userAgent filter: ${filters.userAgent}`);
     }
 
-    if (filters.sessionId) {
-      queryBuilder.andWhere('audit.sessionId = :sessionId', { sessionId: filters.sessionId });
+    if (filters.sessionId && filters.sessionId.trim()) {
+      queryBuilder.andWhere('audit.sessionId = :sessionId', { sessionId: filters.sessionId.trim() });
+      this.logger.debug(`Applied sessionId filter: ${filters.sessionId}`);
     }
 
-    if (filters.correlationId) {
-      queryBuilder.andWhere('audit.correlationId = :correlationId', { correlationId: filters.correlationId });
+    if (filters.correlationId && filters.correlationId.trim()) {
+      queryBuilder.andWhere('audit.correlationId = :correlationId', { correlationId: filters.correlationId.trim() });
+      this.logger.debug(`Applied correlationId filter: ${filters.correlationId}`);
     }
 
     if (filters.isArchived !== undefined) {
@@ -502,7 +559,10 @@ export class AuditManagementService {
       queryBuilder.andWhere('audit.details->>\'parentConsentObtained\' = :parentConsentObtained', {
         parentConsentObtained: filters.parentConsentObtained.toString(),
       });
+      this.logger.debug(`Applied parentConsentObtained filter: ${filters.parentConsentObtained}`);
     }
+
+    this.logger.debug('Audit filters applied successfully');
   }
 
   /**
@@ -610,5 +670,45 @@ export class AuditManagementService {
 
     const regex = new RegExp(`(${searchTerm})`, 'gi');
     return text.replace(regex, '<mark>$1</mark>');
+  }
+
+  /**
+   * Parse period string to date range
+   */
+  private parsePeriodToDateRange(period: string): { startDate: string; endDate: string } {
+    const now = new Date();
+    let startDate: Date;
+
+    // Parse period (e.g., '24h', '7d', '30d', '1y')
+    const match = period.match(/^(\d+)([hdmy])$/);
+    if (!match) {
+      // Default to 24 hours
+      startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    } else {
+      const value = parseInt(match[1]);
+      const unit = match[2];
+
+      switch (unit) {
+        case 'h':
+          startDate = new Date(now.getTime() - value * 60 * 60 * 1000);
+          break;
+        case 'd':
+          startDate = new Date(now.getTime() - value * 24 * 60 * 60 * 1000);
+          break;
+        case 'm':
+          startDate = new Date(now.getTime() - value * 30 * 24 * 60 * 60 * 1000);
+          break;
+        case 'y':
+          startDate = new Date(now.getTime() - value * 365 * 24 * 60 * 60 * 1000);
+          break;
+        default:
+          startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      }
+    }
+
+    return {
+      startDate: startDate.toISOString(),
+      endDate: now.toISOString(),
+    };
   }
 }

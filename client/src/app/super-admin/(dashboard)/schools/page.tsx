@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { FormSelect } from "@/components/ui/form-components"
+import { FormSelect, FormText } from "@/components/ui/form-components"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -52,8 +52,6 @@ export default function SchoolsPage() {
 
 
   const { data: schoolsData, isLoading } = apis.superAdmin.useGetAllSchoolsQuery(filters)
-
-  console.log(schoolsData)
   
   const schools = schoolsData?.data || []
   const pagination = schoolsData?.pagination
@@ -208,19 +206,13 @@ export default function SchoolsPage() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Search</label>
-              <div className="relative">
-                <IconSearch className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search schools..."
-                  className="pl-9"
-                  value={filters.search || ""}
-                  onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                />
-              </div>
-            </div>
-
+            <FormText
+              labelText="Search"
+              placeholder="Search schools..."
+              className="pl-9"
+              value={filters.search || ""}
+              onChange={(e) => setFilters({ ...filters, search: e.target.value as string })}
+            />
             <FormSelect
               labelText="Type"
               placeholder="All types"

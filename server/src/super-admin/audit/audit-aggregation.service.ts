@@ -7,6 +7,7 @@ import { AuditMetricsFiltersDto, AuditDashboardDto, AuditTrendsDto, AuditAnomali
 import { AuditSeverity } from '../../security/types/audit.types';
 import { AuditSeverity as StudentAuditSeverity } from '../../students/entities/student-audit-log.entity';
 import { CacheService } from '../../redis/cache.service';
+import { SYSTEM_USER_ID } from '../../security/entities/audit-log.entity';
 
 @Injectable()
 export class AuditAggregationService implements OnModuleInit, OnModuleDestroy {
@@ -509,7 +510,7 @@ export class AuditAggregationService implements OnModuleInit, OnModuleDestroy {
 
     // Get system events
     const systemEvents = await queryBuilder
-      .andWhere('audit.userId = :userId', { userId: 'system' })
+      .andWhere('audit.userId = :userId', { userId: SYSTEM_USER_ID })
       .getCount();
 
     // Get API calls (placeholder - would need to identify API actions)

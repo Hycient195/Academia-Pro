@@ -11,8 +11,12 @@ import {
 } from "./select"
 import { PhoneInput } from "./phone-input"
 import { Country, State } from "country-state-city";
-import { PaginatedResponse } from "../../../../common/types/shared/shared.types";
+import { PaginatedResponse } from "@academia-pro/types/shared/shared.types";
 import { IconX } from "@tabler/icons-react"
+import { CalendarIcon } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
 
 type TElementTypes = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
 
@@ -262,7 +266,7 @@ export const FormText = ({
           disabled={isLoading || disabled}
           required={required}
           className={cn(
-            "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50",
+            "flex h-[2.35rem] w-full rounded-md border border-input bg-background px-3 py-1 text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50",
             isLoading && "bg-muted animate-pulse",
             icon
               ? (iconPosition === "right" ? "pr-9 pl-3 lg:pl-3.5" : "pl-10 pr-3 lg:pr-3.5")
@@ -401,10 +405,22 @@ export const FormDateInput = ({
   inputClassName,
   isLoading = false,
   disabled = false,
-  showHintText = false,
   inputSize = "MEDIUM"
 }: IProps & React.InputHTMLAttributes<HTMLInputElement>) => {
   const sizeClass = inputSize === "LARGE" ? "!py-4" : "!py-3.5"
+  const [open, setOpen] = React.useState(false);
+
+  // Convert value to Date if possible
+  const dateValue = value ? new Date(value as string) : undefined;
+
+  const handleSelect = (date: Date | undefined) => {
+    setOpen(false);
+    if (onChange && date) {
+      // Format as yyyy-MM-dd for consistency
+      const formatted = format(date, "yyyy-MM-dd");
+      onChange({ target: { value: formatted, name } });
+    }
+  };
 
   return (
     <label htmlFor={id} className={wrapperClassName}>
@@ -418,15 +434,43 @@ export const FormDateInput = ({
         </p>
       )}
       <div className="relative">
-        {showHintText && (
+        {/* {showHintText && (
           <span className={cn(
             "absolute top-1.5 left-3.5 lg:left-4.5 text-muted text-[10px] animate-fade-in uppercase",
             (showHintText && !value) && "!hidden"
           )}>
             {placeholder}
           </span>
-        )}
-        <input
+        )} */}
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              disabled={isLoading || disabled}
+              className={cn(
+              "flex items-center h-[2.35rem] w-full rounded-md border border-input bg-background px-3 py-1 text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50",
+              isLoading && "bg-muted animate-pulse",
+              // sizeClass,
+              inputClassName
+            )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4 text-muted" />
+              <span>
+                {dateValue ? format(dateValue, "PPP") : placeholder || "Pick a date"}
+              </span>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={dateValue}
+              onSelect={handleSelect}
+              initialFocus
+              disabled={disabled}
+            />
+          </PopoverContent>
+        </Popover>
+        {/* <input
           type="date"
           value={value as string}
           onChange={(e) => onChange && onChange(e)}
@@ -440,7 +484,7 @@ export const FormDateInput = ({
             sizeClass,
             inputClassName
           )}
-        />
+        /> */}
       </div>
       {footerText && (
         <p className={cn(

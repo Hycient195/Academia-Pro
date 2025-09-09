@@ -11,8 +11,15 @@ import { AuditAggregationService } from './audit-aggregation.service';
 import { AuditService } from '../../security/services/audit.service';
 import { AuditMetricsFiltersDto, AuditTrendsDto, AuditAnomaliesDto } from './audit-metrics.dto';
 import { AuditSeverity } from '../../security/types/audit.types';
+import { SYSTEM_USER_ID } from '../../security/entities/audit-log.entity';
+import { RolesGuard } from '../../auth/guards/roles.guard';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { EUserRole } from '@academia-pro/types/users';
 
 @Controller('super-admin/audit/metrics')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(EUserRole.SUPER_ADMIN)
 export class AuditMetricsController {
   private readonly logger = new Logger(AuditMetricsController.name);
 
@@ -27,6 +34,8 @@ export class AuditMetricsController {
    */
   @Get()
   async getAuditMetrics(@Query() filters: AuditMetricsFiltersDto) {
+         console.log("Running here")
+
     try {
       // Set default period if not provided
       if (!filters.timeRange) {
@@ -48,9 +57,10 @@ export class AuditMetricsController {
         period: filters.timeRange ? `${filters.timeRange}d` : '30d',
       };
 
+
       // Log the access
       await this.auditService.logActivity({
-        userId: 'system', // This should be the current user ID
+        userId: SYSTEM_USER_ID, // This should be the current user ID
         action: 'audit_metrics_accessed',
         resource: 'audit_metrics',
         details: {
@@ -60,10 +70,7 @@ export class AuditMetricsController {
         severity: AuditSeverity.LOW,
       });
 
-      return {
-        success: true,
-        data: clientMetrics,
-      };
+      return clientMetrics;
     } catch (error) {
       this.logger.error('Error fetching audit metrics:', error);
       throw new HttpException(
@@ -83,12 +90,14 @@ export class AuditMetricsController {
    */
   @Get('dashboard')
   async getAuditDashboard(@Query() filters: AuditMetricsFiltersDto) {
+          console.log("wee")
+
     try {
       const dashboard = await this.auditAggregationService.generateDashboard(filters);
 
       // Log the access
       await this.auditService.logActivity({
-        userId: 'system',
+        userId: SYSTEM_USER_ID,
         action: 'audit_dashboard_accessed',
         resource: 'audit_dashboard',
         details: {
@@ -130,7 +139,7 @@ export class AuditMetricsController {
 
       // Log the access
       await this.auditService.logActivity({
-        userId: 'system',
+        userId: SYSTEM_USER_ID,
         action: 'audit_trends_accessed',
         resource: 'audit_trends',
         details: {
@@ -174,7 +183,7 @@ export class AuditMetricsController {
 
       // Log the access
       await this.auditService.logActivity({
-        userId: 'system',
+        userId: SYSTEM_USER_ID,
         action: 'audit_anomalies_accessed',
         resource: 'audit_anomalies',
         details: {

@@ -231,7 +231,7 @@ export const superAdminApi = createApi({
     }),
 
     // Audit Logs
-    getAuditLogs: builder.query<{ logs: IAuditLog[]; total: number; pagination: { page: number; limit: number; total: number; totalPages: number } }, IAuditFilters>({
+    getAuditLogs: builder.query<{ data: IAuditLog[]; total: number; pagination: { page: number; limit: number; total: number; totalPages: number } }, IAuditFilters>({
       query: (filters) => ({
         url: '/super-admin/audit/logs',
         params: filters,

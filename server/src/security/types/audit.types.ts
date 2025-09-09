@@ -26,6 +26,7 @@ export enum AuditAction {
   // Security Events
   SECURITY_CONFIG_CHANGED = 'security_config_changed',
   AUDIT_LOG_ACCESSED = 'audit_log_accessed',
+  AUDIT_LOGS_ACCESSED = 'audit_logs_accessed',
   SUSPICIOUS_ACTIVITY = 'suspicious_activity',
   SECURITY_ALERT = 'security_alert',
 

@@ -17,8 +17,14 @@ import { AuditFiltersDto, AuditTimelineFiltersDto, AuditSearchDto } from './audi
 import { AuditExportDto, ExportFormat } from './audit-export.dto';
 import { AuditService } from '../../security/services/audit.service';
 import { AuditSeverity } from '../../security/types/audit.types';
+import { SYSTEM_USER_ID } from '../../security/entities/audit-log.entity';
+import { RolesGuard } from '../../auth/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { EUserRole } from '@academia-pro/types/users';
 
 @Controller('super-admin/audit')
+@UseGuards(RolesGuard)
+@Roles(EUserRole.SUPER_ADMIN)
 export class AuditController {
   private readonly logger = new Logger(AuditController.name);
 
@@ -35,12 +41,16 @@ export class AuditController {
    */
   @Get('logs')
   async getAuditLogs(@Query() filters: AuditFiltersDto) {
+    console.log("I am audit!")
+    this.logger.debug('Received audit filters:', JSON.stringify(filters, null, 2));
     try {
       const result = await this.auditManagementService.getAuditLogs(filters);
 
+      // Debug: Log the raw query result
+      this.logger.debug(`Query returned ${result.logs.length} logs out of ${result.total} total`);
       // Log the access
       await this.auditService.logActivity({
-        userId: 'system', // This should be the current user ID
+        userId: SYSTEM_USER_ID, // This should be the current user ID
         action: 'audit_logs_accessed',
         resource: 'audit_logs',
         details: {
@@ -74,11 +84,40 @@ export class AuditController {
   }
 
   /**
+   * GET /super-admin/audit/test-logs
+   * Test endpoint to get raw audit logs without filtering
+   */
+  @Get('test-logs')
+  async getTestAuditLogs() {
+    try {
+      const logs = await this.auditManagementService.getAuditLogs({});
+      this.logger.debug(`Test endpoint: Found ${logs.total} total audit logs`);
+
+      return {
+        success: true,
+        total: logs.total,
+        logs: logs.logs.slice(0, 5), // Return first 5 logs
+        message: 'Test endpoint - no filters applied'
+      };
+    } catch (error) {
+      this.logger.error('Error in test endpoint:', error);
+      throw new HttpException(
+        {
+          success: false,
+          message: 'Failed to fetch test audit logs',
+          error: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
     * GET /super-admin/audit/logs/:id
     * Get a specific audit log by ID
     */
-   @Get('logs/:id')
-   async getAuditLogById(@Param('id') id: string) {
+  @Get('logs/:id')
+  async getAuditLogById(@Param('id') id: string) {
      try {
        const log = await this.auditManagementService.getAuditLogById(id);
 
@@ -117,7 +156,7 @@ export class AuditController {
 
       // Log the search
       await this.auditService.logActivity({
-        userId: 'system',
+        userId: SYSTEM_USER_ID,
         action: 'audit_logs_searched',
         resource: 'audit_logs',
         details: {
@@ -184,8 +223,8 @@ export class AuditController {
       const result = await this.auditManagementService.getStudentAuditLogs(filters);
 
       return {
-        success: true,
-        data: result.logs,
+        logs: result.logs,
+        total: result.total,
         pagination: {
           page: result.page,
           limit: result.limit,
@@ -245,7 +284,7 @@ export class AuditController {
       const result = await this.auditExportService.exportAuditLogs(
         exportDto,
         filters,
-        'system', // This should be the current user ID
+        SYSTEM_USER_ID, // This should be the current user ID
       );
 
       return {
@@ -298,7 +337,7 @@ export class AuditController {
   @Get('export')
   async getExportJobs(@Query() historyDto: any) {
     try {
-      const jobs = this.auditExportService.getExportJobs('system', historyDto); // Current user ID
+      const jobs = this.auditExportService.getExportJobs(SYSTEM_USER_ID, historyDto); // Current user ID
 
       return {
         success: true,
@@ -324,7 +363,7 @@ export class AuditController {
   @Post('export/:jobId/cancel')
   async cancelExportJob(@Param('jobId') jobId: string) {
     try {
-      this.auditExportService.cancelExportJob(jobId, 'system'); // Current user ID
+      this.auditExportService.cancelExportJob(jobId, SYSTEM_USER_ID); // Current user ID
 
       return {
         success: true,

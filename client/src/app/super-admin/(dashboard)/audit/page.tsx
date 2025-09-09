@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -31,6 +30,9 @@ import {
 import { apis } from "@/redux/api"
 import { IAuditLog } from "@academia-pro/types/super-admin"
 import { useWebSocket } from "@/hooks/useWebSocket"
+import { FormSchoolSelect } from "@/components/ui/FormSchoolSelect"
+import { FormUserSelect } from "@/components/ui/FormUserSelect"
+import { FormDateInput, FormSelect, FormText } from "@/components/ui/form-components"
 
 interface PaginationInfo {
   page: number;
@@ -153,23 +155,59 @@ function AuditLogTable({ logs, pagination, isLoading }: { logs?: IAuditLog[], pa
 
 export default function AuditPage() {
   const [filters, setFilters] = useState({
-    period: '24h',
-    user: '',
+    userId: '',
+    schoolId: '',
+    resource: '',
+    resourceId: '',
     action: '',
-    status: '',
-    search: '',
+    severity: '',
+    startDate: '',
+    endDate: '',
+    period: '24h',
+    ipAddress: '',
+    searchTerm: '',
     page: 1,
     limit: 50
   })
 
-  const { data: auditLogs, isLoading: logsLoading, refetch: refetchLogs, error: logsError } = apis.superAdmin.useGetAuditLogsQuery(filters)
+  // Clean filters to remove empty values and format dates properly
+  const cleanFilters = Object.fromEntries(
+    Object.entries(filters)
+      .filter(([key, value]) => {
+        if (typeof value === 'string') {
+          return value.trim() !== '';
+        }
+        return value !== null && value !== undefined;
+      })
+      .map(([key, value]) => {
+        // Format dates to ISO strings if they are date fields
+        if ((key === 'startDate' || key === 'endDate') && value) {
+          try {
+            const date = new Date(value as string);
+            if (!isNaN(date.getTime())) {
+              return [key, date.toISOString()];
+            }
+          } catch (error) {
+            console.warn(`Invalid date format for ${key}:`, value);
+            return [key, value];
+          }
+        }
+        return [key, value];
+      })
+  );
+
+  console.log('Sending filters to API:', cleanFilters);
+
+  const { data: auditLogs, isLoading: logsLoading, refetch: refetchLogs, error: logsError } = apis.superAdmin.useGetAuditLogsQuery(cleanFilters)
   const { data: auditMetrics, isLoading: metricsLoading, refetch: refetchMetrics, error: metricsError } = apis.superAdmin.useGetAuditMetricsQuery({ period: filters.period })
 
   const isLoading = logsLoading || metricsLoading
   const hasError = logsError || metricsError
 
-  console.log(auditLogs)
-  console.log(auditMetrics)
+  console.log('Audit logs response:', auditLogs)
+  console.log('Audit metrics response:', auditMetrics)
+  console.log('Current filters state:', filters)
+  console.log('Clean filters being sent:', cleanFilters)
 
   // WebSocket integration for real-time updates
   const {
@@ -324,7 +362,7 @@ export default function AuditPage() {
   }, [searchTerm])
 
   useEffect(() => {
-    setFilters(prev => ({ ...prev, search: debouncedSearchTerm }))
+    setFilters(prev => ({ ...prev, searchTerm: debouncedSearchTerm }))
   }, [debouncedSearchTerm])
 
   // Refresh data function
@@ -380,7 +418,7 @@ export default function AuditPage() {
   )
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Audit Dashboard</h1>
@@ -551,7 +589,7 @@ export default function AuditPage() {
       )}
 
       {/* Filters */}
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
             <IconFilter className="h-5 w-5 mr-2" />
@@ -562,73 +600,73 @@ export default function AuditPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
+            <FormSelect
+              labelText="Time Period"
+              value={filters.period}
+              onChange={(e) => setFilters(prev => ({ ...prev, period: e?.target?.value as string }))}
+              options={[ { text: "Last hour", value: "1h" },{ text: "Last 24 hours", value: "24h" },{ text: "Last 7 days", value: "7d" },{ text: "Last 30 days", value: "30d" }, ]}
+            />
+             <FormUserSelect
+              placeholder="Search by user ID..."
+              value={filters.userId}
+              onChange={(e) => setFilters(prev => ({ ...prev, userId: e.target.value }))}
+            />
+            <FormSchoolSelect
+              placeholder="Filter by school..."
+              value={filters.schoolId}
+              onChange={(e) => setFilters(prev => ({ ...prev, schoolId: e.target.value }))}
+            />
             <div className="space-y-2">
-              <label className="text-sm font-medium">Time Period</label>
-              <Select value={filters.period} onValueChange={(value) => setFilters(prev => ({ ...prev, period: value }))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1h">Last hour</SelectItem>
-                  <SelectItem value="24h">Last 24 hours</SelectItem>
-                  <SelectItem value="7d">Last 7 days</SelectItem>
-                  <SelectItem value="30d">Last 30 days</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">User</label>
+              <label className="text-sm font-medium">Resource</label>
               <Input
-                placeholder="Search by user..."
-                value={filters.user}
-                onChange={(e) => setFilters(prev => ({ ...prev, user: e.target.value }))}
+                placeholder="Filter by resource..."
+                value={filters.resource}
+                onChange={(e) => setFilters(prev => ({ ...prev, resource: e.target.value }))}
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Action</label>
-              <Select value={filters.action} onValueChange={(value) => setFilters(prev => ({ ...prev, action: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All actions" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="LOGIN">Login</SelectItem>
-                  <SelectItem value="LOGOUT">Logout</SelectItem>
-                  <SelectItem value="CREATE">Create</SelectItem>
-                  <SelectItem value="UPDATE">Update</SelectItem>
-                  <SelectItem value="DELETE">Delete</SelectItem>
-                  <SelectItem value="VIEW">View</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Status</label>
-              <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="SUCCESS">Success</SelectItem>
-                  <SelectItem value="FAILED">Failed</SelectItem>
-                  <SelectItem value="WARNING">Warning</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Search</label>
-              <div className="relative">
-                <IconSearch className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search logs..."
-                  className="pl-8"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
+            <FormSelect
+              labelText="Action"
+              placeholder="All actions"
+              value={filters.action}
+              onChange={(e) => setFilters(prev => ({ ...prev, action: e?.target?.value as string }))}
+              options={[ { text: "Login", value: "LOGIN" },{ text: "Logout", value: "LOGOUT" },{ text: "Create", value: "CREATE" },{ text: "Update", value: "UPDATE" },{ text: "Delete", value: "DELETE" },{ text: "View", value: "VIEW" }, ]}
+            />
+            <FormSelect
+              labelText="Severity"
+              placeholder="All Severities"
+              value={filters.severity}
+              onChange={(e) => setFilters(prev => ({ ...prev, severity: e?.target?.value as string }))}
+              options={[ { text: "Low", value: "low" },{ text: "Medium", value: "medium" },{ text: "High", value: "high" },{ text: "Critical", value: "critical" },{ text: "Delete", value: "DELETE" },{ text: "View", value: "VIEW" }, ]}
+            />
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mt-4">
+            <FormText
+              labelText="IP Address"
+              placeholder="Filter by IP..."
+              value={filters.ipAddress}
+              onChange={(e) => setFilters(prev => ({ ...prev, ipAddress: e.target.value as string }))}
+            />
+            <FormDateInput
+              labelText="Start Date"
+              value={filters.startDate}
+              onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value as string }))}
+            />
+            <FormDateInput
+              labelText="End Date"
+              value={filters.endDate}
+              onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value as string }))}
+            />
+            <FormText
+              labelText="Search"
+              placeholder="Search logs..."
+              className="pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value as string)}
+            />
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
 
       {/* Audit Logs Table */}
       <Card>
@@ -637,12 +675,78 @@ export default function AuditPage() {
             <IconActivity className="h-5 w-5 mr-2" />
             Audit Logs
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="w-full gap-3 flex justify-between">
             Detailed log of all system activities and user operations
+            <button className="text-active flex flex-row items-center rounded-md hover:"><IconFilter className="h-5 w-5 mr-2" />Filters</button>
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <AuditLogTable logs={auditLogs?.logs} pagination={auditLogs?.pagination} isLoading={isLoading} />
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
+            <FormSelect
+              labelText="Time Period"
+              value={filters.period}
+              onChange={(e) => setFilters(prev => ({ ...prev, period: e?.target?.value as string }))}
+              options={[ { text: "Last hour", value: "1h" },{ text: "Last 24 hours", value: "24h" },{ text: "Last 7 days", value: "7d" },{ text: "Last 30 days", value: "30d" }, ]}
+            />
+             <FormUserSelect
+              placeholder="Search by user ID..."
+              value={filters.userId}
+              onChange={(e) => setFilters(prev => ({ ...prev, userId: e.target.value }))}
+            />
+            <FormSchoolSelect
+              placeholder="Filter by school..."
+              value={filters.schoolId}
+              onChange={(e) => setFilters(prev => ({ ...prev, schoolId: e.target.value }))}
+            />
+            <FormText
+              labelText="Resource"
+              placeholder="Filter by resource..."
+              value={filters.resource}
+              onChange={(e) => setFilters(prev => ({ ...prev, resource: e.target.value as string }))}
+            />
+            <FormSelect
+              labelText="Action"
+              placeholder="All actions"
+              value={filters.action}
+              onChange={(e) => setFilters(prev => ({ ...prev, action: e?.target?.value as string }))}
+              options={[ { text: "Login", value: "LOGIN" },{ text: "Logout", value: "LOGOUT" },{ text: "Create", value: "CREATE" },{ text: "Update", value: "UPDATE" },{ text: "Delete", value: "DELETE" },{ text: "View", value: "VIEW" }, ]}
+            />
+            <FormSelect
+              labelText="Severity"
+              placeholder="All Severities"
+              value={filters.severity}
+              onChange={(e) => setFilters(prev => ({ ...prev, severity: e?.target?.value as string }))}
+              options={[ { text: "Low", value: "low" },{ text: "Medium", value: "medium" },{ text: "High", value: "high" },{ text: "Critical", value: "critical" },{ text: "Delete", value: "DELETE" },{ text: "View", value: "VIEW" }, ]}
+            />
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mt-4">
+            <FormText
+              labelText="IP Address"
+              placeholder="Filter by IP..."
+              value={filters.ipAddress}
+              onChange={(e) => setFilters(prev => ({ ...prev, ipAddress: e.target.value as string }))}
+            />
+            <FormDateInput
+              labelText="Start Date"
+              value={filters.startDate}
+              onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value as string }))}
+            />
+            <FormDateInput
+              labelText="End Date"
+              value={filters.endDate}
+              onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value as string }))}
+            />
+            <FormText
+              labelText="Search"
+              placeholder="Search logs..."
+              className="pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value as string)}
+            />
+          </div>
+        </CardContent>
+        <CardContent>
+          <AuditLogTable logs={auditLogs?.data} pagination={auditLogs?.pagination} isLoading={isLoading} />
         </CardContent>
 
         {/* Pagination Controls */}
@@ -679,7 +783,7 @@ export default function AuditPage() {
       </Card>
 
       {/* Recent Security Events */}
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">

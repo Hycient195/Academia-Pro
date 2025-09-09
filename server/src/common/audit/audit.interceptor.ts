@@ -20,12 +20,13 @@ export class AuditInterceptor implements NestInterceptor {
   ) {}
 
   private validateUserId(userId: string): void {
+
     if (!userId) {
       throw new MissingUserIdException();
     }
 
     // Skip validation for system user IDs
-    if (userId === '00000000-0000-0000-0000-000000000000' || userId === SYSTEM_USER_ID) {
+    if (userId === '00000000-0000-0000-0000-000000000000' || userId === SYSTEM_USER_ID || userId === 'system') {
       return;
     }
 
@@ -40,6 +41,7 @@ export class AuditInterceptor implements NestInterceptor {
     const response = context.switchToHttp().getResponse();
     const handler = context.getHandler();
     const controller = context.getClass();
+
 
     // Skip audit for excluded endpoints
     if (this.auditConfig.isExcludedEndpoint(request.url)) {
@@ -69,30 +71,6 @@ export class AuditInterceptor implements NestInterceptor {
 
     this.logger.debug(`Audit interceptor: Processing ${request.method} ${request.url} with userId: ${userId || 'anonymous'} and IP: ${auditData.ipAddress}`);
 
-    // Performance optimization: Process audit logging asynchronously to avoid blocking response
-    setImmediate(async () => {
-      try {
-        await this.processAuditLog({
-          userId,
-          user,
-          auditData,
-          request,
-          response,
-          handler,
-          controller,
-          auditableOptions,
-          resource,
-          crudAction,
-          resourceId,
-          correlationId,
-          schoolId,
-          sessionId,
-        });
-      } catch (error) {
-        this.logger.error(`Failed to process audit log asynchronously: ${error.message}`, error.stack);
-      }
-    });
-
     // For authentication endpoints, use a system identifier if no user ID is available
     if (isAuthEndpoint && !userId) {
       userId = '550e8400-e29b-41d4-a716-446655440000'; // Valid UUID for system authentication attempts
@@ -103,25 +81,57 @@ export class AuditInterceptor implements NestInterceptor {
       this.validateUserId(userId);
     }
 
-    const correlationId = auditData.correlationId;
+    // Ensure correlationId doesn't exceed VARCHAR(100) limit
+    const correlationId = auditData.correlationId ? auditData.correlationId.substring(0, 100) : this.generateCorrelationId();
     const schoolId = user?.schoolId || request.headers['x-school-id'];
     const sessionId = this.sanitizeSessionId(user?.sessionId || request.headers['x-session-id']);
-
-    this.auditService.setAuditContext({
-      userId,
-      correlationId,
-      schoolId,
-      sessionId,
-    });
 
     // Get auditable options from decorator
     const auditableOptions = this.reflector.get<AuditableOptions>(AUDITABLE_KEY, handler);
 
     // Determine audit parameters (decorator takes precedence)
     const resource = auditableOptions?.resource || auditableOptions?.customResource || this.detectResource(auditData.url);
+
+    // Ensure resource is within database limits (100 chars)
+    const safeResource = resource && resource.length > 100 ? resource.substring(0, 100) : (resource || 'api');
+
+    // Log the resource for debugging
+    console.log('Audit resource:', safeResource, 'length:', safeResource.length);
+    console.log('Original resource:', resource, 'length:', resource?.length);
     const crudAction = auditableOptions?.action || this.detectCrudAction(auditData.method, auditData.url);
     const resourceId = auditableOptions?.resourceId || this.extractResourceId(auditData.url);
     const severity = auditableOptions?.severity || this.getSeverityFromStatus(200, crudAction);
+
+    // Performance optimization: Process audit logging asynchronously to avoid blocking response
+    setImmediate(async () => {
+      try {
+        await this.auditService.runInAuditContext({
+          userId,
+          correlationId,
+          schoolId,
+          sessionId,
+        }, async () => {
+          await this.processAuditLog({
+            userId,
+            user,
+            auditData,
+            request,
+            response,
+            handler,
+            controller,
+            auditableOptions,
+            resource: safeResource,
+            crudAction,
+            resourceId,
+            correlationId,
+            schoolId,
+            sessionId,
+          });
+        });
+      } catch (error) {
+        this.logger.error(`Failed to process audit log asynchronously: ${error.message}`, error.stack);
+      }
+    });
 
     // Ensure action is a valid enum value
     const validAction = typeof crudAction === 'string' && Object.values(AuditAction).includes(crudAction as AuditAction)
@@ -169,9 +179,17 @@ export class AuditInterceptor implements NestInterceptor {
   }
 
   private detectResource(url: string): string {
-    // Extract resource from URL path
-    const pathSegments = url.split('/').filter(segment => segment && !segment.match(/^\d+$/));
-    return pathSegments[0] || 'api';
+    // Strip query parameters from URL first
+    const urlWithoutQuery = url.split('?')[0];
+
+    // Extract resource from URL path and ensure it's within length limits
+    const pathSegments = urlWithoutQuery.split('/').filter(segment => segment && !segment.match(/^\d+$/));
+    const resource = pathSegments.length > 1 ? pathSegments.slice(1).join('/') : (pathSegments[0] || 'api');
+
+    // Truncate if too long for the database field (100 chars limit)
+    // Also ensure it's not empty after processing
+    const truncatedResource = resource.length > 100 ? resource.substring(0, 100) : resource;
+    return truncatedResource || 'api';
   }
 
   private detectCrudAction(method: string, url: string): AuditAction {
@@ -192,10 +210,13 @@ export class AuditInterceptor implements NestInterceptor {
   private extractResourceId(url: string): string {
     // Extract ID from URL (assuming RESTful patterns like /resource/:id)
     const segments = url.split('/');
-    console.log(segments)
-    const lastSegment = segments[segments.length - 1];
-    console.log(lastSegment)
-    return (lastSegment && lastSegment.match(/^\d+$/)) ? lastSegment : url;
+    const lastSegment = segments[segments.length - 1]?.includes("?") ? segments[segments.length - 1]?.split("?")[0] : segments[segments.length - 1];
+
+    // If last segment is numeric (likely an ID), use it; otherwise use the full URL but truncated
+    const resourceId = (lastSegment && lastSegment.match(/^\d+$/)) ? lastSegment : url;
+
+    // Ensure resourceId doesn't exceed VARCHAR(100) limit
+    return resourceId.length > 100 ? resourceId.substring(0, 100) : resourceId;
   }
 
   private getClientIp(request: any): string {

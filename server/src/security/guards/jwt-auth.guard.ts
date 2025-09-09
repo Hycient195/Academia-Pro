@@ -123,7 +123,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       if (!isAuthEndpoint && payload.sub) {
         this.validateUserId(payload.sub);
       }
-      console.log(payload)
 
       // Attach user to request
       request.user = {
@@ -137,7 +136,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       // Log successful authentication
       await this.auditService.logActivity({
         userId: payload.sub,
-        action: 'AUTHENTICATION_SUCCESS',
+        action: AuditAction.AUTHENTICATION_SUCCESS,
         resource: 'authentication',
         resourceId: payload.sub,
         details: {
@@ -314,8 +313,8 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       throw new MissingUserIdException();
     }
 
-    // Allow system user IDs for authentication endpoints
-    if (userId === 'auth-system' || userId === SYSTEM_USER_ID) {
+    // Allow system user IDs for authentication endpoints and system operations
+    if (userId === 'auth-system' || userId === SYSTEM_USER_ID || userId === 'system') {
       return;
     }
 

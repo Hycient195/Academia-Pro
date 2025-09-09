@@ -12,6 +12,7 @@ import { EUserRole, EUserStatus } from '@academia-pro/types/users';
 import { AuditService } from '../security/services/audit.service';
 import { AuditSeverity } from '../security/types/audit.types';
 import { AuditConfigService } from '../common/audit/audit.config';
+import { SYSTEM_USER_ID } from '../security/entities/audit-log.entity';
 
 @Injectable()
 export class UsersService {
@@ -81,7 +82,7 @@ export class UsersService {
 
     // Audit logging for user creation
     await this.auditService.logUserCreated(
-      isSuperAdminCreated ? 'system' : null, // userId - system for super admin created users, null for anonymous
+      isSuperAdminCreated ? SYSTEM_USER_ID : null, // userId - system for super admin created users, null for anonymous
       savedUser.id,
       '127.0.0.1', // ipAddress - placeholder, should be passed from controller
       'system', // userAgent - placeholder
@@ -255,7 +256,7 @@ export class UsersService {
 
     // Audit logging for user update
     await this.auditService.logUserUpdated(
-      'system', // userId - should be passed from controller context
+      SYSTEM_USER_ID, // userId - should be passed from controller context
       updatedUser.id,
       updateDataPrepared, // changes
       '127.0.0.1', // ipAddress - placeholder
@@ -278,7 +279,7 @@ export class UsersService {
 
     // Audit logging for user deletion
     await this.auditService.logUserDeleted(
-      'system', // userId - should be passed from controller context
+      SYSTEM_USER_ID, // userId - should be passed from controller context
       id,
       '127.0.0.1', // ipAddress - placeholder
       'system', // userAgent - placeholder
@@ -302,7 +303,7 @@ export class UsersService {
 
     // Audit logging for user activation
     await this.auditService.logActivity({
-      userId: 'system', // should be passed from controller context
+      userId: SYSTEM_USER_ID, // should be passed from controller context
       action: 'USER_STATUS_CHANGED',
       resource: 'user',
       resourceId: id,
@@ -337,7 +338,7 @@ export class UsersService {
 
     // Audit logging for user deactivation
     await this.auditService.logActivity({
-      userId: 'system',
+      userId: SYSTEM_USER_ID,
       action: 'USER_STATUS_CHANGED',
       resource: 'user',
       resourceId: id,
@@ -372,7 +373,7 @@ export class UsersService {
 
     // Audit logging for user suspension
     await this.auditService.logActivity({
-      userId: 'system',
+      userId: SYSTEM_USER_ID,
       action: 'USER_STATUS_CHANGED',
       resource: 'user',
       resourceId: id,
@@ -439,7 +440,7 @@ export class UsersService {
 
     // Audit logging for password change
     await this.auditService.logActivity({
-      userId: 'system', // should be the user who initiated the change
+      userId: SYSTEM_USER_ID, // should be the user who initiated the change
       action: 'PASSWORD_CHANGED',
       resource: 'user',
       resourceId: id,
@@ -469,7 +470,7 @@ export class UsersService {
 
     // Audit logging for password reset
     await this.auditService.logActivity({
-      userId: 'system',
+      userId: SYSTEM_USER_ID,
       action: 'PASSWORD_RESET',
       resource: 'user',
       resourceId: id,

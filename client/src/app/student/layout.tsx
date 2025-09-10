@@ -1,11 +1,7 @@
 "use client"
 
-import { StudentSidebar } from "@/components/student-sidebar"
-import { SiteHeader } from "@/components/site-header"
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar"
+import { PortalLayout } from "@/components/portal-layout"
+import { studentNavData } from "./_constants/navData"
 
 export default function StudentLayout({
   children,
@@ -13,23 +9,8 @@ export default function StudentLayout({
   children: React.ReactNode
 }) {
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <StudentSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader />
-        <div className="flex flex-1 flex-col p-4">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            {children}
-          </div>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+    <PortalLayout navData={studentNavData}>
+      {children}
+    </PortalLayout>
   )
 }

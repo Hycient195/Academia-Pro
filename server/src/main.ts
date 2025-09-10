@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 
 const logger = new Logger('Main');
 
@@ -61,6 +62,9 @@ async function bootstrap() {
 
     // Enable cookie parsing
     app.use(cookieParser());
+
+    // Configure Socket.io adapter for WebSocket support
+    app.useWebSocketAdapter(new IoAdapter(app));
 
     // Set global prefix for API routes
     app.setGlobalPrefix('api/v1');

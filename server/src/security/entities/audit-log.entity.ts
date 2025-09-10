@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index, ManyToOne, JoinColumn } from 'typeorm';
 import { AuditAction, AuditSeverity } from '../types/audit.types';
+import { User } from '../../users/user.entity';
 
 // System user ID for audit events that don't have a specific user
 export const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000';
@@ -22,6 +23,10 @@ export class AuditLog {
 
   @Column({ name: 'user_id', type: 'uuid', nullable: false })
   userId: string;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'user_id' })
+  user?: User;
 
   @Column({ name: 'school_id', type: 'uuid', nullable: true })
   schoolId: string;

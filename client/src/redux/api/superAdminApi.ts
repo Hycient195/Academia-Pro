@@ -247,6 +247,40 @@ export const superAdminApi = createApi({
       providesTags: ['AuditMetrics'],
     }),
 
+    getRecentSecurityEvents: builder.query<{
+      success: boolean;
+      data: Array<{
+        id: string;
+        event: string;
+        user: string;
+        time: string;
+        severity: 'low' | 'medium' | 'high' | 'critical';
+        timestamp: string;
+      }>;
+    }, { period?: string }>({
+      query: ({ period } = {}) => ({
+        url: '/super-admin/audit/metrics/recent-security-events',
+        params: period ? { period } : {},
+      }),
+      providesTags: ['AuditMetrics'],
+    }),
+
+    getActivityTimeline: builder.query<{
+      success: boolean;
+      data: Array<{
+        action: string;
+        count: number;
+        time: string;
+        period: string;
+      }>;
+    }, { period?: string }>({
+      query: ({ period } = {}) => ({
+        url: '/super-admin/audit/metrics/activity-timeline',
+        params: period ? { period } : {},
+      }),
+      providesTags: ['AuditMetrics'],
+    }),
+
     // IAM endpoints
     getDelegatedAccounts: builder.query<IDelegatedAccount[], void>({
       query: () => '/super-admin/iam/delegated-accounts',

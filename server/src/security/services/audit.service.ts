@@ -1,4 +1,4 @@
-import { Injectable, Logger, Inject, Optional, OnModuleDestroy, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, Inject, Optional, OnModuleDestroy, BadRequestException, Inject as NestInject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MissingUserIdException, InvalidUserIdFormatException } from '../../common/exceptions/user-id.exception';
 import { Repository, Between, MoreThan } from 'typeorm';
@@ -21,6 +21,8 @@ export class AuditService implements OnModuleDestroy {
     @InjectRepository(AuditLog)
     private readonly auditLogRepository: Repository<AuditLog>,
     private readonly auditConfig: AuditConfigService,
+    @Optional()
+    private readonly auditGateway?: AuditGateway,
   ) {
     // AuditService initialized successfully
     this.startBufferFlushTimer();
@@ -187,16 +189,15 @@ export class AuditService implements OnModuleDestroy {
       // Log to console for development
       this.logger.log(`Audit: ${enrichedData.action} by ${enrichedData.userId} on ${enrichedData.resource}${enrichedData.resourceId ? ` (${enrichedData.resourceId})` : ''}`);
 
-      // Broadcast the event to WebSocket clients (disabled to break circular dependency)
-      // TODO: Re-enable when circular dependency is resolved
-      // if (this.auditGateway) {
-      //   try {
-      //     await this.auditGateway.broadcastAuditEvent(enrichedData);
-      //   } catch (broadcastError) {
-      //     this.logger.error(`Failed to broadcast audit event: ${broadcastError.message}`, broadcastError.stack);
-      //     // Don't throw error to avoid breaking the main flow
-      //   }
-      // }
+      // Broadcast the event to WebSocket clients
+      if (this.auditGateway) {
+        try {
+          await this.auditGateway.broadcastAuditEvent(enrichedData);
+        } catch (broadcastError) {
+          this.logger.error(`Failed to broadcast audit event: ${broadcastError.message}`, broadcastError.stack);
+          // Don't throw error to avoid breaking the main flow
+        }
+      }
 
     } catch (error) {
       this.logger.error(`Failed to log audit event: ${error.message}`, error.stack);
@@ -892,14 +893,14 @@ export class AuditService implements OnModuleDestroy {
     apiGrowth?: number;
     securityGrowth?: number;
   }): Promise<void> {
-    // Disabled to break circular dependency
-    // TODO: Re-enable when circular dependency is resolved
-    // if (this.auditGateway) {
-    //   try {
-    //     await this.auditGateway.broadcastMetricsUpdate(metrics);
-    //   } catch (error) {
-    //     this.logger.error(`Failed to broadcast metrics update: ${error.message}`, error.stack);
-    //   }
-    // }
+    // Use optional gateway to avoid circular dependency
+    try {
+      const auditGateway = (global as any).auditGateway;
+      if (auditGateway && typeof auditGateway.broadcastMetricsUpdate === 'function') {
+        await auditGateway.broadcastMetricsUpdate(metrics);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to broadcast metrics update: ${error.message}`, error.stack);
+    }
   }
 }

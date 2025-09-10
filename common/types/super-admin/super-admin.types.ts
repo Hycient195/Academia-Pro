@@ -242,7 +242,6 @@ export interface IGeographicReport {
 export interface IAuditLog {
   id: string;
   timestamp: string;
-  user: string;
   userId: string;
   action: string;
   roles: string[];
@@ -255,6 +254,18 @@ export interface IAuditLog {
   details?: Record<string, any>;
   schoolId?: string;
   sessionId?: string;
+  // Additional fields from server response
+  severity?: 'low' | 'medium' | 'high' | 'critical';
+  resourceId?: string;
+  user?: string | {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    middleName?: string;
+    roles: string[];
+    fullName?: string;
+  };
 }
 
 export interface IAuditMetrics {

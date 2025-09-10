@@ -28,7 +28,7 @@ import {
   IconRefresh
 } from "@tabler/icons-react"
 import { apis } from "@/redux/api"
-import { IAuditLog } from "@academia-pro/types/super-admin"
+import { IAuditLog, TAuditActionType, TAuditStatus, IAuditMetrics } from "@academia-pro/types/super-admin"
 import { useWebSocket } from "@/hooks/useWebSocket"
 import { FormSchoolSelect } from "@/components/ui/FormSchoolSelect"
 import { FormUserSelect } from "@/components/ui/FormUserSelect"
@@ -106,33 +106,53 @@ function AuditLogTable({ logs, pagination, isLoading }: { logs?: IAuditLog[], pa
           <TableHead>Action</TableHead>
           <TableHead>Resource</TableHead>
           <TableHead>IP Address</TableHead>
-          <TableHead>Status</TableHead>
+          <TableHead>Severity</TableHead>
           <TableHead>Details</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {logs?.map((log, index) => (
-          <TableRow key={index}>
+          <TableRow key={log.id || index}>
             <TableCell className="font-mono text-xs">
               {new Date(log.timestamp).toLocaleString()}
             </TableCell>
             <TableCell>
               <div className="flex items-center space-x-2">
                 <IconUser className="h-4 w-4" />
-                <span>{log.user}</span>
+                <span>
+                  {typeof log.user === 'string'
+                    ? log.user
+                    : log.user?.fullName || log.user?.email || 'Unknown User'
+                  }
+                </span>
               </div>
             </TableCell>
-            <TableCell className="font-mono text-xs">{log.roles?.join(", ")}</TableCell>
+            <TableCell className="font-mono text-xs">
+              {typeof log.user === 'string'
+                ? log.roles?.join(", ") || 'N/A'
+                : log.user?.roles?.join(", ") || 'N/A'
+              }
+            </TableCell>
             <TableCell>
-              <Badge variant={log.actionType === 'CREATE' ? 'default' : log.actionType === 'UPDATE' ? 'secondary' : log.actionType === 'DELETE' ? 'destructive' : 'outline'}>
+              <Badge variant={
+                log.action?.includes('CREATE') ? 'default' :
+                log.action?.includes('UPDATE') ? 'secondary' :
+                log.action?.includes('DELETE') ? 'destructive' :
+                'outline'
+              }>
                 {log.action}
               </Badge>
             </TableCell>
             <TableCell className="font-mono text-xs">{log.resource}</TableCell>
             <TableCell className="font-mono text-xs">{log.ipAddress}</TableCell>
             <TableCell>
-              <Badge variant={log.status === 'SUCCESS' ? 'default' : 'destructive'}>
-                {log.status}
+              <Badge variant={
+                log.severity === 'critical' ? 'destructive' :
+                log.severity === 'high' ? 'destructive' :
+                log.severity === 'medium' ? 'secondary' :
+                'default'
+              }>
+                {log.severity?.toUpperCase() || 'LOW'}
               </Badge>
             </TableCell>
             <TableCell>
@@ -143,7 +163,7 @@ function AuditLogTable({ logs, pagination, isLoading }: { logs?: IAuditLog[], pa
           </TableRow>
         )) || (
           <TableRow>
-            <TableCell colSpan={7} className="text-center text-muted-foreground">
+            <TableCell colSpan={8} className="text-center text-muted-foreground">
               No audit logs found
             </TableCell>
           </TableRow>
@@ -196,18 +216,15 @@ export default function AuditPage() {
       })
   );
 
-  console.log('Sending filters to API:', cleanFilters);
-
   const { data: auditLogs, isLoading: logsLoading, refetch: refetchLogs, error: logsError } = apis.superAdmin.useGetAuditLogsQuery(cleanFilters)
   const { data: auditMetrics, isLoading: metricsLoading, refetch: refetchMetrics, error: metricsError } = apis.superAdmin.useGetAuditMetricsQuery({ period: filters.period })
+  const { data: securityEvents, isLoading: securityEventsLoading, refetch: refetchSecurityEvents } = apis.superAdmin.useGetRecentSecurityEventsQuery({ period: filters.period })
+  const { data: activityTimeline, isLoading: activityTimelineLoading, refetch: refetchActivityTimeline } = apis.superAdmin.useGetActivityTimelineQuery({ period: filters.period })
 
+  console.log(securityEvents)
+  console.log(activityTimeline)
   const isLoading = logsLoading || metricsLoading
   const hasError = logsError || metricsError
-
-  console.log('Audit logs response:', auditLogs)
-  console.log('Audit metrics response:', auditMetrics)
-  console.log('Current filters state:', filters)
-  console.log('Clean filters being sent:', cleanFilters)
 
   // WebSocket integration for real-time updates
   const {
@@ -229,41 +246,85 @@ export default function AuditPage() {
 
   // Real-time data state
   const [realTimeLogs, setRealTimeLogs] = useState<IAuditLog[]>([])
-  const [realTimeMetrics, setRealTimeMetrics] = useState(auditMetrics)
+  const [realTimeMetrics, setRealTimeMetrics] = useState<IAuditMetrics | null>(null)
   const [newEventsCount, setNewEventsCount] = useState(0)
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null)
+
+  // Define proper types for WebSocket audit events
+  interface AuditEventData {
+    userId: string;
+    user?: {
+      fullName?: string;
+      email?: string;
+      roles?: string[];
+    };
+    action: string;
+    resource: string;
+    resourceId?: string;
+    ipAddress: string;
+  }
+
+  interface WebSocketAuditEvent {
+    event: AuditEventData;
+    timestamp: string;
+    broadcastId: string;
+  }
 
   // WebSocket event handlers
   const handleAuditEvent = useCallback((data: unknown) => {
     try {
-      const eventData = data as { event: IAuditLog; timestamp: string; broadcastId: string }
-      const newLog: IAuditLog = {
-        ...eventData.event,
-        timestamp: eventData.timestamp,
-        id: eventData.broadcastId,
-      } as IAuditLog
+      console.log('🔥 Received audit event:', data)
+      const eventData = data as WebSocketAuditEvent
 
+      // Transform backend audit log format to frontend format
+      const newLog: IAuditLog = {
+        id: eventData.broadcastId,
+        userId: eventData.event.userId,
+        user: eventData.event.user ? {
+          id: eventData.event.userId,
+          email: eventData.event.user.email || '',
+          firstName: '', // Not available in WebSocket data
+          lastName: '', // Not available in WebSocket data
+          middleName: undefined, // Not available in WebSocket data
+          roles: eventData.event.user.roles || [],
+          fullName: eventData.event.user.fullName
+        } : eventData.event.userId, // Fallback to userId as string
+        roles: eventData.event.user?.roles || [],
+        action: eventData.event.action,
+        actionType: eventData.event.action?.includes('created') ? TAuditActionType.CREATE :
+                    eventData.event.action?.includes('updated') ? TAuditActionType.UPDATE :
+                    eventData.event.action?.includes('deleted') ? TAuditActionType.DELETE : TAuditActionType.VIEW,
+        resource: eventData.event.resource,
+        resourceId: eventData.event.resourceId,
+        ipAddress: eventData.event.ipAddress,
+        status: TAuditStatus.SUCCESS, // Default status
+        timestamp: eventData.timestamp,
+        resourceType: 'api', // Default resource type
+      }
+
+      console.log('📝 Processed audit log:', newLog)
       setRealTimeLogs(prev => [newLog, ...prev.slice(0, 49)]) // Keep last 50 events
       setNewEventsCount(prev => prev + 1)
       setLastUpdateTime(new Date())
     } catch (error) {
-      console.error('Failed to process audit event:', error)
+      console.error('❌ Failed to process audit event:', error)
     }
   }, [])
 
   const handleMetricsUpdate = useCallback((data: unknown) => {
     try {
+      console.log('📊 Received metrics update:', data)
       const metricsData = data as {
-        metrics: typeof auditMetrics;
+        metrics: IAuditMetrics;
         timestamp: string;
         updateId: string;
       }
       setRealTimeMetrics(metricsData.metrics)
       setLastUpdateTime(new Date())
     } catch (error) {
-      console.error('Failed to process metrics update:', error)
+      console.error('❌ Failed to process metrics update:', error)
     }
-  }, [auditMetrics])
+  }, [])
 
   // WebSocket connection and subscription management
   useEffect(() => {
@@ -369,6 +430,8 @@ export default function AuditPage() {
   const handleRefresh = () => {
     refetchLogs()
     refetchMetrics()
+    refetchSecurityEvents()
+    refetchActivityTimeline()
   }
 
   // Real-time updates with polling
@@ -637,7 +700,7 @@ export default function AuditPage() {
               placeholder="All Severities"
               value={filters.severity}
               onChange={(e) => setFilters(prev => ({ ...prev, severity: e?.target?.value as string }))}
-              options={[ { text: "Low", value: "low" },{ text: "Medium", value: "medium" },{ text: "High", value: "high" },{ text: "Critical", value: "critical" },{ text: "Delete", value: "DELETE" },{ text: "View", value: "VIEW" }, ]}
+              options={[ { text: "Low", value: "low" },{ text: "Medium", value: "medium" },{ text: "High", value: "high" },{ text: "Critical", value: "critical" } ]}
             />
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mt-4">
@@ -716,7 +779,7 @@ export default function AuditPage() {
               placeholder="All Severities"
               value={filters.severity}
               onChange={(e) => setFilters(prev => ({ ...prev, severity: e?.target?.value as string }))}
-              options={[ { text: "Low", value: "low" },{ text: "Medium", value: "medium" },{ text: "High", value: "high" },{ text: "Critical", value: "critical" },{ text: "Delete", value: "DELETE" },{ text: "View", value: "VIEW" }, ]}
+              options={[ { text: "Low", value: "low" },{ text: "Medium", value: "medium" },{ text: "High", value: "high" },{ text: "Critical", value: "critical" } ]}
             />
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mt-4">
@@ -792,36 +855,44 @@ export default function AuditPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[
-                { event: "Failed login attempt", user: "john.doe@example.com", time: "2 minutes ago", severity: "medium" },
-                { event: "Suspicious API access", user: "admin@school.com", time: "15 minutes ago", severity: "high" },
-                { event: "Password changed", user: "jane.smith@school.com", time: "1 hour ago", severity: "low" },
-                { event: "Bulk data export", user: "superadmin@academiapro.com", time: "2 hours ago", severity: "low" }
-              ].map((event, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <IconAlertTriangle className={`h-4 w-4 ${
-                      event.severity === 'high' ? 'text-red-500' :
-                      event.severity === 'medium' ? 'text-yellow-500' : 'text-green-500'
-                    }`} />
-                    <div>
-                      <p className="text-sm font-medium">{event.event}</p>
-                      <p className="text-xs text-muted-foreground">{event.user}</p>
+            {securityEventsLoading ? (
+              <div className="space-y-4">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <Skeleton key={index} className="h-16 w-full" />
+                ))}
+              </div>
+            ) : securityEvents?.data && securityEvents.data.length > 0 ? (
+              <div className="space-y-4">
+                {securityEvents.data.map((event, index) => (
+                  <div key={event.id || index} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <IconAlertTriangle className={`h-4 w-4 ${
+                        event.severity === 'high' || event.severity === 'critical' ? 'text-red-500' :
+                        event.severity === 'medium' ? 'text-yellow-500' : 'text-green-500'
+                      }`} />
+                      <div>
+                        <p className="text-sm font-medium">{event.event}</p>
+                        <p className="text-xs text-muted-foreground">{event.user}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-muted-foreground">{event.time}</p>
+                      <Badge variant={
+                        event.severity === 'high' || event.severity === 'critical' ? 'destructive' :
+                        event.severity === 'medium' ? 'secondary' : 'default'
+                      } className="text-xs">
+                        {event.severity}
+                      </Badge>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground">{event.time}</p>
-                    <Badge variant={
-                      event.severity === 'high' ? 'destructive' :
-                      event.severity === 'medium' ? 'secondary' : 'default'
-                    } className="text-xs">
-                      {event.severity}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center text-muted-foreground py-8">
+                <IconAlertTriangle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No security events found</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -833,22 +904,30 @@ export default function AuditPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[
-                { action: "User login", count: 245, time: "Last hour" },
-                { action: "Data access", count: 189, time: "Last 6 hours" },
-                { action: "Configuration changes", count: 23, time: "Last 24 hours" },
-                { action: "System backups", count: 12, time: "Last week" }
-              ].map((activity, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">{activity.action}</p>
-                    <p className="text-xs text-muted-foreground">{activity.time}</p>
+            {activityTimelineLoading ? (
+              <div className="space-y-4">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <Skeleton key={index} className="h-12 w-full" />
+                ))}
+              </div>
+            ) : activityTimeline?.data && activityTimeline.data.length > 0 ? (
+              <div className="space-y-4">
+                {activityTimeline.data.map((activity, index) => (
+                  <div key={activity.period || index} className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">{activity.action}</p>
+                      <p className="text-xs text-muted-foreground">{activity.time}</p>
+                    </div>
+                    <Badge variant="outline">{activity.count}</Badge>
                   </div>
-                  <Badge variant="outline">{activity.count}</Badge>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center text-muted-foreground py-8">
+                <IconClock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No activity data found</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

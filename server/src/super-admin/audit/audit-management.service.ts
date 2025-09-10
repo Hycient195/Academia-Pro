@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder, Brackets } from 'typeorm';
 import { AuditLog } from '../../security/entities/audit-log.entity';
 import { StudentAuditLog } from '../../students/entities/student-audit-log.entity';
+import { User } from '../../users/user.entity';
 import { AuditService } from '../../security/services/audit.service';
 import { AuditFiltersDto, AuditTimelineFiltersDto, AuditSearchDto } from './audit-filters.dto';
 import { AuditAction, AuditSeverity } from '../../security/types/audit.types';
@@ -19,6 +20,8 @@ export class AuditManagementService {
     private readonly auditLogRepository: Repository<AuditLog>,
     @InjectRepository(StudentAuditLog)
     private readonly studentAuditLogRepository: Repository<StudentAuditLog>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     private readonly auditService: AuditService,
     private readonly auditMetricsService: AuditMetricsService,
   ) {}
@@ -27,13 +30,16 @@ export class AuditManagementService {
    * Get audit logs with advanced filtering and pagination
    */
   async getAuditLogs(filters: AuditFiltersDto): Promise<{
-    logs: AuditLog[];
+    logs: any[];
     total: number;
     page: number;
     limit: number;
     totalPages: number;
   }> {
     const queryBuilder = this.auditLogRepository.createQueryBuilder('audit');
+
+    // Join with users table to get user information
+    queryBuilder.leftJoinAndSelect('audit.user', 'user');
 
     // Apply filters
     this.applyAuditFilters(queryBuilder, filters);
@@ -50,10 +56,31 @@ export class AuditManagementService {
 
     queryBuilder.skip(offset).take(limit);
 
-    // Execute query
+    // Execute query with relations
     this.logger.debug(`Executing audit logs query with page: ${page}, limit: ${limit}`);
-    const [logs, total] = await queryBuilder.getManyAndCount();
+    const auditLogs = await queryBuilder.getMany();
+
+    // Get total count separately
+    const totalQueryBuilder = this.auditLogRepository.createQueryBuilder('audit');
+    this.applyAuditFilters(totalQueryBuilder, filters);
+    const total = await totalQueryBuilder.getCount();
     const totalPages = Math.ceil(total / limit);
+
+    // Transform the results to include user information properly
+    const logs = auditLogs.map((auditLog) => ({
+      ...auditLog,
+      user: auditLog.user ? {
+        id: auditLog.user.id,
+        firstName: auditLog.user.firstName,
+        lastName: auditLog.user.lastName,
+        email: auditLog.user.email,
+        roles: auditLog.user.roles,
+        status: auditLog.user.status,
+        fullName: auditLog.user.firstName && auditLog.user.lastName
+          ? `${auditLog.user.firstName} ${auditLog.user.lastName}`
+          : auditLog.user.email || 'Unknown User',
+      } : null,
+    }));
 
     this.logger.debug(`Query executed successfully - found ${total} total logs, returning ${logs.length} logs for page ${page}`);
 

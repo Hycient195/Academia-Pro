@@ -77,7 +77,7 @@ export const getDatabaseConfig = async (configService: ConfigService): Promise<T
       'dist/security/**/*.entity{.ts,.js}',
     ],
     migrations: ['dist/migrations/*{.ts,.js}'],
-    synchronize: true,
+    synchronize: false,
     logging: configService.get('NODE_ENV') === 'development',
     ssl: configService.get('NODE_ENV') === 'production',
     extra: {

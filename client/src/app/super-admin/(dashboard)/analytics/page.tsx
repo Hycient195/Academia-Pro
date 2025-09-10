@@ -88,7 +88,7 @@ export default function AnalyticsPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="flex items-center justify-between">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-10 w-32" />
@@ -103,7 +103,7 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Analytics Dashboard</h1>
@@ -167,7 +167,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Charts Grid */}
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         <ChartPlaceholder title="User Growth Trend" />
         <ChartPlaceholder title="Revenue Analytics" />
         <ChartPlaceholder title="School Distribution by Type" />
@@ -243,7 +243,7 @@ export default function AnalyticsPage() {
       </Card>
 
       {/* Additional Analytics */}
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle>Top Performing Schools</CardTitle>

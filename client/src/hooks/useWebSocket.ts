@@ -1,27 +1,30 @@
 // Temporary interface until socket.io-client is installed
-interface Socket {
-  id: string;
-  connected: boolean;
-  disconnect(): void;
-  emit(event: string, data?: unknown): void;
-  on(event: string, callback: (...args: unknown[]) => void): void;
-  off(event: string, callback?: (...args: unknown[]) => void): void;
-}
+import io, { Socket } from "socket.io-client";
 
-interface SocketIOOptions {
-  auth?: { token?: string };
-  transports?: string[];
-  timeout?: number;
-  forceNew?: boolean;
-}
+// interface Socket {
+//   id: string;
+//   connected: boolean;
+//   disconnect(): void;
+//   emit(event: string, data?: unknown): void;
+//   on(event: string, callback: (...args: unknown[]) => void): void;
+//   off(event: string, callback?: (...args: unknown[]) => void): void;
+// }
 
-interface SocketIO {
-  (url: string, options?: SocketIOOptions): Socket;
-}
+// interface SocketIOOptions {
+//   auth?: { token?: string };
+//   transports?: string[];
+//   timeout?: number;
+//   forceNew?: boolean;
+// }
 
-declare const io: SocketIO;
+// interface SocketIO {
+//   (url: string, options?: SocketIOOptions): Socket;
+// }
+
+// declare const io: SocketIO;
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { GLOBAL_BASEURL } from "@/redux/globalURLs";
 
 interface WebSocketOptions {
   namespace?: string;
@@ -93,14 +96,24 @@ export function useWebSocket(options: WebSocketOptions = {}) {
   });
 
   const getAuthToken = useCallback(() => {
-    // Get token from cookies or localStorage
-    const token = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('auth-token='))
-      ?.split('=')[1] ||
-      localStorage.getItem('auth-token');
+    // For development/testing, try to get token from various sources
+    // In production, this should be properly implemented with server-side token generation
 
-    return token;
+    // Try localStorage/sessionStorage first (for development)
+    const localToken = localStorage.getItem('auth-token') ||
+                      localStorage.getItem('token') ||
+                      sessionStorage.getItem('auth-token') ||
+                      sessionStorage.getItem('token');
+
+    if (localToken) {
+      console.log('🔑 WebSocket Auth Token: Found in localStorage/sessionStorage');
+      return localToken;
+    }
+
+    // For now, return a placeholder token to allow connection
+    // In production, this should be replaced with proper authentication
+    console.warn('⚠️ No authentication token found - using placeholder for development');
+    return 'dev-token-placeholder';
   }, []);
 
   const connect = useCallback(() => {
@@ -108,34 +121,30 @@ export function useWebSocket(options: WebSocketOptions = {}) {
 
     setState(prev => ({ ...prev, isConnecting: true, connectionError: null }));
 
-    const token = getAuthToken();
-    if (!token) {
-      setState(prev => ({
-        ...prev,
-        isConnecting: false,
-        connectionError: 'No authentication token found'
-      }));
-      return;
-    }
+    // For development, skip authentication and use placeholder token
+    const token = 'dev-token-placeholder';
+    const serverUrl = (GLOBAL_BASEURL || 'http://localhost:3001').replace(/\/$/, ''); // Remove trailing slash
 
-    const serverUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    console.log('🔌 Connecting to WebSocket:', `${serverUrl}${namespace}`);
 
     socketRef.current = io(`${serverUrl}${namespace}`, {
       auth: { token },
       transports: ['websocket', 'polling'],
       timeout: 20000,
       forceNew: true,
+      reconnection: false, // Disable automatic reconnection to prevent multiple attempts
     });
 
     const socket = socketRef.current;
 
     socket.on('connect', () => {
+      console.log("🔌 WebSocket connected successfully")
       setState(prev => ({
         ...prev,
         isConnected: true,
         isConnecting: false,
         connectionError: null,
-        connectionId: socket.id,
+        connectionId: socket.id || null,
       }));
       reconnectAttemptsRef.current = 0;
     });

@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 // Entities
 import { AuditLog } from '../../security/entities/audit-log.entity';
 import { StudentAuditLog } from '../../students/entities/student-audit-log.entity';
+import { User } from '../../users/user.entity';
 
 // Controllers
 import { AuditController } from './audit.controller';
@@ -27,6 +28,7 @@ import { RedisModule } from '../../redis/redis.module';
     TypeOrmModule.forFeature([
       AuditLog,
       StudentAuditLog,
+      User,
     ]),
 
     // External modules for dependencies

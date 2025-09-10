@@ -1,4 +1,4 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Optional } from '@nestjs/common';
 import { Observable, throwError } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { AuditService } from '../../security/services/audit.service';
@@ -10,7 +10,7 @@ export class AuditSocketInterceptor implements NestInterceptor {
   private readonly rateLimitWindow = 60000; // 1 minute
   private readonly rateLimitMax = 100; // 100 messages per minute per client
 
-  constructor(private readonly auditService: AuditService) {}
+  constructor(@Optional() private readonly auditService?: AuditService) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const client = context.switchToWs().getClient();
@@ -19,43 +19,47 @@ export class AuditSocketInterceptor implements NestInterceptor {
 
     // Rate limiting
     if (!this.checkRateLimit(client.id)) {
-      this.auditService.logActivity({
-        userId: (client as any).user?.id || 'unknown',
-        action: AuditAction.SECURITY_ALERT,
-        resource: 'websocket',
-        resourceId: 'rate_limit_exceeded',
-        details: {
-          eventType: 'websocket_rate_limit',
-          clientId: client.id,
-          event,
+      if (this.auditService) {
+        this.auditService.logActivity({
+          userId: (client as any).user?.id || 'unknown',
+          action: AuditAction.SECURITY_ALERT,
+          resource: 'websocket',
+          resourceId: 'rate_limit_exceeded',
+          details: {
+            eventType: 'websocket_rate_limit',
+            clientId: client.id,
+            event,
+            ipAddress: client.handshake.address,
+          },
           ipAddress: client.handshake.address,
-        },
-        ipAddress: client.handshake.address,
-        userAgent: client.handshake.headers['user-agent'] || 'unknown',
-        severity: AuditSeverity.HIGH,
-      });
+          userAgent: client.handshake.headers['user-agent'] || 'unknown',
+          severity: AuditSeverity.HIGH,
+        });
+      }
 
       return throwError(() => new Error('Rate limit exceeded'));
     }
 
     // Log WebSocket activity
-    this.auditService.logActivity({
-      userId: (client as any).user?.id || 'unknown',
-      action: AuditAction.DATA_ACCESSED,
-      resource: 'websocket',
-      resourceId: event,
-      details: {
-        eventType: 'websocket_message',
-        clientId: client.id,
-        event,
-        hasData: !!data,
-        dataSize: data ? JSON.stringify(data).length : 0,
-      },
-      ipAddress: client.handshake.address,
-      userAgent: client.handshake.headers['user-agent'] || 'unknown',
-      severity: AuditSeverity.LOW,
-      sessionId: (client as any).user?.sessionId,
-    });
+    if (this.auditService) {
+      this.auditService.logActivity({
+        userId: (client as any).user?.id || 'unknown',
+        action: AuditAction.DATA_ACCESSED,
+        resource: 'websocket',
+        resourceId: event,
+        details: {
+          eventType: 'websocket_message',
+          clientId: client.id,
+          event,
+          hasData: !!data,
+          dataSize: data ? JSON.stringify(data).length : 0,
+        },
+        ipAddress: client.handshake.address,
+        userAgent: client.handshake.headers['user-agent'] || 'unknown',
+        severity: AuditSeverity.LOW,
+        sessionId: (client as any).user?.sessionId,
+      });
+    }
 
     const startTime = Date.now();
 

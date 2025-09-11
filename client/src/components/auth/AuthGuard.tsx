@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/redux/auth/authContext'
 import { Skeleton } from '@/components/ui/skeleton'
 
@@ -20,16 +20,27 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
 }) => {
   const { isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
+    if (process.env.NODE_ENV !== 'production') {
+      // eslint-disable-next-line no-console
+      console.debug('[AuthGuard]', { isAuthenticated, isLoading, requireAuth, redirectTo, pathname })
+    }
     if (!isLoading) {
       if (requireAuth && !isAuthenticated) {
-        router.push(redirectTo || '/auth/sign-in')
+        const target = redirectTo || '/auth/sign-in'
+        if (pathname !== target) {
+          router.push(target)
+        }
       } else if (!requireAuth && isAuthenticated) {
-        router.push(redirectTo || '/dashboard')
+        const target = redirectTo || '/dashboard'
+        if (pathname !== target) {
+          router.push(target)
+        }
       }
     }
-  }, [isAuthenticated, isLoading, requireAuth, redirectTo, router])
+  }, [isAuthenticated, isLoading, requireAuth, redirectTo, router, pathname])
 
   // Show loading state
   if (isLoading) {
@@ -68,6 +79,11 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({
   fallback,
 }) => {
   const { user, isAuthenticated } = useAuth()
+
+  if (process.env.NODE_ENV !== 'production') {
+    // eslint-disable-next-line no-console
+    console.debug('[RoleGuard]', { userRoles: user?.roles, allowedRoles })
+  }
 
   if (!isAuthenticated || !user) {
     return fallback || (

@@ -20,6 +20,7 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  activeRole: User["roles"][number] | null;
 }
 
 const initialState: AuthState = {
@@ -29,6 +30,7 @@ const initialState: AuthState = {
   isAuthenticated: false,
   isLoading: false,
   error: null,
+  activeRole: null,
 };
 
 const authSlice = createSlice({
@@ -48,6 +50,11 @@ const authSlice = createSlice({
       state.refreshToken = action.payload.refreshToken;
       state.isAuthenticated = true;
       state.error = null;
+      state.activeRole = action.payload.user.roles?.[0] ?? null;
+    },
+
+    setActiveRole: (state, action: PayloadAction<User["roles"][number]>) => {
+      state.activeRole = action.payload;
     },
 
     updateUser: (state, action: PayloadAction<Partial<User>>) => {
@@ -71,6 +78,7 @@ const authSlice = createSlice({
       state.refreshToken = null;
       state.isAuthenticated = false;
       state.error = null;
+      state.activeRole = null;
     },
 
     clearError: (state) => {
@@ -81,6 +89,7 @@ const authSlice = createSlice({
 
 export const {
   setCredentials,
+  setActiveRole,
   updateUser,
   setLoading,
   setError,

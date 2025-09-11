@@ -11,6 +11,7 @@ import { APP_GUARD, APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
 import { CookieAuthMiddleware } from './auth/middleware/cookie-auth.middleware';
 import { CSRFMiddleware } from './auth/middleware/csrf.middleware';
 import { SecurityMiddleware } from './auth/middleware/security.middleware';
+import cookieParser = require('cookie-parser');
 
 // Core modules
 import { AuthModule } from './auth/auth.module';
@@ -155,12 +156,17 @@ import { AppService } from './app.service';
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
-    // Apply audit middleware globally (before other middleware)
+    // Apply cookie parser first to populate req.cookies for downstream middleware/guards
+    consumer
+      .apply(cookieParser())
+      .forRoutes({ path: '*', method: RequestMethod.ALL });
+
+    // Apply audit middleware globally (after cookie parser)
     consumer
       .apply(AuditMiddleware)
       .forRoutes({ path: '*', method: RequestMethod.ALL });
 
-    // Apply security middleware globally
+    // Apply security middleware globally (adds CORS + security headers)
     consumer
       .apply(SecurityMiddleware)
       .forRoutes({ path: '*', method: RequestMethod.ALL });

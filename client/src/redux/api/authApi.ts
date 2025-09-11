@@ -1,7 +1,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { GLOBAL_API_URL } from '../globalURLs';
 
-import type { IAuthUser, ILoginRequest, ILoginResponse, IRegisterRequest } from '@academia-pro/types/auth';
+import type { IAuthUser, ILoginRequest, ILoginResponse, IRegisterRequest, IChangePasswordRequest, IChangePasswordResponse } from '@academia-pro/types/auth';
 
 export const authApi = createApi({
   reducerPath: 'authApi',
@@ -39,6 +39,15 @@ export const authApi = createApi({
       }),
     }),
 
+    changePassword: builder.mutation<IChangePasswordResponse, IChangePasswordRequest>({
+      query: (data) => ({
+        url: '/auth/change-password',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Auth'],
+    }),
+
     logout: builder.mutation<void, void>({
       query: () => ({
         url: '/auth/logout',
@@ -59,4 +68,5 @@ export const {
   useRefreshTokenMutation,
   useLogoutMutation,
   useGetProfileQuery,
+  useChangePasswordMutation,
 } = authApi;

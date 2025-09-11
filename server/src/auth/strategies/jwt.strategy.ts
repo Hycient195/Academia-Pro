@@ -80,8 +80,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('User not found');
     }
 
+    // Allow INACTIVE users only when they're on their first login (to enable password change)
     if (user.status !== 'active') {
-      throw new UnauthorizedException('Account is not active');
+      const isFirstTimeFlow = user.status === 'inactive' && user.isFirstLogin === true;
+      if (!isFirstTimeFlow) {
+        throw new UnauthorizedException('Account is not active');
+      }
+      // Otherwise, continue - this enables first-time users to access guarded endpoints like change-password
     }
 
     if (!user.isEmailVerified) {

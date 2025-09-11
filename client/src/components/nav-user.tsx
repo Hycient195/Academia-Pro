@@ -60,7 +60,7 @@ export function NavUser({
       dispatch(apis.schoolAdmin.util.resetApiState())
 
       toast.success("Logged out successfully")
-      router.push("/super-admin/auth/sign-in")
+      router.push("/auth/sign-in")
     } catch (error) {
       console.error("Logout error:", error)
       toast.error("Failed to logout. Please try again.")

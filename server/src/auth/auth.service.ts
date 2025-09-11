@@ -127,37 +127,92 @@ export class AuthService {
      metadata: { authType: 'user' }
    })
    async validateUser(email: string, password: string): Promise<Partial<User>> {
-    const user = await this.usersRepository.findOne({
-      where: { email },
-      select: ['id', 'email', 'passwordHash', 'firstName', 'lastName', 'roles', 'status', 'schoolId', 'isEmailVerified', 'isFirstLogin'],
-    });
+     console.log('[AuthService] validateUser start', { email });
+ 
+     const user = await this.usersRepository.findOne({
+       where: { email },
+       select: ['id', 'email', 'passwordHash', 'firstName', 'lastName', 'roles', 'status', 'schoolId', 'isEmailVerified', 'isFirstLogin'],
+     });
+ 
+     if (!user) {
+       console.warn('[AuthService] validateUser: user not found');
+       throw new UnauthorizedException('Invalid credentials');
+     }
+ 
+     // Only allow INACTIVE status for first-time login; otherwise block
+     if (user.status === EUserStatus.INACTIVE) {
+       if (!user.isFirstLogin) {
+         console.warn('[AuthService] validateUser: account inactive and not first login');
+         throw new UnauthorizedException('Account is inactive');
+       }
+     } else if (user.status !== EUserStatus.ACTIVE) {
+       console.warn('[AuthService] validateUser: account not active');
+       throw new UnauthorizedException('Account is not active');
+     }
+ 
+     if (!user.isEmailVerified) {
+       console.warn('[AuthService] validateUser: email not verified');
+       throw new UnauthorizedException('Please verify your email before logging in');
+     }
+ 
+     // Guard against invalid passwordHash types to avoid bcrypt "Illegal arguments" errors
+     // If passwordHash is missing/invalid but this is a first-time login (inactive), allow email-as-password fallback
+     if (!user.passwordHash || typeof user.passwordHash !== 'string') {
+       console.warn('[AuthService] validateUser: missing/invalid passwordHash', { type: typeof user.passwordHash, isFirstLogin: user.isFirstLogin, status: user.status });
+       if (user.isFirstLogin && user.status === EUserStatus.INACTIVE) {
+         const candidate = (password || '').trim().toLowerCase();
+         const emailNormalized = (user.email || '').trim().toLowerCase();
+         if (candidate && candidate === emailNormalized) {
+           console.warn('[AuthService] validateUser: fallback accepted for first-time login with missing passwordHash');
+           // proceed without throwing; treat as valid and continue to reset attempts
+         } else {
+           await this.incrementLoginAttempts(user.id);
+           throw new UnauthorizedException('Invalid credentials');
+         }
+       } else {
+         throw new UnauthorizedException('Invalid credentials');
+       }
+     }
+     if (typeof password !== 'string' || !password) {
+       console.error('[AuthService] validateUser: invalid password input', { type: typeof password });
+       throw new UnauthorizedException('Invalid credentials');
+     }
+ 
+     let isPasswordValid = false;
+     try {
+       // Only attempt bcrypt compare if we actually have a hash
+       if (user.passwordHash && typeof user.passwordHash === 'string') {
+         isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+       }
+     } catch (err: any) {
+       console.error('[AuthService] validateUser: bcrypt.compare error', { message: err?.message });
+       // Increment login attempts
+       await this.incrementLoginAttempts(user.id);
+       throw new UnauthorizedException('Invalid credentials');
+     }
 
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+     // First-time login fallback: accept email-as-password ignoring case/whitespace
+     if (!isPasswordValid && user.isFirstLogin && user.status === EUserStatus.INACTIVE) {
+       const candidate = (password || '').trim().toLowerCase();
+       const emailNormalized = (user.email || '').trim().toLowerCase();
+       if (candidate === emailNormalized) {
+         console.warn('[AuthService] validateUser: first-time login fallback matched email-as-password');
+         isPasswordValid = true;
+       }
+     }
 
-    // Allow login for INACTIVE users who are doing first-time login
-    if (user.status !== 'active' && user.status !== 'inactive') {
-      throw new UnauthorizedException('Account is not active');
-    }
-
-    if (!user.isEmailVerified) {
-      throw new UnauthorizedException('Please verify your email before logging in');
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-    if (!isPasswordValid) {
-      // Increment login attempts
-      await this.incrementLoginAttempts(user.id);
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    // Reset login attempts on successful login
-    await this.resetLoginAttempts(user.id);
-
-    const { passwordHash, ...result } = user;
-    return result;
-  }
+     if (!isPasswordValid) {
+       // Increment login attempts
+       await this.incrementLoginAttempts(user.id);
+       throw new UnauthorizedException('Invalid credentials');
+     }
+ 
+     // Reset login attempts on successful login
+     await this.resetLoginAttempts(user.id);
+ 
+     const { passwordHash, ...result } = user as any;
+     return result;
+   }
 
   /**
     * Login user and generate tokens
@@ -169,72 +224,97 @@ export class AuthService {
      metadata: { sessionType: 'login' }
    })
    async login(user: any): Promise<IAuthTokens & { requiresPasswordReset?: boolean }> {
-
-    // Create user session
-    const sessionId = this.generateSessionId();
-    const session = await this.userSessionRepository.save({
-      userId: user.id,
-      sessionToken: this.generateSessionId(),
-      ipAddress: '127.0.0.1', // This should be passed from request
-      userAgent: 'Unknown', // This should be passed from request
-      lastActivityAt: new Date(),
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-      createdAt: new Date(),
-      loginAt: new Date(),
-      isActive: true,
-    });
-
-    const payload = {
-      email: user.email,
-      sub: user.id,
-      userId: user.id, // Ensure userId is included in payload
-      roles: user.roles,
-      schoolId: user.schoolId,
-      sessionId: session.id,
-    };
-
-    const accessToken = this.jwtService.sign(payload);
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
-
-    // Store refresh token in database
-    await this.usersRepository.update(user.id, {
-      refreshToken: await bcrypt.hash(refreshToken, 10),
-      refreshTokenExpires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-      lastLoginAt: new Date(),
-    });
-
-    const result: IAuthTokens & { requiresPasswordReset?: boolean } = {
-      accessToken,
-      refreshToken,
-      expiresIn: 86400, // 24 hours in seconds
-      tokenType: 'Bearer',
-      issuedAt: new Date(),
-    };
-
-    // Check if user needs to reset password (first-time login)
-    if (user.isFirstLogin) {
-      result.requiresPasswordReset = true;
-    }
-
-    return result;
-  }
+     console.log('[AuthService] login: creating session', { userId: user?.id });
+ 
+     // Create user session
+     const sessionId = this.generateSessionId();
+     const session = await this.userSessionRepository.save({
+       userId: user.id,
+       sessionToken: this.generateSessionId(),
+       ipAddress: '127.0.0.1', // This should be passed from request
+       userAgent: 'Unknown', // This should be passed from request
+       lastActivityAt: new Date(),
+       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+       createdAt: new Date(),
+       loginAt: new Date(),
+       isActive: true,
+     });
+     console.log('[AuthService] login: session created', { sessionId: session?.id });
+ 
+     const payload = {
+       email: user.email,
+       sub: user.id,
+       userId: user.id, // Ensure userId is included in payload
+       roles: user.roles,
+       schoolId: user.schoolId,
+       sessionId: session.id,
+     };
+ 
+     let accessToken: string;
+     let refreshToken: string;
+     try {
+       accessToken = this.jwtService.sign(payload);
+       refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+     } catch (err: any) {
+       console.error('[AuthService] login: jwt sign error', { message: err?.message });
+       throw err;
+     }
+ 
+     // Store refresh token in database
+     await this.usersRepository.update(user.id, {
+       refreshToken: await bcrypt.hash(refreshToken, 10),
+       refreshTokenExpires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+       lastLoginAt: new Date(),
+     });
+ 
+     const result: IAuthTokens & { requiresPasswordReset?: boolean } = {
+       accessToken,
+       refreshToken,
+       expiresIn: 86400, // 24 hours in seconds
+       tokenType: 'Bearer',
+       issuedAt: new Date(),
+     };
+     console.log('[AuthService] login: tokens generated');
+ 
+     // Check if user needs to reset password (first-time login)
+     if (user.isFirstLogin) {
+       result.requiresPasswordReset = true;
+     }
+ 
+     return result;
+   }
 
   /**
    * Login user and set authentication cookies
    */
-  async loginWithCookies(user: any, res: Response): Promise<{ user: any; requiresPasswordReset?: boolean }> {
-    const tokens = await this.login(user);
+  async loginWithCookies(
+    user: any,
+    res: Response
+  ): Promise<{ user: any; tokens: IAuthTokens; requiresPasswordReset?: boolean }> {
+    const tokensWithFlag = await this.login(user);
 
     // Set authentication cookies
-    this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+    this.setAuthCookies(res, tokensWithFlag.accessToken, tokensWithFlag.refreshToken);
 
     // Remove sensitive information from response
     const { passwordHash, ...userResponse } = user;
 
-    const result: { user: any; requiresPasswordReset?: boolean } = { user: userResponse };
+    // Ensure response also contains tokens for clients expecting them in body
+    const tokens: IAuthTokens = {
+      accessToken: tokensWithFlag.accessToken,
+      refreshToken: tokensWithFlag.refreshToken,
+      expiresIn: tokensWithFlag.expiresIn,
+      tokenType: tokensWithFlag.tokenType,
+      issuedAt: tokensWithFlag.issuedAt,
+    };
+
+    const result: { user: any; tokens: IAuthTokens; requiresPasswordReset?: boolean } = {
+      user: userResponse,
+      tokens,
+    };
 
     // Include password reset requirement if needed
-    if (tokens.requiresPasswordReset) {
+    if ((tokensWithFlag as any).requiresPasswordReset) {
       result.requiresPasswordReset = true;
     }
 
@@ -246,28 +326,43 @@ export class AuthService {
    */
   setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
     const isProduction = process.env.NODE_ENV === 'production';
-    const cookieOptions = {
+    const sameSite = 'lax' as const; // use lax in dev for localhost cross-origin
+
+    const baseCookieOptions = {
       httpOnly: true,
       secure: isProduction,
-      sameSite: "lax" as const,
-      // sameSite: isProduction ? 'strict' as const : 'lax' as const, // Use 'lax' in development for cross-origin
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    };
+      sameSite,
+      path: '/',
+    } as const;
 
-    res.cookie('accessToken', accessToken, {
-      ...cookieOptions,
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    });
+    try {
+      console.log('[AuthService] setAuthCookies', {
+        secure: baseCookieOptions.secure,
+        sameSite: baseCookieOptions.sameSite,
+        origin: (res as any)?.req?.headers?.origin,
+      });
 
-    res.cookie('refreshToken', refreshToken, cookieOptions);
+      res.cookie('accessToken', accessToken, {
+        ...baseCookieOptions,
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      });
 
-    // Generate and set CSRF token
-    const csrfToken = this.generateCSRFToken();
-    res.cookie('csrfToken', csrfToken, {
-      ...cookieOptions,
-      httpOnly: false, // Allow client-side access for CSRF token
-      maxAge: 60 * 60 * 1000, // 1 hour
-    });
+      res.cookie('refreshToken', refreshToken, {
+        ...baseCookieOptions,
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+
+      // Generate and set CSRF token
+      const csrfToken = this.generateCSRFToken();
+      res.cookie('csrfToken', csrfToken, {
+        ...baseCookieOptions,
+        httpOnly: false, // Allow client-side access for CSRF token
+        maxAge: 60 * 60 * 1000, // 1 hour
+      });
+    } catch (err: any) {
+      console.error('[AuthService] setAuthCookies error', { message: err?.message });
+      throw err;
+    }
   }
 
   /**
@@ -413,31 +508,39 @@ export class AuthService {
      metadata: { passwordChangeType: 'user_initiated' }
    })
    async changePassword(userId: string, changePasswordDto: ChangePasswordDto): Promise<void> {
-    const { currentPassword, newPassword } = changePasswordDto;
-
-    const user = await this.usersRepository.findOne({
-      where: { id: userId },
-      select: ['id', 'passwordHash', 'schoolId'],
-    });
-
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
-
-    // Verify current password
-    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
-    if (!isCurrentPasswordValid) {
-      throw new BadRequestException('Current password is incorrect');
-    }
-
-    // Hash new password
-    const newPasswordHash = await bcrypt.hash(newPassword, 12);
-
-    // Update password
-    await this.usersRepository.update(userId, {
-      passwordHash: newPasswordHash,
-    });
-  }
+     const { currentPassword, newPassword } = changePasswordDto;
+ 
+     const user = await this.usersRepository.findOne({
+       where: { id: userId },
+       select: ['id', 'passwordHash', 'schoolId', 'isFirstLogin', 'status'],
+     });
+ 
+     if (!user) {
+       throw new UnauthorizedException('User not found');
+     }
+ 
+     // Verify current password
+     const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
+     if (!isCurrentPasswordValid) {
+       throw new BadRequestException('Current password is incorrect');
+     }
+ 
+     // Hash new password
+     const newPasswordHash = await bcrypt.hash(newPassword, 12);
+ 
+     // Build update payload
+     const updatePayload: Partial<User> = {
+       passwordHash: newPasswordHash,
+     };
+ 
+     // If this was a first-time login, clear the flag and activate the account
+     if ((user as any).isFirstLogin) {
+       (updatePayload as any).isFirstLogin = false;
+       (updatePayload as any).status = EUserStatus.ACTIVE as any;
+     }
+ 
+     await this.usersRepository.update(userId, updatePayload);
+   }
 
   /**
     * Verify email address

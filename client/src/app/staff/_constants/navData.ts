@@ -1,3 +1,5 @@
+"use client"
+
 import { RoleConfig } from "@/components/portal-sidebar"
 import {
   IconDashboard,

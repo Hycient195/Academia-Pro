@@ -91,13 +91,13 @@ const recentActivities = [
 
 export default function SchoolAdminDashboard() {
   return (
-    <div className="flex flex-1 flex-col gap-4 md:gap-6">
-      <div className="flex flex-col gap-4 md:gap-6">
+    <div className="flex flex-1 flex-col gap-4 md:gap-4">
+      <div className="flex flex-col gap-4">
         {/* Header */}
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-bold tracking-tight">School Dashboard</h1>
           <p className="text-muted-foreground">
-            Welcome back! Here's an overview of your school's performance.
+            Welcome back! Here&apos;s an overview of your school&apos;s performance.
           </p>
         </div>
 

@@ -148,15 +148,35 @@ export class AuthController {
     },
   })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async login(@Body() loginDto: LoginDto, @Response() res: any): Promise<void> {
-    const user = await this.authService.validateUser(
-      loginDto.email,
-      loginDto.password,
-    );
+  async login(@Body() loginDto: LoginDto, @Response() res: any, @Request() req: any): Promise<void> {
+    try {
+      console.log('[AuthController] login start:', { email: loginDto?.email });
 
-    const result = await this.authService.loginWithCookies(user, res);
+      // Per-request CORS headers for credentialed responses
+      const origin = req.headers?.origin;
+      if (origin) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+      }
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
 
-    res.json(result);
+      const user = await this.authService.validateUser(
+        loginDto.email,
+        loginDto.password,
+      );
+
+      const result = await this.authService.loginWithCookies(user, res);
+
+      console.log('[AuthController] login success:', { userId: user?.id, roles: user?.roles });
+      res.json(result);
+    } catch (err: any) {
+      const status = err?.status || 500;
+      const message = err?.message || 'Login failed';
+      console.error('[AuthController] login error:', { status, message });
+
+      if (!res.headersSent) {
+        res.status(status).json({ message });
+      }
+    }
   }
 
   @Post('super-admin/login')
@@ -210,17 +230,34 @@ export class AuthController {
   })
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
   async refreshToken(@Request() req: any, @Response() res: any): Promise<void> {
-    // Get refresh token from cookies instead of request body
-    const refreshToken = req.cookies?.refreshToken;
+    try {
+      // Per-request CORS headers for credentialed responses
+      const origin = req.headers?.origin;
+      if (origin) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+      }
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
 
-    if (!refreshToken) {
-      res.status(401).json({ message: 'Refresh token not found in cookies' });
-      return;
+      // Get refresh token from cookies instead of request body
+      const refreshToken = req.cookies?.refreshToken;
+
+      if (!refreshToken) {
+        res.status(401).json({ message: 'Refresh token not found in cookies' });
+        return;
+      }
+
+      const tokens = await this.authService.refreshToken({ refreshToken });
+      this.authService.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+      res.json(tokens);
+    } catch (err: any) {
+      const status = err?.status || 500;
+      const message = err?.message || 'Token refresh failed';
+      console.error('[AuthController] refresh error:', { status, message });
+
+      if (!res.headersSent) {
+        res.status(status).json({ message });
+      }
     }
-
-    const tokens = await this.authService.refreshToken({ refreshToken });
-    this.authService.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
-    res.json(tokens);
   }
 
   @Get('csrf-token')

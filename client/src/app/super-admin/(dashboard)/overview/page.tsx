@@ -18,7 +18,7 @@ import {
 } from "@tabler/icons-react"
 import { apis } from "@/redux/api"
 import { IAlert } from "@academia-pro/types/shared"
-import { IActivity } from "@academia-pro/parent-portal"
+import { IActivity } from "@academia-pro/types/parent-portal"
 
 function MetricCard({
   title,
@@ -124,7 +124,7 @@ export default function SuperAdminDashboard() {
 
   if (overviewLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <Card key={i}>
@@ -143,7 +143,7 @@ export default function SuperAdminDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">System Overview</h1>
         <div className="flex items-center space-x-2">
@@ -191,7 +191,7 @@ export default function SuperAdminDashboard() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {/* Recent Activities */}
         <Card className="col-span-2">
           <CardHeader>

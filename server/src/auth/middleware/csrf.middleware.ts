@@ -16,31 +16,41 @@ export class CSRFMiddleware implements NestMiddleware {
       return next();
     }
 
-    // Skip CSRF check for API routes that don't need it
-    if (req.path.startsWith('/api/v1/auth/') ||
-        req.path.startsWith('/api/v1/super-admin/')) {
+    // Normalize path (supports both Express req.path and req.url)
+    const path = (req as any).path || (req as any).url || '';
+
+    // Skip CSRF check for authentication endpoints regardless of global prefix
+    // This covers both '/api/v1/auth/*' and '/auth/*' as well as super-admin auth scopes
+    if (
+      path.startsWith('/api/v1/auth/') ||
+      path.startsWith('/auth/') ||
+      path.startsWith('/api/v1/super-admin/') ||
+      path.startsWith('/super-admin/')
+    ) {
       return next();
     }
 
-    const csrfToken = req.headers['x-csrf-token'] as string ||
-                     req.body?._csrf ||
-                     req.query._csrf as string;
+    const csrfToken =
+      (req.headers['x-csrf-token'] as string) ||
+      (req.body?._csrf as string) ||
+      (req.query._csrf as string);
 
     const sessionId = this.getSessionId(req);
 
     if (!csrfToken) {
-      throw new ForbiddenException('CSRF token missing');
+      // Explicit 403 response to avoid hanging requests if thrown inside middleware chain
+      return res.status(403).json({ message: 'CSRF token missing' });
     }
 
     const storedToken = this.csrfTokens.get(sessionId);
     if (!storedToken || storedToken.token !== csrfToken) {
-      throw new ForbiddenException('Invalid CSRF token');
+      return res.status(403).json({ message: 'Invalid CSRF token' });
     }
 
     // Check if token is expired
     if (Date.now() > storedToken.expires) {
       this.csrfTokens.delete(sessionId);
-      throw new ForbiddenException('CSRF token expired');
+      return res.status(403).json({ message: 'CSRF token expired' });
     }
 
     next();

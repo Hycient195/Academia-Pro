@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
   IconMail,
@@ -17,10 +16,6 @@ import {
   IconSchool,
   IconShield,
   IconHelp,
-  IconUser,
-  IconUsers,
-  IconUserShield,
-  IconBuildingBank,
 } from "@tabler/icons-react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -28,177 +23,116 @@ import { apis } from "@/redux/api"
 import { useDispatch } from "react-redux"
 import { setCredentials } from "@/redux/slices/authSlice"
 import { toast } from "sonner"
+import type { IAuthUser } from "@academia-pro/types/auth"
+import ErrorBlock from "@/components/utilities/ErrorBlock"
 
-type UserType = "super-admin" | "delegated-super-admin" | "school-admin" | "student" | "parent" | "teacher"
-
-const userTypes = [
-  {
-    id: "super-admin" as UserType,
-    name: "Super Admin",
-    description: "Full system administration and management",
-    icon: IconShield,
-    redirectPath: "/super-admin/dashboard",
-    color: "bg-red-500",
-  },
-  {
-    id: "delegated-super-admin" as UserType,
-    name: "Delegated Admin",
-    description: "Limited administrative access with specific permissions",
-    icon: IconUserShield,
-    redirectPath: "/super-admin/dashboard",
-    color: "bg-orange-500",
-  },
-  {
-    id: "school-admin" as UserType,
-    name: "School Admin",
-    description: "Manage school operations and administration",
-    icon: IconUserShield,
-    redirectPath: "/dashboard",
-    color: "bg-blue-500",
-  },
-  {
-    id: "student" as UserType,
-    name: "Student",
-    description: "Access your academic information and grades",
-    icon: IconUser,
-    redirectPath: "/student/dashboard",
-    color: "bg-green-500",
-  },
-  {
-    id: "parent" as UserType,
-    name: "Parent",
-    description: "Monitor your children's academic progress",
-    icon: IconUsers,
-    redirectPath: "/parent/dashboard",
-    color: "bg-purple-500",
-  },
-  {
-    id: "teacher" as UserType,
-    name: "Teacher",
-    description: "Manage classes and student performance",
-    icon: IconBuildingBank,
-    redirectPath: "/teacher/dashboard",
-    color: "bg-orange-500",
-  },
-]
 
 export default function SignInPage() {
   const router = useRouter()
   const dispatch = useDispatch()
-  const [showPassword, setShowPassword] = useState(false)
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [rememberMe, setRememberMe] = useState(false)
-  const [selectedUserType, setSelectedUserType] = useState<UserType | null>(null)
+  const [loginForm, setLoginForm] = useState({ email: "doe@yopmail.com", password: "Test1234$", rememberMe: false })
+  const [uiState, setUiState] = useState({ showPassword: false })
+  const [resetState, setResetState] = useState({ open: false, newPassword: "", confirmPassword: "" })
 
-  const [login, { isLoading }] = apis.auth.useLoginMutation()
-  const [showPasswordReset, setShowPasswordReset] = useState(false)
-  const [newPassword, setNewPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [resetPasswordLoading, setResetPasswordLoading] = useState(false)
+  const [login, { isLoading, error: loginError }] = apis.auth.useLoginMutation()
+  const [changePassword, { isLoading: isChangingPassword }] = apis.auth.useChangePasswordMutation()
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (newPassword !== confirmPassword) {
+    if (resetState.newPassword !== resetState.confirmPassword) {
       toast.error("Passwords do not match")
       return
     }
 
-    if (newPassword.length < 8) {
+    if (resetState.newPassword.length < 8) {
       toast.error("Password must be at least 8 characters long")
       return
     }
 
-    setResetPasswordLoading(true)
+    // loading state handled by RTK isChangingPassword
 
     try {
-      // Call the back-end password reset API
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001'}/api/v1/auth/reset-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          token: 'first-time-reset-token', // This should come from the login response
-          newPassword
-        }),
-        credentials: 'include',
-      })
+      // Change password for first-time login using default current password (email)
+      await changePassword({
+        currentPassword: loginForm.email,
+        newPassword: resetState.newPassword,
+        confirmPassword: resetState.confirmPassword,
+      }).unwrap()
 
-      if (!response.ok) {
-        throw new Error('Failed to reset password')
+      // After password change, fetch current user and proceed
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001'
+      const meRes = await fetch(`${apiBase}/api/v1/auth/me`, { credentials: 'include' })
+      let userPayload: IAuthUser | null = null
+      if (meRes.ok) {
+        userPayload = await meRes.json()
       }
 
-      const result = await response.json()
+      toast.success("Password updated. Your account is now active.")
 
-      toast.success("Password reset successful! Your account is now active.")
+      if (userPayload) {
+        dispatch(setCredentials({
+          user: {
+            ...userPayload,
+            name: `${userPayload.firstName} ${userPayload.lastName}`,
+            roles: userPayload.roles,
+            permissions: [],
+          },
+          // Using cookie-based auth; tokens not required for client fetchBaseQuery with credentials: 'include'
+          token: '',
+          refreshToken: '',
+        }))
 
-      // Store credentials in Redux
-      dispatch(setCredentials({
-        user: {
-          ...result.user,
-          name: `${result.user.firstName} ${result.user.lastName}`,
-          roles: result.user.roles,
-          permissions: [],
-        },
-        token: result.tokens?.accessToken || '',
-        refreshToken: result.tokens?.refreshToken || '',
-      }))
+        // Redirect based on user role (use first role for primary routing)
+        const userRole = userPayload.roles[0] || 'student'
+        let redirectPath = "/dashboard"
 
-      // Redirect based on user role (use first role for primary routing)
-      const userRole = result.user.roles[0] || 'student'
-      let redirectPath = "/dashboard"
+        switch (userRole) {
+          case "student":
+            redirectPath = "/student/dashboard"
+            break
+          case "parent":
+            redirectPath = "/parent/dashboard"
+            break
+          case "teacher":
+            // Teacher portal maps to staff area
+            redirectPath = "/staff"
+            break
+          case "school-admin":
+            redirectPath = "/school-admin"
+            break
+          case "super-admin":
+          case "delegated-super-admin":
+            redirectPath = "/super-admin/dashboard"
+            break
+          default:
+            redirectPath = "/dashboard"
+        }
 
-      switch (userRole) {
-        case "student":
-          redirectPath = "/student/dashboard"
-          break
-        case "parent":
-          redirectPath = "/parent/dashboard"
-          break
-        case "teacher":
-          redirectPath = "/teacher/dashboard"
-          break
-        case "school-admin":
-          redirectPath = "/school-admin/dashboard"
-          break
-        case "super-admin":
-          redirectPath = "/super-admin/dashboard"
-          break
-        case "delegated-super-admin":
-          redirectPath = "/super-admin/dashboard"
-          break
-        default:
-          redirectPath = "/dashboard"
+        router.push(redirectPath)
+      } else {
+        router.push("/dashboard")
       }
-
-      router.push(redirectPath)
     } catch (error) {
       console.error("Password reset failed:", error)
       toast.error("Failed to reset password. Please try again.")
-    } finally {
-      setResetPasswordLoading(false)
     }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!selectedUserType) {
-      toast.error("Please select a user type")
-      return
-    }
-
     try {
       const result = await login({
-        email,
-        password,
+        email: loginForm.email,
+        password: loginForm.password,
       }).unwrap()
+
+      console.log(result)
 
       // Check if password reset is required (first-time login)
       if (result.requiresPasswordReset) {
-        setShowPasswordReset(true)
+        setResetState((prev) => ({ ...prev, open: true }))
         return
       }
 
@@ -226,14 +160,13 @@ export default function SignInPage() {
           redirectPath = "/parent/dashboard"
           break
         case "teacher":
-          redirectPath = "/teacher/dashboard"
+          // Teacher uses the staff portal
+          redirectPath = "/staff"
           break
         case "school-admin":
-          redirectPath = "/school-admin/dashboard"
+          redirectPath = "/school-admin"
           break
         case "super-admin":
-          redirectPath = "/super-admin/dashboard"
-          break
         case "delegated-super-admin":
           redirectPath = "/super-admin/dashboard"
           break
@@ -262,7 +195,7 @@ export default function SignInPage() {
           </div>
           <h1 className="text-3xl font-bold text-gray-900">Academia Pro</h1>
           <p className="text-gray-600 mt-2">
-            Choose your role and sign in to access your portal
+            Sign in to access your portal
           </p>
         </div>
 
@@ -278,21 +211,6 @@ export default function SignInPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="userType">User Type</Label>
-                <Select value={selectedUserType || ""} onValueChange={(value) => setSelectedUserType(value as UserType)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select your role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {userTypes.map((type) => (
-                      <SelectItem key={type.id} value={type.id}>
-                        {type.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
                 <div className="relative">
                   <IconMail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -300,8 +218,8 @@ export default function SignInPage() {
                     id="email"
                     type="email"
                     placeholder="user@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={loginForm.email}
+                    onChange={(e) => setLoginForm((prev) => ({ ...prev, email: e.target.value }))}
                     className="pl-10"
                     required
                   />
@@ -314,10 +232,10 @@ export default function SignInPage() {
                   <IconLock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="password"
-                    type={showPassword ? "text" : "password"}
+                    type={uiState.showPassword ? "text" : "password"}
                     placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    value={loginForm.password}
+                    onChange={(e) => setLoginForm((prev) => ({ ...prev, password: e.target.value }))}
                     className="pl-10 pr-10"
                     required
                   />
@@ -326,9 +244,9 @@ export default function SignInPage() {
                     variant="ghost"
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={() => setUiState((prev) => ({ ...prev, showPassword: !prev.showPassword }))}
                   >
-                    {showPassword ? (
+                    {uiState.showPassword ? (
                       <IconEyeOff className="h-4 w-4 text-muted-foreground" />
                     ) : (
                       <IconEye className="h-4 w-4 text-muted-foreground" />
@@ -341,8 +259,8 @@ export default function SignInPage() {
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="remember"
-                    checked={rememberMe}
-                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                    checked={loginForm.rememberMe}
+                    onCheckedChange={(checked) => setLoginForm((prev) => ({ ...prev, rememberMe: Boolean(checked) }))}
                   />
                   <Label
                     htmlFor="remember"
@@ -355,12 +273,12 @@ export default function SignInPage() {
                   Forgot password?
                 </Button>
               </div>
-
+              <ErrorBlock error={loginError} />
               <Button
                 type="submit"
                 className="w-full"
                 size="lg"
-                disabled={isLoading || !selectedUserType}
+                disabled={isLoading}
               >
                 {isLoading ? "Signing In..." : "Sign In"}
                 <IconArrowRight className="ml-2 h-4 w-4" />
@@ -416,7 +334,7 @@ export default function SignInPage() {
         </div>
 
         {/* Security Notice */}
-        <Card className="border-amber-200 bg-amber-50 max-w-lg mx-auto">
+        {/* <Card className="border-amber-200 bg-amber-50 max-w-lg mx-auto">
           <CardContent className="pt-6">
             <div className="flex items-start gap-3">
               <IconShield className="h-5 w-5 text-amber-600 mt-0.5" />
@@ -428,10 +346,10 @@ export default function SignInPage() {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Password Reset Modal */}
-        <Dialog open={showPasswordReset} onOpenChange={setShowPasswordReset}>
+        <Dialog open={resetState.open} onOpenChange={(open) => setResetState((prev) => ({ ...prev, open }))}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -449,10 +367,10 @@ export default function SignInPage() {
                   <IconLock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="newPassword"
-                    type={showPassword ? "text" : "password"}
+                    type={uiState.showPassword ? "text" : "password"}
                     placeholder="Enter your new password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
+                    value={resetState.newPassword}
+                    onChange={(e) => setResetState((prev) => ({ ...prev, newPassword: e.target.value }))}
                     className="pl-10 pr-10"
                     required
                     minLength={8}
@@ -462,9 +380,9 @@ export default function SignInPage() {
                     variant="ghost"
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={() => setUiState((prev) => ({ ...prev, showPassword: !prev.showPassword }))}
                   >
-                    {showPassword ? (
+                    {uiState.showPassword ? (
                       <IconEyeOff className="h-4 w-4 text-muted-foreground" />
                     ) : (
                       <IconEye className="h-4 w-4 text-muted-foreground" />
@@ -484,8 +402,8 @@ export default function SignInPage() {
                     id="confirmPassword"
                     type="password"
                     placeholder="Confirm your new password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    value={resetState.confirmPassword}
+                    onChange={(e) => setResetState((prev) => ({ ...prev, confirmPassword: e.target.value }))}
                     className="pl-10"
                     required
                   />
@@ -497,18 +415,16 @@ export default function SignInPage() {
                   type="button"
                   variant="outline"
                   onClick={() => {
-                    setShowPasswordReset(false)
-                    setNewPassword("")
-                    setConfirmPassword("")
+                    setResetState((prev) => ({ ...prev, open: false, newPassword: "", confirmPassword: "" }))
                   }}
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
-                  disabled={resetPasswordLoading || !newPassword || !confirmPassword}
+                  disabled={isChangingPassword || !resetState.newPassword || !resetState.confirmPassword}
                 >
-                  {resetPasswordLoading ? "Setting Password..." : "Set Password"}
+                  {isChangingPassword ? "Setting Password..." : "Set Password"}
                 </Button>
               </DialogFooter>
             </form>

@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
   Sidebar,
   SidebarContent,
@@ -41,6 +41,18 @@ import {
   IconUserHeart,
 } from "@tabler/icons-react"
 import type { Icon } from "@tabler/icons-react"
+import { useSelector, useDispatch } from "react-redux"
+import type { RootState } from "@/redux/store"
+import { setActiveRole } from "@/redux/slices/authSlice"
+import type { User as AuthUser } from "@/redux/slices/authSlice"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export type PortalRole = "student" | "parent" | "staff" | "school-admin"
 
@@ -87,6 +99,34 @@ export type RoleConfig = {
 
 export function PortalSidebar({ navData, user, ...sidebarProps }: PortalSidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
+  const dispatch = useDispatch()
+  const roles = useSelector((state: RootState) => state.auth.user?.roles ?? []) as AuthUser["roles"]
+  const activeRole = useSelector((state: RootState) => state.auth.activeRole ?? ((roles?.[0] as AuthUser["roles"][number]) ?? null))
+
+  const roleLabel = (role: string) => {
+    switch (role) {
+      case "super-admin": return "Super Admin";
+      case "delegated-super-admin": return "Delegated Admin";
+      case "school-admin": return "School Admin";
+      case "teacher": return "Teacher";
+      case "student": return "Student";
+      case "parent": return "Parent";
+      default: return role;
+    }
+  }
+
+  const roleToRoute = (role: string) => {
+    switch (role) {
+      case "student": return "/student/dashboard";
+      case "parent": return "/parent/dashboard";
+      case "teacher": return "/staff";
+      case "school-admin": return "/school-admin";
+      case "super-admin": return "/super-admin/dashboard";
+      case "delegated-super-admin": return "/super-admin/dashboard";
+      default: return "/dashboard";
+    }
+  }
 
   const navMainWithActive: NavItem[] = navData.navMain.map((item) => {
     if ("items" in item) {
@@ -131,6 +171,40 @@ export function PortalSidebar({ navData, user, ...sidebarProps }: PortalSidebarP
       </SidebarContent>
 
       <SidebarFooter>
+        {roles && roles.length > 1 && (
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton
+                    tooltip="Switch Dashboard"
+                    className="data-[slot=sidebar-menu-button]:!p-1.5"
+                  >
+                    <IconUserShield className="!size-5" />
+                    <span className="group-data-[collapsible=icon]:hidden text-sm">
+                      {activeRole ? `Switch: ${roleLabel(activeRole as string)}` : "Switch Dashboard"}
+                    </span>
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-56">
+                  <DropdownMenuLabel>Switch Dashboard</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {roles.map((r) => (
+                    <DropdownMenuItem
+                      key={r}
+                      onClick={() => {
+                        dispatch(setActiveRole(r as AuthUser["roles"][number]))
+                        router.push(roleToRoute(r as string))
+                      }}
+                    >
+                      <span className="capitalize">{roleLabel(r as string)}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        )}
         <NavUser user={user ?? navData.user} />
       </SidebarFooter>
     </Sidebar>

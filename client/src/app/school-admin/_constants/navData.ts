@@ -1,3 +1,5 @@
+"use client"
+
 import { RoleConfig } from "@/components/portal-sidebar"
 import {
   IconDashboard,
@@ -21,7 +23,7 @@ export const schoolAdminNavData: RoleConfig =  {
       avatar: "/avatars/admin.jpg",
     },
     navMain: [
-      { title: "Dashboard", url: "/school-admin/dashboard", icon: IconDashboard, shortForm: "Dash" },
+      { title: "Dashboard", url: "/school-admin/overview", icon: IconDashboard, shortForm: "Dash" },
       { title: "Students", url: "/school-admin/students", icon: IconUsers, shortForm: "Stud" },
       { title: "Staff", url: "/school-admin/staff", icon: IconUserShield, shortForm: "Staff" },
       { title: "Academic", url: "/school-admin/academic", icon: IconBook, shortForm: "Acad" },

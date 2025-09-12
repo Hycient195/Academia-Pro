@@ -22,6 +22,7 @@ export interface ISchoolAdminStudent {
     admissionNumber: string;
     grade: string;
     section: string;
+    enrollmentDate?: string;
     photo?: string;
     email?: string;
     phone?: string;
@@ -79,6 +80,85 @@ export interface ISchoolAdminUpdateStudentRequest {
         email?: string;
         phone?: string;
     };
+}
+export interface IBulkImportResult {
+    total: number;
+    successful: number;
+    failed: number;
+    errors: Array<{
+        row: number;
+        field: string;
+        message: string;
+        data: Record<string, any>;
+    }>;
+    preview: Array<{
+        row: number;
+        data: Record<string, any>;
+        valid: boolean;
+        errors: string[];
+    }>;
+}
+export interface IBulkImportRequest {
+    file: File;
+    schoolId: string;
+}
+export interface IPromotionRequest {
+    scope: 'all' | 'grade' | 'section' | 'students';
+    gradeCode?: string;
+    streamSection?: string;
+    studentIds?: string[];
+    targetGradeCode: string;
+    academicYear: string;
+    includeRepeaters?: boolean;
+    reason?: string;
+}
+export interface IPromotionResult {
+    promotedStudents: number;
+    studentIds: string[];
+    errors?: Array<{
+        studentId: string;
+        error: string;
+    }>;
+}
+export interface IGraduationRequest {
+    studentIds?: string[];
+    graduationYear: number;
+    clearanceStatus: 'cleared' | 'pending';
+}
+export interface IGraduationResult {
+    graduatedStudents: number;
+    studentIds: string[];
+    errors?: Array<{
+        studentId: string;
+        error: string;
+    }>;
+}
+export interface ITransferStudentRequest {
+    studentId: string;
+    newGradeCode?: string;
+    newStreamSection?: string;
+    reason?: string;
+    effectiveDate?: string;
+    type?: 'internal' | 'external';
+    targetSchoolId?: string;
+}
+export interface ITransferResult {
+    success: boolean;
+    studentId: string;
+    message: string;
+    transferId?: string;
+}
+export interface IClearanceStatus {
+    fees: boolean;
+    library: boolean;
+    hostel: boolean;
+    discipline: boolean;
+    documents: boolean;
+}
+export interface IClearanceUpdateRequest {
+    studentId: string;
+    item: keyof IClearanceStatus;
+    status: boolean;
 }
 export interface ISchoolAdminStaff {
     id: string;

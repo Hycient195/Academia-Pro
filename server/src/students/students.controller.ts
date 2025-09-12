@@ -31,7 +31,10 @@ import {
   UpdateMedicalInfoDto,
   AddDocumentDto,
   AssignClassDto,
-  PromotionDto,
+  PromotionRequestDto,
+  BulkImportRequestDto,
+  GraduationRequestDto,
+  TransferStudentRequestDto,
 } from './dtos';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -384,13 +387,58 @@ export class StudentsController {
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Batch promotion of students' })
-  @ApiBody({ type: PromotionDto })
+  @ApiBody({ type: PromotionRequestDto })
   @ApiResponse({
     status: 200,
     description: 'Promotion executed successfully',
   })
   @ApiResponse({ status: 400, description: 'Invalid promotion configuration' })
-  promotion(@Body() promotionDto: PromotionDto) {
+  promotion(@Body() promotionDto: PromotionRequestDto) {
     return this.studentsService.executePromotion(promotionDto);
+  }
+
+  @Post('bulk-import')
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Bulk import students from CSV data' })
+  @ApiBody({ type: BulkImportRequestDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Bulk import completed',
+  })
+  @ApiResponse({ status: 400, description: 'Invalid import data' })
+  bulkImport(@Body() bulkImportDto: BulkImportRequestDto) {
+    return this.studentsService.bulkImport(bulkImportDto);
+  }
+
+  @Post('batch-graduate')
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Batch graduation of students' })
+  @ApiBody({ type: GraduationRequestDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Graduation completed successfully',
+  })
+  @ApiResponse({ status: 400, description: 'Invalid graduation request' })
+  batchGraduate(@Body() graduationDto: GraduationRequestDto) {
+    return this.studentsService.batchGraduate(graduationDto);
+  }
+
+  @Post('batch-transfer')
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Batch transfer of students' })
+  @ApiBody({ type: TransferStudentRequestDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Transfer completed successfully',
+  })
+  @ApiResponse({ status: 400, description: 'Invalid transfer request' })
+  batchTransfer(@Body() transferDto: TransferStudentRequestDto) {
+    return this.studentsService.batchTransfer(transferDto);
   }
 }

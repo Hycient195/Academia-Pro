@@ -7,7 +7,10 @@ export { TransferStudentDto } from './transfer-student.dto';
 export { UpdateMedicalInfoDto } from './update-medical-info.dto';
 export { AddDocumentDto } from './add-document.dto';
 export { AssignClassDto } from './assign-class.dto';
-export { PromotionDto } from './promotion.dto';
+export { PromotionRequestDto, PromotionResultDto } from './promotion.dto';
+export { BulkImportRequestDto, BulkImportResultDto } from './bulk-import.dto';
+export { GraduationRequestDto, GraduationResultDto } from './graduation.dto';
+export { TransferStudentRequestDto, TransferResultDto } from './transfer.dto';
 export { StudentResponseDto, StudentsListResponseDto, StudentStatisticsResponseDto } from './student-response.dto';
 
 // Health DTOs
@@ -45,7 +48,6 @@ export {
 export type {
   ICreateStudentRequest,
   IUpdateStudentRequest,
-  ITransferStudentRequest,
   IUpdateMedicalInfoRequest,
   IAddDocumentRequest,
   IStudentResponse,

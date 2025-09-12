@@ -248,29 +248,6 @@ export interface IStudentFilters {
     page?: number;
     limit?: number;
 }
-export interface ITransferStudentRequest {
-    newGradeCode?: TGradeCode;
-    newStreamSection?: string;
-    reason?: string;
-    effectiveDate?: string;
-    type?: 'internal' | 'external';
-    targetSchoolId?: string;
-}
-export interface IPromotionRequest {
-    scope: 'all' | 'grade' | 'section' | 'students';
-    gradeCode?: TGradeCode;
-    streamSection?: string;
-    studentIds?: string[];
-    targetGradeCode: TGradeCode;
-    academicYear: string;
-    includeRepeaters?: boolean;
-    reason?: string;
-}
-export interface IGraduationRequest {
-    studentIds?: string[];
-    graduationYear: number;
-    clearanceStatus: 'cleared' | 'pending';
-}
 export interface IUpdateMedicalInfoRequest {
     allergies?: string[];
     medications?: string[];
@@ -343,6 +320,33 @@ export interface IStudentValidationRules {
     currentSection: {
         maxLength: number;
     };
+}
+export interface IStudentImportData {
+    FirstName: string;
+    LastName: string;
+    MiddleName?: string;
+    DateOfBirth: string;
+    Gender: 'male' | 'female' | 'other';
+    BloodGroup?: string;
+    Email?: string;
+    Phone?: string;
+    AdmissionNumber: string;
+    Stage: string;
+    GradeCode: string;
+    StreamSection: string;
+    AdmissionDate: string;
+    EnrollmentType: string;
+    FatherName?: string;
+    FatherPhone?: string;
+    FatherEmail?: string;
+    MotherName?: string;
+    MotherPhone?: string;
+    MotherEmail?: string;
+    AddressStreet?: string;
+    AddressCity?: string;
+    AddressState?: string;
+    AddressPostalCode?: string;
+    AddressCountry?: string;
 }
 export interface IGradeMapping {
     gradeCode: TGradeCode;

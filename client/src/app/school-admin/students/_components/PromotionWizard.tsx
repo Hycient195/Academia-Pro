@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { useGetStudentsQuery } from "@/redux/api/schoolAdminApi"
-import type { TStudentStage, TGradeCode, IPromotionRequest } from "@academia-pro/types/student/student.types"
+import type { TStudentStage, TGradeCode } from "@academia-pro/types/student/student.types"
 import {
   IconUsers,
   IconArrowUp,
@@ -23,6 +23,7 @@ import {
   IconEye,
   IconSettings,
 } from "@tabler/icons-react"
+import { IPromotionRequest } from "@academia-pro/types/school-admin"
 
 interface PromotionWizardProps {
   onComplete: () => void

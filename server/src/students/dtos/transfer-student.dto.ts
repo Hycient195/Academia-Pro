@@ -1,32 +1,38 @@
 // Academia Pro - Transfer Student DTO
 // Data Transfer Object for student grade/section transfers
 
-import { IsString, IsNotEmpty, IsOptional, MaxLength } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, MaxLength, IsEnum } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ITransferStudentRequest } from '@academia-pro/types/student';
+import { ITransferStudentRequest } from "@academia-pro/types/school-admin"
 
 export class TransferStudentDto implements ITransferStudentRequest {
   @ApiProperty({
-    description: 'New grade for the student',
+    description: 'ID of the student to transfer',
+    example: 'student-123',
+  })
+  @IsString({ message: 'Student ID must be a string' })
+  @IsNotEmpty({ message: 'Student ID is required' })
+  studentId: string;
+
+  @ApiPropertyOptional({
+    description: 'New grade code for the student',
     example: 'Grade 11',
-    minLength: 1,
     maxLength: 20,
   })
-  @IsString({ message: 'New grade must be a string' })
-  @IsNotEmpty({ message: 'New grade is required' })
-  @MaxLength(20, { message: 'New grade cannot exceed 20 characters' })
-  newGrade: string;
+  @IsOptional()
+  @IsString({ message: 'New grade code must be a string' })
+  @MaxLength(20, { message: 'New grade code cannot exceed 20 characters' })
+  newGradeCode?: string;
 
-  @ApiProperty({
-    description: 'New section for the student',
+  @ApiPropertyOptional({
+    description: 'New stream section for the student',
     example: 'B',
-    minLength: 1,
     maxLength: 10,
   })
-  @IsString({ message: 'New section must be a string' })
-  @IsNotEmpty({ message: 'New section is required' })
-  @MaxLength(10, { message: 'New section cannot exceed 10 characters' })
-  newSection: string;
+  @IsOptional()
+  @IsString({ message: 'New stream section must be a string' })
+  @MaxLength(10, { message: 'New stream section cannot exceed 10 characters' })
+  newStreamSection?: string;
 
   @ApiPropertyOptional({
     description: 'Reason for the transfer',
@@ -46,4 +52,21 @@ export class TransferStudentDto implements ITransferStudentRequest {
   @IsOptional()
   @IsString({ message: 'Effective date must be a string' })
   effectiveDate?: string;
+
+  @ApiPropertyOptional({
+    description: 'Type of transfer',
+    example: 'internal',
+    enum: ['internal', 'external'],
+  })
+  @IsOptional()
+  @IsEnum(['internal', 'external'], { message: 'Type must be either internal or external' })
+  type?: 'internal' | 'external';
+
+  @ApiPropertyOptional({
+    description: 'Target school ID for external transfer',
+    example: 'school-456',
+  })
+  @IsOptional()
+  @IsString({ message: 'Target school ID must be a string' })
+  targetSchoolId?: string;
 }

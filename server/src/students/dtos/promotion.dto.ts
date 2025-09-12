@@ -1,40 +1,60 @@
-import { IsOptional, IsString, IsArray, IsEnum, IsDateString, IsNumber, MinLength, MaxLength, IsUUID, IsNotEmpty, IsBoolean } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import type { TGradeCode } from '@academia-pro/types/student';
+// Academia Pro - Promotion DTOs
+// Data Transfer Objects for student promotion operations
 
-export class PromotionDto {
+import { IsString, IsNotEmpty, IsOptional, IsEnum, IsUUID, IsBoolean, IsArray } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+interface IPromotionRequest {
+  scope: 'all' | 'grade' | 'section' | 'students';
+  gradeCode?: string;
+  streamSection?: string;
+  studentIds?: string[];
+  targetGradeCode: string;
+  academicYear: string;
+  includeRepeaters?: boolean;
+  reason?: string;
+}
+
+interface IPromotionResult {
+  promotedStudents: number;
+  studentIds: string[];
+  errors?: Array<{
+    studentId: string;
+    error: string;
+  }>;
+}
+
+export class PromotionRequestDto implements IPromotionRequest {
   @ApiProperty({
-    description: 'Scope of promotion',
-    example: 'grade',
+    description: 'Promotion scope',
+    example: 'all',
     enum: ['all', 'grade', 'section', 'students'],
   })
-  @IsEnum(['all', 'grade', 'section', 'students'], { message: 'Invalid scope' })
+  @IsEnum(['all', 'grade', 'section', 'students'], {
+    message: 'Scope must be one of: all, grade, section, students'
+  })
+  @IsNotEmpty({ message: 'Scope is required' })
   scope: 'all' | 'grade' | 'section' | 'students';
 
   @ApiPropertyOptional({
-    description: 'Grade code for scope',
-    example: 'PRY3',
-    enum: ['CRECHE', 'N1', 'N2', 'KG1', 'KG2', 'PRY1', 'PRY2', 'PRY3', 'PRY4', 'PRY5', 'PRY6', 'JSS1', 'JSS2', 'JSS3', 'SSS1', 'SSS2', 'SSS3'],
+    description: 'Target grade code for promotion',
+    example: 'PRY2',
   })
   @IsOptional()
-  @IsEnum(['CRECHE', 'N1', 'N2', 'KG1', 'KG2', 'PRY1', 'PRY2', 'PRY3', 'PRY4', 'PRY5', 'PRY6', 'JSS1', 'JSS2', 'JSS3', 'SSS1', 'SSS2', 'SSS3'], { message: 'Invalid grade code' })
-  gradeCode?: TGradeCode;
+  @IsString({ message: 'Grade code must be a string' })
+  gradeCode?: string;
 
   @ApiPropertyOptional({
-    description: 'Stream section for scope',
+    description: 'Target stream section',
     example: 'A',
-    minLength: 1,
-    maxLength: 20,
   })
   @IsOptional()
   @IsString({ message: 'Stream section must be a string' })
-  @MinLength(1, { message: 'Stream section cannot be empty' })
-  @MaxLength(20, { message: 'Stream section cannot exceed 20 characters' })
   streamSection?: string;
 
   @ApiPropertyOptional({
-    description: 'Specific student IDs for scope',
-    example: ['uuid1', 'uuid2'],
+    description: 'Specific student IDs for promotion',
+    example: ['student-uuid-1', 'student-uuid-2'],
   })
   @IsOptional()
   @IsArray({ message: 'Student IDs must be an array' })
@@ -43,24 +63,22 @@ export class PromotionDto {
 
   @ApiProperty({
     description: 'Target grade code for promotion',
-    example: 'PRY4',
-    enum: ['CRECHE', 'N1', 'N2', 'KG1', 'KG2', 'PRY1', 'PRY2', 'PRY3', 'PRY4', 'PRY5', 'PRY6', 'JSS1', 'JSS2', 'JSS3', 'SSS1', 'SSS2', 'SSS3'],
+    example: 'PRY2',
   })
+  @IsString({ message: 'Target grade code must be a string' })
   @IsNotEmpty({ message: 'Target grade code is required' })
-  @IsEnum(['CRECHE', 'N1', 'N2', 'KG1', 'KG2', 'PRY1', 'PRY2', 'PRY3', 'PRY4', 'PRY5', 'PRY6', 'JSS1', 'JSS2', 'JSS3', 'SSS1', 'SSS2', 'SSS3'], { message: 'Invalid target grade code' })
-  targetGradeCode: TGradeCode;
+  targetGradeCode: string;
 
   @ApiProperty({
-    description: 'Academic year for promotion',
-    example: '2024/2025',
+    description: 'Academic year for the promotion',
+    example: '2024-2025',
   })
   @IsString({ message: 'Academic year must be a string' })
   @IsNotEmpty({ message: 'Academic year is required' })
-  @MinLength(4, { message: 'Academic year must be at least 4 characters' })
   academicYear: string;
 
   @ApiPropertyOptional({
-    description: 'Include repeaters in promotion',
+    description: 'Whether to include students on academic probation',
     example: false,
   })
   @IsOptional()
@@ -68,12 +86,36 @@ export class PromotionDto {
   includeRepeaters?: boolean;
 
   @ApiPropertyOptional({
-    description: 'Reason for promotion',
-    example: 'End of year promotion',
-    maxLength: 500,
+    description: 'Reason for the promotion',
+    example: 'End of academic year promotion',
   })
   @IsOptional()
   @IsString({ message: 'Reason must be a string' })
-  @MaxLength(500, { message: 'Reason cannot exceed 500 characters' })
   reason?: string;
+}
+
+export class PromotionResultDto implements IPromotionResult {
+  @ApiProperty({
+    description: 'Number of students promoted',
+    example: 85,
+  })
+  promotedStudents: number;
+
+  @ApiProperty({
+    description: 'List of student IDs that were promoted',
+    example: ['student-uuid-1', 'student-uuid-2'],
+  })
+  studentIds: string[];
+
+  @ApiPropertyOptional({
+    description: 'Any errors that occurred during promotion',
+    example: [{
+      studentId: 'student-uuid-1',
+      error: 'Student not found'
+    }],
+  })
+  errors?: Array<{
+    studentId: string;
+    error: string;
+  }>;
 }

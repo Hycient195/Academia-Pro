@@ -19,37 +19,10 @@ import {
   IconEye,
   IconRefresh,
 } from "@tabler/icons-react"
+import type { IStudentImportData } from "@academia-pro/types/student"
 
 interface BulkImportWizardProps {
   onComplete: () => void
-}
-
-interface StudentImportData {
-  FirstName: string
-  LastName: string
-  MiddleName?: string
-  DateOfBirth: string
-  Gender: 'male' | 'female' | 'other'
-  BloodGroup?: string
-  Email?: string
-  Phone?: string
-  AdmissionNumber: string
-  Stage: string
-  GradeCode: string
-  StreamSection: string
-  AdmissionDate: string
-  EnrollmentType: string
-  FatherName?: string
-  FatherPhone?: string
-  FatherEmail?: string
-  MotherName?: string
-  MotherPhone?: string
-  MotherEmail?: string
-  AddressStreet?: string
-  AddressCity?: string
-  AddressState?: string
-  AddressPostalCode?: string
-  AddressCountry?: string
 }
 
 interface ImportResult {
@@ -60,11 +33,11 @@ interface ImportResult {
     row: number
     field: string
     message: string
-    data: StudentImportData
+    data: IStudentImportData
   }>
   preview: Array<{
     row: number
-    data: StudentImportData
+    data: IStudentImportData
     valid: boolean
     errors: string[]
   }>

@@ -82,7 +82,7 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({
 
   if (process.env.NODE_ENV !== 'production') {
     // eslint-disable-next-line no-console
-    console.debug('[RoleGuard]', { userRoles: user?.roles, allowedRoles })
+    // console.debug('[RoleGuard]', { userRoles: user?.roles, allowedRoles })
   }
 
   if (!isAuthenticated || !user) {

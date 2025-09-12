@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import { useGetStudentsQuery } from "@/redux/api/schoolAdminApi"
-import type { ITransferStudentRequest, TStudentStage, TGradeCode } from "@academia-pro/types/student/student.types"
+import type { TStudentStage, TGradeCode } from "@academia-pro/types/student/student.types"
 import {
   IconArrowRight,
   IconBuilding,
@@ -25,6 +25,7 @@ import {
   IconUsers,
   IconClipboardList,
 } from "@tabler/icons-react"
+import { ITransferStudentRequest } from "@academia-pro/types/school-admin"
 
 interface TransferWizardProps {
   onComplete: () => void

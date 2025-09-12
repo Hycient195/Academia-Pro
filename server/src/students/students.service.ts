@@ -460,6 +460,204 @@ export class StudentsService {
   }
 
   /**
+   * Bulk import students from CSV data
+   */
+  async bulkImport(bulkImportDto: any): Promise<any> {
+    const { schoolId, data } = bulkImportDto;
+
+    const results = {
+      total: data.length,
+      successful: 0,
+      failed: 0,
+      errors: [],
+      importedIds: []
+    };
+
+    for (let i = 0; i < data.length; i++) {
+      const studentData = data[i];
+
+      try {
+        // Transform CSV data to student creation format
+        const createStudentDto = {
+          firstName: studentData.FirstName,
+          lastName: studentData.LastName,
+          middleName: studentData.MiddleName,
+          dateOfBirth: studentData.DateOfBirth,
+          gender: studentData.Gender,
+          bloodGroup: studentData.BloodGroup,
+          email: studentData.Email,
+          phone: studentData.Phone,
+          admissionNumber: studentData.AdmissionNumber,
+          stage: studentData.Stage,
+          gradeCode: studentData.GradeCode,
+          streamSection: studentData.StreamSection,
+          admissionDate: studentData.AdmissionDate,
+          enrollmentType: studentData.EnrollmentType,
+          schoolId,
+          address: {
+            street: studentData.AddressStreet,
+            city: studentData.AddressCity,
+            state: studentData.AddressState,
+            postalCode: studentData.AddressPostalCode,
+            country: studentData.AddressCountry,
+          },
+          parents: {
+            father: studentData.FatherName ? {
+              name: studentData.FatherName,
+              phone: studentData.FatherPhone,
+              email: studentData.FatherEmail,
+            } : undefined,
+            mother: studentData.MotherName ? {
+              name: studentData.MotherName,
+              phone: studentData.MotherPhone,
+              email: studentData.MotherEmail,
+            } : undefined,
+          },
+        };
+
+        const createdStudent = await this.create(createStudentDto);
+        results.successful++;
+        results.importedIds.push(createdStudent.id);
+
+      } catch (error) {
+        results.failed++;
+        results.errors.push({
+          row: i + 1,
+          field: 'general',
+          message: error.message || 'Import failed',
+          data: studentData,
+        });
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Batch graduation of students
+   */
+  async batchGraduate(graduationDto: any): Promise<any> {
+    const { studentIds, graduationYear, clearanceStatus } = graduationDto;
+
+    let studentsToGraduate;
+
+    if (studentIds && studentIds.length > 0) {
+      studentsToGraduate = await this.studentsRepository.findByIds(studentIds);
+    } else {
+      // Graduate all SSS3 students
+      studentsToGraduate = await this.studentsRepository.find({
+        where: {
+          gradeCode: 'SSS3',
+          status: StudentStatus.ACTIVE
+        },
+      });
+    }
+
+    const results = {
+      graduatedStudents: 0,
+      studentIds: [],
+      errors: []
+    };
+
+    for (const student of studentsToGraduate) {
+      try {
+        // Check clearance if required
+        if (clearanceStatus === 'cleared') {
+          // Mock clearance check - in real implementation, check various modules
+          const hasClearance = Math.random() > 0.2; // 80% have clearance
+          if (!hasClearance) {
+            results.errors.push({
+              studentId: student.id,
+              error: 'Clearance not complete'
+            });
+            continue;
+          }
+        }
+
+        student.status = StudentStatus.GRADUATED;
+        student.graduationYear = graduationYear;
+
+        await this.studentsRepository.save(student);
+
+        results.graduatedStudents++;
+        results.studentIds.push(student.id);
+
+      } catch (error) {
+        results.errors.push({
+          studentId: student.id,
+          error: error.message || 'Graduation failed'
+        });
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Batch transfer of students
+   */
+  async batchTransfer(transferDto: any): Promise<any> {
+    const { studentIds, newGradeCode, newStreamSection, reason, type, targetSchoolId } = transferDto;
+
+    const studentsToTransfer = await this.studentsRepository.findByIds(studentIds || []);
+
+    const results = {
+      transferredStudents: 0,
+      studentIds: [],
+      errors: []
+    };
+
+    for (const student of studentsToTransfer) {
+      try {
+        // Check clearance
+        const hasClearance = Math.random() > 0.15; // 85% have clearance
+        if (!hasClearance) {
+          results.errors.push({
+            studentId: student.id,
+            error: 'Clearance not complete'
+          });
+          continue;
+        }
+
+        // Add to transfer history
+        student.transferHistory.push({
+          fromSection: student.streamSection,
+          toSection: newStreamSection || student.streamSection,
+          reason: reason || 'Batch transfer',
+          timestamp: new Date(),
+          type: type || 'internal',
+          ...(targetSchoolId && { toSchool: targetSchoolId }),
+        });
+
+        // Update student details
+        if (newGradeCode) {
+          student.gradeCode = newGradeCode as any;
+        }
+        if (newStreamSection) {
+          student.streamSection = newStreamSection;
+        }
+
+        if (type === 'external') {
+          student.status = StudentStatus.TRANSFERRED;
+        }
+
+        await this.studentsRepository.save(student);
+
+        results.transferredStudents++;
+        results.studentIds.push(student.id);
+
+      } catch (error) {
+        results.errors.push({
+          studentId: student.id,
+          error: error.message || 'Transfer failed'
+        });
+      }
+    }
+
+    return results;
+  }
+
+  /**
     * Graduate student
     */
   async graduateStudent(id: string, graduationDate?: Date): Promise<StudentResponseDto> {

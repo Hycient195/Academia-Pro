@@ -284,32 +284,6 @@ export interface IStudentFilters {
   limit?: number;
 }
 
-export interface ITransferStudentRequest {
-  newGradeCode?: TGradeCode;
-  newStreamSection?: string;
-  reason?: string;
-  effectiveDate?: string;
-  type?: 'internal' | 'external';
-  targetSchoolId?: string; // for external
-}
-
-export interface IPromotionRequest {
-  scope: 'all' | 'grade' | 'section' | 'students';
-  gradeCode?: TGradeCode;
-  streamSection?: string;
-  studentIds?: string[];
-  targetGradeCode: TGradeCode;
-  academicYear: string;
-  includeRepeaters?: boolean;
-  reason?: string;
-}
-
-export interface IGraduationRequest {
-  studentIds?: string[];
-  graduationYear: number;
-  clearanceStatus: 'cleared' | 'pending';
-}
-
 export interface IUpdateMedicalInfoRequest {
   allergies?: string[];
   medications?: string[];

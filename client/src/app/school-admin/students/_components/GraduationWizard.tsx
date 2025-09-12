@@ -14,7 +14,6 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import { useGetStudentsQuery } from "@/redux/api/schoolAdminApi"
-import type { IGraduationRequest } from "@academia-pro/types/student/student.types"
 import {
   IconAward,
   IconCheck,
@@ -25,6 +24,7 @@ import {
   IconCalendar,
   IconClipboardList,
 } from "@tabler/icons-react"
+import { IGraduationRequest } from "@academia-pro/types/school-admin"
 
 interface GraduationWizardProps {
   onComplete: () => void

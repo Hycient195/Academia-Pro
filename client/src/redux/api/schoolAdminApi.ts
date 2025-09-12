@@ -11,6 +11,14 @@ import type {
   ISchoolAdminCreateStudentRequest,
   ISchoolAdminUpdateStudentRequest,
   ISchoolAdminStaff,
+  IBulkImportResult,
+  IBulkImportRequest,
+  IPromotionResult,
+  IPromotionRequest,
+  IGraduationResult,
+  IGraduationRequest,
+  ITransferResult,
+  ITransferStudentRequest,
 } from '@academia-pro/types/school-admin';
 import type { IStudent } from '@academia-pro/types/student';
 
@@ -47,20 +55,20 @@ export const schoolAdminApi = createApi({
     // Student Management
     getStudents: builder.query<{ students: ISchoolAdminStudent[]; total: number; page: number; limit: number }, ISchoolAdminStudentFilters & { stage?: string; gradeCode?: string; streamSection?: string }>({
       query: (filters) => ({
-        url: '/school-admin/students',
+        url: '/students',
         params: filters,
       }),
       providesTags: ['Students'],
     }),
 
     getStudentById: builder.query<IStudent, string>({
-      query: (studentId) => `/school-admin/students/${studentId}`,
+      query: (studentId) => `/students/${studentId}`,
       providesTags: (result, error, studentId) => [{ type: 'Students', id: studentId }],
     }),
 
     createStudent: builder.mutation<ISchoolAdminStudent, ISchoolAdminCreateStudentRequest>({
       query: (studentData) => ({
-        url: '/school-admin/students',
+        url: '/students',
         method: 'POST',
         body: studentData,
       }),
@@ -69,7 +77,7 @@ export const schoolAdminApi = createApi({
 
     updateStudent: builder.mutation<ISchoolAdminStudent, { studentId: string; updates: ISchoolAdminUpdateStudentRequest }>({
       query: ({ studentId, updates }) => ({
-        url: `/school-admin/students/${studentId}`,
+        url: `/students/${studentId}`,
         method: 'PATCH',
         body: updates,
       }),
@@ -81,7 +89,7 @@ export const schoolAdminApi = createApi({
 
     deleteStudent: builder.mutation<void, string>({
       query: (studentId) => ({
-        url: `/school-admin/students/${studentId}`,
+        url: `/students/${studentId}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['Students', 'SchoolOverview'],
@@ -90,20 +98,20 @@ export const schoolAdminApi = createApi({
     // Staff Management
     getStaff: builder.query<{ staff: ISchoolAdminStaff[]; total: number }, ISchoolAdminStaffFilters>({
       query: (filters) => ({
-        url: '/school-admin/staff',
+        url: '/staff',
         params: filters,
       }),
       providesTags: ['Staff'],
     }),
 
     getStaffById: builder.query<ISchoolAdminStaff, string>({
-      query: (staffId) => `/school-admin/staff/${staffId}`,
+      query: (staffId) => `/staff/${staffId}`,
       providesTags: (result, error, staffId) => [{ type: 'Staff', id: staffId }],
     }),
 
     updateStaff: builder.mutation<ISchoolAdminStaff, { staffId: string; updates: Partial<ISchoolAdminStaff> }>({
       query: ({ staffId, updates }) => ({
-        url: `/school-admin/staff/${staffId}`,
+        url: `/staff/${staffId}`,
         method: 'PATCH',
         body: updates,
       }),
@@ -115,29 +123,29 @@ export const schoolAdminApi = createApi({
 
     // Academic Management
     getClasses: builder.query<{ id: string; name: string; grade: string; section: string; teacherId: string; teacherName: string; totalStudents: number; academicYear: string }[], void>({
-      query: () => '/school-admin/academic/classes',
+      query: () => '/academic/classes',
       providesTags: ['Academic'],
     }),
 
     getSubjects: builder.query<{ id: string; name: string; code: string; description?: string; grade: string; teacherId?: string; teacherName?: string }[], void>({
-      query: () => '/school-admin/academic/subjects',
+      query: () => '/academic/subjects',
       providesTags: ['Academic'],
     }),
 
     // Financial Management
     getFeeStructure: builder.query<{ id: string; grade: string; tuitionFee: number; transportationFee?: number; otherFees: Array<{ name: string; amount: number }>; totalFee: number; dueDate: string }, void>({
-      query: () => '/school-admin/financial/fees',
+      query: () => '/fees/structures',
       providesTags: ['Financial'],
     }),
 
     getOutstandingFees: builder.query<{ studentId: string; studentName: string; amount: number; dueDate: string; daysOverdue: number }[], void>({
-      query: () => '/school-admin/financial/outstanding',
+      query: () => '/fees/outstanding',
       providesTags: ['Financial'],
     }),
 
     processPayment: builder.mutation<{ id: string; status: string; amount: number; transactionId: string }, { studentId: string; amount: number; paymentMethod: string; feeType: string }>({
       query: (paymentData) => ({
-        url: '/school-admin/financial/payments',
+        url: '/fees/payments',
         method: 'POST',
         body: paymentData,
       }),
@@ -147,7 +155,7 @@ export const schoolAdminApi = createApi({
     // Communication
     createAnnouncement: builder.mutation<{ id: string; title: string; content: string; type: string; createdAt: string }, { title: string; content: string; type: 'general' | 'academic' | 'financial' | 'emergency'; targetAudience: 'all' | 'students' | 'parents' | 'staff'; priority: 'low' | 'medium' | 'high' }>({
       query: (announcementData) => ({
-        url: '/school-admin/communication/announcements',
+        url: '/communication/announcement',
         method: 'POST',
         body: announcementData,
       }),
@@ -155,8 +163,45 @@ export const schoolAdminApi = createApi({
     }),
 
     getAnnouncements: builder.query<{ id: string; title: string; content: string; type: string; priority: string; createdAt: string; createdBy: string }[], void>({
-      query: () => '/school-admin/communication/announcements',
+      query: () => '/communication/notices',
       providesTags: ['Communication'],
+    }),
+
+    // Bulk Operations
+    bulkImportStudents: builder.mutation<IBulkImportResult, IBulkImportRequest>({
+      query: (importData) => ({
+        url: '/students/bulk-import',
+        method: 'POST',
+        body: importData,
+      }),
+      invalidatesTags: ['Students', 'SchoolOverview'],
+    }),
+
+    batchPromoteStudents: builder.mutation<IPromotionResult, IPromotionRequest>({
+      query: (promotionData) => ({
+        url: '/students/promotion',
+        method: 'POST',
+        body: promotionData,
+      }),
+      invalidatesTags: ['Students', 'SchoolOverview'],
+    }),
+
+    batchGraduateStudents: builder.mutation<IGraduationResult, IGraduationRequest>({
+      query: (graduationData) => ({
+        url: '/students/batch-graduate',
+        method: 'POST',
+        body: graduationData,
+      }),
+      invalidatesTags: ['Students', 'SchoolOverview'],
+    }),
+
+    batchTransferStudents: builder.mutation<ITransferResult, ITransferStudentRequest>({
+      query: (transferData) => ({
+        url: '/students/batch-transfer',
+        method: 'POST',
+        body: transferData,
+      }),
+      invalidatesTags: ['Students', 'SchoolOverview'],
     }),
   }),
 });
@@ -178,4 +223,8 @@ export const {
   useProcessPaymentMutation,
   useCreateAnnouncementMutation,
   useGetAnnouncementsQuery,
+  useBulkImportStudentsMutation,
+  useBatchPromoteStudentsMutation,
+  useBatchGraduateStudentsMutation,
+  useBatchTransferStudentsMutation,
 } = schoolAdminApi;

@@ -23,6 +23,8 @@ export interface ISchoolAdminStudent {
     grade: string;
     section: string;
     photo?: string;
+    email?: string;
+    phone?: string;
     status: 'active' | 'inactive' | 'transferred' | 'graduated';
     attendanceRate: number;
     parentContact: {

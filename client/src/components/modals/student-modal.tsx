@@ -24,7 +24,7 @@ import {
   IconCheck,
   IconAlertTriangle,
 } from "@tabler/icons-react"
-import { FormTextArea } from "@/components/ui/form-components"
+import { FormTextArea } from "@/components/ui/form/form-components"
 
 interface StudentModalProps {
   isOpen: boolean

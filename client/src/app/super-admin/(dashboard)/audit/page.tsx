@@ -30,9 +30,9 @@ import {
 import { apis } from "@/redux/api"
 import { IAuditLog, TAuditActionType, TAuditStatus, IAuditMetrics } from "@academia-pro/types/super-admin"
 import { useWebSocket } from "@/hooks/useWebSocket"
-import { FormSchoolSelect } from "@/components/ui/FormSchoolSelect"
-import { FormUserSelect } from "@/components/ui/FormUserSelect"
-import { FormDateInput, FormSelect, FormText } from "@/components/ui/form-components"
+import { FormSchoolSelect } from "@/components/ui/form/FormSchoolSelect"
+import { FormUserSelect } from "@/components/ui/form/FormUserSelect"
+import { FormDateInput, FormSelect, FormText } from "@/components/ui/form/form-components"
 
 interface PaginationInfo {
   page: number;

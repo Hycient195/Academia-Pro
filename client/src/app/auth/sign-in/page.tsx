@@ -154,24 +154,23 @@ export default function SignInPage() {
 
       switch (userRole) {
         case "student":
-          redirectPath = "/student/dashboard"
+          redirectPath = "/student/overview"
           break
         case "parent":
-          redirectPath = "/parent/dashboard"
+          redirectPath = "/parent/overview"
           break
         case "teacher":
-          // Teacher uses the staff portal
-          redirectPath = "/staff"
+          redirectPath = "/staff/overview"
           break
         case "school-admin":
-          redirectPath = "/school-admin"
+          redirectPath = "/school-admin/overview"
           break
         case "super-admin":
         case "delegated-super-admin":
-          redirectPath = "/super-admin/dashboard"
+          redirectPath = "/super-admin/overview"
           break
         default:
-          redirectPath = "/dashboard"
+          redirectPath = "/overview"
       }
 
       toast.success("Login successful! Redirecting...")

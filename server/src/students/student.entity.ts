@@ -3,6 +3,7 @@
 
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Index, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { School } from '../schools/school.entity';
+import { TStudentStage, TGradeCode } from '@academia-pro/types/student/student.types';
 
 export enum StudentStatus {
   ACTIVE = 'active',
@@ -12,6 +13,9 @@ export enum StudentStatus {
   WITHDRAWN = 'withdrawn',
   SUSPENDED = 'suspended',
 }
+
+// Use shared enums
+export type { TStudentStage, TGradeCode };
 
 export enum EnrollmentType {
   REGULAR = 'regular',
@@ -34,6 +38,7 @@ export enum BloodGroup {
 
 @Entity('students')
 @Index(['schoolId', 'status'])
+@Index(['schoolId', 'stage', 'gradeCode', 'status'])
 @Index(['admissionNumber'], { unique: true })
 @Index(['email'])
 export class Student {
@@ -91,10 +96,22 @@ export class Student {
   admissionNumber: string;
 
   @Column({ type: 'varchar', length: 20 })
-  currentGrade: string; // e.g., 'Grade 10', 'Class 8'
+  currentGrade: string; // e.g., 'Grade 10', 'Class 8' - legacy
 
   @Column({ type: 'varchar', length: 10 })
-  currentSection: string; // e.g., 'A', 'B', 'C'
+  currentSection: string; // e.g., 'A', 'B', 'C' - legacy
+
+  @Column({
+    type: 'enum',
+    enum: TStudentStage,
+  })
+  stage: TStudentStage;
+
+  @Column({ type: 'varchar', length: 10 })
+  gradeCode: TGradeCode;
+
+  @Column({ type: 'varchar', length: 20 })
+  streamSection: string; // e.g., 'Science Stream A'
 
   @Column({ type: 'date' })
   admissionDate: Date;
@@ -105,6 +122,35 @@ export class Student {
     default: EnrollmentType.REGULAR,
   })
   enrollmentType: EnrollmentType;
+
+  // New fields
+  @Column({ type: 'boolean', default: false })
+  isBoarding: boolean;
+
+  @Column({ type: 'jsonb', default: [] })
+  promotionHistory: {
+    fromGrade: TGradeCode;
+    toGrade: TGradeCode;
+    academicYear: string;
+    performedBy: string;
+    timestamp: Date;
+    reason?: string;
+  }[];
+
+  @Column({ type: 'jsonb', default: [] })
+  transferHistory: {
+    fromSchool?: string;
+    toSchool?: string;
+    fromSection?: string;
+    toSection?: string;
+    reason: string;
+    academicYear?: string;
+    timestamp: Date;
+    type: 'internal' | 'external';
+  }[];
+
+  @Column({ type: 'int', nullable: true })
+  graduationYear?: number;
 
   // School Information
   @Column({ type: 'uuid' })
@@ -323,6 +369,7 @@ export class Student {
       ...updates,
     };
   }
+
 
   // Relations
   @ManyToOne(() => School, school => school.students)

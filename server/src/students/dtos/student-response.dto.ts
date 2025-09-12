@@ -71,16 +71,47 @@ export class StudentResponseDto {
   bloodGroup?: any; // TBloodGroup
 
   @ApiProperty({
-    description: 'Current grade',
-    example: 'Grade 10',
+    description: 'Academic stage',
+    example: 'PRY',
+    enum: ['EY', 'PRY', 'JSS', 'SSS'],
   })
-  currentGrade: string;
+  stage: string; // TStudentStage
 
   @ApiProperty({
-    description: 'Current section',
+    description: 'Canonical grade code',
+    example: 'PRY3',
+  })
+  gradeCode: string; // TGradeCode
+
+  @ApiProperty({
+    description: 'Stream or section',
     example: 'A',
   })
-  currentSection: string;
+  streamSection: string;
+
+  @ApiProperty({
+    description: 'Boarding status',
+    example: false,
+  })
+  isBoarding: boolean;
+
+  @ApiProperty({
+    description: 'Promotion history',
+    type: [Object],
+  })
+  promotionHistory: any[]; // IPromotionHistory[]
+
+  @ApiProperty({
+    description: 'Transfer history',
+    type: [Object],
+  })
+  transferHistory: any[]; // ITransferHistory[]
+
+  @ApiPropertyOptional({
+    description: 'Graduation year',
+    example: 2025,
+  })
+  graduationYear?: number;
 
 
   @ApiProperty({
@@ -248,13 +279,18 @@ export class StudentResponseDto {
       phone: entity.phone,
       address: entity.address,
       bloodGroup: entity.bloodGroup,
-      currentGrade: entity.currentGrade,
-      currentSection: entity.currentSection,
+      stage: entity.stage,
+      gradeCode: entity.gradeCode,
+      streamSection: entity.streamSection,
+      isBoarding: entity.isBoarding,
       admissionDate: entity.admissionDate,
       enrollmentType: entity.enrollmentType,
       schoolId: entity.schoolId,
       userId: entity.userId,
       status: entity.status,
+      promotionHistory: entity.promotionHistory || [],
+      transferHistory: entity.transferHistory || [],
+      graduationYear: entity.graduationYear,
       emergencyContact: entity.medicalInfo?.emergencyContact || {},
       parents: entity.parents,
       medicalInfo: entity.medicalInfo,
@@ -270,7 +306,7 @@ export class StudentResponseDto {
       updatedAt: entity.updatedAt,
       fullName: `${entity.firstName} ${entity.middleName ? entity.middleName + ' ' : ''}${entity.lastName}`,
       age,
-      gradeSection: `${entity.currentGrade} - ${entity.currentSection}`,
+      gradeSection: `${entity.gradeCode} - ${entity.streamSection}`,
       isActive: entity.status === 'active',
       hasTransportation: entity.transportation?.required || false,
       hasHostel: entity.hostel?.required || false,

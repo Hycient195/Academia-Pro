@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { FormCountrySelect, FormRegionSelect, FormSelect, FormText, FormTextArea, FormPhoneInput, FormMultiSelect } from "@/components/ui/form-components"
+import { FormCountrySelect, FormRegionSelect, FormSelect, FormText, FormTextArea, FormPhoneInput, FormMultiSelect } from "@/components/ui/form/form-components"
 import ErrorBlock from "@/components/utilities/ErrorBlock"
 import { apis } from "@/redux/api"
 import { ICreateSchoolRequest, IUpdateSchoolRequest, ISuperAdminSchool } from "@academia-pro/types/super-admin"

@@ -20,6 +20,8 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiQuery,
+  ApiParam,
+  ApiBody,
 } from '@nestjs/swagger';
 import { StudentsService } from './students.service';
 import {
@@ -28,6 +30,8 @@ import {
   TransferStudentDto,
   UpdateMedicalInfoDto,
   AddDocumentDto,
+  AssignClassDto,
+  PromotionDto,
 } from './dtos';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -82,8 +86,8 @@ export class StudentsController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('schoolId') schoolId?: string,
-    @Query('grade') grade?: string,
-    @Query('section') section?: string,
+    @Query('gradeCode') gradeCode?: string,
+    @Query('streamSection') streamSection?: string,
     @Query('status') status?: StudentStatus,
     @Query('enrollmentType') enrollmentType?: EnrollmentType,
     @Query('search') search?: string,
@@ -92,8 +96,8 @@ export class StudentsController {
       page,
       limit,
       schoolId,
-      grade,
-      section,
+      gradeCode,
+      streamSection,
       status,
       enrollmentType,
       search,
@@ -106,8 +110,8 @@ export class StudentsController {
   @ApiOperation({ summary: 'Search students' })
   @ApiQuery({ name: 'query', required: true, type: String })
   @ApiQuery({ name: 'schoolId', required: false, type: String })
-  @ApiQuery({ name: 'grade', required: false, type: String })
-  @ApiQuery({ name: 'section', required: false, type: String })
+  @ApiQuery({ name: 'gradeCode', required: false, type: String })
+  @ApiQuery({ name: 'streamSection', required: false, type: String })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({
     status: 200,
@@ -123,35 +127,35 @@ export class StudentsController {
     return this.studentsService.search(query, schoolId, { grade, section, limit });
   }
 
-  @Get('by-grade/:schoolId/:grade')
+  @Get('by-grade/:schoolId/:gradeCode')
   @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get students by grade' })
+  @ApiOperation({ summary: 'Get students by grade code' })
   @ApiResponse({
     status: 200,
     description: 'Students retrieved successfully',
   })
-  getStudentsByGrade(
+  getStudentsByGradeCode(
     @Param('schoolId') schoolId: string,
-    @Param('grade') grade: string,
+    @Param('gradeCode') gradeCode: string,
   ) {
-    return this.studentsService.getStudentsByGrade(schoolId, grade);
+    return this.studentsService.getStudentsByGradeCode(schoolId, gradeCode);
   }
 
-  @Get('by-section/:schoolId/:grade/:section')
+  @Get('by-section/:schoolId/:gradeCode/:streamSection')
   @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get students by section' })
+  @ApiOperation({ summary: 'Get students by stream section' })
   @ApiResponse({
     status: 200,
     description: 'Students retrieved successfully',
   })
-  getStudentsBySection(
+  getStudentsByStreamSection(
     @Param('schoolId') schoolId: string,
-    @Param('grade') grade: string,
-    @Param('section') section: string,
+    @Param('gradeCode') gradeCode: string,
+    @Param('streamSection') streamSection: string,
   ) {
-    return this.studentsService.getStudentsBySection(schoolId, grade, section);
+    return this.studentsService.getStudentsByStreamSection(schoolId, gradeCode, streamSection);
   }
 
   @Get('statistics')
@@ -247,26 +251,50 @@ export class StudentsController {
   })
   @ApiResponse({ status: 400, description: 'Invalid transfer or already in grade/section' })
   @ApiResponse({ status: 404, description: 'Student not found' })
-  transferStudent(@Param('id') id: string, @Body() transferStudentDto: TransferStudentDto) {
-    return this.studentsService.transferStudent(id, transferStudentDto.newGrade, transferStudentDto.newSection);
+  internalTransfer(@Param('id') id: string, @Body() transferDto: TransferStudentDto) {
+    return this.studentsService.internalTransfer(id, transferDto);
   }
 
-  @Patch(':id/graduate')
+  @Post(':id/transfer/external')
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'External transfer to another school' })
+  @ApiParam({ name: 'id', description: 'Student ID' })
+  @ApiBody({ type: TransferStudentDto })
+  @ApiResponse({
+    status: 200,
+    description: 'External transfer executed',
+  })
+  @ApiResponse({ status: 400, description: 'Invalid transfer' })
+  @ApiResponse({ status: 404, description: 'Student not found' })
+  externalTransfer(@Param('id') id: string, @Body() transferDto: TransferStudentDto) {
+    return this.studentsService.externalTransfer(id, transferDto);
+  }
+
+  @Post(':id/graduate')
   @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Graduate student' })
+  @ApiParam({ name: 'id', description: 'Student ID' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        graduationYear: { type: 'number', example: 2025 },
+        clearanceStatus: { type: 'string', enum: ['cleared', 'pending'], example: 'cleared' },
+      },
+    },
+  })
   @ApiResponse({
     status: 200,
     description: 'Student graduated successfully',
   })
   @ApiResponse({ status: 400, description: 'Student already graduated' })
   @ApiResponse({ status: 404, description: 'Student not found' })
-  graduateStudent(
-    @Param('id') id: string,
-    @Body('graduationDate') graduationDate?: Date,
-  ) {
-    return this.studentsService.graduateStudent(id, graduationDate);
+  graduate(@Param('id') id: string, @Body() graduationData: any) {
+    return this.studentsService.graduateStudent(id, graduationData.graduationYear);
   }
 
   @Patch(':id/medical-info')
@@ -332,5 +360,37 @@ export class StudentsController {
   @ApiResponse({ status: 404, description: 'Student not found' })
   remove(@Param('id') id: string) {
     return this.studentsService.remove(id);
+  }
+
+  @Post(':id/assign-class')
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Assign or reassign class/section' })
+  @ApiParam({ name: 'id', description: 'Student ID' })
+  @ApiBody({ type: AssignClassDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Class assigned successfully',
+  })
+  @ApiResponse({ status: 400, description: 'Invalid assignment' })
+  @ApiResponse({ status: 404, description: 'Student not found' })
+  assignClass(@Param('id') id: string, @Body() assignClassDto: AssignClassDto) {
+    return this.studentsService.assignClass(id, assignClassDto);
+  }
+
+  @Post('promotion')
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Batch promotion of students' })
+  @ApiBody({ type: PromotionDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Promotion executed successfully',
+  })
+  @ApiResponse({ status: 400, description: 'Invalid promotion configuration' })
+  promotion(@Body() promotionDto: PromotionDto) {
+    return this.studentsService.executePromotion(promotionDto);
   }
 }

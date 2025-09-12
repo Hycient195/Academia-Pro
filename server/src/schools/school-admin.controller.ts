@@ -1,7 +1,7 @@
 // Academia Pro - School Admin Controller
 // Handles school-specific administration and management
 
-import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, Logger, Inject, Req } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, Logger, Inject, Req, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { SchoolContextService, SchoolContext } from './school-context.service';
 import { School } from './school.entity';
@@ -23,6 +23,7 @@ import { EUserRole } from '@academia-pro/types/users';
 // Audit imports
 import { Auditable, SampleAudit } from '../common/audit/auditable.decorator';
 import { AuditAction, AuditSeverity } from '../security/types/audit.types';
+import { AddDocumentDto } from 'src/students/dtos';
 
 @ApiTags('School Admin - School Management')
 @Controller('school-admin')
@@ -354,49 +355,187 @@ export class SchoolAdminController {
   @Get('students')
   @ApiOperation({
     summary: 'Get school students',
-    description: 'Returns all students enrolled in the current school.',
+    description: 'Returns paginated list of students enrolled in the current school.',
   })
-  @ApiQuery({
-    name: 'grade',
-    required: false,
-    description: 'Filter by grade level',
-  })
+  @ApiQuery({ name: 'stage', required: false, enum: ['EY', 'PRY', 'JSS', 'SSS'], description: 'Filter by academic stage' })
+  @ApiQuery({ name: 'gradeCode', required: false, description: 'Filter by canonical grade code' })
+  @ApiQuery({ name: 'streamSection', required: false, description: 'Filter by stream or section' })
   @ApiQuery({
     name: 'status',
     required: false,
     enum: ['active', 'inactive', 'graduated', 'transferred', 'withdrawn', 'suspended'],
     description: 'Filter by student status',
   })
+  @ApiQuery({ name: 'search', required: false, description: 'Search by name, admission number or email' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (1-based)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page' })
   @ApiResponse({
     status: 200,
     description: 'School students retrieved successfully',
   })
   async getSchoolStudents(
     @Req() request: any,
-    @Query('grade') grade?: string,
+    @Query('stage') stage?: string,
+    @Query('gradeCode') gradeCode?: string,
+    @Query('streamSection') streamSection?: string,
     @Query('status') status?: string,
-  ): Promise<any[]> {
+    @Query('search') search?: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ): Promise<{ students: any[]; total: number; page: number; limit: number }> {
     this.logger.log('Getting school students');
 
     const schoolContext = request.schoolContext;
     const schoolId = schoolContext.schoolId;
 
-    // Use the StudentsService to get students for this school
     const result = await this.studentsService.findAll({
       schoolId,
-      grade,
+      stage,
+      gradeCode,
+      streamSection,
       status: status as any,
+      search,
+      page: Number(page),
+      limit: Number(limit),
     });
 
-    return result.students.map(student => ({
+    const students = result.students.map(student => ({
       id: student.id,
       admissionNumber: student.admissionNumber,
       firstName: student.firstName,
       lastName: student.lastName,
-      currentGrade: student.currentGrade,
+      stage: student.stage,
+      gradeCode: student.gradeCode,
+      streamSection: student.streamSection,
       status: student.status,
       enrollmentDate: student.admissionDate,
+      email: student.email,
+      phone: student.phone,
     }));
+
+    return {
+      students,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+    };
+  }
+
+  @Post('students')
+  @ApiOperation({
+    summary: 'Create student admission',
+    description: 'Creates a new student record for the current school.',
+  })
+  @ApiBody({ type: CreateStudentDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Student created successfully',
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 409, description: 'Admission number or email already exists' })
+  async createSchoolStudent(
+    @Req() request: any,
+    @Body() createStudentDto: CreateStudentDto,
+  ): Promise<any> {
+    this.logger.log('Creating school student');
+
+    const schoolContext = request.schoolContext;
+    const schoolId = schoolContext.schoolId;
+
+    const studentData = { ...createStudentDto, schoolId };
+
+    return this.studentsService.create(studentData);
+  }
+
+  @Get('students/:id')
+  @ApiOperation({
+    summary: 'Get student profile',
+    description: 'Returns detailed profile for a student in the current school.',
+  })
+  @ApiParam({ name: 'id', description: 'Student ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Student profile retrieved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Student not found' })
+  async getSchoolStudentById(
+    @Req() request: any,
+    @Param('id') id: string,
+  ): Promise<any> {
+    this.logger.log(`Getting student profile for ID: ${id}`);
+
+    const schoolContext = request.schoolContext;
+    const schoolId = schoolContext.schoolId;
+
+    const student = await this.studentsService.findOne(id);
+
+    if (student.schoolId !== schoolId) {
+      throw new NotFoundException('Student not found in this school');
+    }
+
+    return student;
+  }
+
+  @Put('students/:id')
+  @ApiOperation({
+    summary: 'Update student profile',
+    description: 'Updates student information for the current school.',
+  })
+  @ApiParam({ name: 'id', description: 'Student ID' })
+  @ApiBody({ type: UpdateStudentDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Student updated successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Student not found' })
+  async updateSchoolStudent(
+    @Req() request: any,
+    @Param('id') id: string,
+    @Body() updateStudentDto: UpdateStudentDto,
+  ): Promise<any> {
+    this.logger.log(`Updating student profile for ID: ${id}`);
+
+    const schoolContext = request.schoolContext;
+    const schoolId = schoolContext.schoolId;
+
+    const student = await this.studentsService.findOne(id);
+
+    if (student.schoolId !== schoolId) {
+      throw new NotFoundException('Student not found in this school');
+    }
+
+    return this.studentsService.update(id, updateStudentDto);
+  }
+
+  @Post('students/:id/documents')
+  @ApiOperation({
+    summary: 'Upload student document',
+    description: 'Uploads a document to the student record.',
+  })
+  @ApiParam({ name: 'id', description: 'Student ID' })
+  @ApiBody({ type: AddDocumentDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Document uploaded successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Student not found' })
+  async uploadSchoolStudentDocument(
+    @Req() request: any,
+    @Param('id') id: string,
+    @Body() addDocumentDto: AddDocumentDto,
+  ): Promise<any> {
+    this.logger.log(`Uploading document for student ID: ${id}`);
+
+    const schoolContext = request.schoolContext;
+    const schoolId = schoolContext.schoolId;
+
+    const student = await this.studentsService.findOne(id);
+
+    if (student.schoolId !== schoolId) {
+      throw new NotFoundException('Student not found in this school');
+    }
+
+    return this.studentsService.addDocument(id, addDocumentDto);
   }
 
   // ==================== SCHOOL REPORTS ====================

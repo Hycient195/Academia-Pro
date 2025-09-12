@@ -17,7 +17,7 @@ import { IconX, IconSearch } from "@tabler/icons-react"
 import { useState, useEffect, useMemo } from "react"
 import { apis } from "@/redux/api"
 import ErrorBlock from "@/components/utilities/ErrorBlock"
-import { FormText, FormTextArea } from "@/components/ui/form-components"
+import { FormText, FormTextArea } from "@/components/ui/form/form-components"
 
 interface DelegatedAccount {
   id: string

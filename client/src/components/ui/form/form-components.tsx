@@ -8,8 +8,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./select"
-import { PhoneInput } from "./phone-input"
+} from "../select"
 import { Country, State } from "country-state-city";
 import { PaginatedResponse } from "@academia-pro/types/shared/shared.types";
 import { IconX } from "@tabler/icons-react"
@@ -17,6 +16,7 @@ import { CalendarIcon } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
+import { PhoneInput } from "./phone-input";
 
 type TElementTypes = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
 

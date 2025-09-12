@@ -3,17 +3,17 @@
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { StudentModal } from "@/components/modals/student-modal"
 import { MultiSelect, MultiSelectOption } from "@/components/ui/multi-select"
 import { Pagination, usePagination } from "@/components/ui/pagination"
+import { useGetStudentsQuery, useCreateStudentMutation, useUpdateStudentMutation, useDeleteStudentMutation } from "@/redux/api/schoolAdminApi"
+import type { ISchoolAdminStudent } from "@academia-pro/types/school-admin"
+import type { TStudentStage, TGradeCode, ICreateStudentRequest } from "@academia-pro/types/student/student.types"
 import {
   IconUsers,
   IconPlus,
@@ -24,95 +24,97 @@ import {
   IconTrash,
   IconMail,
   IconPhone,
-  IconMapPin,
-  IconDots,
+  IconUpload,
+  IconDownload,
+  IconArrowRight,
+  IconAward,
+  IconTransfer,
 } from "@tabler/icons-react"
+import { toast } from "sonner"
 
-// Sample student data
-const students = [
-  {
-    id: 1,
-    name: "Sarah Johnson",
-    email: "sarah.johnson@email.com",
-    grade: "10-A",
-    rollNumber: "001",
-    phone: "+1 (555) 123-4567",
-    address: "123 Main St, City, State",
-    status: "Active",
-    avatar: "/avatars/student1.jpg",
-    enrollmentDate: "2023-08-15",
-    attendance: 95,
-  },
-  {
-    id: 2,
-    name: "Michael Chen",
-    email: "michael.chen@email.com",
-    grade: "9-B",
-    rollNumber: "045",
-    phone: "+1 (555) 234-5678",
-    address: "456 Oak Ave, City, State",
-    status: "Active",
-    avatar: "/avatars/student2.jpg",
-    enrollmentDate: "2023-08-14",
-    attendance: 92,
-  },
-  {
-    id: 3,
-    name: "Emily Rodriguez",
-    email: "emily.rodriguez@email.com",
-    grade: "11-C",
-    rollNumber: "078",
-    phone: "+1 (555) 345-6789",
-    address: "789 Pine Rd, City, State",
-    status: "Active",
-    avatar: "/avatars/student3.jpg",
-    enrollmentDate: "2023-08-13",
-    attendance: 88,
-  },
-  {
-    id: 4,
-    name: "David Kim",
-    email: "david.kim@email.com",
-    grade: "12-A",
-    rollNumber: "112",
-    phone: "+1 (555) 456-7890",
-    address: "321 Elm St, City, State",
-    status: "Inactive",
-    avatar: "/avatars/student4.jpg",
-    enrollmentDate: "2022-08-15",
-    attendance: 0,
-  },
+// Import form components
+import {
+  FormText,
+  FormSelect,
+  FormDateInput,
+  FormPhoneInput,
+  FormTextArea,
+  FormMultiSelect,
+  FormCountrySelect,
+  FormRegionSelect,
+} from "@/components/ui/form/form-components"
+
+// Import wizard components
+import { StudentCreationForm } from "./_components/StudentCreationForm"
+import { BulkImportWizard } from "./_components/BulkImportWizard"
+import { PromotionWizard } from "./_components/PromotionWizard"
+import { TransferWizard } from "./_components/TransferWizard"
+import { GraduationWizard } from "./_components/GraduationWizard"
+
+// Constants for form options
+const stageOptions: MultiSelectOption[] = [
+  { label: "Early Years (EY)", value: "EY" },
+  { label: "Primary (PRY)", value: "PRY" },
+  { label: "Junior Secondary (JSS)", value: "JSS" },
+  { label: "Senior Secondary (SSS)", value: "SSS" },
 ]
 
-const gradeOptions: MultiSelectOption[] = [
-  { label: "Grade 9-A", value: "9-A" },
-  { label: "Grade 9-B", value: "9-B" },
-  { label: "Grade 10-A", value: "10-A" },
-  { label: "Grade 10-B", value: "10-B" },
-  { label: "Grade 11-A", value: "11-A" },
-  { label: "Grade 11-B", value: "11-B" },
-  { label: "Grade 12-A", value: "12-A" },
-  { label: "Grade 12-B", value: "12-B" },
+const gradeCodeOptions: MultiSelectOption[] = [
+  // EY
+  { label: "Creche", value: "CRECHE" },
+  { label: "Nursery 1", value: "N1" },
+  { label: "Nursery 2", value: "N2" },
+  { label: "KG 1", value: "KG1" },
+  { label: "KG 2", value: "KG2" },
+  // PRY
+  { label: "Primary 1", value: "PRY1" },
+  { label: "Primary 2", value: "PRY2" },
+  { label: "Primary 3", value: "PRY3" },
+  { label: "Primary 4", value: "PRY4" },
+  { label: "Primary 5", value: "PRY5" },
+  { label: "Primary 6", value: "PRY6" },
+  // JSS
+  { label: "JSS 1", value: "JSS1" },
+  { label: "JSS 2", value: "JSS2" },
+  { label: "JSS 3", value: "JSS3" },
+  // SSS
+  { label: "SSS 1", value: "SSS1" },
+  { label: "SSS 2", value: "SSS2" },
+  { label: "SSS 3", value: "SSS3" },
 ]
 
 const statusOptions: MultiSelectOption[] = [
   { label: "Active", value: "active" },
   { label: "Inactive", value: "inactive" },
+  { label: "Graduated", value: "graduated" },
+  { label: "Transferred", value: "transferred" },
+  { label: "Withdrawn", value: "withdrawn" },
+  { label: "Suspended", value: "suspended" },
+]
+
+const streamSectionOptions: MultiSelectOption[] = [
+  { label: "A", value: "A" },
+  { label: "B", value: "B" },
+  { label: "C", value: "C" },
+  { label: "Science Stream", value: "Science" },
+  { label: "Arts Stream", value: "Arts" },
+  { label: "Commercial Stream", value: "Commercial" },
 ]
 
 export default function StudentsPage() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedGrades, setSelectedGrades] = useState<string[]>([])
+  const [selectedStages, setSelectedStages] = useState<string[]>([])
+  const [selectedGradeCodes, setSelectedGradeCodes] = useState<string[]>([])
+  const [selectedStreamSections, setSelectedStreamSections] = useState<string[]>([])
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([])
-  const [selectedStudents, setSelectedStudents] = useState<number[]>([])
-  const [modalState, setModalState] = useState<{
-    isOpen: boolean
-    mode: 'create' | 'edit' | 'view'
-    student?: any
-  }>({
-    isOpen: false,
-    mode: 'create',
-  })
+  const [selectedStudents, setSelectedStudents] = useState<string[]>([])
+
+  // Modal states
+  const [studentCreationOpen, setStudentCreationOpen] = useState(false)
+  const [bulkImportOpen, setBulkImportOpen] = useState(false)
+  const [promotionWizardOpen, setPromotionWizardOpen] = useState(false)
+  const [transferWizardOpen, setTransferWizardOpen] = useState(false)
+  const [graduationWizardOpen, setGraduationWizardOpen] = useState(false)
 
   // Pagination
   const {
@@ -122,38 +124,41 @@ export default function StudentsPage() {
     handlePageSizeChange,
   } = usePagination(10)
 
-  const filteredStudents = students.filter(student => {
-    const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          student.rollNumber.includes(searchTerm)
-    const matchesGrade = selectedGrades.length === 0 || selectedGrades.includes(student.grade)
-    const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(student.status.toLowerCase())
-
-    return matchesSearch && matchesGrade && matchesStatus
+  // API hooks
+  const { data, isFetching, refetch } = useGetStudentsQuery({
+    search: searchTerm || undefined,
+    stage: selectedStages[0] || undefined,
+    gradeCode: selectedGradeCodes[0] || undefined,
+    streamSection: selectedStreamSections[0] || undefined,
+    status: selectedStatuses[0] || undefined,
+    page: currentPage,
+    limit: pageSize,
   })
 
-  // Pagination logic
-  const totalItems = filteredStudents.length
+  const [createStudent] = useCreateStudentMutation()
+  const [updateStudent] = useUpdateStudentMutation()
+  const [deleteStudent] = useDeleteStudentMutation()
+
+  const students: ISchoolAdminStudent[] = data?.students ?? []
+  const totalItems = data?.total ?? 0
   const totalPages = Math.ceil(totalItems / pageSize)
-  const startIndex = (currentPage - 1) * pageSize
-  const endIndex = startIndex + pageSize
-  const paginatedStudents = filteredStudents.slice(startIndex, endIndex)
 
   const getStatusBadge = (status: string) => {
-    return status === "Active" ? (
-      <Badge variant="default" className="bg-green-100 text-green-800">Active</Badge>
-    ) : (
-      <Badge variant="secondary">Inactive</Badge>
-    )
+    const s = (status || '').toLowerCase()
+    const map: Record<string, string> = {
+      active: "bg-green-100 text-green-800",
+      inactive: "bg-gray-100 text-gray-800",
+      graduated: "bg-blue-100 text-blue-800",
+      transferred: "bg-amber-100 text-amber-800",
+      withdrawn: "bg-red-100 text-red-800",
+      suspended: "bg-red-100 text-red-800",
+    }
+    const cls = map[s] || "bg-secondary"
+    const label = s.charAt(0).toUpperCase() + s.slice(1)
+    return <Badge variant="default" className={cls}>{label}</Badge>
   }
 
-  const getAttendanceColor = (attendance: number) => {
-    if (attendance >= 90) return "text-green-600"
-    if (attendance >= 75) return "text-yellow-600"
-    return "text-red-600"
-  }
-
-  const handleSelectStudent = (studentId: number, checked: boolean) => {
+  const handleSelectStudent = (studentId: string, checked: boolean) => {
     setSelectedStudents(prev =>
       checked
         ? [...prev, studentId]
@@ -162,7 +167,7 @@ export default function StudentsPage() {
   }
 
   const handleSelectAll = (checked: boolean) => {
-    setSelectedStudents(checked ? paginatedStudents.map(s => s.id) : [])
+    setSelectedStudents(checked ? students.map((s) => s.id) : [])
   }
 
   const handleBulkAction = (action: string) => {
@@ -170,12 +175,44 @@ export default function StudentsPage() {
     setSelectedStudents([])
   }
 
-  const openModal = (mode: 'create' | 'edit' | 'view', student?: any) => {
-    setModalState({ isOpen: true, mode, student })
+  const handleStudentCreated = () => {
+    setStudentCreationOpen(false)
+    refetch()
+    toast.success("Student created successfully")
   }
 
-  const closeModal = () => {
-    setModalState({ isOpen: false, mode: 'create' })
+  const handleBulkImport = () => {
+    setBulkImportOpen(false)
+    refetch()
+    toast.success("Students imported successfully")
+  }
+
+  const handlePromotion = () => {
+    setPromotionWizardOpen(false)
+    refetch()
+    toast.success("Promotion completed successfully")
+  }
+
+  const handleTransfer = () => {
+    setTransferWizardOpen(false)
+    refetch()
+    toast.success("Transfer completed successfully")
+  }
+
+  const handleGraduation = () => {
+    setGraduationWizardOpen(false)
+    refetch()
+    toast.success("Graduation completed successfully")
+  }
+
+  const handleDeleteStudent = async (studentId: string) => {
+    try {
+      await deleteStudent(studentId).unwrap()
+      refetch()
+      toast.success("Student deleted successfully")
+    } catch (error) {
+      toast.error("Failed to delete student")
+    }
   }
 
   return (
@@ -189,72 +226,98 @@ export default function StudentsPage() {
               Manage student information, enrollment, and academic records
             </p>
           </div>
-          <Dialog>
+          <div className="flex gap-2">
+            <Dialog open={bulkImportOpen} onOpenChange={setBulkImportOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <IconUpload className="mr-2 h-4 w-4" />
+                  Bulk Import
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl">
+                <DialogHeader>
+                  <DialogTitle>Bulk Import Students</DialogTitle>
+                  <DialogDescription>
+                    Upload a CSV or Excel file to import multiple students at once.
+                  </DialogDescription>
+                </DialogHeader>
+                <BulkImportWizard onComplete={handleBulkImport} />
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={studentCreationOpen} onOpenChange={setStudentCreationOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <IconPlus className="mr-2 h-4 w-4" />
+                  Add Student
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Add New Student</DialogTitle>
+                  <DialogDescription>
+                    Enter the student&apos;s information to create a new record.
+                  </DialogDescription>
+                </DialogHeader>
+                <StudentCreationForm onComplete={handleStudentCreated} />
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          <Dialog open={promotionWizardOpen} onOpenChange={setPromotionWizardOpen}>
             <DialogTrigger asChild>
-              <Button>
-                <IconPlus className="mr-2 h-4 w-4" />
-                Add Student
+              <Button variant="outline">
+                <IconArrowRight className="mr-2 h-4 w-4" />
+                Promote Students
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
+            <DialogContent className="max-w-4xl">
               <DialogHeader>
-                <DialogTitle>Add New Student</DialogTitle>
+                <DialogTitle>Student Promotion</DialogTitle>
                 <DialogDescription>
-                  Enter the student's information to create a new record.
+                  Promote students to the next grade level.
                 </DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">First Name</label>
-                    <Input placeholder="Enter first name" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Last Name</label>
-                    <Input placeholder="Enter last name" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Email</label>
-                  <Input type="email" placeholder="student@email.com" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Grade</label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select grade" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="9-A">Grade 9-A</SelectItem>
-                        <SelectItem value="9-B">Grade 9-B</SelectItem>
-                        <SelectItem value="10-A">Grade 10-A</SelectItem>
-                        <SelectItem value="10-B">Grade 10-B</SelectItem>
-                        <SelectItem value="11-A">Grade 11-A</SelectItem>
-                        <SelectItem value="11-B">Grade 11-B</SelectItem>
-                        <SelectItem value="12-A">Grade 12-A</SelectItem>
-                        <SelectItem value="12-B">Grade 12-B</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Roll Number</label>
-                    <Input placeholder="001" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Phone</label>
-                  <Input placeholder="+1 (555) 123-4567" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Address</label>
-                  <Input placeholder="123 Main St, City, State" />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline">Cancel</Button>
-                <Button>Add Student</Button>
-              </div>
+              <PromotionWizard onComplete={handlePromotion} />
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={transferWizardOpen} onOpenChange={setTransferWizardOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <IconTransfer className="mr-2 h-4 w-4" />
+                Transfer Students
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>Student Transfer</DialogTitle>
+                <DialogDescription>
+                  Transfer students between classes or schools.
+                </DialogDescription>
+              </DialogHeader>
+              <TransferWizard onComplete={handleTransfer} />
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={graduationWizardOpen} onOpenChange={setGraduationWizardOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <IconAward className="mr-2 h-4 w-4" />
+                Graduate Students
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>Student Graduation</DialogTitle>
+                <DialogDescription>
+                  Mark students as graduated and update their records.
+                </DialogDescription>
+              </DialogHeader>
+              <GraduationWizard onComplete={handleGraduation} />
             </DialogContent>
           </Dialog>
         </div>
@@ -267,7 +330,7 @@ export default function StudentsPage() {
               <IconUsers className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">1,247</div>
+              <div className="text-2xl font-bold">{totalItems}</div>
               <p className="text-xs text-muted-foreground">
                 Active enrollments
               </p>
@@ -276,39 +339,45 @@ export default function StudentsPage() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">New This Month</CardTitle>
-              <IconPlus className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Active Students</CardTitle>
+              <IconUsers className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">23</div>
+              <div className="text-2xl font-bold">
+                {students.filter(s => s.status === 'active').length}
+              </div>
               <p className="text-xs text-muted-foreground">
-                +12% from last month
+                Currently enrolled
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Average Attendance</CardTitle>
-              <IconUsers className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Graduated</CardTitle>
+              <IconAward className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">94.2%</div>
+              <div className="text-2xl font-bold">
+                {students.filter(s => s.status === 'graduated').length}
+              </div>
               <p className="text-xs text-muted-foreground">
-                This month
+                This academic year
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Inactive Students</CardTitle>
-              <IconUsers className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Transferred</CardTitle>
+              <IconTransfer className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">12</div>
+              <div className="text-2xl font-bold">
+                {students.filter(s => s.status === 'transferred').length}
+              </div>
               <p className="text-xs text-muted-foreground">
-                Need attention
+                This academic year
               </p>
             </CardContent>
           </Card>
@@ -325,28 +394,45 @@ export default function StudentsPage() {
           <CardContent>
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="flex flex-1 gap-4">
-                <div className="relative flex-1 max-w-sm">
-                  <IconSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Search students..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-                <MultiSelect
-                  options={gradeOptions}
-                  value={selectedGrades}
-                  onChange={setSelectedGrades}
-                  placeholder="Filter by grade"
-                  className="w-40"
+                <FormText
+                  labelText=""
+                  placeholder="Search students..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value as string)}
+                  icon={<IconSearch className="h-4 w-4" />}
+                  wrapperClassName="flex-1 max-w-sm"
                 />
-                <MultiSelect
-                  options={statusOptions}
+
+                <FormMultiSelect
+                  options={stageOptions.map(opt => ({ value: opt.value, text: opt.label }))}
+                  value={selectedStages}
+                  onChange={(e) => setSelectedStages(Array.isArray(e.target.value) ? e.target.value : [e.target.value])}
+                  placeholder="Filter by stage"
+                  wrapperClassName="w-40"
+                />
+
+                <FormMultiSelect
+                  options={gradeCodeOptions.map(opt => ({ value: opt.value, text: opt.label }))}
+                  value={selectedGradeCodes}
+                  onChange={(e) => setSelectedGradeCodes(Array.isArray(e.target.value) ? e.target.value : [e.target.value])}
+                  placeholder="Filter by grade code"
+                  wrapperClassName="w-48"
+                />
+
+                <FormMultiSelect
+                  options={streamSectionOptions.map(opt => ({ value: opt.value, text: opt.label }))}
+                  value={selectedStreamSections}
+                  onChange={(e) => setSelectedStreamSections(Array.isArray(e.target.value) ? e.target.value : [e.target.value])}
+                  placeholder="Filter by stream/section"
+                  wrapperClassName="w-48"
+                />
+
+                <FormMultiSelect
+                  options={statusOptions.map(opt => ({ value: opt.value, text: opt.label }))}
                   value={selectedStatuses}
-                  onChange={setSelectedStatuses}
+                  onChange={(e) => setSelectedStatuses(Array.isArray(e.target.value) ? e.target.value : [e.target.value])}
                   placeholder="Filter by status"
-                  className="w-40"
+                  wrapperClassName="w-40"
                 />
               </div>
               <Button variant="outline">
@@ -360,41 +446,51 @@ export default function StudentsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectedStudents.length === students.length && students.length > 0}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
                     <TableHead>Student</TableHead>
-                    <TableHead>Grade</TableHead>
-                    <TableHead>Roll Number</TableHead>
-                    <TableHead>Attendance</TableHead>
+                    <TableHead>Stage/Grade/Section</TableHead>
+                    <TableHead>Admission No.</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Contact</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedStudents.map((student) => (
+                  {students.map((student) => (
                     <TableRow key={student.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedStudents.includes(student.id)}
+                          onCheckedChange={(checked) => handleSelectStudent(student.id, checked as boolean)}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
-                            <AvatarImage src={student.avatar} />
+                            <AvatarImage src={student.photo} />
                             <AvatarFallback>
-                              {student.name.split(' ').map(n => n[0]).join('')}
+                              {(student.firstName?.[0] || '') + (student.lastName?.[0] || '')}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-medium">{student.name}</p>
-                            <p className="text-sm text-muted-foreground">{student.email}</p>
+                            <p className="font-medium">{`${student.firstName ?? ''} ${student.lastName ?? ''}`.trim()}</p>
+                            {student.email && <p className="text-sm text-muted-foreground">{student.email}</p>}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{student.grade}</Badge>
+                        <div className="space-y-1">
+                          <Badge variant="secondary">{(student as ISchoolAdminStudent & { stage?: string; gradeCode?: string; streamSection?: string }).stage || student.grade}</Badge>
+                          <Badge variant="outline">{(student as ISchoolAdminStudent & { stage?: string; gradeCode?: string; streamSection?: string }).gradeCode || student.grade}</Badge>
+                          <Badge variant="default" className="text-xs">{(student as ISchoolAdminStudent & { stage?: string; gradeCode?: string; streamSection?: string }).streamSection || student.section}</Badge>
+                        </div>
                       </TableCell>
-                      <TableCell>{student.rollNumber}</TableCell>
-                      <TableCell>
-                        <span className={`font-medium ${getAttendanceColor(student.attendance)}`}>
-                          {student.attendance}%
-                        </span>
-                      </TableCell>
+                      <TableCell>{student.admissionNumber}</TableCell>
                       <TableCell>{getStatusBadge(student.status)}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
@@ -407,17 +503,32 @@ export default function StudentsPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-1">
-                          <Button variant="ghost" size="sm">
-                            <IconEye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <IconEdit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <IconTrash className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <IconEdit className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem>
+                              <IconEye className="mr-2 h-4 w-4" />
+                              View Profile
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <IconEdit className="mr-2 h-4 w-4" />
+                              Edit Student
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-red-600"
+                              onClick={() => handleDeleteStudent(student.id)}
+                            >
+                              <IconTrash className="mr-2 h-4 w-4" />
+                              Delete Student
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -425,7 +536,7 @@ export default function StudentsPage() {
               </Table>
             </div>
 
-            {filteredStudents.length === 0 && (
+            {!isFetching && students.length === 0 && (
               <div className="text-center py-8">
                 <IconUsers className="mx-auto h-12 w-12 text-muted-foreground" />
                 <h3 className="mt-2 text-sm font-semibold">No students found</h3>
@@ -436,7 +547,7 @@ export default function StudentsPage() {
             )}
 
             {/* Pagination */}
-            {filteredStudents.length > 0 && (
+            {totalItems > 0 && (
               <div className="mt-6">
                 <Pagination
                   currentPage={currentPage}
@@ -451,14 +562,6 @@ export default function StudentsPage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Student Modal */}
-      <StudentModal
-        isOpen={modalState.isOpen}
-        onClose={closeModal}
-        student={modalState.student}
-        mode={modalState.mode}
-      />
     </div>
   )
 }

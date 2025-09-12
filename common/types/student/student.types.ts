@@ -25,15 +25,33 @@ export enum TEnrollmentType {
   TRANSFER = 'transfer',
 }
 
+export enum TStudentStage {
+  EY = 'EY', // Early Years: Creche, Nursery, KG
+  PRY = 'PRY', // Primary 1-6
+  JSS = 'JSS', // Junior Secondary 1-3
+  SSS = 'SSS', // Senior Secondary 1-3
+}
+
+export type TGradeCode =
+  | 'CRECHE' | 'N1' | 'N2' | 'KG1' | 'KG2' // EY
+  | 'PRY1' | 'PRY2' | 'PRY3' | 'PRY4' | 'PRY5' | 'PRY6' // PRY
+  | 'JSS1' | 'JSS2' | 'JSS3' // JSS
+  | 'SSS1' | 'SSS2' | 'SSS3'; // SSS
+
 // Interfaces
 export interface IStudent extends IUser {
   admissionNumber: string;
-  currentGrade: string;
-  currentSection: string;
+  stage: TStudentStage;
+  gradeCode: TGradeCode;
+  streamSection: string;
   admissionDate: string;
   enrollmentType: TEnrollmentType;
   userId?: string;
   status: EUserStatus;
+  isBoarding: boolean;
+  promotionHistory: IPromotionHistory[];
+  transferHistory: ITransferHistory[];
+  graduationYear?: number;
   parents?: IParentsInfo;
   medicalInfo?: IMedicalInfo;
   transportation?: ITransportationInfo;
@@ -173,6 +191,26 @@ export interface IAcademicStanding {
   disciplinaryStatus?: string;
 }
 
+export interface IPromotionHistory {
+  fromGrade: TGradeCode;
+  toGrade: TGradeCode;
+  academicYear: string;
+  performedBy: string; // userId
+  timestamp: Date;
+  reason?: string;
+}
+
+export interface ITransferHistory {
+  fromSchool?: string;
+  toSchool?: string;
+  fromSection?: string;
+  toSection?: string;
+  reason: string;
+  academicYear?: string;
+  timestamp: Date;
+  type: 'internal' | 'external';
+}
+
 // Request Types
 export interface ICreateStudentRequest {
   firstName: string;
@@ -181,16 +219,18 @@ export interface ICreateStudentRequest {
   dateOfBirth: string;
   gender: 'male' | 'female' | 'other';
   bloodGroup?: TBloodGroup;
-  email: string;
+  email?: string;
   phone?: string;
   address?: IAddress;
   admissionNumber: string;
-  currentGrade: string;
-  currentSection: string;
+  stage: TStudentStage;
+  gradeCode: TGradeCode;
+  streamSection: string;
   admissionDate: string;
   enrollmentType: TEnrollmentType;
   schoolId: string;
   userId?: string;
+  isBoarding?: boolean;
   parents?: IParentsInfo;
   medicalInfo?: IMedicalInfo;
   transportation?: ITransportationInfo;
@@ -208,13 +248,18 @@ export interface IUpdateStudentRequest {
   phone?: string;
   address?: IAddress;
   admissionNumber?: string;
-  currentGrade?: string;
-  currentSection?: string;
+  stage?: TStudentStage;
+  gradeCode?: TGradeCode;
+  streamSection?: string;
   admissionDate?: string;
   enrollmentType?: TEnrollmentType;
   schoolId?: string;
   userId?: string;
   status?: EUserStatus;
+  isBoarding?: boolean;
+  promotionHistory?: IPromotionHistory[];
+  transferHistory?: ITransferHistory[];
+  graduationYear?: number;
   parents?: IParentsInfo;
   medicalInfo?: IMedicalInfo;
   transportation?: ITransportationInfo;
@@ -229,8 +274,9 @@ export interface IUpdateStudentRequest {
 
 export interface IStudentFilters {
   schoolId?: string;
-  grade?: string;
-  section?: string;
+  stage?: TStudentStage;
+  gradeCode?: TGradeCode;
+  streamSection?: string;
   status?: EUserStatus;
   enrollmentType?: TEnrollmentType;
   search?: string;
@@ -239,10 +285,29 @@ export interface IStudentFilters {
 }
 
 export interface ITransferStudentRequest {
-  newGrade: string;
-  newSection: string;
+  newGradeCode?: TGradeCode;
+  newStreamSection?: string;
   reason?: string;
   effectiveDate?: string;
+  type?: 'internal' | 'external';
+  targetSchoolId?: string; // for external
+}
+
+export interface IPromotionRequest {
+  scope: 'all' | 'grade' | 'section' | 'students';
+  gradeCode?: TGradeCode;
+  streamSection?: string;
+  studentIds?: string[];
+  targetGradeCode: TGradeCode;
+  academicYear: string;
+  includeRepeaters?: boolean;
+  reason?: string;
+}
+
+export interface IGraduationRequest {
+  studentIds?: string[];
+  graduationYear: number;
+  clearanceStatus: 'cleared' | 'pending';
 }
 
 export interface IUpdateMedicalInfoRequest {
@@ -329,4 +394,43 @@ export interface IStudentValidationRules {
   };
 }
 
+// Bulk Import Types
+export interface IStudentImportData {
+  FirstName: string;
+  LastName: string;
+  MiddleName?: string;
+  DateOfBirth: string;
+  Gender: 'male' | 'female' | 'other';
+  BloodGroup?: string;
+  Email?: string;
+  Phone?: string;
+  AdmissionNumber: string;
+  Stage: string;
+  GradeCode: string;
+  StreamSection: string;
+  AdmissionDate: string;
+  EnrollmentType: string;
+  FatherName?: string;
+  FatherPhone?: string;
+  FatherEmail?: string;
+  MotherName?: string;
+  MotherPhone?: string;
+  MotherEmail?: string;
+  AddressStreet?: string;
+  AddressCity?: string;
+  AddressState?: string;
+  AddressPostalCode?: string;
+  AddressCountry?: string;
+}
+
 // All types are exported above with their declarations
+
+// Grade mapping for school settings (to be used in school.types.ts as well)
+export interface IGradeMapping {
+  gradeCode: TGradeCode;
+  displayName: string;
+  order: number;
+  stage: TStudentStage;
+  minAge?: number;
+  maxAge?: number;
+}

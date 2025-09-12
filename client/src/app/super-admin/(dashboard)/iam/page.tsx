@@ -16,7 +16,7 @@ import { DeleteRoleModal } from "./_components/DeleteRoleModal"
 import { useState, useMemo } from "react"
 import { SuspendConfirmationModal } from "./_components/SuspendConfirmationModal"
 import { DeleteConfirmationModal } from "./_components/DeleteConfirmationModal"
-import { FormText } from "@/components/ui/form-components"
+import { FormText } from "@/components/ui/form/form-components"
 
 interface Permission {
   id: string

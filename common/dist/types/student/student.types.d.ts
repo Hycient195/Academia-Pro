@@ -1,4 +1,5 @@
 import { IAddress, IDocument, IEmergencyContact, IInsuranceInfo, TBloodGroup } from '../shared';
+import { IUser, EUserStatus } from '../users';
 export type { TBloodGroup };
 export declare enum TStudentStatus {
     ACTIVE = "active",
@@ -15,30 +16,31 @@ export declare enum TEnrollmentType {
     INTERNATIONAL = "international",
     TRANSFER = "transfer"
 }
-export interface IStudent {
-    id: string;
-    firstName: string;
-    lastName: string;
-    middleName?: string;
-    dateOfBirth: Date;
-    gender: 'male' | 'female' | 'other';
-    bloodGroup?: TBloodGroup;
-    email?: string;
-    phone?: string;
-    address?: IAddress;
+export declare enum TStudentStage {
+    EY = "EY",// Early Years: Creche, Nursery, KG
+    PRY = "PRY",// Primary 1-6
+    JSS = "JSS",// Junior Secondary 1-3
+    SSS = "SSS"
+}
+export type TGradeCode = 'CRECHE' | 'N1' | 'N2' | 'KG1' | 'KG2' | 'PRY1' | 'PRY2' | 'PRY3' | 'PRY4' | 'PRY5' | 'PRY6' | 'JSS1' | 'JSS2' | 'JSS3' | 'SSS1' | 'SSS2' | 'SSS3';
+export interface IStudent extends IUser {
     admissionNumber: string;
-    currentGrade: string;
-    currentSection: string;
-    admissionDate: Date;
+    stage: TStudentStage;
+    gradeCode: TGradeCode;
+    streamSection: string;
+    admissionDate: string;
     enrollmentType: TEnrollmentType;
-    schoolId: string;
     userId?: string;
-    status: TStudentStatus;
+    status: EUserStatus;
+    isBoarding: boolean;
+    promotionHistory: IPromotionHistory[];
+    transferHistory: ITransferHistory[];
+    graduationYear?: number;
     parents?: IParentsInfo;
     medicalInfo?: IMedicalInfo;
     transportation?: ITransportationInfo;
     hostel?: IHostelInfo;
-    financialInfo: IStucentFinancialInfo;
+    financialInfo: IStudentFinancialInfo;
     documents: IDocument[];
     preferences: IStudentPreferences;
     gpa?: number;
@@ -129,7 +131,7 @@ export interface IHostelInfo {
     bedNumber?: string;
     fee?: number;
 }
-export interface IStucentFinancialInfo {
+export interface IStudentFinancialInfo {
     feeCategory: string;
     scholarship?: IScholarshipInfo;
     outstandingBalance: number;
@@ -159,6 +161,24 @@ export interface IAcademicStanding {
     academicWarning?: boolean;
     disciplinaryStatus?: string;
 }
+export interface IPromotionHistory {
+    fromGrade: TGradeCode;
+    toGrade: TGradeCode;
+    academicYear: string;
+    performedBy: string;
+    timestamp: Date;
+    reason?: string;
+}
+export interface ITransferHistory {
+    fromSchool?: string;
+    toSchool?: string;
+    fromSection?: string;
+    toSection?: string;
+    reason: string;
+    academicYear?: string;
+    timestamp: Date;
+    type: 'internal' | 'external';
+}
 export interface ICreateStudentRequest {
     firstName: string;
     lastName: string;
@@ -169,13 +189,15 @@ export interface ICreateStudentRequest {
     email?: string;
     phone?: string;
     address?: IAddress;
-    admissionNumber?: string;
-    currentGrade: string;
-    currentSection: string;
+    admissionNumber: string;
+    stage: TStudentStage;
+    gradeCode: TGradeCode;
+    streamSection: string;
     admissionDate: string;
-    enrollmentType?: TEnrollmentType;
+    enrollmentType: TEnrollmentType;
     schoolId: string;
     userId?: string;
+    isBoarding?: boolean;
     parents?: IParentsInfo;
     medicalInfo?: IMedicalInfo;
     transportation?: ITransportationInfo;
@@ -192,18 +214,23 @@ export interface IUpdateStudentRequest {
     phone?: string;
     address?: IAddress;
     admissionNumber?: string;
-    currentGrade?: string;
-    currentSection?: string;
+    stage?: TStudentStage;
+    gradeCode?: TGradeCode;
+    streamSection?: string;
     admissionDate?: string;
     enrollmentType?: TEnrollmentType;
     schoolId?: string;
     userId?: string;
-    status?: TStudentStatus;
+    status?: EUserStatus;
+    isBoarding?: boolean;
+    promotionHistory?: IPromotionHistory[];
+    transferHistory?: ITransferHistory[];
+    graduationYear?: number;
     parents?: IParentsInfo;
     medicalInfo?: IMedicalInfo;
     transportation?: ITransportationInfo;
     hostel?: IHostelInfo;
-    financialInfo?: Partial<IStucentFinancialInfo>;
+    financialInfo?: Partial<IStudentFinancialInfo>;
     documents?: IDocument[];
     preferences?: Partial<IStudentPreferences>;
     gpa?: number;
@@ -212,19 +239,37 @@ export interface IUpdateStudentRequest {
 }
 export interface IStudentFilters {
     schoolId?: string;
-    grade?: string;
-    section?: string;
-    status?: TStudentStatus;
+    stage?: TStudentStage;
+    gradeCode?: TGradeCode;
+    streamSection?: string;
+    status?: EUserStatus;
     enrollmentType?: TEnrollmentType;
     search?: string;
     page?: number;
     limit?: number;
 }
 export interface ITransferStudentRequest {
-    newGrade: string;
-    newSection: string;
+    newGradeCode?: TGradeCode;
+    newStreamSection?: string;
     reason?: string;
     effectiveDate?: string;
+    type?: 'internal' | 'external';
+    targetSchoolId?: string;
+}
+export interface IPromotionRequest {
+    scope: 'all' | 'grade' | 'section' | 'students';
+    gradeCode?: TGradeCode;
+    streamSection?: string;
+    studentIds?: string[];
+    targetGradeCode: TGradeCode;
+    academicYear: string;
+    includeRepeaters?: boolean;
+    reason?: string;
+}
+export interface IGraduationRequest {
+    studentIds?: string[];
+    graduationYear: number;
+    clearanceStatus: 'cleared' | 'pending';
 }
 export interface IUpdateMedicalInfoRequest {
     allergies?: string[];
@@ -258,7 +303,7 @@ export interface IStudentStatisticsResponse {
     totalStudents: number;
     activeStudents: number;
     studentsByGrade: Record<string, number>;
-    studentsByStatus: Record<TStudentStatus, number>;
+    studentsByStatus: Record<EUserStatus, number>;
     studentsByEnrollmentType: Record<TEnrollmentType, number>;
 }
 export interface IStudentSearchResponse {
@@ -269,7 +314,7 @@ export interface IStudentQuery {
     schoolId?: string;
     grade?: string;
     section?: string;
-    status?: TStudentStatus;
+    status?: EUserStatus;
     enrollmentType?: TEnrollmentType;
     search?: string;
     page?: number;
@@ -298,4 +343,12 @@ export interface IStudentValidationRules {
     currentSection: {
         maxLength: number;
     };
+}
+export interface IGradeMapping {
+    gradeCode: TGradeCode;
+    displayName: string;
+    order: number;
+    stage: TStudentStage;
+    minAge?: number;
+    maxAge?: number;
 }

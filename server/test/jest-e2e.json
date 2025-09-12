@@ -5,5 +5,9 @@
   "testRegex": ".e2e-spec.ts$",
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "^@academia-pro/(.*)$": "<rootDir>/../common/dist/$1",
+    "^@academia-pro/types/(.*)$": "<rootDir>/../common/dist/types/$1"
   }
 }

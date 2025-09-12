@@ -29,7 +29,7 @@ export interface IUser {
     firstName: string;
     lastName: string;
     middleName?: string;
-    role: EUserRole;
+    roles: EUserRole[];
     phone?: string;
     dateOfBirth?: string;
     gender?: 'male' | 'female' | 'other';
@@ -142,7 +142,7 @@ export interface ICreateUserRequest {
     firstName: string;
     lastName: string;
     middleName?: string;
-    role?: EUserRole;
+    roles?: EUserRole[];
     phone?: string;
     dateOfBirth?: string;
     gender?: 'male' | 'female' | 'other';
@@ -155,6 +155,7 @@ export interface IUpdateUserRequest {
     firstName?: string;
     lastName?: string;
     middleName?: string;
+    roles?: EUserRole[];
     phone?: string;
     dateOfBirth?: string;
     gender?: 'male' | 'female' | 'other';

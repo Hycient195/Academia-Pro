@@ -86,7 +86,7 @@ export interface ISuperAdminUser {
     lastName: string;
     middleName?: string;
     email: string;
-    role: EUserRole;
+    roles: EUserRole[];
     schoolId?: string;
     schoolName?: string;
     status: EUserStatus;
@@ -224,7 +224,6 @@ export interface IGeographicReport {
 export interface IAuditLog {
     id: string;
     timestamp: string;
-    user: string;
     userId: string;
     action: string;
     roles: string[];
@@ -237,6 +236,17 @@ export interface IAuditLog {
     details?: Record<string, any>;
     schoolId?: string;
     sessionId?: string;
+    severity?: 'low' | 'medium' | 'high' | 'critical';
+    resourceId?: string;
+    user?: string | {
+        id: string;
+        email: string;
+        firstName: string;
+        lastName: string;
+        middleName?: string;
+        roles: string[];
+        fullName?: string;
+    };
 }
 export interface IAuditMetrics {
     totalActivities: number;
@@ -250,18 +260,47 @@ export interface IAuditMetrics {
     period: string;
 }
 export interface IAuditFilters {
-    period?: string;
-    user?: string;
-    action?: string;
-    status?: string;
-    resourceType?: string;
+    userId?: string;
     schoolId?: string;
+    resource?: string;
+    resourceId?: string;
+    action?: string;
+    severity?: string;
+    startDate?: string;
+    endDate?: string;
+    period?: string;
+    ipAddress?: string;
+    userAgent?: string;
+    sessionId?: string;
+    correlationId?: string;
+    searchTerm?: string;
+    tags?: string[];
+    isArchived?: boolean;
+    isConfidential?: boolean;
+    studentId?: string;
+    studentAction?: string;
+    entityType?: string;
+    studentSeverity?: string;
+    academicYear?: string;
+    gradeLevel?: string;
+    section?: string;
+    userRole?: string;
+    userDepartment?: string;
     page?: number;
     limit?: number;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+    changedFields?: string[];
+    businessRulesViolated?: string[];
+    complianceIssues?: string[];
+    riskLevel?: string;
+    gdprCompliant?: boolean;
+    requiresParentConsent?: boolean;
+    parentConsentObtained?: boolean;
 }
 export interface IUserFilters {
     search?: string;
-    role?: string;
+    roles?: EUserRole[];
     status?: string;
     schoolId?: string;
     page?: number;
@@ -299,7 +338,7 @@ export type IUpdateSchoolRequest = ISuperAdminUpdateSchoolRequest;
 export interface IBulkUserUpdateRequest {
     userIds: string[];
     updates: {
-        role?: EUserRole;
+        roles?: EUserRole[];
         status?: string;
         schoolId?: string;
     };
@@ -337,11 +376,18 @@ export interface IDelegatedAccount {
     revokedAt?: string;
 }
 export interface ICreateDelegatedAccountRequest {
-    email: string;
-    permissions: string[];
-    expiryDate: string;
-    notes?: string;
+    firstName?: string;
+    lastName?: string;
+    middleName?: string;
+    email?: string;
     userId?: string;
+    permissions: string[];
+    startDate?: string;
+    startTime?: string;
+    endDate?: string;
+    endTime?: string;
+    expiryDate?: string;
+    notes?: string;
 }
 export interface IUpdateDelegatedAccountRequest {
     permissions?: string[];
@@ -366,7 +412,7 @@ export interface ISuperAdminLoginResponse {
         email: string;
         firstName: string;
         lastName: string;
-        role: EUserRole;
+        roles: EUserRole[];
         isEmailVerified: boolean;
     };
     tokens: {

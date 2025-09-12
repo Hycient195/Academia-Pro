@@ -135,7 +135,7 @@ exports.createUserSchema = zod_1.z.object({
     email: zod_1.z.string().email('Invalid email address'),
     firstName: zod_1.z.string().min(1, 'First name is required').max(50),
     lastName: zod_1.z.string().min(1, 'Last name is required').max(50),
-    role: zod_1.z.enum(['super-admin', 'school-admin', 'teacher', 'student', 'parent']),
+    roles: zod_1.z.array(zod_1.z.enum(['super-admin', 'delegated-super-admin', 'school-admin', 'teacher', 'student', 'parent'])).min(1, 'At least one role is required'),
     phone: zod_1.z.string().optional(),
     schoolId: zod_1.z.string().optional(),
     sendWelcomeEmail: zod_1.z.boolean().default(true),

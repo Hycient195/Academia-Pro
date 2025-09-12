@@ -25,7 +25,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
   useEffect(() => {
     if (process.env.NODE_ENV !== 'production') {
       // eslint-disable-next-line no-console
-      console.debug('[AuthGuard]', { isAuthenticated, isLoading, requireAuth, redirectTo, pathname })
+      // console.debug('[AuthGuard]', { isAuthenticated, isLoading, requireAuth, redirectTo, pathname })
     }
     if (!isLoading) {
       if (requireAuth && !isAuthenticated) {

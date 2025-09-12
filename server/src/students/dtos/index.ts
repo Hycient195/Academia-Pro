@@ -6,6 +6,8 @@ export { UpdateStudentDto } from './update-student.dto';
 export { TransferStudentDto } from './transfer-student.dto';
 export { UpdateMedicalInfoDto } from './update-medical-info.dto';
 export { AddDocumentDto } from './add-document.dto';
+export { AssignClassDto } from './assign-class.dto';
+export { PromotionDto } from './promotion.dto';
 export { StudentResponseDto, StudentsListResponseDto, StudentStatisticsResponseDto } from './student-response.dto';
 
 // Health DTOs

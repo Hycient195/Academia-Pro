@@ -169,7 +169,7 @@ interface IProps {
 
 ### Basic Form
 ```tsx
-import { FormText, FormSelect, Button } from "@/components/ui/form-components"
+import { FormText, FormSelect, Button } from "@/components/ui/form/form-components"
 
 function UserForm() {
   const [formData, setFormData] = useState({
@@ -219,7 +219,7 @@ function UserForm() {
 ### With React Hook Form
 ```tsx
 import { useForm } from "react-hook-form"
-import { FormText } from "@/components/ui/form-components"
+import { FormText } from "@/components/ui/form/form-components"
 
 function HookFormExample() {
   const { register, handleSubmit, formState: { errors } } = useForm()

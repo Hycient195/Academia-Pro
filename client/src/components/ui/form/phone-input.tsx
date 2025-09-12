@@ -2,14 +2,14 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { Input } from "./input"
+import { Input } from "../input"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./select"
+} from "../select"
 
 export interface Country {
   code: string

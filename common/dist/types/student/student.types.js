@@ -2,7 +2,7 @@
 // Academia Pro - Student Shared Types
 // Shared types and interfaces for student management across frontend and backend
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TTransportationStatus = exports.TEnrollmentType = exports.TStudentStatus = void 0;
+exports.TTransportationStatus = exports.TStudentStage = exports.TEnrollmentType = exports.TStudentStatus = void 0;
 // Enums
 var TStudentStatus;
 (function (TStudentStatus) {
@@ -21,10 +21,16 @@ var TEnrollmentType;
     TEnrollmentType["INTERNATIONAL"] = "international";
     TEnrollmentType["TRANSFER"] = "transfer";
 })(TEnrollmentType || (exports.TEnrollmentType = TEnrollmentType = {}));
+var TStudentStage;
+(function (TStudentStage) {
+    TStudentStage["EY"] = "EY";
+    TStudentStage["PRY"] = "PRY";
+    TStudentStage["JSS"] = "JSS";
+    TStudentStage["SSS"] = "SSS";
+})(TStudentStage || (exports.TStudentStage = TStudentStage = {}));
 var TTransportationStatus;
 (function (TTransportationStatus) {
     TTransportationStatus["ACTIVE"] = "active";
     TTransportationStatus["INACTIVE"] = "inactive";
     TTransportationStatus["SUSPENDED"] = "suspended";
 })(TTransportationStatus || (exports.TTransportationStatus = TTransportationStatus = {}));
-// All types are exported above with their declarations

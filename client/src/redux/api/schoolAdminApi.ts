@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { GLOBAL_API_URL } from '../globalURLs';
+import type { RootState } from '../store';
 
 // Import types from common package
 import type {
@@ -11,13 +12,19 @@ import type {
   ISchoolAdminUpdateStudentRequest,
   ISchoolAdminStaff,
 } from '@academia-pro/types/school-admin';
+import type { IStudent } from '@academia-pro/types/student';
 
 export const schoolAdminApi = createApi({
   reducerPath: 'schoolAdminApi',
   baseQuery: fetchBaseQuery({
     baseUrl: GLOBAL_API_URL,
-    prepareHeaders: (headers) => {
+    prepareHeaders: (headers, { getState }) => {
       headers.set('Content-Type', 'application/json');
+      const state = getState() as RootState;
+      const token = state?.auth?.token;
+      if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
+      }
       return headers;
     },
     credentials: 'include',
@@ -38,7 +45,7 @@ export const schoolAdminApi = createApi({
     }),
 
     // Student Management
-    getStudents: builder.query<{ students: ISchoolAdminStudent[]; total: number }, ISchoolAdminStudentFilters>({
+    getStudents: builder.query<{ students: ISchoolAdminStudent[]; total: number; page: number; limit: number }, ISchoolAdminStudentFilters & { stage?: string; gradeCode?: string; streamSection?: string }>({
       query: (filters) => ({
         url: '/school-admin/students',
         params: filters,
@@ -46,7 +53,7 @@ export const schoolAdminApi = createApi({
       providesTags: ['Students'],
     }),
 
-    getStudentById: builder.query<ISchoolAdminStudent, string>({
+    getStudentById: builder.query<IStudent, string>({
       query: (studentId) => `/school-admin/students/${studentId}`,
       providesTags: (result, error, studentId) => [{ type: 'Students', id: studentId }],
     }),
@@ -153,3 +160,22 @@ export const schoolAdminApi = createApi({
     }),
   }),
 });
+
+export const {
+  useGetSchoolOverviewQuery,
+  useGetStudentsQuery,
+  useGetStudentByIdQuery,
+  useCreateStudentMutation,
+  useUpdateStudentMutation,
+  useDeleteStudentMutation,
+  useGetStaffQuery,
+  useGetStaffByIdQuery,
+  useUpdateStaffMutation,
+  useGetClassesQuery,
+  useGetSubjectsQuery,
+  useGetFeeStructureQuery,
+  useGetOutstandingFeesQuery,
+  useProcessPaymentMutation,
+  useCreateAnnouncementMutation,
+  useGetAnnouncementsQuery,
+} = schoolAdminApi;

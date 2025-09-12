@@ -4,6 +4,7 @@
 import { IsString, IsNotEmpty, IsOptional, IsEnum, IsEmail, IsDateString, IsUUID, IsObject, IsArray, IsBoolean, MinLength, MaxLength, IsNumber } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TBloodGroup, TEnrollmentType } from '@academia-pro/types/student';
+import type { TStudentStage, TGradeCode } from '@academia-pro/types/student/student.types';
 
 // Local interface for create transportation
 interface ICreateTransportationInfo {
@@ -133,28 +134,42 @@ export class CreateStudentDto { // implements ICreateStudentRequest
   admissionNumber?: string;
 
   @ApiProperty({
-    description: 'Current grade/class',
-    example: 'Grade 10',
+    description: 'Academic stage',
+    example: 'PRY',
+    enum: ['EY', 'PRY', 'JSS', 'SSS'],
+  })
+  @IsEnum(['EY', 'PRY', 'JSS', 'SSS'], { message: 'Stage must be one of EY, PRY, JSS, SSS' })
+  @IsNotEmpty({ message: 'Stage is required' })
+  stage: TStudentStage;
+
+  @ApiProperty({
+    description: 'Canonical grade code',
+    example: 'PRY3',
+    enum: ['CRECHE', 'N1', 'N2', 'KG1', 'KG2', 'PRY1', 'PRY2', 'PRY3', 'PRY4', 'PRY5', 'PRY6', 'JSS1', 'JSS2', 'JSS3', 'SSS1', 'SSS2', 'SSS3'],
+  })
+  @IsEnum(['CRECHE', 'N1', 'N2', 'KG1', 'KG2', 'PRY1', 'PRY2', 'PRY3', 'PRY4', 'PRY5', 'PRY6', 'JSS1', 'JSS2', 'JSS3', 'SSS1', 'SSS2', 'SSS3'], { message: 'Invalid grade code' })
+  @IsNotEmpty({ message: 'Grade code is required' })
+  gradeCode: TGradeCode;
+
+  @ApiProperty({
+    description: 'Stream or section',
+    example: 'A',
     minLength: 1,
     maxLength: 20,
   })
-  @IsString({ message: 'Current grade must be a string' })
-  @IsNotEmpty({ message: 'Current grade is required' })
-  @MinLength(1, { message: 'Current grade cannot be empty' })
-  @MaxLength(20, { message: 'Current grade cannot exceed 20 characters' })
-  currentGrade: string;
+  @IsString({ message: 'Stream section must be a string' })
+  @IsNotEmpty({ message: 'Stream section is required' })
+  @MinLength(1, { message: 'Stream section cannot be empty' })
+  @MaxLength(20, { message: 'Stream section cannot exceed 20 characters' })
+  streamSection: string;
 
-  @ApiProperty({
-    description: 'Current section',
-    example: 'A',
-    minLength: 1,
-    maxLength: 10,
+  @ApiPropertyOptional({
+    description: 'Boarding status',
+    example: false,
   })
-  @IsString({ message: 'Current section must be a string' })
-  @IsNotEmpty({ message: 'Current section is required' })
-  @MinLength(1, { message: 'Current section cannot be empty' })
-  @MaxLength(10, { message: 'Current section cannot exceed 10 characters' })
-  currentSection: string;
+  @IsOptional()
+  @IsBoolean({ message: 'Is boarding must be a boolean' })
+  isBoarding?: boolean;
 
   @ApiProperty({
     description: 'Admission date',

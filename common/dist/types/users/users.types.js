@@ -17,6 +17,7 @@ var EUserStatus;
 var EUserRole;
 (function (EUserRole) {
     EUserRole["SUPER_ADMIN"] = "super-admin";
+    EUserRole["DELEGATED_SUPER_ADMIN"] = "delegated-super-admin";
     EUserRole["SCHOOL_ADMIN"] = "school-admin";
     EUserRole["TEACHER"] = "teacher";
     EUserRole["STUDENT"] = "student";

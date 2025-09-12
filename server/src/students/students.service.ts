@@ -4,7 +4,7 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Student, StudentStatus, EnrollmentType, BloodGroup } from './student.entity';
+import { Student, StudentStatus, EnrollmentType, BloodGroup, TGradeCode } from './student.entity';
 import {
   CreateStudentDto,
   UpdateStudentDto,
@@ -63,8 +63,10 @@ export class StudentsService {
       phone: createStudentDto.phone,
       address: createStudentDto.address,
       admissionNumber: finalAdmissionNumber,
-      currentGrade: createStudentDto.currentGrade,
-      currentSection: createStudentDto.currentSection,
+      stage: createStudentDto.stage,
+      gradeCode: createStudentDto.gradeCode,
+      streamSection: createStudentDto.streamSection,
+      isBoarding: createStudentDto.isBoarding || false,
       admissionDate: new Date(createStudentDto.admissionDate),
       ...(createStudentDto.enrollmentType && { enrollmentType: createStudentDto.enrollmentType as unknown as EnrollmentType }),
       schoolId: createStudentDto.schoolId,
@@ -89,8 +91,9 @@ export class StudentsService {
           firstName: createStudentDto.firstName,
           lastName: createStudentDto.lastName,
           admissionNumber: finalAdmissionNumber,
-          currentGrade: createStudentDto.currentGrade,
-          currentSection: createStudentDto.currentSection,
+          stage: createStudentDto.stage,
+          gradeCode: createStudentDto.gradeCode,
+          streamSection: createStudentDto.streamSection,
           schoolId: createStudentDto.schoolId,
           enrollmentType: createStudentDto.enrollmentType,
         },
@@ -110,13 +113,14 @@ export class StudentsService {
     page?: number;
     limit?: number;
     schoolId?: string;
-    grade?: string;
-    section?: string;
+    stage?: string;
+    gradeCode?: string;
+    streamSection?: string;
     status?: StudentStatus;
     enrollmentType?: EnrollmentType;
     search?: string;
   }): Promise<StudentsListResponseDto> {
-    const { page = 1, limit = 10, schoolId, grade, section, status, enrollmentType, search } = options || {};
+    const { page = 1, limit = 10, schoolId, stage, gradeCode, streamSection, status, enrollmentType, search } = options || {};
 
     const queryBuilder = this.studentsRepository.createQueryBuilder('student');
 
@@ -125,12 +129,16 @@ export class StudentsService {
       queryBuilder.andWhere('student.schoolId = :schoolId', { schoolId });
     }
 
-    if (grade) {
-      queryBuilder.andWhere('student.currentGrade = :grade', { grade });
+    if (stage) {
+      queryBuilder.andWhere('student.stage = :stage', { stage });
     }
 
-    if (section) {
-      queryBuilder.andWhere('student.currentSection = :section', { section });
+    if (gradeCode) {
+      queryBuilder.andWhere('student.gradeCode = :gradeCode', { gradeCode });
+    }
+
+    if (streamSection) {
+      queryBuilder.andWhere('student.streamSection = :streamSection', { streamSection });
     }
 
     if (status) {
@@ -227,8 +235,9 @@ export class StudentsService {
       lastName: student.lastName,
       email: student.email,
       phone: student.phone,
-      currentGrade: student.currentGrade,
-      currentSection: student.currentSection,
+      stage: student.stage,
+      gradeCode: student.gradeCode,
+      streamSection: student.streamSection,
       status: student.status,
     };
 
@@ -292,15 +301,26 @@ export class StudentsService {
   /**
     * Transfer student to different grade/section
     */
-  async transferStudent(id: string, newGrade: string, newSection: string): Promise<StudentResponseDto> {
+  async internalTransfer(id: string, transferDto: any): Promise<StudentResponseDto> {
     const student = await this.findStudentEntity(id);
 
-    if (student.currentGrade === newGrade && student.currentSection === newSection) {
-      throw new BadRequestException('Student is already in the specified grade and section');
+    const { newGradeCode, newStreamSection, reason } = transferDto;
+
+    if (student.gradeCode === newGradeCode && student.streamSection === newStreamSection) {
+      throw new BadRequestException('Student is already in the specified grade code and stream section');
     }
 
-    student.currentGrade = newGrade;
-    student.currentSection = newSection;
+    // Add to transferHistory
+    student.transferHistory.push({
+      fromSection: student.streamSection,
+      toSection: newStreamSection,
+      reason: reason || 'Internal transfer',
+      timestamp: new Date(),
+      type: 'internal' as const,
+    });
+
+    student.gradeCode = newGradeCode as any;
+    student.streamSection = newStreamSection;
 
     const savedStudent = await this.studentsRepository.save(student);
 
@@ -311,16 +331,132 @@ export class StudentsService {
         'system', // TODO: Get actual user ID
         'System', // TODO: Get actual user name
         'admin', // TODO: Get actual user role
-        student.currentGrade,
-        student.currentSection,
-        newGrade,
-        newSection,
+        student.gradeCode,
+        student.streamSection,
+        newGradeCode,
+        newStreamSection,
       );
     } catch (auditError) {
-      console.error('Failed to log student transfer audit:', auditError);
+      console.error('Failed to log internal transfer audit:', auditError);
     }
 
     return StudentResponseDto.fromEntity(savedStudent);
+  }
+
+  async externalTransfer(id: string, transferDto: any): Promise<any> {
+    const student = await this.findStudentEntity(id);
+
+    const { targetSchoolId, exitReason, clearanceDocuments } = transferDto;
+
+    // Validate clearance for external transfer
+    if (!clearanceDocuments || clearanceDocuments.length < 3) {
+      throw new BadRequestException('Complete clearance required for external transfer');
+    }
+
+    // Add to transferHistory
+    student.transferHistory.push({
+      toSchool: targetSchoolId,
+      reason: exitReason || 'Transfer to another school',
+      timestamp: new Date(),
+      type: 'external' as const,
+    });
+
+    student.status = StudentStatus.TRANSFERRED;
+
+    const savedStudent = await this.studentsRepository.save(student);
+
+    // Emit event or notify target school (future integration)
+
+    // Audit logging for external transfer
+    try {
+      await this.studentAuditService.logStudentTransfer(
+        id,
+        'system',
+        'System',
+        'admin',
+        student.schoolId,
+        null,
+        targetSchoolId,
+        null,
+      );
+    } catch (auditError) {
+      console.error('Failed to log external transfer audit:', auditError);
+    }
+
+    return { message: 'Student transferred to another school', studentId: savedStudent.id };
+  }
+
+
+  async assignClass(id: string, assignClassDto: any): Promise<StudentResponseDto> {
+    const student = await this.findStudentEntity(id);
+
+    const { gradeCode, streamSection, effectiveDate, reason } = assignClassDto;
+
+    // Add to promotionHistory if it's a promotion
+    if (gradeCode && gradeCode > student.gradeCode) { // Simple comparison, adjust logic as needed
+      student.promotionHistory.push({
+        fromGrade: student.gradeCode,
+        toGrade: gradeCode,
+        academicYear: new Date().getFullYear().toString(),
+        performedBy: 'system',
+        timestamp: new Date(),
+        reason: reason || 'Class assignment',
+      });
+    }
+
+    student.gradeCode = gradeCode as any;
+    student.streamSection = streamSection;
+
+    const savedStudent = await this.studentsRepository.save(student);
+
+    return StudentResponseDto.fromEntity(savedStudent);
+  }
+
+  async executePromotion(promotionDto: any): Promise<any> {
+    const { scope, gradeCode, streamSection, studentIds, targetGradeCode, academicYear, includeRepeaters, reason } = promotionDto;
+
+    let studentsToPromote;
+
+    if (scope === 'all') {
+      studentsToPromote = await this.studentsRepository.find({
+        where: { status: StudentStatus.ACTIVE },
+      });
+    } else if (scope === 'grade') {
+      studentsToPromote = await this.studentsRepository.find({
+        where: { gradeCode, status: StudentStatus.ACTIVE },
+      });
+    } else if (scope === 'section') {
+      studentsToPromote = await this.studentsRepository.find({
+        where: { gradeCode, streamSection, status: StudentStatus.ACTIVE },
+      });
+    } else if (scope === 'students') {
+      studentsToPromote = await this.studentsRepository.findByIds(studentIds || []);
+    }
+
+    const results = [];
+
+    for (const student of studentsToPromote) {
+      if (!includeRepeaters && student.academicStanding?.probation) {
+        continue; // Skip repeaters if not included
+      }
+
+      student.promotionHistory.push({
+        fromGrade: student.gradeCode,
+        toGrade: targetGradeCode,
+        academicYear,
+        performedBy: 'system',
+        timestamp: new Date(),
+        reason: reason || 'Batch promotion',
+      });
+
+      student.gradeCode = targetGradeCode as any;
+      student.streamSection = streamSection || student.streamSection;
+
+      const saved = await this.studentsRepository.save(student);
+      results.push(saved.id);
+    }
+
+    return { promotedStudents: results.length, studentIds: results };
   }
 
   /**
@@ -428,9 +564,9 @@ export class StudentsService {
   /**
    * Get students by grade
    */
-  async getStudentsByGrade(schoolId: string, grade: string): Promise<Student[]> {
+  async getStudentsByGradeCode(schoolId: string, gradeCode: string): Promise<Student[]> {
     return this.studentsRepository.find({
-      where: { schoolId, currentGrade: grade, status: StudentStatus.ACTIVE },
+      where: { schoolId, gradeCode: gradeCode as TGradeCode, status: StudentStatus.ACTIVE },
       order: { firstName: 'ASC' },
     });
   }
@@ -438,12 +574,12 @@ export class StudentsService {
   /**
    * Get students by section
    */
-  async getStudentsBySection(schoolId: string, grade: string, section: string): Promise<Student[]> {
+  async getStudentsByStreamSection(schoolId: string, gradeCode: string, streamSection: string): Promise<Student[]> {
     return this.studentsRepository.find({
       where: {
         schoolId,
-        currentGrade: grade,
-        currentSection: section,
+        gradeCode: gradeCode as TGradeCode,
+        streamSection,
         status: StudentStatus.ACTIVE
       },
       order: { firstName: 'ASC' },
@@ -511,11 +647,11 @@ export class StudentsService {
     // Count students by grade
     const gradeCounts = await this.studentsRepository
       .createQueryBuilder('student')
-      .select('student.currentGrade', 'grade')
+      .select('student.gradeCode', 'grade')
       .addSelect('COUNT(*)', 'count')
       .where(whereCondition)
       .andWhere('student.status = :status', { status: StudentStatus.ACTIVE })
-      .groupBy('student.currentGrade')
+      .groupBy('student.gradeCode')
       .getRawMany();
 
     const studentsByGrade: Record<string, number> = {};

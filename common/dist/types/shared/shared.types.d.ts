@@ -144,7 +144,7 @@ export interface User extends BaseEntity {
     email: string;
     firstName: string;
     lastName: string;
-    role: EUserRole;
+    roles: EUserRole[];
     status: EUserStatus;
     avatar?: string;
     phone?: string;
@@ -158,7 +158,7 @@ export interface User extends BaseEntity {
     passwordHash?: string;
 }
 export interface Teacher extends User {
-    role: EUserRole.TEACHER;
+    roles: EUserRole[];
     employeeId: string;
     department?: string;
     subjects: string[];
@@ -168,7 +168,7 @@ export interface Teacher extends User {
     classTeacherOf?: string[];
 }
 export interface Student extends User {
-    role: EUserRole.STUDENT;
+    roles: EUserRole[];
     studentId: string;
     gradeId: string;
     sectionId: string;
@@ -179,7 +179,7 @@ export interface Student extends User {
     academicInfo: AcademicInfo;
 }
 export interface Parent extends User {
-    role: EUserRole.PARENT;
+    roles: EUserRole[];
     childrenIds: string[];
     relationship: 'father' | 'mother' | 'guardian' | 'other';
     occupation?: string;
@@ -648,7 +648,7 @@ export interface User {
     email: string;
     firstName: string;
     lastName: string;
-    role: EUserRole;
+    roles: EUserRole[];
     status: EUserStatus;
     avatar?: string;
     phone?: string;
@@ -922,7 +922,7 @@ export interface CreateUserRequest {
     email: string;
     firstName: string;
     lastName: string;
-    role: IUserPermissionRole;
+    roles: EUserRole[];
     phone?: string;
     schoolId?: string;
     sendWelcomeEmail?: boolean;
@@ -933,7 +933,7 @@ export interface BulkUserOperation {
     data?: Record<string, any>;
 }
 export interface UserSearchFilters {
-    role?: IUserPermissionRole;
+    roles?: EUserRole[];
     status?: EUserStatus;
     schoolId?: string;
     gradeId?: string;
@@ -991,7 +991,24 @@ export interface UserListResponse {
     page: number;
     limit: number;
 }
-export interface UserProfileResponse extends User {
+export interface UserProfileResponse {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    userRoles: EUserRole[];
+    status: EUserStatus;
+    avatar?: string;
+    phone?: string;
+    dateOfBirth?: Date;
+    gender?: 'male' | 'female' | 'other';
+    address?: Address;
+    schoolId?: string;
+    isEmailVerified: boolean;
+    lastLoginAt?: Date;
+    preferences: UserPreferences;
+    createdAt: Date;
+    updatedAt: Date;
     roles: Role[];
     permissions: Permission[];
     recentActivity: UserActivity[];
@@ -1011,7 +1028,7 @@ export declare const createUserSchema: z.ZodObject<{
     email: z.ZodString;
     firstName: z.ZodString;
     lastName: z.ZodString;
-    role: z.ZodEnum<["super-admin", "school-admin", "teacher", "student", "parent"]>;
+    roles: z.ZodArray<z.ZodEnum<["super-admin", "delegated-super-admin", "school-admin", "teacher", "student", "parent"]>, "many">;
     phone: z.ZodOptional<z.ZodString>;
     schoolId: z.ZodOptional<z.ZodString>;
     sendWelcomeEmail: z.ZodDefault<z.ZodBoolean>;
@@ -1019,7 +1036,7 @@ export declare const createUserSchema: z.ZodObject<{
     email: string;
     firstName: string;
     lastName: string;
-    role: "super-admin" | "school-admin" | "teacher" | "student" | "parent";
+    roles: ("super-admin" | "delegated-super-admin" | "school-admin" | "teacher" | "student" | "parent")[];
     sendWelcomeEmail: boolean;
     phone?: string | undefined;
     schoolId?: string | undefined;
@@ -1027,7 +1044,7 @@ export declare const createUserSchema: z.ZodObject<{
     email: string;
     firstName: string;
     lastName: string;
-    role: "super-admin" | "school-admin" | "teacher" | "student" | "parent";
+    roles: ("super-admin" | "delegated-super-admin" | "school-admin" | "teacher" | "student" | "parent")[];
     phone?: string | undefined;
     schoolId?: string | undefined;
     sendWelcomeEmail?: boolean | undefined;

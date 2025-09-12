@@ -34,7 +34,7 @@ export interface IAuthUser {
     email: string;
     firstName: string;
     lastName: string;
-    role: EUserRole;
+    roles: EUserRole[];
     schoolId?: string;
     isEmailVerified: boolean;
     mfaEnabled: boolean;
@@ -212,6 +212,7 @@ export interface ILoginResponse {
     session: ISession;
     requiresMFA?: boolean;
     mfaType?: TMFAType;
+    requiresPasswordReset?: boolean;
 }
 export interface IRegisterResponse {
     user: IAuthUser;
@@ -270,6 +271,7 @@ export interface IOAuthLoginResponse {
     session: ISession;
     isNewUser: boolean;
     profile: IOAuthProfile;
+    requiresPasswordReset?: boolean;
 }
 export interface IForgotPasswordResponse {
     message: string;

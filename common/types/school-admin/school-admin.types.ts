@@ -1,7 +1,7 @@
 // Academia Pro - School Admin Types
 // Shared type definitions for school admin module
 
-import { IClass, ISubject } from '../shared';
+import { IClass, ISubject, PaginatedResponse } from '../shared';
 
 // Dashboard and Overview
 export interface ISchoolAdminOverview {
@@ -364,14 +364,4 @@ export interface IApiResponse<T> {
   errors?: string[];
 }
 
-export interface IPaginatedResponse<T> {
-  data: T[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasNext: boolean;
-    hasPrev: boolean;
-  };
-}
+// Using shared PaginatedResponse instead of local IPaginatedResponse

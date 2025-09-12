@@ -17,11 +17,11 @@ import {
   IconAlertTriangle,
   IconCircleCheck
 } from "@tabler/icons-react"
-import { useAuth } from "@/redux/auth/authContext"
+import { useSuperAdminAuth } from "@/redux/auth/superAdminAuthContext"
 
 export default function SuperAdminSignIn() {
   const router = useRouter()
-  const { login, isLoading } = useAuth()
+  const { login, isLoading } = useSuperAdminAuth()
   const [formData, setFormData] = useState({
     email: "admin@admin.com",
     password: "Admin1234$"

@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { IconSearch, IconEdit } from "@tabler/icons-react"
 import { FormText, FormTextArea } from "@/components/ui/form/form-components"
-import { apis } from "@/redux/api"
+import apis from "@/redux/api"
 import ErrorBlock from "@/components/utilities/ErrorBlock"
 import { toast } from "sonner"
 import type { IRole, IPermission } from '@academia-pro/types/super-admin'
@@ -35,7 +35,7 @@ export function EditRoleModal({ isOpen, onClose, role, availablePermissions, onR
     searchTerm: ""
   })
 
-  const [updateRole, { error: updateRoleError }] = apis.superAdmin.useUpdateRoleMutation()
+  const [updateRole, { error: updateRoleError }] = apis.superAdmin.iam.useUpdateRoleMutation()
 
   // Update form data when role changes
   useEffect(() => {
@@ -83,9 +83,11 @@ export function EditRoleModal({ isOpen, onClose, role, availablePermissions, onR
     try {
       const roleData = {
         id: role.id,
-        name: formData.name.trim(),
-        description: formData.description.trim() || undefined,
-        permissionIds: formData.selectedPermissions
+        updates: {
+          name: formData.name.trim(),
+          description: formData.description.trim() || '',
+          permissionIds: formData.selectedPermissions
+        }
       }
 
       await updateRole(roleData).unwrap()

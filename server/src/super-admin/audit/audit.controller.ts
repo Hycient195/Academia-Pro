@@ -19,11 +19,12 @@ import { AuditService } from '../../security/services/audit.service';
 import { AuditSeverity } from '../../security/types/audit.types';
 import { SYSTEM_USER_ID } from '../../security/entities/audit-log.entity';
 import { RolesGuard } from '../../auth/guards/roles.guard';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { EUserRole } from '@academia-pro/types/users';
 
 @Controller('super-admin/audit')
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(EUserRole.SUPER_ADMIN)
 export class AuditController {
   private readonly logger = new Logger(AuditController.name);

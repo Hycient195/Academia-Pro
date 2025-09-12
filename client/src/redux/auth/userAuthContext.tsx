@@ -16,36 +16,36 @@ export interface User {
   isFirstLogin?: boolean
 }
 
-export interface AuthState {
+export interface UserAuthState {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
   csrfToken: string | null
 }
 
-export interface AuthContextType extends AuthState {
+export interface UserAuthContextType extends UserAuthState {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
   logout: () => Promise<void>
   refreshAuth: () => Promise<void>
   getCSRFToken: () => Promise<string | null>
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const UserAuthContext = createContext<UserAuthContextType | undefined>(undefined)
 
-export const useAuth = () => {
-  const context = useContext(AuthContext)
+export const useUserAuth = () => {
+  const context = useContext(UserAuthContext)
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
+    throw new Error('useUserAuth must be used within an UserAuthProvider')
   }
   return context
 }
 
-interface AuthProviderProps {
+interface UserAuthProviderProps {
   children: ReactNode
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [authState, setAuthState] = useState<AuthState>({
+export const UserAuthProvider: React.FC<UserAuthProviderProps> = ({ children }) => {
+  const [authState, setAuthState] = useState<UserAuthState>({
     user: null,
     isAuthenticated: false,
     isLoading: true,
@@ -76,18 +76,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const checkAuthStatus = async () => {
     try {
-      // Only check auth status if we have cookies (indicating a potential previous session)
-      // const hasCookies = document.cookie.includes('accessToken') || document.cookie.includes('refreshToken')
+      // Only check auth status if we have regular user cookies (indicating a potential previous session)
+      const hasUserCookies = document.cookie.includes('accessToken') ||
+                            document.cookie.includes('refreshToken') ||
+                            document.cookie.includes('csrfToken')
 
-      // if (!hasCookies) {
-      //   setAuthState({
-      //     user: null,
-      //     isAuthenticated: false,
-      //     isLoading: false,
-      //     csrfToken: null,
-      //   })
-      //   return
-      // }
+      if (!hasUserCookies) {
+        setAuthState({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+          csrfToken: null,
+        })
+        return
+      }
 
       const response = await fetch(`${GLOBAL_API_URL}/auth/me`, {
         credentials: 'include',
@@ -95,12 +97,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (response.ok) {
         const user = await response.json()
-        setAuthState({
-          user,
-          isAuthenticated: true,
-          isLoading: false,
-          csrfToken: authState.csrfToken,
-        })
+        // Only set auth state if this is not a super admin
+        if (!user.roles.includes('super-admin') && !user.roles.includes('delegated-super-admin')) {
+          setAuthState({
+            user,
+            isAuthenticated: true,
+            isLoading: false,
+            csrfToken: authState.csrfToken,
+          })
+        } else {
+          // Clear any invalid cookies if this is actually a super admin
+          setAuthState({
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+            csrfToken: null,
+          })
+        }
       } else {
         // Clear any invalid cookies
         setAuthState({
@@ -111,7 +124,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         })
       }
     } catch (error) {
-      console.error('Auth check failed:', error)
+      console.error('User auth check failed:', error)
       setAuthState({
         user: null,
         isAuthenticated: false,
@@ -125,7 +138,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true }))
 
-      const response = await fetch(`${GLOBAL_API_URL}/auth/super-admin/login`, {
+      const response = await fetch(`${GLOBAL_API_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -175,6 +188,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('Logout error:', error)
     } finally {
+      // Clear regular user specific cookies
+      document.cookie = "accessToken=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/"
+      document.cookie = "refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/"
+      document.cookie = "csrfToken=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/"
+      
       setAuthState({
         user: null,
         isAuthenticated: false,
@@ -186,17 +204,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const refreshAuth = async (): Promise<void> => {
     try {
-      const response = await fetch(`${GLOBAL_API_URL}/auth/me`, {
+      // First try to refresh the token using the regular refresh endpoint
+      const refreshResponse = await fetch(`${GLOBAL_API_URL}/auth/refresh`, {
+        method: 'POST',
         credentials: 'include',
       })
 
-      if (response.ok) {
-        const user = await response.json()
-        setAuthState(prev => ({
-          ...prev,
-          user,
-          isAuthenticated: true,
-        }))
+      if (refreshResponse.ok) {
+        // Token refresh successful, now get the user profile
+        const response = await fetch(`${GLOBAL_API_URL}/auth/me`, {
+          credentials: 'include',
+        })
+
+        if (response.ok) {
+          const user = await response.json()
+          // Only update auth state if this is not a super admin
+          if (!user.roles.includes('super-admin') && !user.roles.includes('delegated-super-admin')) {
+            setAuthState(prev => ({
+              ...prev,
+              user,
+              isAuthenticated: true,
+            }))
+          }
+        } else {
+          // Profile fetch failed, logout user
+          setAuthState({
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+            csrfToken: null,
+          })
+        }
       } else {
         // Refresh failed, logout user
         setAuthState({
@@ -207,7 +245,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         })
       }
     } catch (error) {
-      console.error('Auth refresh error:', error)
+      console.error('User auth refresh error:', error)
       setAuthState({
         user: null,
         isAuthenticated: false,
@@ -235,7 +273,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return null
   }
 
-  const value: AuthContextType = {
+  const value: UserAuthContextType = {
     ...authState,
     login,
     logout,
@@ -244,8 +282,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={value}>
+    <UserAuthContext.Provider value={value}>
       {children}
-    </AuthContext.Provider>
+    </UserAuthContext.Provider>
   )
 }

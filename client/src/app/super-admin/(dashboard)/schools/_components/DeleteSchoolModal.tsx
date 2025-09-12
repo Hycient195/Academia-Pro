@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { apis } from "@/redux/api"
+import apis from "@/redux/api"
 import { ISuperAdminSchool } from "@academia-pro/types/super-admin"
 import { toast } from "sonner"
 
@@ -16,7 +16,7 @@ interface DeleteSchoolModalProps {
 }
 
 export default function DeleteSchoolModal({ isOpen, onOpenChange, school, onSuccess }: DeleteSchoolModalProps) {
-  const [deleteSchool] = apis.superAdmin.useDeleteSchoolMutation()
+  const [deleteSchool] = apis.superAdmin.schools.useDeleteSchoolMutation()
   const [deleteConfirmation, setDeleteConfirmation] = useState('')
 
   const confirmDeleteSchool = async () => {
@@ -25,7 +25,7 @@ export default function DeleteSchoolModal({ isOpen, onOpenChange, school, onSucc
       return
     }
 
-    deleteSchool(school.id).unwrap()
+    deleteSchool({ id: school.id }).unwrap()
     .then(() => {
       toast.success(`School ${school.name} deleted successfully!`)
       onOpenChange(false)

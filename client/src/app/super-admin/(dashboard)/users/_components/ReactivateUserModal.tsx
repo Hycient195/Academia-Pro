@@ -3,25 +3,29 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { apis } from "@/redux/api"
-import { ISuperAdminUser } from "@academia-pro/types/super-admin"
+import apis from "@/redux/api"
+import { ISuperAdminUser, ISuperAdminUserResponse } from "@academia-pro/types/super-admin"
+import { EUserStatus } from "@academia-pro/types/users"
 import { toast } from "sonner"
 
 interface ReactivateUserModalProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
-  user: ISuperAdminUser | null
+  user: ISuperAdminUserResponse | null
   onSuccess?: () => void
 }
 
 export default function ReactivateUserModal({ isOpen, onOpenChange, user, onSuccess }: ReactivateUserModalProps) {
-  const [reactivateUser] = apis.superAdmin.useReactivateUserMutation()
+  const [updateUser] = apis.superAdmin.iam.useUpdateUserMutation()
 
   const handleReactivateUser = async () => {
     if (!user) return
 
     try {
-      await reactivateUser(user.id).unwrap()
+      await updateUser({
+        id: user.id,
+        updates: { status: EUserStatus.ACTIVE }
+      }).unwrap()
       toast.success(`User ${user.name} has been reactivated successfully!`)
       onOpenChange(false)
       onSuccess?.()

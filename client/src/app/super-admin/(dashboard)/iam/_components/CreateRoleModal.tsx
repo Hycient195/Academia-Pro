@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { IconPlus, IconSearch } from "@tabler/icons-react"
 import { FormText, FormTextArea } from "@/components/ui/form/form-components"
-import { apis } from "@/redux/api"
+import apis from "@/redux/api"
 import ErrorBlock from "@/components/utilities/ErrorBlock"
 import { toast } from "sonner"
 import type { IPermission } from '@academia-pro/types/super-admin'
@@ -34,7 +34,7 @@ export function CreateRoleModal({ defaultPermissions, onRoleCreated }: CreateRol
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
 
-  const [createRole, { error: createRoleError }] = apis.superAdmin.useCreateRoleMutation()
+  const [createRole, { error: createRoleError }] = apis.superAdmin.iam.useCreateRoleMutation()
 
   // Filter and sort permissions based on search term
   const filteredAndSortedPermissions = defaultPermissions
@@ -68,8 +68,8 @@ export function CreateRoleModal({ defaultPermissions, onRoleCreated }: CreateRol
     try {
       const roleData = {
         name: formData.name.trim(),
-        description: formData.description.trim() || undefined,
-        permissionIds: formData.selectedPermissions
+        description: formData.description.trim() || '',
+        permissions: formData.selectedPermissions
       }
 
       await createRole(roleData).unwrap()

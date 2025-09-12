@@ -36,8 +36,6 @@ export interface RequestWithUser extends Request {
 export class JwtAuthGuard extends AuthGuard('jwt') {
   private readonly logger = new Logger(JwtAuthGuard.name);
 
-
-
   constructor(
     private reflector: Reflector,
     private jwtService: JwtService,
@@ -73,6 +71,8 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     const request = context.switchToHttp().getRequest<RequestWithUser>();
     const response = context.switchToHttp().getResponse();
 
+    this.logger.log(`[JwtAuthGuard] canActivate called for ${request.method} ${request.url}`);
+
     try {
       // Check if route is public
       const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
@@ -81,21 +81,27 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       ]);
 
       if (isPublic) {
+        this.logger.log('[JwtAuthGuard] Route is public, allowing access');
         return true;
       }
 
       // Extract token from header
       const token = this.extractTokenFromHeader(request);
+      this.logger.log(`[JwtAuthGuard] Token extracted: ${token ? 'present' : 'missing'}`);
       if (!token) {
         throw new UnauthorizedException('No token provided');
       }
 
 
       // Verify JWT token
+      this.logger.log('[JwtAuthGuard] Verifying JWT token...');
       const payload = await this.verifyToken(token);
+      this.logger.log(`[JwtAuthGuard] Token payload:`, JSON.stringify(payload, null, 2));
 
       // Validate session
+      this.logger.log('[JwtAuthGuard] Validating session...');
       const session = await this.validateSession(payload);
+      this.logger.log(`[JwtAuthGuard] Session validation result: ${session ? 'valid' : 'invalid'}`);
 
       if (!session) {
         await this.logSecurityEvent(SecurityEventType.SESSION_INVALID, payload.sub, request);
@@ -104,12 +110,14 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
       // Check if session is expired
       if (session.expiresAt < new Date()) {
+        this.logger.log('[JwtAuthGuard] Session expired');
         await this.logSecurityEvent(SecurityEventType.SESSION_EXPIRED, payload.sub, request);
         throw new UnauthorizedException('Session expired');
       }
 
       // Check if user is blocked or suspended
       if (session.isBlocked) {
+        this.logger.log('[JwtAuthGuard] User account is blocked');
         await this.logSecurityEvent(SecurityEventType.USER_BLOCKED, payload.sub, request);
         throw new UnauthorizedException('User account is blocked');
       }
@@ -133,6 +141,8 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         lastActivity: new Date(),
       };
 
+      this.logger.log(`[JwtAuthGuard] User attached to request:`, JSON.stringify(request.user, null, 2));
+
       // Log successful authentication
       await this.auditService.logActivity({
         userId: payload.sub,
@@ -150,6 +160,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         severity: AuditSeverity.LOW,
       });
 
+      this.logger.log('[JwtAuthGuard] Authentication successful');
       return true;
 
     } catch (error) {
@@ -202,6 +213,15 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
     // If not found in header, try to get from cookies
     const cookies = (request as any).cookies;
+
+    // For super-admin endpoints, prioritize super-admin tokens
+    if (request.url.includes('/super-admin/')) {
+      if (cookies?.superAdminAccessToken) {
+        return cookies.superAdminAccessToken;
+      }
+    }
+
+    // For regular endpoints, use regular access token
     if (cookies?.accessToken) {
       return cookies.accessToken;
     }

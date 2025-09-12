@@ -1,20 +1,15 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
 
-import apis from './api';
-
 import authReducer from './slices/authSlice';
 import uiReducer from './slices/uiSlice';
+import { baseApi } from './api/baseApi';
+
+// All API endpoints are now injected into the baseApi
 
 export const store = configureStore({
   reducer: {
-    // API reducers
-    [apis.superAdmin.reducerPath]: apis.superAdmin.reducer,
-    [apis.auth.reducerPath]: apis.auth.reducer,
-    [apis.schoolAdmin.reducerPath]: apis.schoolAdmin.reducer,
-    [apis.schools.reducerPath]: apis.schools.reducer,
-
-    // Feature reducers
+    [ baseApi.reducerPath ]: baseApi.reducer,
     auth: authReducer,
     ui: uiReducer,
   },
@@ -24,10 +19,7 @@ export const store = configureStore({
         ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
       },
     })
-    .concat(apis.superAdmin.middleware)
-    .concat(apis.auth.middleware)
-    .concat(apis.schoolAdmin.middleware)
-    .concat(apis.schools.middleware),
+    .concat(baseApi.middleware),
   devTools: process.env.NODE_ENV !== 'production',
 });
 

@@ -13,7 +13,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
-import { useGetStudentsQuery } from "@/redux/api/schoolAdminApi"
+import apis from "@/redux/api"
+const { useGetStudentsQuery } = apis.schoolAdmin.student
 import {
   IconAward,
   IconCheck,
@@ -63,7 +64,7 @@ export function GraduationWizard({ onComplete }: GraduationWizardProps) {
     limit: 1000, // Get all students for graduation check
   })
 
-  const students = studentsData?.students || []
+  const students = studentsData?.data || []
 
   const handleRequestChange = (field: string, value: string | number) => {
     setGraduationRequest(prev => ({
@@ -76,7 +77,7 @@ export function GraduationWizard({ onComplete }: GraduationWizardProps) {
     if (!students.length) return
 
     // Filter SSS3 students only
-    const sss3Students = students.filter(s => s.grade === 'SSS3' || s.grade?.includes('SSS3'))
+    const sss3Students = students.filter(s => s.gradeCode === 'SSS3' || s.gradeCode?.includes('SSS3'))
 
     const preview: GraduationPreview[] = sss3Students.map(student => {
       const admissionYear = student.enrollmentDate ? new Date(student.enrollmentDate).getFullYear() : 2020
@@ -110,7 +111,7 @@ export function GraduationWizard({ onComplete }: GraduationWizardProps) {
       return {
         studentId: student.id,
         studentName: `${student.firstName} ${student.lastName}`,
-        currentGrade: student.grade || 'SSS3',
+        currentGrade: student.gradeCode || 'SSS3',
         admissionYear,
         yearsInSchool,
         gpa: Math.round((Math.random() * 2 + 2) * 100) / 100, // Mock GPA between 2.0-4.0

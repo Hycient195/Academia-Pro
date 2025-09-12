@@ -29,38 +29,37 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { useAuth } from "@/redux/auth/authContext"
 import { useDispatch } from "react-redux"
 import { logout as logoutAction } from "@/redux/slices/authSlice"
-import { apis } from "@/redux/api"
+import apis from "@/redux/api"
 import { toast } from "sonner"
 
 export function NavUser({
   user,
+  onLogout,
+  redirectTo,
 }: {
   user: {
     name: string
     email: string
     avatar: string
   }
+  onLogout?: () => Promise<void>
+  redirectTo?: string
 }) {
   const { isMobile } = useSidebar()
-  const { logout } = useAuth()
   const dispatch = useDispatch()
   const router = useRouter()
 
   const handleLogout = async () => {
     try {
-      await logout()
+      if (onLogout) {
+        await onLogout()
+      }
       dispatch(logoutAction()) // Clear Redux auth state
 
-      // Clear API cache
-      dispatch(apis.superAdmin.util.resetApiState())
-      dispatch(apis.auth.util.resetApiState())
-      dispatch(apis.schoolAdmin.util.resetApiState())
-
       toast.success("Logged out successfully")
-      router.push("/auth/sign-in")
+      router.push(redirectTo ?? "/auth/sign-in")
     } catch (error) {
       console.error("Logout error:", error)
       toast.error("Failed to logout. Please try again.")

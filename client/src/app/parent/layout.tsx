@@ -2,8 +2,8 @@
 
 import PortalLayout from "@/components/PortalLayout"
 import { parentNavData } from "./_constants/navData"
-import { AuthProvider } from "@/redux/auth/authContext"
-import { AuthGuard, RoleGuard } from "@/components/auth/AuthGuard"
+import { UserAuthProvider } from "@/redux/auth/userAuthContext"
+import { UserAuthGuard, UserRoleGuard } from "@/components/auth/UserAuthGuard"
 
 export default function ParentLayout({
   children,
@@ -11,8 +11,8 @@ export default function ParentLayout({
   children: React.ReactNode
 }) {
   return (
-    <AuthProvider>
-      <AuthGuard
+    <UserAuthProvider>
+      <UserAuthGuard
         requireAuth={true}
         redirectTo="/auth/sign-in"
         fallback={
@@ -24,12 +24,12 @@ export default function ParentLayout({
           </div>
         }
       >
-        <RoleGuard allowedRoles={['parent']}>
+        <UserRoleGuard allowedRoles={['parent']}>
           <PortalLayout navData={parentNavData}>
             {children}
           </PortalLayout>
-        </RoleGuard>
-      </AuthGuard>
-    </AuthProvider>
+        </UserRoleGuard>
+      </UserAuthGuard>
+    </UserAuthProvider>
   )
 }

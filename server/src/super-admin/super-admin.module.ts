@@ -12,6 +12,9 @@ import { IamModule } from '../iam/iam.module';
 // Controllers
 import { SuperAdminController } from './super-admin.controller';
 import { SuperAdminUsersController } from './controllers/super-admin.controller';
+import { AnalyticsController } from './controllers/analytics.controller';
+import { SystemController } from './controllers/system.controller';
+import { IamProxyController } from './controllers/iam-proxy.controller';
 
 // Services
 import { CrossSchoolReportingService } from './cross-school-reporting.service';
@@ -31,6 +34,9 @@ import { AuditModule } from './audit/audit.module';
   controllers: [
     SuperAdminController,
     SuperAdminUsersController,
+    AnalyticsController,
+    SystemController,
+    IamProxyController,
   ],
   providers: [
     CrossSchoolReportingService,

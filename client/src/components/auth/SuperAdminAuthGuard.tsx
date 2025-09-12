@@ -2,39 +2,39 @@
 
 import { useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { useAuth } from '@/redux/auth/authContext'
+import { useSuperAdminAuth } from '@/redux/auth/superAdminAuthContext'
 import { Skeleton } from '@/components/ui/skeleton'
 
-interface AuthGuardProps {
+interface SuperAdminAuthGuardProps {
   children: React.ReactNode
   requireAuth?: boolean
   redirectTo?: string
   fallback?: React.ReactNode
 }
 
-export const AuthGuard: React.FC<AuthGuardProps> = ({
+export const SuperAdminAuthGuard: React.FC<SuperAdminAuthGuardProps> = ({
   children,
   requireAuth = true,
   redirectTo,
   fallback,
 }) => {
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, isLoading } = useSuperAdminAuth()
   const router = useRouter()
   const pathname = usePathname()
 
   useEffect(() => {
     if (process.env.NODE_ENV !== 'production') {
       // eslint-disable-next-line no-console
-      // console.debug('[AuthGuard]', { isAuthenticated, isLoading, requireAuth, redirectTo, pathname })
+      // console.debug('[SuperAdminAuthGuard]', { isAuthenticated, isLoading, requireAuth, redirectTo, pathname })
     }
     if (!isLoading) {
       if (requireAuth && !isAuthenticated) {
-        const target = redirectTo || '/auth/sign-in'
+        const target = redirectTo || '/super-admin/auth/sign-in'
         if (pathname !== target) {
           router.push(target)
         }
       } else if (!requireAuth && isAuthenticated) {
-        const target = redirectTo || '/dashboard'
+        const target = redirectTo || '/super-admin/overview'
         if (pathname !== target) {
           router.push(target)
         }
@@ -67,22 +67,22 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
   return <>{children}</>
 }
 
-interface RoleGuardProps {
+interface SuperAdminRoleGuardProps {
   children: React.ReactNode
   allowedRoles: string[]
   fallback?: React.ReactNode
 }
 
-export const RoleGuard: React.FC<RoleGuardProps> = ({
+export const SuperAdminRoleGuard: React.FC<SuperAdminRoleGuardProps> = ({
   children,
   allowedRoles,
   fallback,
 }) => {
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated } = useSuperAdminAuth()
 
   if (process.env.NODE_ENV !== 'production') {
     // eslint-disable-next-line no-console
-    // console.debug('[RoleGuard]', { userRoles: user?.roles, allowedRoles })
+    // console.debug('[SuperAdminRoleGuard]', { userRoles: user?.roles, allowedRoles })
   }
 
   if (!isAuthenticated || !user) {
@@ -96,7 +96,7 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({
     )
   }
 
-  const hasRequiredRole = user.roles.some(role => allowedRoles.includes(role))
+  const hasRequiredRole = user?.roles?.some(role => allowedRoles.includes(role))
   if (!hasRequiredRole) {
     return fallback || (
       <div className="min-h-screen flex items-center justify-center">
@@ -114,7 +114,7 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({
 }
 
 // Higher-order component for protecting pages
-export const withAuth = <P extends object>(
+export const withSuperAdminAuth = <P extends object>(
   Component: React.ComponentType<P>,
   options: {
     requireAuth?: boolean
@@ -127,22 +127,22 @@ export const withAuth = <P extends object>(
   const ProtectedComponent: React.FC<P> = (props) => {
     if (allowedRoles && allowedRoles.length > 0) {
       return (
-        <RoleGuard allowedRoles={allowedRoles}>
-          <AuthGuard requireAuth={requireAuth} redirectTo={redirectTo}>
+        <SuperAdminRoleGuard allowedRoles={allowedRoles}>
+          <SuperAdminAuthGuard requireAuth={requireAuth} redirectTo={redirectTo}>
             <Component {...props} />
-          </AuthGuard>
-        </RoleGuard>
+          </SuperAdminAuthGuard>
+        </SuperAdminRoleGuard>
       )
     }
 
     return (
-      <AuthGuard requireAuth={requireAuth} redirectTo={redirectTo}>
+      <SuperAdminAuthGuard requireAuth={requireAuth} redirectTo={redirectTo}>
         <Component {...props} />
-      </AuthGuard>
+      </SuperAdminAuthGuard>
     )
   }
 
-  ProtectedComponent.displayName = `withAuth(${Component.displayName || Component.name})`
+  ProtectedComponent.displayName = `withSuperAdminAuth(${Component.displayName || Component.name})`
 
   return ProtectedComponent
 }

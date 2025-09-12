@@ -2,8 +2,8 @@
 
 import PortalLayout from "@/components/PortalLayout"
 import { studentNavData } from "./_constants/navData"
-import { AuthProvider } from "@/redux/auth/authContext"
-import { AuthGuard, RoleGuard } from "@/components/auth/AuthGuard"
+import { UserAuthProvider } from "@/redux/auth/userAuthContext"
+import { UserAuthGuard, UserRoleGuard } from "@/components/auth/UserAuthGuard"
 
 export default function StudentLayout({
   children,
@@ -11,8 +11,8 @@ export default function StudentLayout({
   children: React.ReactNode
 }) {
   return (
-    <AuthProvider>
-      <AuthGuard
+    <UserAuthProvider>
+      <UserAuthGuard
         requireAuth={true}
         redirectTo="/student/login"
         fallback={
@@ -24,12 +24,12 @@ export default function StudentLayout({
           </div>
         }
       >
-        <RoleGuard allowedRoles={['student']}>
+        <UserRoleGuard allowedRoles={['student']}>
           <PortalLayout navData={studentNavData}>
             {children}
           </PortalLayout>
-        </RoleGuard>
-      </AuthGuard>
-    </AuthProvider>
+        </UserRoleGuard>
+      </UserAuthGuard>
+    </UserAuthProvider>
   )
 }

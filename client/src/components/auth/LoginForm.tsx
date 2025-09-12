@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/redux/auth/authContext'
+import { useUserAuth } from '@/redux/auth/userAuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,7 +17,7 @@ export const LoginForm: React.FC = () => {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  const { login } = useAuth()
+  const { login } = useUserAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {

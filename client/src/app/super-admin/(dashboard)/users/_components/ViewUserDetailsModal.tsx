@@ -1,12 +1,12 @@
 "use client"
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { ISuperAdminUser } from "@academia-pro/types/super-admin"
+import { ISuperAdminUser, ISuperAdminUserResponse } from "@academia-pro/types/super-admin"
 
 interface ViewUserDetailsModalProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
-  user: ISuperAdminUser | null
+  user: ISuperAdminUserResponse | null
 }
 
 export default function ViewUserDetailsModal({ isOpen, onOpenChange, user }: ViewUserDetailsModalProps) {

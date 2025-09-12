@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch"
 import { IconPlus, IconSearch } from "@tabler/icons-react"
 import { FormText, FormDateInput, FormTextArea } from "@/components/ui/form/form-components"
 import { FormUserSelect } from "@/components/ui/form/FormUserSelect"
-import { apis } from "@/redux/api"
+import apis from "@/redux/api"
 import ErrorBlock from "@/components/utilities/ErrorBlock"
 import { toast } from "sonner"
 
@@ -52,7 +52,7 @@ export function CreateDelegatedAccountModal({ defaultPermissions }: CreateDelega
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
 
-  const [createDelegatedAccount, { error: createDelegationError }] = apis.superAdmin.useCreateDelegatedAccountMutation()
+  const [createDelegatedAccount, { error: createDelegationError }] = apis.superAdmin.iam.useCreateDelegatedAccountMutation()
 
   // Filter and sort permissions based on search term
   const filteredAndSortedPermissions = useMemo(() => {

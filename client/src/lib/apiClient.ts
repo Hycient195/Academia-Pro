@@ -1,5 +1,5 @@
 import React from 'react'
-import { useAuth } from '@/redux/auth/authContext'
+import { useUserAuth } from '@/redux/auth/userAuthContext'
 
 export interface ApiResponse<T = unknown> {
   data?: T
@@ -203,7 +203,7 @@ export const apiClient = new ApiClient()
 
 // React hook for using the API client with auth context
 export const useApiClient = () => {
-  const { csrfToken, getCSRFToken } = useAuth()
+  const { csrfToken, getCSRFToken } = useUserAuth()
 
   // Update CSRF token when it changes
   React.useEffect(() => {

@@ -2,8 +2,8 @@
 
 import PortalLayout from "@/components/PortalLayout"
 import { staffNavData } from "./_constants/navData"
-import { AuthProvider } from "@/redux/auth/authContext"
-import { AuthGuard, RoleGuard } from "@/components/auth/AuthGuard"
+import { UserAuthProvider } from "@/redux/auth/userAuthContext"
+import { UserAuthGuard, UserRoleGuard } from "@/components/auth/UserAuthGuard"
 
 export default function StaffLayout({
   children,
@@ -11,10 +11,10 @@ export default function StaffLayout({
   children: React.ReactNode
 }) {
   return (
-    <AuthProvider>
-      <AuthGuard
+    <UserAuthProvider>
+      <UserAuthGuard
         requireAuth={true}
-        redirectTo="/staff/login"
+        redirectTo="/auth/sign-in"
         fallback={
           <div className="min-h-screen flex items-center justify-center">
             <div className="text-center">
@@ -24,12 +24,12 @@ export default function StaffLayout({
           </div>
         }
       >
-        <RoleGuard allowedRoles={['teacher']}>
+        <UserRoleGuard allowedRoles={['staff']}>
           <PortalLayout navData={staffNavData}>
             {children}
           </PortalLayout>
-        </RoleGuard>
-      </AuthGuard>
-    </AuthProvider>
+        </UserRoleGuard>
+      </UserAuthGuard>
+    </UserAuthProvider>
   )
 }

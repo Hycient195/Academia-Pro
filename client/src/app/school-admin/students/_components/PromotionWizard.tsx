@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
-import { useGetStudentsQuery } from "@/redux/api/schoolAdminApi"
+import apis from "@/redux/api"
+const { useGetStudentsQuery } = apis.schoolAdmin.student
 import type { TStudentStage, TGradeCode } from "@academia-pro/types/student/student.types"
 import {
   IconUsers,
@@ -56,7 +57,7 @@ export function PromotionWizard({ onComplete }: PromotionWizardProps) {
     limit: 1000, // Get all students for promotion
   })
 
-  const students = studentsData?.students || []
+  const students = studentsData?.data || []
 
   const gradeOptions: Record<TStudentStage, Array<{ value: TGradeCode; text: string }>> = {
     EY: [
@@ -116,15 +117,15 @@ export function PromotionWizard({ onComplete }: PromotionWizardProps) {
 
     // Apply scope filters
     if (promotionRequest.scope === 'grade' && promotionRequest.gradeCode) {
-      filteredStudents = students.filter(s => s.grade === promotionRequest.gradeCode)
+      filteredStudents = students.filter(s => s.gradeCode === promotionRequest.gradeCode)
     } else if (promotionRequest.scope === 'section' && promotionRequest.streamSection) {
-      filteredStudents = students.filter(s => s.section === promotionRequest.streamSection)
+      filteredStudents = students.filter(s => s.streamSection === promotionRequest.streamSection)
     }
 
     // Generate preview data
     const preview: PromotionPreview[] = filteredStudents.map(student => {
       // Mock grade code from current grade for now
-      const mockGradeCode = student.grade as TGradeCode
+      const mockGradeCode = student.gradeCode as TGradeCode
       const nextGrade = getNextGrade(mockGradeCode)
       let status: PromotionPreview['status'] = 'eligible'
       let reason = ''

@@ -100,6 +100,35 @@ export class SchoolsController {
     return this.schoolsService.getActiveSchools();
   }
 
+  @Get('transfer-options')
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.DELEGATED_SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get schools available for student transfers' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'excludeCurrentSchool', required: false, type: Boolean, description: 'Exclude current user\'s school from results' })
+  @ApiResponse({
+    status: 200,
+    description: 'Schools available for transfer retrieved successfully',
+  })
+  getSchoolsForTransfer(
+    @Req() request: any,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('search') search?: string,
+    @Query('excludeCurrentSchool') excludeCurrentSchool?: boolean
+  ) {
+    const user = request.user;
+    return this.schoolsService.getSchoolsForTransfer({
+      page,
+      limit,
+      search,
+      excludeCurrentSchool: excludeCurrentSchool || true,
+      currentUserSchoolId: user?.schoolId
+    });
+  }
+
   @Get('search')
   @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @SampleAudit(0.3) // Sample 30% of search requests

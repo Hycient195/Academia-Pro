@@ -214,75 +214,75 @@ export class AuthService {
      return result;
    }
 
-  /**
-    * Login user and generate tokens
-    */
-   @Auditable({
-     action: AuditAction.LOGIN,
-     resource: 'user_session',
-     severity: AuditSeverity.MEDIUM,
-     metadata: { sessionType: 'login' }
-   })
-   async login(user: any): Promise<IAuthTokens & { requiresPasswordReset?: boolean }> {
-     console.log('[AuthService] login: creating session', { userId: user?.id });
- 
-     // Create user session
-     const sessionId = this.generateSessionId();
-     const session = await this.userSessionRepository.save({
-       userId: user.id,
-       sessionToken: this.generateSessionId(),
-       ipAddress: '127.0.0.1', // This should be passed from request
-       userAgent: 'Unknown', // This should be passed from request
-       lastActivityAt: new Date(),
-       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-       createdAt: new Date(),
-       loginAt: new Date(),
-       isActive: true,
-     });
-     console.log('[AuthService] login: session created', { sessionId: session?.id });
- 
-     const payload = {
-       email: user.email,
-       sub: user.id,
-       userId: user.id, // Ensure userId is included in payload
-       roles: user.roles,
-       schoolId: user.schoolId,
-       sessionId: session.id,
-     };
- 
-     let accessToken: string;
-     let refreshToken: string;
-     try {
-       accessToken = this.jwtService.sign(payload);
-       refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
-     } catch (err: any) {
-       console.error('[AuthService] login: jwt sign error', { message: err?.message });
-       throw err;
-     }
- 
-     // Store refresh token in database
-     await this.usersRepository.update(user.id, {
-       refreshToken: await bcrypt.hash(refreshToken, 10),
-       refreshTokenExpires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-       lastLoginAt: new Date(),
-     });
- 
-     const result: IAuthTokens & { requiresPasswordReset?: boolean } = {
-       accessToken,
-       refreshToken,
-       expiresIn: 86400, // 24 hours in seconds
-       tokenType: 'Bearer',
-       issuedAt: new Date(),
-     };
-     console.log('[AuthService] login: tokens generated');
- 
-     // Check if user needs to reset password (first-time login)
-     if (user.isFirstLogin) {
-       result.requiresPasswordReset = true;
-     }
- 
-     return result;
+ /**
+  * Login user and generate tokens
+  */
+ @Auditable({
+   action: AuditAction.LOGIN,
+   resource: 'user_session',
+   severity: AuditSeverity.MEDIUM,
+   metadata: { sessionType: 'login' }
+ })
+ async login(user: any): Promise<IAuthTokens & { requiresPasswordReset?: boolean }> {
+   console.log('[AuthService] login: creating session', { userId: user?.id });
+
+   // Create user session
+   const sessionId = this.generateSessionId();
+   const session = await this.userSessionRepository.save({
+     userId: user.id,
+     sessionToken: this.generateSessionId(),
+     ipAddress: '127.0.0.1', // This should be passed from request
+     userAgent: 'Unknown', // This should be passed from request
+     lastActivityAt: new Date(),
+     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+     createdAt: new Date(),
+     loginAt: new Date(),
+     isActive: true,
+   });
+   console.log('[AuthService] login: session created', { sessionId: session?.id });
+
+   const payload = {
+     email: user.email,
+     sub: user.id,
+     userId: user.id, // Ensure userId is included in payload
+     roles: user.roles,
+     schoolId: user.schoolId,
+     sessionId: session.id,
+   };
+
+   let accessToken: string;
+   let refreshToken: string;
+   try {
+     accessToken = this.jwtService.sign(payload);
+     refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+   } catch (err: any) {
+     console.error('[AuthService] login: jwt sign error', { message: err?.message });
+     throw err;
    }
+
+   // Store refresh token in database
+   await this.usersRepository.update(user.id, {
+     refreshToken: await bcrypt.hash(refreshToken, 10),
+     refreshTokenExpires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+     lastLoginAt: new Date(),
+   });
+
+   const result: IAuthTokens & { requiresPasswordReset?: boolean } = {
+     accessToken,
+     refreshToken,
+     expiresIn: 86400, // 24 hours in seconds
+     tokenType: 'Bearer',
+     issuedAt: new Date(),
+   };
+   console.log('[AuthService] login: tokens generated');
+
+   // Check if user needs to reset password (first-time login)
+   if (user.isFirstLogin) {
+     result.requiresPasswordReset = true;
+   }
+
+   return result;
+ }
 
   /**
    * Login user and set authentication cookies
@@ -293,8 +293,8 @@ export class AuthService {
   ): Promise<{ user: any; tokens: IAuthTokens; requiresPasswordReset?: boolean }> {
     const tokensWithFlag = await this.login(user);
 
-    // Set authentication cookies
-    this.setAuthCookies(res, tokensWithFlag.accessToken, tokensWithFlag.refreshToken);
+    // Set authentication cookies (pass user for role-based cookie naming)
+    this.setAuthCookies(res, tokensWithFlag.accessToken, tokensWithFlag.refreshToken, user);
 
     // Remove sensitive information from response
     const { passwordHash, ...userResponse } = user;
@@ -324,7 +324,7 @@ export class AuthService {
   /**
    * Set authentication cookies on response
    */
-  setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
+  setAuthCookies(res: Response, accessToken: string, refreshToken: string, user?: any) {
     const isProduction = process.env.NODE_ENV === 'production';
     const sameSite = 'lax' as const; // use lax in dev for localhost cross-origin
 
@@ -335,26 +335,36 @@ export class AuthService {
       path: '/',
     } as const;
 
+    // Determine cookie names based on user role
+    const isSuperAdmin = user?.roles?.includes(EUserRole.SUPER_ADMIN);
+    const accessTokenKey = isSuperAdmin ? 'superAdminAccessToken' : 'accessToken';
+    const refreshTokenKey = isSuperAdmin ? 'superAdminRefreshToken' : 'refreshToken';
+    const csrfTokenKey = isSuperAdmin ? 'superAdminCsrfToken' : 'csrfToken';
+
     try {
       console.log('[AuthService] setAuthCookies', {
         secure: baseCookieOptions.secure,
         sameSite: baseCookieOptions.sameSite,
         origin: (res as any)?.req?.headers?.origin,
+        isSuperAdmin,
+        accessTokenKey,
+        refreshTokenKey,
+        csrfTokenKey,
       });
 
-      res.cookie('accessToken', accessToken, {
+      res.cookie(accessTokenKey, accessToken, {
         ...baseCookieOptions,
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
       });
 
-      res.cookie('refreshToken', refreshToken, {
+      res.cookie(refreshTokenKey, refreshToken, {
         ...baseCookieOptions,
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
 
       // Generate and set CSRF token
       const csrfToken = this.generateCSRFToken();
-      res.cookie('csrfToken', csrfToken, {
+      res.cookie(csrfTokenKey, csrfToken, {
         ...baseCookieOptions,
         httpOnly: false, // Allow client-side access for CSRF token
         maxAge: 60 * 60 * 1000, // 1 hour
@@ -368,7 +378,7 @@ export class AuthService {
   /**
    * Clear authentication cookies
    */
-  clearAuthCookies(res: Response) {
+  clearAuthCookies(res: Response, user?: any) {
     const isProduction = process.env.NODE_ENV === 'production';
     const cookieOptions = {
       httpOnly: true,
@@ -376,9 +386,15 @@ export class AuthService {
       sameSite: 'strict' as const,
     };
 
-    res.clearCookie('accessToken', cookieOptions);
-    res.clearCookie('refreshToken', cookieOptions);
-    res.clearCookie('csrfToken', { ...cookieOptions, httpOnly: false });
+    // Determine cookie names based on user role
+    const isSuperAdmin = user?.roles?.includes(EUserRole.SUPER_ADMIN);
+    const accessTokenKey = isSuperAdmin ? 'superAdminAccessToken' : 'accessToken';
+    const refreshTokenKey = isSuperAdmin ? 'superAdminRefreshToken' : 'refreshToken';
+    const csrfTokenKey = isSuperAdmin ? 'superAdminCsrfToken' : 'csrfToken';
+
+    res.clearCookie(accessTokenKey, cookieOptions);
+    res.clearCookie(refreshTokenKey, cookieOptions);
+    res.clearCookie(csrfTokenKey, { ...cookieOptions, httpOnly: false });
   }
 
   /**
@@ -430,117 +446,134 @@ export class AuthService {
     return newUser;
   }
 
-  /**
-    * Refresh access token
-    */
-   @Auditable({
-     action: AuditAction.AUTHENTICATION_SUCCESS,
-     resource: 'token_refresh',
-     severity: AuditSeverity.LOW,
-     excludeFields: ['refreshToken'],
-     metadata: { tokenOperation: 'refresh' }
-   })
-   async refreshToken(refreshTokenDto: RefreshTokenDto): Promise<IAuthTokens> {
-    try {
-      const { refreshToken } = refreshTokenDto;
+ /**
+  * Refresh access token
+  */
+ @Auditable({
+   action: AuditAction.AUTHENTICATION_SUCCESS,
+   resource: 'token_refresh',
+   severity: AuditSeverity.LOW,
+   excludeFields: ['refreshToken'],
+   metadata: { tokenOperation: 'refresh' }
+ })
+ async refreshToken(refreshTokenDto: RefreshTokenDto): Promise<IAuthTokens> {
+   try {
+     const { refreshToken } = refreshTokenDto;
 
-      // Verify refresh token
-      const payload = this.jwtService.verify(refreshToken);
-      const user = await this.usersRepository.findOne({
-        where: { id: payload.sub },
-        select: ['id', 'email', 'refreshToken', 'refreshTokenExpires', 'roles', 'schoolId'],
-      });
-
-      if (!user || !user.refreshToken) {
-        throw new UnauthorizedException('Invalid refresh token');
-      }
-
-      // Check if refresh token is expired
-      if (user.refreshTokenExpires && user.refreshTokenExpires < new Date()) {
-        throw new UnauthorizedException('Refresh token expired');
-      }
-
-      // Verify stored refresh token
-      const isRefreshTokenValid = await bcrypt.compare(refreshToken, user.refreshToken);
-      if (!isRefreshTokenValid) {
-        throw new UnauthorizedException('Invalid refresh token');
-      }
-
-      // Generate new tokens
-      const newPayload = {
-        email: user.email,
-        sub: user.id,
-        userId: user.id, // Ensure userId is included in payload
-        roles: user.roles,
-        schoolId: user.schoolId,
-      };
-
-      const newAccessToken = this.jwtService.sign(newPayload);
-      const newRefreshToken = this.jwtService.sign(newPayload, { expiresIn: '7d' });
-
-      // Update stored refresh token
-      await this.usersRepository.update(user.id, {
-        refreshToken: await bcrypt.hash(newRefreshToken, 10),
-        refreshTokenExpires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      });
-
-      return {
-        accessToken: newAccessToken,
-        refreshToken: newRefreshToken,
-        expiresIn: 86400,
-        tokenType: 'Bearer',
-        issuedAt: new Date(),
-      };
-    } catch (error) {
-      throw new UnauthorizedException('Invalid refresh token');
-    }
-  }
-
-  /**
-    * Change user password
-    */
-   @Auditable({
-     action: AuditAction.PASSWORD_CHANGED,
-     resource: 'user_password',
-     resourceId: 'userId',
-     severity: AuditSeverity.HIGH,
-     excludeFields: ['currentPassword', 'newPassword'],
-     metadata: { passwordChangeType: 'user_initiated' }
-   })
-   async changePassword(userId: string, changePasswordDto: ChangePasswordDto): Promise<void> {
-     const { currentPassword, newPassword } = changePasswordDto;
- 
+     // Verify refresh token
+     const payload = this.jwtService.verify(refreshToken);
      const user = await this.usersRepository.findOne({
-       where: { id: userId },
-       select: ['id', 'passwordHash', 'schoolId', 'isFirstLogin', 'status'],
+       where: { id: payload.sub },
+       select: ['id', 'email', 'refreshToken', 'refreshTokenExpires', 'roles', 'schoolId'],
      });
- 
-     if (!user) {
-       throw new UnauthorizedException('User not found');
+
+     if (!user || !user.refreshToken) {
+       throw new UnauthorizedException('Invalid refresh token');
      }
- 
-     // Verify current password
-     const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
-     if (!isCurrentPasswordValid) {
-       throw new BadRequestException('Current password is incorrect');
+
+     // Check if refresh token is expired
+     if (user.refreshTokenExpires && user.refreshTokenExpires < new Date()) {
+       throw new UnauthorizedException('Refresh token expired');
      }
- 
-     // Hash new password
-     const newPasswordHash = await bcrypt.hash(newPassword, 12);
- 
-     // Build update payload
-     const updatePayload: Partial<User> = {
-       passwordHash: newPasswordHash,
+
+     // Verify stored refresh token
+     const isRefreshTokenValid = await bcrypt.compare(refreshToken, user.refreshToken);
+     if (!isRefreshTokenValid) {
+       throw new UnauthorizedException('Invalid refresh token');
+     }
+
+     // Generate new tokens
+     const newPayload = {
+       email: user.email,
+       sub: user.id,
+       userId: user.id, // Ensure userId is included in payload
+       roles: user.roles,
+       schoolId: user.schoolId,
      };
- 
-     // If this was a first-time login, clear the flag and activate the account
-     if ((user as any).isFirstLogin) {
-       (updatePayload as any).isFirstLogin = false;
-       (updatePayload as any).status = EUserStatus.ACTIVE as any;
-     }
- 
-     await this.usersRepository.update(userId, updatePayload);
+
+     const newAccessToken = this.jwtService.sign(newPayload);
+     const newRefreshToken = this.jwtService.sign(newPayload, { expiresIn: '7d' });
+
+     // Update stored refresh token
+     await this.usersRepository.update(user.id, {
+       refreshToken: await bcrypt.hash(newRefreshToken, 10),
+       refreshTokenExpires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+     });
+
+     return {
+       accessToken: newAccessToken,
+       refreshToken: newRefreshToken,
+       expiresIn: 86400,
+       tokenType: 'Bearer',
+       issuedAt: new Date(),
+     };
+   } catch (error) {
+     throw new UnauthorizedException('Invalid refresh token');
    }
+ }
+
+  /**
+   * Change user password
+   */
+  @Auditable({
+    action: AuditAction.PASSWORD_CHANGED,
+    resource: 'user_password',
+    resourceId: 'userId',
+    severity: AuditSeverity.HIGH,
+    excludeFields: ['currentPassword', 'newPassword'],
+    metadata: { passwordChangeType: 'user_initiated' }
+  })
+  async changePassword(userId: string, changePasswordDto: ChangePasswordDto): Promise<void> {
+    const { currentPassword, newPassword } = changePasswordDto;
+
+    const user = await this.usersRepository.findOne({
+      where: { id: userId },
+      select: ['id', 'passwordHash', 'schoolId', 'isFirstLogin', 'status', 'email'],
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // For first-time login users, skip current password verification
+    // since they logged in with email as password and don't have a proper password hash
+    if (!(user as any).isFirstLogin) {
+      // Verify current password for non-first-time users
+      if (!user.passwordHash) {
+        throw new BadRequestException('Current password is required');
+      }
+
+      const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
+      if (!isCurrentPasswordValid) {
+        throw new BadRequestException('Current password is incorrect');
+      }
+    } else {
+      // For first-time login users, verify that the "current password" matches their email
+      // This provides an additional security check
+      const normalizedCurrentPassword = (currentPassword || '').trim().toLowerCase();
+      const normalizedEmail = (user.email || '').trim().toLowerCase();
+
+      if (normalizedCurrentPassword !== normalizedEmail) {
+        throw new BadRequestException('Current password is incorrect');
+      }
+    }
+
+    // Hash new password
+    const newPasswordHash = await bcrypt.hash(newPassword, 12);
+
+    // Build update payload
+    const updatePayload: Partial<User> = {
+      passwordHash: newPasswordHash,
+    };
+
+    // If this was a first-time login, clear the flag and activate the account
+    if ((user as any).isFirstLogin) {
+      (updatePayload as any).isFirstLogin = false;
+      (updatePayload as any).status = EUserStatus.ACTIVE as any;
+    }
+
+    await this.usersRepository.update(userId, updatePayload);
+  }
 
   /**
     * Verify email address
@@ -631,47 +664,59 @@ export class AuthService {
     });
   }
 
-  /**
-    * Logout user (invalidate refresh token)
-    */
-   @Auditable({
-     action: AuditAction.LOGOUT,
-     resource: 'user_session',
-     severity: AuditSeverity.LOW,
-     metadata: { sessionType: 'logout' }
-   })
-   async logout(userId: string): Promise<void> {
-    // Get user details for audit context
-    const user = await this.usersRepository.findOne({
-      where: { id: userId },
-      select: ['id', 'schoolId'],
-    });
+ /**
+  * Logout user (invalidate refresh token)
+  */
+ @Auditable({
+   action: AuditAction.LOGOUT,
+   resource: 'user_session',
+   severity: AuditSeverity.LOW,
+   metadata: { sessionType: 'logout' }
+ })
+ async logout(userId: string): Promise<void> {
+   // Get user details for audit context
+   const user = await this.usersRepository.findOne({
+     where: { id: userId },
+     select: ['id', 'schoolId'],
+   });
 
-    if (user) {
-       // Audit context is handled by the interceptor
-     }
+   if (user) {
+      // Audit context is handled by the interceptor
+    }
 
-    await this.usersRepository.update(userId, {
-      refreshToken: null,
-      refreshTokenExpires: null,
-    });
-  }
+   await this.usersRepository.update(userId, {
+     refreshToken: null,
+     refreshTokenExpires: null,
+   });
+ }
 
-  /**
-    * Get user profile for JWT strategy
-    */
-   async getUserProfile(userId: string): Promise<any> {
-     const user = await this.usersRepository.findOne({
-       where: { id: userId },
-       select: ['id', 'email', 'firstName', 'lastName', 'roles', 'status', 'schoolId', 'isEmailVerified'],
-     });
+ /**
+  * Get user profile for JWT strategy
+  */
+ async getUserProfile(userId: string): Promise<any> {
+   const user = await this.usersRepository.findOne({
+     where: { id: userId },
+     select: ['id', 'email', 'firstName', 'lastName', 'roles', 'status', 'schoolId', 'isEmailVerified'],
+   });
 
-     if (!user) {
-       throw new UnauthorizedException('User not found');
-     }
-
-     return user;
+   if (!user) {
+     throw new UnauthorizedException('User not found');
    }
+
+   return user;
+ }
+
+ /**
+  * Get user from refresh token (for determining cookie names)
+  */
+ async getUserFromRefreshToken(refreshToken: string): Promise<any> {
+   try {
+     const payload = this.jwtService.verify(refreshToken);
+     return await this.getUserProfile(payload.sub);
+   } catch (error) {
+     throw new UnauthorizedException('Invalid refresh token');
+   }
+ }
 
   // Custom audit methods for auth-specific events
   private async logAccountLockout(userId: string, attempts: number): Promise<void> {

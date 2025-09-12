@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { IconTrash } from "@tabler/icons-react"
-import { apis } from "@/redux/api"
+import apis from "@/redux/api"
 import ErrorBlock from "@/components/utilities/ErrorBlock"
 
 interface DeleteConfirmationModalProps {
@@ -27,7 +27,7 @@ export function DeleteConfirmationModal({
   accountId,
   accountEmail
 }: DeleteConfirmationModalProps) {
-  const [deleteDelegatedAccount, { isLoading, error }] = apis.superAdmin.useDeleteDelegatedAccountMutation()
+  const [deleteDelegatedAccount, { isLoading, error }] = apis.superAdmin.iam.useDeleteDelegatedAccountMutation()
 
   const [formData, setFormData] = useState({
     accountId: '',

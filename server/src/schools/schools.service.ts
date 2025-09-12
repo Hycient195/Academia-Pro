@@ -365,6 +365,68 @@ export class SchoolsService {
   }
 
   /**
+   * Get schools available for student transfers
+   */
+  @AuditRead('schools')
+  async getSchoolsForTransfer(options?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    excludeCurrentSchool?: boolean;
+    currentUserSchoolId?: string;
+  }): Promise<{ data: School[]; pagination: { page: number; limit: number; total: number; totalPages: number; hasNext: boolean; hasPrev: boolean } }> {
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      excludeCurrentSchool = true,
+      currentUserSchoolId
+    } = options || {};
+
+    const queryBuilder = this.schoolsRepository.createQueryBuilder('school');
+
+    // Only include active schools for transfers
+    queryBuilder.andWhere('school.status = :status', { status: SchoolStatus.ACTIVE });
+
+    // Exclude current user's school if requested
+    if (excludeCurrentSchool && currentUserSchoolId) {
+      queryBuilder.andWhere('school.id != :currentSchoolId', { currentSchoolId: currentUserSchoolId });
+    }
+
+    // Apply search filter
+    if (search) {
+      queryBuilder.andWhere(
+        '(school.name ILIKE :search OR school.code ILIKE :search OR school.email ILIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+
+    // Apply pagination
+    queryBuilder
+      .orderBy('school.name', 'ASC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [schools, total] = await queryBuilder.getManyAndCount();
+
+    const totalPages = Math.ceil(total / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
+
+    return {
+      data: schools,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext,
+        hasPrev,
+      },
+    };
+  }
+
+  /**
    * Bulk update school status
    */
   async bulkUpdateStatus(schoolIds: string[], status: SchoolStatus, userId?: string): Promise<{ success: number; failed: number; errors: string[] }> {

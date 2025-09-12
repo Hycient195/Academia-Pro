@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { IconPlayerPause, IconPlayerPlay } from "@tabler/icons-react"
-import { apis } from "@/redux/api"
+import apis from "@/redux/api"
 import ErrorBlock from "@/components/utilities/ErrorBlock"
 
 interface SuspendConfirmationModalProps {
@@ -29,8 +29,8 @@ export function SuspendConfirmationModal({
   accountEmail,
   isCurrentlySuspended
 }: SuspendConfirmationModalProps) {
-  const [suspendDelegatedAccount, { isLoading: suspendLoading, error: suspendError }] = apis.superAdmin.useSuspendDelegatedAccountMutation()
-  const [unsuspendDelegatedAccount, { isLoading: unsuspendLoading, error: unsuspendError }] = apis.superAdmin.useUnsuspendDelegatedAccountMutation()
+  const [revokeDelegatedAccount, { isLoading: revokeLoading, error: revokeError }] = apis.superAdmin.iam.useRevokeDelegatedAccountMutation()
+  const [updateDelegatedAccount, { isLoading: updateLoading, error: updateError }] = apis.superAdmin.iam.useUpdateDelegatedAccountMutation()
 
   const [formData, setFormData] = useState({
     accountId: '',
@@ -45,15 +45,21 @@ export function SuspendConfirmationModal({
     })
   }, [accountId, isCurrentlySuspended])
 
-  const isLoading = suspendLoading || unsuspendLoading
-  const error = suspendError || unsuspendError
+  const isLoading = revokeLoading || updateLoading
+  const error = revokeError || updateError
 
   const handleConfirm = async () => {
     try {
       if (formData.operation === 'unsuspend') {
-        await unsuspendDelegatedAccount(formData.accountId).unwrap()
+        await updateDelegatedAccount({
+          id: formData.accountId,
+          updates: { status: 'active' }
+        }).unwrap()
       } else {
-        await suspendDelegatedAccount(formData.accountId).unwrap()
+        await revokeDelegatedAccount({
+          id: formData.accountId,
+          reason: 'Suspended by administrator'
+        }).unwrap()
       }
       onClose()
     } catch (error) {

@@ -9,6 +9,8 @@ type PortalLayoutProps = {
   navData: RoleConfig
   children: React.ReactNode
   style?: React.CSSProperties
+  onLogout?: () => Promise<void>
+  redirectTo?: string
 }
 
 const defaultStyle = {
@@ -16,7 +18,7 @@ const defaultStyle = {
   "--header-height": "calc(var(--spacing) * 12)",
 } as React.CSSProperties
 
-export default function PortalLayout({ navData, children, style }: PortalLayoutProps) {
+export default function PortalLayout({ navData, children, style, onLogout, redirectTo }: PortalLayoutProps) {
   const contentClassName = `flex flex-1 flex-col p-4`
 
   return (
@@ -26,7 +28,7 @@ export default function PortalLayout({ navData, children, style }: PortalLayoutP
         ...style,
       } as React.CSSProperties}
     >
-      <PortalSidebar navData={navData} variant="inset" />
+      <PortalSidebar navData={navData} variant="inset" onLogout={onLogout} redirectTo={redirectTo} />
       <SidebarInset>
         <SiteHeader />
         <div className={contentClassName}>

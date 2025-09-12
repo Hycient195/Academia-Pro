@@ -36,7 +36,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       jwtFromRequest: ExtractJwt.fromExtractors([
         ExtractJwt.fromAuthHeaderAsBearerToken(),
         (request: any) => {
-          return request?.cookies?.accessToken;
+          // Intelligently select the appropriate token based on request context
+          const url = request?.url || '';
+          const isSuperAdminRoute = url.includes('/super-admin/');
+
+          if (isSuperAdminRoute) {
+            // For super admin routes, prioritize super admin token
+            return request?.cookies?.superAdminAccessToken || request?.cookies?.accessToken;
+          } else {
+            // For regular routes, prioritize regular token
+            return request?.cookies?.accessToken || request?.cookies?.superAdminAccessToken;
+          }
         },
       ]),
       ignoreExpiration: false,

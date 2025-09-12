@@ -2,8 +2,17 @@
 
 import PortalLayout from "@/components/PortalLayout"
 import { schoolAdminNavData } from "./_constants/navData"
-import { AuthProvider } from "@/redux/auth/authContext"
-import { AuthGuard, RoleGuard } from "@/components/auth/AuthGuard"
+import { UserAuthProvider, useUserAuth } from "@/redux/auth/userAuthContext"
+import { UserAuthGuard, UserRoleGuard } from "@/components/auth/UserAuthGuard"
+
+function SchoolAdminPortalWrapper({ children }: { children: React.ReactNode }) {
+  const { logout } = useUserAuth()
+  return (
+    <PortalLayout navData={schoolAdminNavData} onLogout={logout} redirectTo="/auth/sign-in">
+      {children}
+    </PortalLayout>
+  )
+}
 
 export default function SchoolAdminLayout({
   children,
@@ -11,10 +20,10 @@ export default function SchoolAdminLayout({
   children: React.ReactNode
 }) {
   return (
-    <AuthProvider>
-      <AuthGuard
+    <UserAuthProvider>
+      <UserAuthGuard
         requireAuth={true}
-        redirectTo="/school-admin/login"
+        redirectTo="/auth/sign-in"
         fallback={
           <div className="min-h-screen flex items-center justify-center">
             <div className="text-center">
@@ -24,12 +33,12 @@ export default function SchoolAdminLayout({
           </div>
         }
       >
-        <RoleGuard allowedRoles={['school-admin']}>
-          <PortalLayout navData={schoolAdminNavData}>
+        <UserRoleGuard allowedRoles={['school-admin']}>
+          <SchoolAdminPortalWrapper>
             {children}
-          </PortalLayout>
-        </RoleGuard>
-      </AuthGuard>
-    </AuthProvider>
+          </SchoolAdminPortalWrapper>
+        </UserRoleGuard>
+      </UserAuthGuard>
+    </UserAuthProvider>
   )
 }

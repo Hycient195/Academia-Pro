@@ -14,7 +14,7 @@ import {
   FormCountrySelect,
   FormRegionSelect,
   FormMultiSelect
-} from "./form-components"
+} from "./form/form-components"
 
 export function FormComponentsExample() {
   const [formData, setFormData] = useState({

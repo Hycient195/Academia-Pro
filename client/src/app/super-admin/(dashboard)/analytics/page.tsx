@@ -17,7 +17,7 @@ import {
   IconCurrencyDollar,
   IconCalendar
 } from "@tabler/icons-react"
-import { apis } from "@/redux/api"
+import apis from "@/redux/api"
 
 function MetricCard({
   title,
@@ -81,8 +81,8 @@ function ChartPlaceholder({ title, height = "h-64" }: { title: string; height?: 
 export default function AnalyticsPage() {
   const [period, setPeriod] = useState('30d')
 
-  const { data: analytics, isLoading: analyticsLoading } = apis.superAdmin.useGetSystemAnalyticsQuery({ period })
-  const { data: metrics, isLoading: metricsLoading } = apis.superAdmin.useGetSystemMetricsQuery()
+  const { data: analytics, isLoading: analyticsLoading } = apis.superAdmin.analytics.useGetDashboardAnalyticsQuery({ timeRange: period })
+  const { data: metrics, isLoading: metricsLoading } = apis.superAdmin.system.useGetRealtimeSystemMetricsQuery()
 
   const isLoading = analyticsLoading || metricsLoading
 
@@ -134,32 +134,32 @@ export default function AnalyticsPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Total Schools"
-          value={analytics?.schools?.total || 0}
-          change={analytics?.schools?.growth}
+          value={analytics?.summary?.totalSchools || 0}
+          change={analytics?.summary?.growthMetrics?.schools}
           changeType="increase"
           icon={IconBuilding}
           description="Active educational institutions"
         />
         <MetricCard
           title="Total Users"
-          value={analytics?.users?.total || 0}
-          change={analytics?.users?.growth}
+          value={analytics?.summary?.totalUsers || 0}
+          change={analytics?.summary?.growthMetrics?.users}
           changeType="increase"
           icon={IconUsers}
           description="Registered system users"
         />
         <MetricCard
           title="Active Schools"
-          value={analytics?.schools?.active || 0}
-          change={analytics?.schools?.growth}
+          value={analytics?.summary?.activeSubscriptions || 0}
+          change={analytics?.summary?.growthMetrics?.schools}
           changeType="increase"
           icon={IconSchool}
           description="Currently active schools"
         />
         <MetricCard
           title="Revenue"
-          value={`$${(analytics?.revenue?.total || 0).toLocaleString()}`}
-          change={analytics?.revenue?.growth}
+          value={`$${(analytics?.summary?.totalRevenue || 0).toLocaleString()}`}
+          change={analytics?.summary?.growthMetrics?.revenue}
           changeType="increase"
           icon={IconCurrencyDollar}
           description="Total subscription revenue"

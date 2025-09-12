@@ -2,9 +2,8 @@
 
 import React, { useState } from 'react'
 import { FormPaginatedSelect } from './form-components'
-import { IUserFilters } from '@academia-pro/types/super-admin'
-import { ISuperAdminUser } from '@academia-pro/types/super-admin'
-import { apis } from '@/redux/api'
+import { IUserFilters, ISuperAdminUser, ISuperAdminUserResponse } from '@academia-pro/types/super-admin'
+import apis from '@/redux/api'
 
 interface FormUserSelectProps {
   labelText?: string
@@ -31,9 +30,9 @@ export const FormUserSelect: React.FC<FormUserSelectProps> = ({
     limit: 10,
   })
 
-  const { data, isLoading, error } = apis.superAdmin.useGetAllUsersQuery(filters)
+  const { data, isLoading, error } = apis.superAdmin.iam.useGetUsersQuery(filters)
 
-  const apiOptions = data?.data?.map((user: ISuperAdminUser) => ({
+  const apiOptions = data?.data?.map((user: ISuperAdminUserResponse) => ({
     value: user.id,
     text: user.name || `${user.firstName} ${user.lastName}`,
   })) || []
@@ -43,6 +42,15 @@ export const FormUserSelect: React.FC<FormUserSelectProps> = ({
   const options = selectedUser && !apiOptions.find(opt => opt.value === value)
     ? [{ value: selectedUser.id, text: selectedUser.name || `${selectedUser.firstName} ${selectedUser.lastName}` }, ...apiOptions]
     : apiOptions
+
+  const pagination = data?.pagination ? {
+    total: data.pagination.total,
+    page: data.pagination.page,
+    limit: data.pagination.limit,
+    totalPages: data.pagination.totalPages,
+    hasNext: data.pagination.hasNext,
+    hasPrev: data.pagination.hasPrev
+  } : undefined
 
   const handlePageChange = (page: number) => {
     setFilters(prev => ({ ...prev, page }))
@@ -68,7 +76,7 @@ export const FormUserSelect: React.FC<FormUserSelectProps> = ({
       required={required}
       disabled={disabled || isLoading}
       options={options}
-      pagination={data?.pagination}
+      pagination={pagination}
       onPageChange={handlePageChange}
       onSearchChange={handleSearchChange}
       isLoading={isLoading}

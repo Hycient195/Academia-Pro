@@ -25,9 +25,9 @@ import {
   IconMail,
   IconClock
 } from "@tabler/icons-react"
-import { apis } from "@/redux/api"
+import apis from "@/redux/api"
 import { IUserFilters } from "@academia-pro/types/super-admin"
-import { ISuperAdminUser } from "@academia-pro/types/super-admin"
+import { ISuperAdminUser, ISuperAdminUserResponse } from "@academia-pro/types/super-admin"
 import { toast } from "sonner"
 import AddUserModal from "./_components/AddUserModal"
 import DeleteUserModal from "./_components/DeleteUserModal"
@@ -42,14 +42,14 @@ export default function UsersPage() {
   })
 
   const [modals, setModals] = useState({
-    view: { isOpen: false, user: null as ISuperAdminUser | null },
+    view: { isOpen: false, user: null as ISuperAdminUserResponse | null },
     add: { isOpen: false },
-    edit: { isOpen: false, user: null as ISuperAdminUser | null },
-    delete: { isOpen: false, user: null as ISuperAdminUser | null },
-    reactivate: { isOpen: false, user: null as ISuperAdminUser | null }
+    edit: { isOpen: false, user: null as ISuperAdminUserResponse | null },
+    delete: { isOpen: false, user: null as ISuperAdminUserResponse | null },
+    reactivate: { isOpen: false, user: null as ISuperAdminUserResponse | null }
   })
 
-  const { data: usersData, isLoading } = apis.superAdmin.useGetAllUsersQuery(filters)
+  const { data: usersData, isLoading } = apis.superAdmin.iam.useGetUsersQuery(filters)
   const users = usersData?.data || []
   const pagination = usersData?.pagination
 
@@ -87,28 +87,28 @@ export default function UsersPage() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase()
   }
 
-  const handleViewDetails = (user: ISuperAdminUser) => {
+  const handleViewDetails = (user: ISuperAdminUserResponse) => {
     setModals(prev => ({
       ...prev,
       view: { isOpen: true, user }
     }))
   }
 
-  const handleEditUser = (user: ISuperAdminUser) => {
+  const handleEditUser = (user: ISuperAdminUserResponse) => {
     setModals(prev => ({
       ...prev,
       edit: { isOpen: true, user }
     }))
   }
 
-  const handleDeleteUser = (user: ISuperAdminUser) => {
+  const handleDeleteUser = (user: ISuperAdminUserResponse) => {
     setModals(prev => ({
       ...prev,
       delete: { isOpen: true, user }
     }))
   }
 
-  const handleReactivateUser = (user: ISuperAdminUser) => {
+  const handleReactivateUser = (user: ISuperAdminUserResponse) => {
     setModals(prev => ({
       ...prev,
       reactivate: { isOpen: true, user }

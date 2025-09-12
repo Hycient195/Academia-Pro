@@ -70,8 +70,8 @@ export class CSRFMiddleware implements NestMiddleware {
   }
 
   private getSessionId(req: Request): string {
-    // Use access token as session identifier
-    const accessToken = (req as any).cookies?.accessToken;
+    // Use access token as session identifier (try both regular and super admin tokens)
+    const accessToken = (req as any).cookies?.accessToken || (req as any).cookies?.superAdminAccessToken;
     if (accessToken) {
       return crypto.createHash('sha256').update(accessToken).digest('hex');
     }

@@ -23,7 +23,7 @@ import {
   IconMapPin,
   IconX
 } from "@tabler/icons-react"
-import { apis } from "@/redux/api"
+import apis from "@/redux/api"
 import { ISuperAdminSchool } from "@academia-pro/types/super-admin"
 import { ISchoolFilters as BaseSchoolFilters, TSchoolType, TSchoolStatus } from "@academia-pro/types/shared"
 
@@ -51,7 +51,7 @@ export default function SchoolsPage() {
   })
 
 
-  const { data: schoolsData, isLoading } = apis.superAdmin.useGetAllSchoolsQuery(filters)
+  const { data: schoolsData, isLoading } = apis.superAdmin.schools.useGetSchoolsQuery(filters)
   
   const schools = schoolsData?.data || []
   const pagination = schoolsData?.pagination

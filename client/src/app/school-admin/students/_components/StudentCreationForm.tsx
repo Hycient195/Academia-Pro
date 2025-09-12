@@ -8,9 +8,10 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
-import { useCreateStudentMutation } from "@/redux/api/schoolAdminApi"
+import apis from "@/redux/api"
+const { useCreateStudentMutation } = apis.schoolAdmin.student
 import type { ICreateStudentRequest, TStudentStage, TGradeCode, TEnrollmentType } from "@academia-pro/types/student/student.types"
-import type { ISchoolAdminCreateStudentRequest } from "@academia-pro/types/school-admin"
+import type { ISchoolAdminCreateStudentRequest, ICreateStudentDto } from "@academia-pro/types/school-admin"
 
 // Import form components
 import {
@@ -145,19 +146,49 @@ export function StudentCreationForm({ onComplete }: StudentCreationFormProps) {
         return
       }
 
-      // Map form data to ISchoolAdminCreateStudentRequest format
-      const admissionData: ISchoolAdminCreateStudentRequest = {
+      // Map form data to ICreateStudentDto format
+      const admissionData: ICreateStudentDto = {
+        admissionNumber: formData.admissionNumber || `ADM${Date.now().toString().slice(-6)}`,
         firstName: formData.firstName!,
         lastName: formData.lastName!,
         middleName: formData.middleName,
-        admissionNumber: formData.admissionNumber || `ADM${Date.now().toString().slice(-6)}`,
-        grade: formData.gradeCode || 'Unknown',
-        section: formData.streamSection || 'A',
-        parentFirstName: formData.parents?.father?.name || formData.parents?.mother?.name || 'Unknown',
-        parentLastName: formData.parents?.father?.name ? '' : (formData.parents?.mother?.name ? '' : 'Parent'),
-        parentMiddleName: '',
-        parentEmail: formData.parents?.father?.email || formData.parents?.mother?.email || '',
-        parentPhone: formData.parents?.father?.phone || formData.parents?.mother?.phone || '',
+        dateOfBirth: formData.dateOfBirth!,
+        gender: formData.gender!,
+        email: formData.email,
+        phone: formData.phone,
+        address: {
+          street: formData.address?.street || '',
+          city: formData.address?.city || '',
+          state: formData.address?.state || '',
+          country: formData.address?.country || 'Nigeria',
+          postalCode: formData.address?.postalCode || '',
+        },
+        schoolId: 'default-school-id', // TODO: Get from context/store
+        gradeCode: formData.gradeCode!,
+        streamSection: formData.streamSection!,
+        enrollmentType: formData.enrollmentType!,
+        parentInfo: {
+          fatherName: formData.parents?.father?.name || formData.parents?.mother?.name || 'Unknown',
+          fatherPhone: formData.parents?.father?.phone,
+          fatherEmail: formData.parents?.father?.email,
+          motherName: formData.parents?.mother?.name || formData.parents?.father?.name || 'Unknown',
+          motherPhone: formData.parents?.mother?.phone,
+          motherEmail: formData.parents?.mother?.email,
+          guardianName: formData.parents?.guardian?.name,
+          guardianPhone: formData.parents?.guardian?.phone,
+          guardianEmail: formData.parents?.guardian?.email,
+        },
+        medicalInfo: formData.medicalInfo ? {
+          bloodGroup: formData.bloodGroup,
+          allergies: formData.medicalInfo.allergies,
+          medications: formData.medicalInfo.medications,
+          conditions: formData.medicalInfo.conditions,
+          emergencyContact: {
+            name: formData.medicalInfo.emergencyContact?.name || '',
+            relationship: formData.medicalInfo.emergencyContact?.relationship || '',
+            phone: formData.medicalInfo.emergencyContact?.phone || '',
+          },
+        } : undefined,
       }
 
       await createStudent(admissionData).unwrap()

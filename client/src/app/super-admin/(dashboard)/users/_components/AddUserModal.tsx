@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { FormSelect, FormText, FormPhoneInput } from "@/components/ui/form/form-components"
 import ErrorBlock from "@/components/utilities/ErrorBlock"
-import { apis } from "@/redux/api"
-import { ISuperAdminUser } from "@academia-pro/types/super-admin"
+import apis from "@/redux/api"
+import { ISuperAdminUser, ISuperAdminUserResponse } from "@academia-pro/types/super-admin"
 import { EUserRole, EUserStatus } from "@academia-pro/types/users"
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query"
 import { toast } from "sonner"
@@ -16,13 +16,13 @@ interface AddUserModalProps {
   mode: 'add' | 'edit'
   isOpen: boolean
   onOpenChange: (open: boolean) => void
-  userData?: ISuperAdminUser | null
+  userData?: ISuperAdminUserResponse | null
   onSuccess?: () => void
 }
 
 export default function AddUserModal({ mode, isOpen, onOpenChange, userData, onSuccess }: AddUserModalProps) {
-  const [createUser, { isLoading: isCreating, error: createUserError }] = apis.superAdmin.useCreateUserMutation()
-  const [updateUser, { isLoading: isUpdating, error: updateError }] = apis.superAdmin.useUpdateUserMutation()
+  const [createUser, { isLoading: isCreating, error: createUserError }] = apis.superAdmin.iam.useCreateUserMutation()
+  const [updateUser, { isLoading: isUpdating, error: updateError }] = apis.superAdmin.iam.useUpdateUserMutation()
 
   const [formData, setFormData] = useState<{
     firstName: string;
@@ -124,7 +124,7 @@ export default function AddUserModal({ mode, isOpen, onOpenChange, userData, onS
         status: formData.status
       }
       updateUser({
-        userId: userData.id,
+        id: userData.id,
         updates: apiData
       }).unwrap()
       .then(() => {

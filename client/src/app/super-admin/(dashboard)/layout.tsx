@@ -1,7 +1,7 @@
 import { SuperAdminSidebar } from "@/components/super-admin-sidebar"
 import { SiteHeader } from "@/components/site-header"
-import { AuthProvider } from "@/redux/auth/authContext"
-import { AuthGuard, RoleGuard } from "@/components/auth/AuthGuard"
+import { SuperAdminAuthProvider } from "@/redux/auth/superAdminAuthContext"
+import { SuperAdminAuthGuard, SuperAdminRoleGuard } from "@/components/auth/SuperAdminAuthGuard"
 import {
   SidebarInset,
   SidebarProvider,
@@ -13,8 +13,8 @@ export default function SuperAdminLayout({
   children: React.ReactNode
 }) {
   return (
-    <AuthProvider>
-      <AuthGuard
+    <SuperAdminAuthProvider>
+      <SuperAdminAuthGuard
         requireAuth={true}
         redirectTo="/super-admin/auth/sign-in"
         fallback={
@@ -26,7 +26,7 @@ export default function SuperAdminLayout({
           </div>
         }
       >
-        <RoleGuard
+        <SuperAdminRoleGuard
           allowedRoles={['super-admin']}
           fallback={
             <div className="min-h-screen flex items-center justify-center">
@@ -57,8 +57,8 @@ export default function SuperAdminLayout({
               </div>
             </SidebarInset>
           </SidebarProvider>
-        </RoleGuard>
-      </AuthGuard>
-    </AuthProvider>
+        </SuperAdminRoleGuard>
+      </SuperAdminAuthGuard>
+    </SuperAdminAuthProvider>
   )
 }

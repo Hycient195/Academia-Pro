@@ -13,7 +13,7 @@ import {
   IconFileText,
   IconKey,
 } from "@tabler/icons-react"
-import { useAuth } from "@/redux/auth/authContext"
+import { useSuperAdminAuth } from "@/redux/auth/superAdminAuthContext"
 
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
@@ -85,7 +85,7 @@ const navSecondary = [
 
 export function SuperAdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
-  const { user, isAuthenticated } = useAuth()
+  const { user, logout } = useSuperAdminAuth()
 
   // Transform user data for NavUser component
   const userData = user ? {
@@ -133,7 +133,7 @@ export function SuperAdminSidebar({ ...props }: React.ComponentProps<typeof Side
         <NavSecondary items={navSecondaryWithActive} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={userData} />
+        <NavUser user={userData} onLogout={logout} redirectTo="/super-admin/auth/sign-in" />
       </SidebarFooter>
     </Sidebar>
   )

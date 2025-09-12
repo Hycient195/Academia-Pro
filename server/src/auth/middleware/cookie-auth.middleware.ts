@@ -10,6 +10,9 @@ export interface AuthenticatedRequest extends Request {
     accessToken?: string;
     refreshToken?: string;
     csrfToken?: string;
+    superAdminAccessToken?: string;
+    superAdminRefreshToken?: string;
+    superAdminCsrfToken?: string;
   };
 }
 
@@ -27,13 +30,29 @@ export class CookieAuthMiddleware implements NestMiddleware {
     }
 
     try {
-      const accessToken = req.cookies.accessToken;
-      const refreshToken = req.cookies.refreshToken;
+      // Intelligently select the appropriate tokens based on request context
+      let accessToken: string | undefined;
+      let refreshToken: string | undefined;
+      let isSuperAdmin = false;
+
+      const isSuperAdminRoute = req.path.includes('/super-admin/');
+
+      if (isSuperAdminRoute) {
+        // For super admin routes, prioritize super admin tokens
+        accessToken = req.cookies.superAdminAccessToken || req.cookies.accessToken;
+        refreshToken = req.cookies.superAdminRefreshToken || req.cookies.refreshToken;
+        isSuperAdmin = !!req.cookies.superAdminAccessToken;
+      } else {
+        // For regular routes, prioritize regular tokens
+        accessToken = req.cookies.accessToken || req.cookies.superAdminAccessToken;
+        refreshToken = req.cookies.refreshToken || req.cookies.superAdminRefreshToken;
+        isSuperAdmin = !req.cookies.accessToken && !!req.cookies.superAdminAccessToken;
+      }
 
       if (!accessToken) {
         // If no access token, try to refresh
         if (refreshToken) {
-          await this.handleTokenRefresh(req, res);
+          await this.handleTokenRefresh(req, res, isSuperAdmin);
         } else {
           return next();
         }
@@ -49,7 +68,7 @@ export class CookieAuthMiddleware implements NestMiddleware {
         } catch (error) {
           // Access token expired, try refresh
           if (refreshToken) {
-            await this.handleTokenRefresh(req, res);
+            await this.handleTokenRefresh(req, res, isSuperAdmin);
           }
         }
       }
@@ -60,9 +79,9 @@ export class CookieAuthMiddleware implements NestMiddleware {
     }
   }
 
-  private async handleTokenRefresh(req: AuthenticatedRequest, res: Response) {
+  private async handleTokenRefresh(req: AuthenticatedRequest, res: Response, isSuperAdmin: boolean = false) {
     try {
-      const refreshToken = req.cookies.refreshToken;
+      const refreshToken = isSuperAdmin ? req.cookies.superAdminRefreshToken : req.cookies.refreshToken;
       if (!refreshToken) return;
 
       // Verify refresh token
@@ -97,7 +116,7 @@ export class CookieAuthMiddleware implements NestMiddleware {
       );
 
       // Set new cookies
-      this.setAuthCookies(res, newAccessToken, newRefreshToken);
+      this.setAuthCookies(res, newAccessToken, newRefreshToken, isSuperAdmin);
 
       // Set user on request
       const fullUser = await this.usersService.findOneForAuth(user.id);
@@ -110,7 +129,7 @@ export class CookieAuthMiddleware implements NestMiddleware {
     }
   }
 
-  private setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
+  private setAuthCookies(res: Response, accessToken: string, refreshToken: string, isSuperAdmin: boolean = false) {
     const isProduction = process.env.NODE_ENV === 'production';
     const cookieOptions = {
       httpOnly: true,
@@ -119,11 +138,14 @@ export class CookieAuthMiddleware implements NestMiddleware {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     };
 
-    res.cookie('accessToken', accessToken, {
+    const accessTokenKey = isSuperAdmin ? 'superAdminAccessToken' : 'accessToken';
+    const refreshTokenKey = isSuperAdmin ? 'superAdminRefreshToken' : 'refreshToken';
+
+    res.cookie(accessTokenKey, accessToken, {
       ...cookieOptions,
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     });
 
-    res.cookie('refreshToken', refreshToken, cookieOptions);
+    res.cookie(refreshTokenKey, refreshToken, cookieOptions);
   }
 }

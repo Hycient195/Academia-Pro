@@ -3,7 +3,8 @@
 import { useState } from "react"
 import { useParams } from "next/navigation"
 import { useRouter } from "next/navigation"
-import { useGetStudentByIdQuery, useUpdateStudentMutation } from "@/redux/api/schoolAdminApi"
+import apis from "@/redux/api"
+const { useGetStudentQuery, useUpdateStudentMutation } = apis.schoolAdmin.student
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,7 +18,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 // import { useToast } from "@/components/ui/use-toast"
 import { Download } from "lucide-react"
 import { Loader2, Save, Upload, FileText, Calendar, Phone, Mail, User, School, GraduationCap, Home } from "lucide-react"
-import type { IStudent } from "@academia-pro/types/student"
+import type { IStudent, IUpdateStudentDto } from "@academia-pro/types/school-admin"
 import type { TStudentStage, TGradeCode } from "@academia-pro/types/student"
 import { toast } from "sonner"
 
@@ -51,11 +52,12 @@ const gradeCodeLabels = {
 export default function StudentProfilePage() {
   const params = useParams()
   const id = params.id as string
+  const router = useRouter()
   // const { toast } = useToast()
   const [editMode, setEditMode] = useState(false)
   const [activeTab, setActiveTab] = useState("overview")
 
-  const { data: student, isLoading, error } = useGetStudentByIdQuery(id)
+  const { data: student, isLoading, error } = useGetStudentQuery(id)
   const [updateStudent] = useUpdateStudentMutation()
 
   if (isLoading) {
@@ -78,24 +80,15 @@ export default function StudentProfilePage() {
     )
   }
 
-  const handleSave = async (updates: Partial<IStudent>) => {
+  const handleSave = async (updates: IUpdateStudentDto) => {
     try {
-      await updateStudent({ studentId: id, updates }).unwrap()
-      toast({
-        title: "Success",
-        description: "Student profile updated successfully.",
-      })
+      await updateStudent({ id, data: updates }).unwrap()
+      toast.success("Student profile updated successfully.")
       setEditMode(false)
     } catch (err) {
-      toast({
-        title: "Error",
-        description: "Failed to update student profile.",
-        variant: "destructive",
-      })
+      toast.error("Failed to update student profile.")
     }
   }
-
-  const router = useRouter()
 
   const handleInternalTransfer = async (formData: FormData) => {
     const newGradeCode = formData.get('newGradeCode') as string
@@ -104,20 +97,13 @@ export default function StudentProfilePage() {
 
     try {
       await updateStudent({
-        studentId: id,
-        updates: { gradeCode: newGradeCode, streamSection: newStreamSection, reason }
+        id,
+        data: { gradeCode: newGradeCode, streamSection: newStreamSection }
       }).unwrap()
-      toast({
-        title: "Success",
-        description: "Internal transfer completed.",
-      })
+      toast.success("Internal transfer completed.")
       router.refresh()
     } catch (err) {
-      toast({
-        title: "Error",
-        description: "Failed to process internal transfer.",
-        variant: "destructive",
-      })
+      toast.error("Failed to process internal transfer.")
     }
   }
 
@@ -128,20 +114,13 @@ export default function StudentProfilePage() {
 
     try {
       await updateStudent({
-        studentId: id,
-        updates: { targetSchoolId, exitReason, clearanceDocuments }
+        id,
+        data: { status: 'transferred' }
       }).unwrap()
-      toast({
-        title: "Success",
-        description: "External transfer initiated.",
-      })
+      toast.success("External transfer initiated.")
       router.refresh()
     } catch (err) {
-      toast({
-        title: "Error",
-        description: "Failed to process external transfer.",
-        variant: "destructive",
-      })
+      toast.error("Failed to process external transfer.")
     }
   }
 
@@ -151,20 +130,13 @@ export default function StudentProfilePage() {
 
     try {
       await updateStudent({
-        studentId: id,
-        updates: { graduationYear, clearanceStatus }
+        id,
+        data: { status: 'graduated' }
       }).unwrap()
-      toast({
-        title: "Success",
-        description: "Student graduated successfully.",
-      })
+      toast.success("Student graduated successfully.")
       router.refresh()
     } catch (err) {
-      toast({
-        title: "Error",
-        description: "Failed to graduate student.",
-        variant: "destructive",
-      })
+      toast.error("Failed to graduate student.")
     }
   }
 
@@ -258,7 +230,7 @@ export default function StudentProfilePage() {
                   </div>
                   <div>
                     <Label className="text-sm font-medium">Blood Group</Label>
-                    <p>{student.bloodGroup || 'Not specified'}</p>
+                    <p>{student.medicalInfo?.bloodGroup || 'Not specified'}</p>
                   </div>
                 </div>
               </CardContent>
@@ -304,7 +276,7 @@ export default function StudentProfilePage() {
                   </div>
                   <div>
                     <Label className="text-sm font-medium">Relation</Label>
-                    <p>{student.medicalInfo?.emergencyContact?.relation || 'Not specified'}</p>
+                    <p>{student.medicalInfo?.emergencyContact?.relationship || 'Not specified'}</p>
                   </div>
                 </div>
               </CardContent>
@@ -316,7 +288,7 @@ export default function StudentProfilePage() {
           <Card>
             <CardHeader>
               <CardTitle>Academic Information</CardTitle>
-              <CardDescription>Student's academic details and history</CardDescription>
+              <CardDescription>Student&apos;s academic details and history</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
@@ -361,7 +333,7 @@ export default function StudentProfilePage() {
               <div>
                 <Label className="text-sm font-medium">Promotion History</Label>
                 <div className="mt-2 space-y-2">
-                  {student.promotionHistory?.length > 0 ? (
+                  {student.promotionHistory && student.promotionHistory.length > 0 ? (
                     student.promotionHistory.map((promo, index) => (
                       <div key={index} className="p-3 border rounded-lg bg-muted/50">
                         <div className="flex justify-between items-center">
@@ -384,11 +356,11 @@ export default function StudentProfilePage() {
           <Card>
             <CardHeader>
               <CardTitle>Documents</CardTitle>
-              <CardDescription>Student's uploaded documents and records</CardDescription>
+              <CardDescription>Student&apos;s uploaded documents and records</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {student.documents?.length > 0 ? (
+                {student.documents && student.documents.length > 0 ? (
                   student.documents.map((doc, index) => (
                     <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                       <div>
@@ -436,13 +408,13 @@ export default function StudentProfilePage() {
           <Card>
             <CardHeader>
               <CardTitle>History</CardTitle>
-              <CardDescription>Student's academic and transfer history</CardDescription>
+              <CardDescription>Student&apos;s academic and transfer history</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
                 <Label className="text-sm font-medium">Transfer History</Label>
                 <div className="mt-2 space-y-2">
-                  {student.transferHistory?.length > 0 ? (
+                  {student.transferHistory && student.transferHistory.length > 0 ? (
                     student.transferHistory.map((transfer, index) => (
                       <div key={index} className="p-3 border rounded-lg bg-muted/50">
                         <div className="flex justify-between items-center">
@@ -485,7 +457,7 @@ export default function StudentProfilePage() {
           <Card>
             <CardHeader>
               <CardTitle>Financial Information</CardTitle>
-              <CardDescription>Student's fee and payment details</CardDescription>
+              <CardDescription>Student&apos;s fee and payment details</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-2 gap-6">

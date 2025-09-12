@@ -277,7 +277,7 @@ export class SchoolAdminController {
     @Req() request: any,
     @Query('role') role?: string,
     @Query('status') status?: string,
-  ): Promise<any[]> {
+  ): Promise<any> {
     this.logger.log('Getting school users');
 
     const schoolContext = request.schoolContext;
@@ -291,7 +291,7 @@ export class SchoolAdminController {
     });
     const users = result.data;
 
-    return users.map(user => ({
+    const formattedUsers = users.map(user => ({
       id: user.id,
       email: user.email,
       firstName: user.firstName,
@@ -300,6 +300,11 @@ export class SchoolAdminController {
       status: user.status,
       createdAt: user.createdAt,
     }));
+
+    return {
+      data: formattedUsers,
+      pagination: result.pagination,
+    };
   }
 
   @Post('users')
@@ -382,7 +387,7 @@ export class SchoolAdminController {
     @Query('search') search?: string,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
-  ): Promise<{ students: any[]; total: number; page: number; limit: number }> {
+  ): Promise<any> {
     this.logger.log('Getting school students');
 
     const schoolContext = request.schoolContext;
@@ -414,10 +419,15 @@ export class SchoolAdminController {
     }));
 
     return {
-      students,
-      total: result.total,
-      page: result.page,
-      limit: result.limit,
+      data: students,
+      pagination: {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: Math.ceil(result.total / result.limit),
+        hasNext: result.page < Math.ceil(result.total / result.limit),
+        hasPrev: result.page > 1,
+      },
     };
   }
 

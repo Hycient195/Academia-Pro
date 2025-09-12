@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { FormCountrySelect, FormRegionSelect, FormSelect, FormText, FormTextArea, FormPhoneInput, FormMultiSelect } from "@/components/ui/form/form-components"
 import ErrorBlock from "@/components/utilities/ErrorBlock"
-import { apis } from "@/redux/api"
+import apis from "@/redux/api"
 import { ICreateSchoolRequest, IUpdateSchoolRequest, ISuperAdminSchool } from "@academia-pro/types/super-admin"
 import { toast } from "sonner"
 
@@ -18,8 +18,8 @@ interface AddSchoolModalProps {
 }
 
 export default function AddSchoolModal({ mode, isOpen, onOpenChange, schoolData, onSuccess }: AddSchoolModalProps) {
-  const [createSchool, { isLoading: isCreating, error: createSchoolError }] = apis.superAdmin.useCreateSchoolMutation()
-  const [updateSchool, { isLoading: isUpdating, error: updateError }] = apis.superAdmin.useUpdateSchoolMutation()
+  const [createSchool, { isLoading: isCreating, error: createSchoolError }] = apis.superAdmin.schools.useCreateSchoolMutation()
+  const [updateSchool, { isLoading: isUpdating, error: updateError }] = apis.superAdmin.schools.useUpdateSchoolMutation()
 
   const [formData, setFormData] = useState<{
     name: string;
@@ -95,7 +95,7 @@ export default function AddSchoolModal({ mode, isOpen, onOpenChange, schoolData,
       }
 
       updateSchool({
-        schoolId: schoolData.id,
+        id: schoolData.id,
         updates: formData as IUpdateSchoolRequest
       }).unwrap()
       .then(() => {

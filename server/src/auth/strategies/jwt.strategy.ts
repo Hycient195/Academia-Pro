@@ -23,11 +23,21 @@ export interface JwtPayload {
 
 /**
  * Custom JWT extractor from cookies
+ * Intelligently selects the appropriate token based on request context
  */
 const cookieExtractor = (req: Request): string | null => {
   let token = null;
   if (req && req.cookies) {
-    token = req.cookies['accessToken'];
+    const url = req.url || '';
+    const isSuperAdminRoute = url.includes('/super-admin/');
+
+    if (isSuperAdminRoute) {
+      // For super admin routes, prioritize super admin token
+      token = req.cookies['superAdminAccessToken'] || req.cookies['accessToken'];
+    } else {
+      // For regular routes, prioritize regular token
+      token = req.cookies['accessToken'] || req.cookies['superAdminAccessToken'];
+    }
   }
   return token;
 };

@@ -91,6 +91,7 @@ export interface IGuardianInfo {
 }
 
 export interface IMedicalInfo {
+  bloodGroup?: string;
   allergies?: string[];
   medications?: string[];
   conditions?: string[];

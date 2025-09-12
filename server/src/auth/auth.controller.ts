@@ -238,7 +238,7 @@ export class AuthController {
       }
       res.setHeader('Access-Control-Allow-Credentials', 'true');
 
-      // Get refresh token from cookies instead of request body
+      // Try to get refresh token from regular user cookies
       const refreshToken = req.cookies?.refreshToken;
 
       if (!refreshToken) {
@@ -247,12 +247,68 @@ export class AuthController {
       }
 
       const tokens = await this.authService.refreshToken({ refreshToken });
-      this.authService.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+
+      // Get user info to determine cookie names
+      const user = await this.authService.getUserFromRefreshToken(refreshToken);
+
+      this.authService.setAuthCookies(res, tokens.accessToken, tokens.refreshToken, user);
       res.json(tokens);
     } catch (err: any) {
       const status = err?.status || 500;
       const message = err?.message || 'Token refresh failed';
       console.error('[AuthController] refresh error:', { status, message });
+
+      if (!res.headersSent) {
+        res.status(status).json({ message });
+      }
+    }
+  }
+
+  @Post('super-admin/refresh')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Refresh super admin access token using refresh token from cookies' })
+  @ApiResponse({
+    status: 200,
+    description: 'Token refreshed successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        accessToken: { type: 'string' },
+        refreshToken: { type: 'string' },
+        expiresIn: { type: 'number' },
+        tokenType: { type: 'string' },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Invalid refresh token' })
+  async superAdminRefreshToken(@Request() req: any, @Response() res: any): Promise<void> {
+    try {
+      // Per-request CORS headers for credentialed responses
+      const origin = req.headers?.origin;
+      if (origin) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+      }
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+      // Try to get refresh token from super admin cookies
+      const refreshToken = req.cookies?.superAdminRefreshToken;
+
+      if (!refreshToken) {
+        res.status(401).json({ message: 'Super admin refresh token not found in cookies' });
+        return;
+      }
+
+      const tokens = await this.authService.refreshToken({ refreshToken });
+
+      // Get user info to determine cookie names
+      const user = await this.authService.getUserFromRefreshToken(refreshToken);
+
+      this.authService.setAuthCookies(res, tokens.accessToken, tokens.refreshToken, user);
+      res.json(tokens);
+    } catch (err: any) {
+      const status = err?.status || 500;
+      const message = err?.message || 'Super admin token refresh failed';
+      console.error('[AuthController] super admin refresh error:', { status, message });
 
       if (!res.headersSent) {
         res.status(status).json({ message });
@@ -266,7 +322,19 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'CSRF token retrieved successfully' })
   getCSRFToken(@Request() req: any): { csrfToken: string } {
     // CSRF token is already set in cookie by login
+    // Try regular user cookie names
     const csrfToken = req.cookies?.csrfToken;
+    return { csrfToken };
+  }
+
+  @Get('super-admin/csrf-token')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get super admin CSRF token' })
+  @ApiResponse({ status: 200, description: 'CSRF token retrieved successfully' })
+  getSuperAdminCSRFToken(@Request() req: any): { csrfToken: string } {
+    // CSRF token is already set in cookie by login
+    // Try super admin cookie names
+    const csrfToken = req.cookies?.superAdminCsrfToken;
     return { csrfToken };
   }
 
@@ -285,7 +353,26 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async logout(@Request() req: any, @Response() res: any): Promise<void> {
     await this.authService.logout(req.user.id);
-    this.authService.clearAuthCookies(res);
+    this.authService.clearAuthCookies(res, req.user);
+    res.json({ message: 'Logged out successfully' });
+  }
+
+  @Post('super-admin/logout')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @Auditable({
+    action: AuditAction.LOGOUT,
+    resource: 'super_admin_logout_endpoint',
+    severity: AuditSeverity.LOW,
+    metadata: { endpoint: 'super_admin_logout' }
+  })
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Logout super admin and invalidate tokens' })
+  @ApiResponse({ status: 200, description: 'Logout successful' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async superAdminLogout(@Request() req: any, @Response() res: any): Promise<void> {
+    await this.authService.logout(req.user.id);
+    this.authService.clearAuthCookies(res, req.user);
     res.json({ message: 'Logged out successfully' });
   }
 
@@ -305,6 +392,29 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Invalid current password' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async changePassword(
+    @Request() req: any,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
+    await this.authService.changePassword(req.user.id, changePasswordDto);
+    return { message: 'Password changed successfully' };
+  }
+
+  @Post('super-admin/change-password')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @Auditable({
+    action: AuditAction.PASSWORD_CHANGED,
+    resource: 'super_admin_password_change_endpoint',
+    severity: AuditSeverity.HIGH,
+    excludeFields: ['currentPassword', 'newPassword'],
+    metadata: { endpoint: 'super_admin_change_password' }
+  })
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Change super admin password' })
+  @ApiResponse({ status: 200, description: 'Password changed successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid current password' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async superAdminChangePassword(
     @Request() req: any,
     @Body() changePasswordDto: ChangePasswordDto,
   ): Promise<{ message: string }> {
@@ -364,6 +474,47 @@ export class AuthController {
       throw new BadRequestException('User ID is missing from request context');
     }
 
+    // Check if user is a super admin and deny access
+    if (req.user.roles.includes(EUserRole.SUPER_ADMIN) || req.user.roles.includes(EUserRole.DELEGATED_SUPER_ADMIN)) {
+      throw new UnauthorizedException('Super admin users should use the super admin profile endpoint');
+    }
+
+    return req.user;
+  }
+
+  @Get('super-admin/me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current super admin profile' })
+  @ApiResponse({
+    status: 200,
+    description: 'Super admin profile retrieved successfully',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  getSuperAdminProfile(@Request() req: any): any {
+    this.logger.log('[getSuperAdminProfile] Request received');
+    this.logger.log('[getSuperAdminProfile] req.user:', JSON.stringify(req.user, null, 2));
+    this.logger.log('[getSuperAdminProfile] req.headers:', JSON.stringify(req.headers, null, 2));
+
+    // Ensure user context is available
+    if (!req.user) {
+      this.logger.error('[getSuperAdminProfile] No req.user found');
+      throw new UnauthorizedException('Authentication required');
+    }
+
+    // Validate user ID format
+    if (!req.user.sub) {
+      this.logger.error('[getSuperAdminProfile] User ID is missing from request context');
+      throw new BadRequestException('User ID is missing from request context');
+    }
+
+    // Check if user is NOT a super admin and deny access
+    if (!req.user.roles.includes(EUserRole.SUPER_ADMIN) && !req.user.roles.includes(EUserRole.DELEGATED_SUPER_ADMIN)) {
+      this.logger.error('[getSuperAdminProfile] User is not a super admin. Roles:', req.user.roles);
+      throw new UnauthorizedException('Regular users should use the regular profile endpoint');
+    }
+
+    this.logger.log('[getSuperAdminProfile] Returning user profile:', JSON.stringify(req.user, null, 2));
     return req.user;
   }
 
@@ -375,6 +526,28 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Verification email sent' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async resendVerification(@Request() req: any): Promise<{ message: string }> {
+    // Check if user is a super admin and deny access
+    if (req.user.roles.includes(EUserRole.SUPER_ADMIN) || req.user.roles.includes(EUserRole.DELEGATED_SUPER_ADMIN)) {
+      throw new UnauthorizedException('Super admin users should use the super admin resend verification endpoint');
+    }
+    
+    // TODO: Implement resend verification logic
+    return { message: 'Verification email sent' };
+  }
+
+  @Post('super-admin/resend-verification')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Resend super admin email verification' })
+  @ApiResponse({ status: 200, description: 'Verification email sent' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async superAdminResendVerification(@Request() req: any): Promise<{ message: string }> {
+    // Check if user is NOT a super admin and deny access
+    if (!req.user.roles.includes(EUserRole.SUPER_ADMIN) && !req.user.roles.includes(EUserRole.DELEGATED_SUPER_ADMIN)) {
+      throw new UnauthorizedException('Regular users should use the regular resend verification endpoint');
+    }
+    
     // TODO: Implement resend verification logic
     return { message: 'Verification email sent' };
   }
@@ -586,7 +759,33 @@ export class AuthController {
     description: 'Session status retrieved',
   })
   async getSessionStatus(@Request() req: any): Promise<any> {
+    // Check if user is a super admin and deny access
+    if (req.user.roles.includes(EUserRole.SUPER_ADMIN) || req.user.roles.includes(EUserRole.DELEGATED_SUPER_ADMIN)) {
+      throw new UnauthorizedException('Super admin users should use the super admin session status endpoint');
+    }
+    
     this.logger.log(`Session status check for user: ${req.user.userId}`);
+    return this.sessionService.getSessionStats(req.user.userId);
+  }
+
+  @Get('super-admin/session/status')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get super admin session status',
+    description: 'Check current super admin session status and validity.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Session status retrieved',
+  })
+  async getSuperAdminSessionStatus(@Request() req: any): Promise<any> {
+    // Check if user is NOT a super admin and deny access
+    if (!req.user.roles.includes(EUserRole.SUPER_ADMIN) && !req.user.roles.includes(EUserRole.DELEGATED_SUPER_ADMIN)) {
+      throw new UnauthorizedException('Regular users should use the regular session status endpoint');
+    }
+    
+    this.logger.log(`Session status check for super admin: ${req.user.userId}`);
     return this.sessionService.getSessionStats(req.user.userId);
   }
 }

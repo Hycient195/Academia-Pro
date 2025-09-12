@@ -13,7 +13,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
-import { useGetStudentsQuery } from "@/redux/api/schoolAdminApi"
+import apis from "@/redux/api"
+const { useGetStudentsQuery } = apis.schoolAdmin.student
 import type { TStudentStage, TGradeCode } from "@academia-pro/types/student/student.types"
 import {
   IconArrowRight,
@@ -64,7 +65,7 @@ export function TransferWizard({ onComplete }: TransferWizardProps) {
     limit: 1000, // Get all students for transfer
   })
 
-  const students = studentsData?.students || []
+  const students = studentsData?.data || []
 
   const handleRequestChange = (field: string, value: unknown) => {
     setTransferRequest(prev => ({
@@ -80,7 +81,7 @@ export function TransferWizard({ onComplete }: TransferWizardProps) {
 
     // Apply filters if needed
     if (transferRequest.newGradeCode) {
-      filteredStudents = students.filter(s => s.grade === transferRequest.newGradeCode)
+      filteredStudents = students.filter(s => s.gradeCode === transferRequest.newGradeCode)
     }
 
     const preview: TransferPreview[] = filteredStudents.slice(0, 10).map(student => { // Limit for demo
@@ -107,9 +108,9 @@ export function TransferWizard({ onComplete }: TransferWizardProps) {
       return {
         studentId: student.id,
         studentName: `${student.firstName} ${student.lastName}`,
-        currentGrade: student.grade || 'Unknown',
-        currentSection: student.section || 'Unknown',
-        targetGrade: transferRequest.newGradeCode,
+        currentGrade: student.gradeCode || 'Unknown',
+        currentSection: student.streamSection || 'Unknown',
+        targetGrade: transferRequest.newGradeCode as TGradeCode,
         targetSection: transferRequest.newStreamSection,
         transferType: transferRequest.type || 'internal',
         targetSchool: transferRequest.targetSchoolId,

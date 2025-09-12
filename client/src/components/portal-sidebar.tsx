@@ -65,6 +65,8 @@ type PortalSidebarProps = React.ComponentProps<typeof Sidebar> & {
     email: string
     avatar: string
   }
+  onLogout?: () => Promise<void>
+  redirectTo?: string
 }
 
 type BaseNavItem = {
@@ -97,7 +99,7 @@ export type RoleConfig = {
   navSecondary: SecondaryItem[]
 }
 
-export function PortalSidebar({ navData, user, ...sidebarProps }: PortalSidebarProps) {
+export function PortalSidebar({ navData, user, onLogout, redirectTo, ...sidebarProps }: PortalSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const dispatch = useDispatch()
@@ -118,12 +120,12 @@ export function PortalSidebar({ navData, user, ...sidebarProps }: PortalSidebarP
 
   const roleToRoute = (role: string) => {
     switch (role) {
-      case "student": return "/student/dashboard";
-      case "parent": return "/parent/dashboard";
-      case "teacher": return "/staff";
-      case "school-admin": return "/school-admin";
-      case "super-admin": return "/super-admin/dashboard";
-      case "delegated-super-admin": return "/super-admin/dashboard";
+      case "student": return "/student/overview";
+      case "parent": return "/parent/overview";
+      case "staff": return "/staff/overview";
+      case "school-admin": return "/school-admin/overview";
+      case "super-admin": return "/super-admin/overview";
+      case "delegated-super-admin": return "/super-admin/overview";
       default: return "/dashboard";
     }
   }
@@ -205,7 +207,7 @@ export function PortalSidebar({ navData, user, ...sidebarProps }: PortalSidebarP
             </SidebarMenuItem>
           </SidebarMenu>
         )}
-        <NavUser user={user ?? navData.user} />
+        <NavUser user={user ?? navData.user} onLogout={onLogout} redirectTo={redirectTo} />
       </SidebarFooter>
     </Sidebar>
   )

@@ -1,14 +1,11 @@
 import { authApi } from "./authApi";
-import { schoolAdminApi } from "./schoolAdminApi";
-import { superAdminApi } from "./superAdminApi";
-import { schoolsApi } from "./schoolsApi";
+import superAdminApis from "./super-admin";
+import schoolAdminApis from "./school-admin";
 
-// Export API instances
-export const apis = {
+const apis = {
     auth: authApi,
-    schoolAdmin: schoolAdminApi,
-    superAdmin: superAdminApi,
-    schools: schoolsApi
+    schoolAdmin: schoolAdminApis,
+    superAdmin: superAdminApis
 };
 
 export default apis;

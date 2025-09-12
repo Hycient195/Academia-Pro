@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { PhoneInput } from "./phone-input"
+import { PhoneInput } from "./form/phone-input"
 import { Button } from "./button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./card"
 

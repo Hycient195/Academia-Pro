@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { IconTrash, IconKey, IconShield, IconUsers, IconEdit, IconPlayerPause, IconPlayerPlay, IconSearch } from "@tabler/icons-react"
-import { apis } from "@/redux/api"
+import apis from "@/redux/api"
 import type { IRole } from '@academia-pro/types/super-admin'
 import { CreateDelegatedAccountModal } from "./_components/CreateDelegatedAccountModal"
 import { EditDelegatedAccountModal } from "./_components/EditDelegatedAccountModal"
@@ -118,9 +118,9 @@ const defaultPermissions: Permission[] = [
 ]
 
 export default function IAMPage() {
-  const { data: delegatedAccounts, isLoading, refetch } = apis.superAdmin.useGetDelegatedAccountsQuery()
-  const { data: roles, isLoading: rolesLoading, refetch: refetchRoles } = apis.superAdmin.useGetRolesQuery()
-  const { data: permissions } = apis.superAdmin.useGetPermissionsQuery()
+  const { data: delegatedAccounts, isLoading, refetch } = apis.superAdmin.iam.useGetDelegatedAccountsQuery({})
+  const { data: roles, isLoading: rolesLoading, refetch: refetchRoles } = apis.superAdmin.iam.useGetRolesQuery({})
+  const { data: permissions } = apis.superAdmin.iam.useGetPermissionsQuery()
 
   // Modal states
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; account: DelegatedAccount | null }>({
@@ -261,7 +261,7 @@ export default function IAMPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {delegatedAccounts?.map((account: DelegatedAccount) => (
+                    {delegatedAccounts?.data?.map((account: DelegatedAccount) => (
                       <TableRow key={account.id}>
                         <TableCell className="font-medium">{account.email}</TableCell>
                         <TableCell>
@@ -386,7 +386,7 @@ export default function IAMPage() {
               <div className="flex items-center justify-between mb-6">
                 <div></div>
                 <CreateRoleModal
-                  defaultPermissions={permissions || []}
+                  defaultPermissions={permissions?.data || []}
                   onRoleCreated={refetchRoles}
                 />
               </div>
@@ -404,7 +404,7 @@ export default function IAMPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {roles?.map((role: IRole) => (
+                    {roles?.data?.map((role: IRole) => (
                       <TableRow key={role.id}>
                         <TableCell className="font-medium">{role.name}</TableCell>
                         <TableCell>{role.description || 'No description'}</TableCell>
@@ -446,7 +446,7 @@ export default function IAMPage() {
                 </Table>
               )}
 
-              {roles && roles.length === 0 && !rolesLoading && (
+              {roles?.data && roles.data.length === 0 && !rolesLoading && (
                 <div className="text-center py-8 text-muted-foreground">
                   No roles found. Create your first role to get started.
                 </div>
@@ -480,12 +480,12 @@ export default function IAMPage() {
       />
 
       <EditRoleModal
-        isOpen={editRoleModal.isOpen}
-        onClose={closeEditRoleModal}
-        role={editRoleModal.role}
-        availablePermissions={permissions || []}
-        onRoleUpdated={refetchRoles}
-      />
+         isOpen={editRoleModal.isOpen}
+         onClose={closeEditRoleModal}
+         role={editRoleModal.role}
+         availablePermissions={permissions?.data || []}
+         onRoleUpdated={refetchRoles}
+       />
 
       <DeleteRoleModal
         isOpen={deleteRoleModal.isOpen}

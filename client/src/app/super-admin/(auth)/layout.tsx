@@ -1,6 +1,6 @@
 "use client"
 
-import { AuthProvider } from "@/redux/auth/authContext"
+import { SuperAdminAuthProvider } from "@/redux/auth/superAdminAuthContext"
 
 export default function SuperAdminAuthLayout({
   children,
@@ -8,8 +8,8 @@ export default function SuperAdminAuthLayout({
   children: React.ReactNode
 }) {
   return (
-    <AuthProvider>
+    <SuperAdminAuthProvider>
       {children}
-    </AuthProvider>
+    </SuperAdminAuthProvider>
   )
 }

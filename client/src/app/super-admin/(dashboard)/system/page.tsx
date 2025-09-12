@@ -17,7 +17,7 @@ import {
   IconClock,
   IconRefresh
 } from "@tabler/icons-react"
-import { apis } from "@/redux/api"
+import apis from "@/redux/api"
 
 function HealthStatusCard({
   title,
@@ -133,7 +133,7 @@ function SystemMetric({
 export default function SystemPage() {
   const [selectedTab, setSelectedTab] = useState('overview')
 
-  const { data: healthData, isLoading: healthLoading, refetch: refetchHealth } = apis.superAdmin.useGetSystemHealthQuery()
+  const { data: healthData, isLoading: healthLoading, refetch: refetchHealth } = apis.superAdmin.system.useGetSystemHealthQuery()
 
   const handleRefresh = () => {
     refetchHealth()

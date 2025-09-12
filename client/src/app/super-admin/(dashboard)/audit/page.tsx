@@ -27,7 +27,7 @@ import {
   IconWifiOff,
   IconRefresh
 } from "@tabler/icons-react"
-import { apis } from "@/redux/api"
+import apis from "@/redux/api"
 import { IAuditLog, TAuditActionType, TAuditStatus, IAuditMetrics } from "@academia-pro/types/super-admin"
 import { useWebSocket } from "@/hooks/useWebSocket"
 import { FormSchoolSelect } from "@/components/ui/form/FormSchoolSelect"
@@ -216,13 +216,12 @@ export default function AuditPage() {
       })
   );
 
-  const { data: auditLogs, isLoading: logsLoading, refetch: refetchLogs, error: logsError } = apis.superAdmin.useGetAuditLogsQuery(cleanFilters)
-  const { data: auditMetrics, isLoading: metricsLoading, refetch: refetchMetrics, error: metricsError } = apis.superAdmin.useGetAuditMetricsQuery({ period: filters.period })
-  const { data: securityEvents, isLoading: securityEventsLoading, refetch: refetchSecurityEvents } = apis.superAdmin.useGetRecentSecurityEventsQuery({ period: filters.period })
-  const { data: activityTimeline, isLoading: activityTimelineLoading, refetch: refetchActivityTimeline } = apis.superAdmin.useGetActivityTimelineQuery({ period: filters.period })
+  const { data: auditLogs, isLoading: logsLoading, refetch: refetchLogs, error: logsError } = apis.superAdmin.audit.useGetAuditLogsQuery(cleanFilters)
+  const { data: auditMetrics, isLoading: metricsLoading, refetch: refetchMetrics, error: metricsError } = apis.superAdmin.audit.useGetAuditMetricsQuery({ period: filters.period })
+  const { data: securityEvents, isLoading: securityEventsLoading, refetch: refetchSecurityEvents } = apis.superAdmin.audit.useGetSecurityEventsQuery({ period: filters.period })
+  // const { data: activityTimeline, isLoading: activityTimelineLoading, refetch: refetchActivityTimeline } = apis.superAdmin.useGetActivityTimelineQuery({ period: filters.period })
 
   console.log(securityEvents)
-  console.log(activityTimeline)
   const isLoading = logsLoading || metricsLoading
   const hasError = logsError || metricsError
 
@@ -372,6 +371,7 @@ export default function AuditPage() {
   const handleRetry = () => {
     if (logsError) refetchLogs()
     if (metricsError) refetchMetrics()
+    if (securityEvents) refetchSecurityEvents()
   }
 
   // Export functionality
@@ -431,7 +431,6 @@ export default function AuditPage() {
     refetchLogs()
     refetchMetrics()
     refetchSecurityEvents()
-    refetchActivityTimeline()
   }
 
   // Real-time updates with polling
@@ -813,7 +812,7 @@ export default function AuditPage() {
         </CardContent>
 
         {/* Pagination Controls */}
-        {auditLogs?.pagination && auditLogs.pagination.totalPages > 1 && (
+        {auditLogs && auditLogs.pagination.totalPages > 1 && (
           <div className="flex items-center justify-between px-6 py-4 border-t">
             <div className="text-sm text-muted-foreground">
               Showing {((auditLogs.pagination.page - 1) * auditLogs.pagination.limit) + 1} to{' '}
@@ -871,12 +870,12 @@ export default function AuditPage() {
                         event.severity === 'medium' ? 'text-yellow-500' : 'text-green-500'
                       }`} />
                       <div>
-                        <p className="text-sm font-medium">{event.event}</p>
-                        <p className="text-xs text-muted-foreground">{event.user}</p>
+                        <p className="text-sm font-medium">{event.action}</p>
+                        <p className="text-xs text-muted-foreground">{event.userId}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-muted-foreground">{event.time}</p>
+                      <p className="text-xs text-muted-foreground">{new Date(event.timestamp).toLocaleTimeString()}</p>
                       <Badge variant={
                         event.severity === 'high' || event.severity === 'critical' ? 'destructive' :
                         event.severity === 'medium' ? 'secondary' : 'default'
@@ -896,40 +895,6 @@ export default function AuditPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <IconClock className="h-5 w-5 mr-2" />
-              Activity Timeline
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {activityTimelineLoading ? (
-              <div className="space-y-4">
-                {Array.from({ length: 4 }).map((_, index) => (
-                  <Skeleton key={index} className="h-12 w-full" />
-                ))}
-              </div>
-            ) : activityTimeline?.data && activityTimeline.data.length > 0 ? (
-              <div className="space-y-4">
-                {activityTimeline.data.map((activity, index) => (
-                  <div key={activity.period || index} className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium">{activity.action}</p>
-                      <p className="text-xs text-muted-foreground">{activity.time}</p>
-                    </div>
-                    <Badge variant="outline">{activity.count}</Badge>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center text-muted-foreground py-8">
-                <IconClock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No activity data found</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
     </div>
   )

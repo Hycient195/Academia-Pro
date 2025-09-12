@@ -11,8 +11,9 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { MultiSelect, MultiSelectOption } from "@/components/ui/multi-select"
 import { Pagination, usePagination } from "@/components/ui/pagination"
-import { useGetStudentsQuery, useCreateStudentMutation, useUpdateStudentMutation, useDeleteStudentMutation } from "@/redux/api/schoolAdminApi"
-import type { ISchoolAdminStudent } from "@academia-pro/types/school-admin"
+import apis from "@/redux/api"
+const { useGetStudentsQuery, useCreateStudentMutation, useUpdateStudentMutation, useDeleteStudentMutation } = apis.schoolAdmin.student
+import type { ISchoolAdminStudent, IStudent } from "@academia-pro/types/school-admin"
 import type { TStudentStage, TGradeCode, ICreateStudentRequest } from "@academia-pro/types/student/student.types"
 import {
   IconUsers,
@@ -127,10 +128,9 @@ export default function StudentsPage() {
   // API hooks
   const { data, isFetching, refetch } = useGetStudentsQuery({
     search: searchTerm || undefined,
-    stage: selectedStages[0] || undefined,
     gradeCode: selectedGradeCodes[0] || undefined,
     streamSection: selectedStreamSections[0] || undefined,
-    status: selectedStatuses[0] || undefined,
+    status: (selectedStatuses[0] as 'active' | 'inactive' | 'graduated' | 'transferred' | 'withdrawn' | 'suspended') || undefined,
     page: currentPage,
     limit: pageSize,
   })
@@ -139,8 +139,8 @@ export default function StudentsPage() {
   const [updateStudent] = useUpdateStudentMutation()
   const [deleteStudent] = useDeleteStudentMutation()
 
-  const students: ISchoolAdminStudent[] = data?.students ?? []
-  const totalItems = data?.total ?? 0
+  const students: IStudent[] = data?.data ?? []
+  const totalItems = data?.pagination?.total ?? 0
   const totalPages = Math.ceil(totalItems / pageSize)
 
   const getStatusBadge = (status: string) => {
@@ -472,7 +472,7 @@ export default function StudentsPage() {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
-                            <AvatarImage src={student.photo} />
+                            <AvatarImage src={student.avatar} />
                             <AvatarFallback>
                               {(student.firstName?.[0] || '') + (student.lastName?.[0] || '')}
                             </AvatarFallback>
@@ -485,9 +485,9 @@ export default function StudentsPage() {
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <Badge variant="secondary">{(student as ISchoolAdminStudent & { stage?: string; gradeCode?: string; streamSection?: string }).stage || student.grade}</Badge>
-                          <Badge variant="outline">{(student as ISchoolAdminStudent & { stage?: string; gradeCode?: string; streamSection?: string }).gradeCode || student.grade}</Badge>
-                          <Badge variant="default" className="text-xs">{(student as ISchoolAdminStudent & { stage?: string; gradeCode?: string; streamSection?: string }).streamSection || student.section}</Badge>
+                          <Badge variant="secondary">{student.stage}</Badge>
+                          <Badge variant="outline">{student.gradeCode}</Badge>
+                          <Badge variant="default" className="text-xs">{student.streamSection}</Badge>
                         </div>
                       </TableCell>
                       <TableCell>{student.admissionNumber}</TableCell>

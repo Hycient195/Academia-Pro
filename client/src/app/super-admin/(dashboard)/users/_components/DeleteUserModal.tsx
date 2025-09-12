@@ -4,19 +4,19 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { apis } from "@/redux/api"
-import { ISuperAdminUser } from "@academia-pro/types/super-admin"
+import apis from "@/redux/api"
+import { ISuperAdminUser, ISuperAdminUserResponse } from "@academia-pro/types/super-admin"
 import { toast } from "sonner"
 
 interface DeleteUserModalProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
-  user: ISuperAdminUser | null
+  user: ISuperAdminUserResponse | null
   onSuccess?: () => void
 }
 
 export default function DeleteUserModal({ isOpen, onOpenChange, user, onSuccess }: DeleteUserModalProps) {
-  const [deleteUser] = apis.superAdmin.useDeleteUserMutation()
+  const [deleteUser] = apis.superAdmin.iam.useDeleteUserMutation()
   const [deleteConfirmation, setDeleteConfirmation] = useState('')
 
   const confirmDeleteUser = async () => {

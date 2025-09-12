@@ -1,19 +1,8 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { GLOBAL_API_URL } from '../globalURLs';
+import { baseApi } from './baseApi';
 
 import type { IAuthUser, ILoginRequest, ILoginResponse, IRegisterRequest, IChangePasswordRequest, IChangePasswordResponse } from '@academia-pro/types/auth';
 
-export const authApi = createApi({
-  reducerPath: 'authApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: GLOBAL_API_URL,
-    prepareHeaders: (headers) => {
-      headers.set('Content-Type', 'application/json');
-      return headers;
-    },
-    credentials: 'include',
-  }),
-  tagTypes: ['Auth'],
+export const authApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     login: builder.mutation<ILoginResponse, ILoginRequest>({
       query: (credentials) => ({

@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { IconTrash } from "@tabler/icons-react"
-import { apis } from "@/redux/api"
+import apis from "@/redux/api"
 import ErrorBlock from "@/components/utilities/ErrorBlock"
 import type { IRole } from '@academia-pro/types/super-admin'
 
@@ -29,7 +29,7 @@ interface DeleteRoleModalProps {
 }
 
 export function DeleteRoleModal({ isOpen, onClose, role, onRoleDeleted }: DeleteRoleModalProps) {
-  const [deleteRole, { isLoading, error }] = apis.superAdmin.useDeleteRoleMutation()
+  const [deleteRole, { isLoading, error }] = apis.superAdmin.iam.useDeleteRoleMutation()
 
   const handleDelete = async () => {
     if (!role) return

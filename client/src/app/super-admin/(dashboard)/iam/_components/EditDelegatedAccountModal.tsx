@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { IconX, IconSearch } from "@tabler/icons-react"
 import { useState, useEffect, useMemo } from "react"
-import { apis } from "@/redux/api"
+import apis from "@/redux/api"
 import ErrorBlock from "@/components/utilities/ErrorBlock"
 import { FormText, FormTextArea } from "@/components/ui/form/form-components"
 
@@ -49,7 +49,7 @@ export function EditDelegatedAccountModal({
   account,
   availablePermissions
 }: EditDelegatedAccountModalProps) {
-  const [updateDelegatedAccount, { isLoading, error }] = apis.superAdmin.useUpdateDelegatedAccountMutation()
+  const [updateDelegatedAccount, { isLoading, error }] = apis.superAdmin.iam.useUpdateDelegatedAccountMutation()
 
   const [formData, setFormData] = useState({
     selectedPermissions: [] as string[],

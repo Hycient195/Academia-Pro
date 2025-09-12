@@ -18,8 +18,8 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { EUserRole } from '@academia-pro/types/users';
 
 @Controller('super-admin/audit/metrics')
-// @UseGuards(JwtAuthGuard, RolesGuard)
-// @Roles(EUserRole.SUPER_ADMIN)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(EUserRole.SUPER_ADMIN)
 export class AuditMetricsController {
   private readonly logger = new Logger(AuditMetricsController.name);
 

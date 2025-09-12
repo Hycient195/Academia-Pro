@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { FormPaginatedSelect } from './form-components'
 import { ISchoolFilters } from '@academia-pro/types/shared'
 import { ISuperAdminSchool } from '@academia-pro/types/super-admin'
-import { useGetAllSchoolsQuery, useGetSchoolByIdQuery } from '@/redux/api/schoolsApi'
+import apis from '@/redux/api'
 
 interface FormSchoolSelectProps {
   labelText?: string
@@ -31,10 +31,10 @@ export const FormSchoolSelect: React.FC<FormSchoolSelectProps> = ({
     limit: 10,
   })
 
-  const { data, isLoading, error } = useGetAllSchoolsQuery(filters)
+  const { data, isLoading, error } = apis.superAdmin.schools.useGetSchoolsQuery(filters)
 
   // Fetch selected school separately if it's not in the current page
-  const { data: selectedSchoolData } = useGetSchoolByIdQuery(value || '', {
+  const { data: selectedSchoolData } = apis.superAdmin.schools.useGetSchoolByIdQuery(value || '', {
     skip: !value || !!data?.data?.find(school => school.id === value)
   })
 

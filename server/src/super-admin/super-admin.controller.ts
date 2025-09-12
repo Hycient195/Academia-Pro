@@ -28,6 +28,7 @@ export class SuperAdminController {
   // ==================== SCHOOL MANAGEMENT ====================
 
   @Get('schools')
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.DELEGATED_SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({
     summary: 'Get all schools',
     description: 'Returns a list of all schools in the system with pagination and filtering.',

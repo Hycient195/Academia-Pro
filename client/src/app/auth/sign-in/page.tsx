@@ -19,18 +19,19 @@ import {
 } from "@tabler/icons-react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { apis } from "@/redux/api"
+// import apis from "@/redux/api"
 import { useDispatch } from "react-redux"
 import { setCredentials } from "@/redux/slices/authSlice"
 import { toast } from "sonner"
 import type { IAuthUser } from "@academia-pro/types/auth"
 import ErrorBlock from "@/components/utilities/ErrorBlock"
+import apis from "@/redux/api"
 
 
 export default function SignInPage() {
   const router = useRouter()
   const dispatch = useDispatch()
-  const [loginForm, setLoginForm] = useState({ email: "doe@yopmail.com", password: "Test1234$", rememberMe: false })
+  const [loginForm, setLoginForm] = useState({ email: "john@yopmail.com", password: "Test1234$", rememberMe: false })
   const [uiState, setUiState] = useState({ showPassword: false })
   const [resetState, setResetState] = useState({ open: false, newPassword: "", confirmPassword: "" })
 
@@ -89,21 +90,20 @@ export default function SignInPage() {
 
         switch (userRole) {
           case "student":
-            redirectPath = "/student/dashboard"
+            redirectPath = "/student/overview"
             break
           case "parent":
-            redirectPath = "/parent/dashboard"
+            redirectPath = "/parent/overview"
             break
           case "teacher":
-            // Teacher portal maps to staff area
-            redirectPath = "/staff"
+            redirectPath = "/staff/overview"
             break
           case "school-admin":
-            redirectPath = "/school-admin"
+            redirectPath = "/school-admin/overview"
             break
           case "super-admin":
           case "delegated-super-admin":
-            redirectPath = "/super-admin/dashboard"
+            redirectPath = "/super-admin/overview"
             break
           default:
             redirectPath = "/dashboard"

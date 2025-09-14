@@ -1,0 +1,30 @@
+{
+  "name": "academia-pro-e2e",
+  "version": "1.0.0",
+  "description": "End-to-end tests for Academia Pro application",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "report": "playwright show-report",
+    "install-browsers": "playwright install",
+    "watch:test": "nodemon",
+    "watch:ui": "concurrently \"nodemon\" \"pnpm test:ui\"",
+    "dev:tdd": "concurrently \"nodemon --exec 'echo \\\"🔄 Running tests with visible browser...\\\" && playwright test --headed --timeout=30000'\" \"echo '💡 TDD Mode: Edit code and watch tests run automatically (browser visible)'\""
+  },
+  "keywords": [
+    "e2e",
+    "testing",
+    "playwright",
+    "academia-pro"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "concurrently": "^9.2.1",
+    "nodemon": "^3.1.10"
+  }
+}

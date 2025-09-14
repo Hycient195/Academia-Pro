@@ -1,0 +1,23 @@
+{
+  "watch": [
+    "../client/src/**/*",
+    "../server/src/**/*",
+    "./tests/**/*"
+  ],
+  "ext": "ts,tsx,js,jsx,json",
+  "ignore": [
+    "../client/node_modules/**",
+    "../server/node_modules/**",
+    "./node_modules/**",
+    "../client/.next/**",
+    "../server/dist/**",
+    "./test-results/**",
+    "./playwright-report/**"
+  ],
+  "delay": 1000,
+  "verbose": true,
+  "exec": "echo \"🔄 File change detected. Running E2E tests...\" && pnpm test",
+  "env": {
+    "NODE_ENV": "development"
+  }
+}

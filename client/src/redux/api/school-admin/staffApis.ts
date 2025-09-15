@@ -1,4 +1,4 @@
-import { baseApi } from '../baseApi';
+import { baseApi } from '../userBaseApi';
 import { PaginatedResponse } from '@academia-pro/types/shared';
 
 // Types for staff management

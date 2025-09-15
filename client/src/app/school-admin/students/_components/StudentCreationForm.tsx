@@ -10,8 +10,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import apis from "@/redux/api"
 const { useCreateStudentMutation } = apis.schoolAdmin.student
+import { Country } from "country-state-city"
 import type { ICreateStudentRequest, TStudentStage, TGradeCode, TEnrollmentType } from "@academia-pro/types/student/student.types"
-import type { ISchoolAdminCreateStudentRequest, ICreateStudentDto } from "@academia-pro/types/school-admin"
 
 // Import form components
 import {
@@ -24,6 +24,7 @@ import {
   FormCountrySelect,
   FormRegionSelect,
 } from "@/components/ui/form/form-components"
+import ErrorBlock from "@/components/utilities/ErrorBlock"
 
 // Constants for form options
 const genderOptions = [
@@ -100,7 +101,7 @@ interface StudentCreationFormProps {
 }
 
 export function StudentCreationForm({ onComplete }: StudentCreationFormProps) {
-  const [createStudent, { isLoading }] = useCreateStudentMutation()
+  const [createStudent, { isLoading, error: createStudentError }] = useCreateStudentMutation()
 
   // Form state
   const [formData, setFormData] = useState<Partial<ICreateStudentRequest>>({
@@ -146,38 +147,51 @@ export function StudentCreationForm({ onComplete }: StudentCreationFormProps) {
         return
       }
 
-      // Map form data to ICreateStudentDto format
-      const admissionData: ICreateStudentDto = {
+      // Map form data to the correct server format (CreateStudentDto)
+      const admissionData: ICreateStudentRequest = {
         admissionNumber: formData.admissionNumber || `ADM${Date.now().toString().slice(-6)}`,
         firstName: formData.firstName!,
         lastName: formData.lastName!,
         middleName: formData.middleName,
         dateOfBirth: formData.dateOfBirth!,
         gender: formData.gender!,
+        bloodGroup: formData.bloodGroup,
         email: formData.email,
         phone: formData.phone,
-        address: {
-          street: formData.address?.street || '',
-          city: formData.address?.city || '',
-          state: formData.address?.state || '',
-          country: formData.address?.country || 'Nigeria',
-          postalCode: formData.address?.postalCode || '',
-        },
-        schoolId: 'default-school-id', // TODO: Get from context/store
+        address: formData.address ? {
+          street: formData.address.street || '',
+          city: formData.address.city || '',
+          state: formData.address.state || '',
+          country: formData.address.country ? Country.getCountryByCode(formData.address.country)?.name || 'Nigeria' : 'Nigeria',
+          postalCode: formData.address.postalCode || '',
+        } : undefined,
+        stage: formData.stage!,
         gradeCode: formData.gradeCode!,
         streamSection: formData.streamSection!,
+        admissionDate: formData.admissionDate!,
         enrollmentType: formData.enrollmentType!,
-        parentInfo: {
-          fatherName: formData.parents?.father?.name || formData.parents?.mother?.name || 'Unknown',
-          fatherPhone: formData.parents?.father?.phone,
-          fatherEmail: formData.parents?.father?.email,
-          motherName: formData.parents?.mother?.name || formData.parents?.father?.name || 'Unknown',
-          motherPhone: formData.parents?.mother?.phone,
-          motherEmail: formData.parents?.mother?.email,
-          guardianName: formData.parents?.guardian?.name,
-          guardianPhone: formData.parents?.guardian?.phone,
-          guardianEmail: formData.parents?.guardian?.email,
-        },
+        schoolId: 'bd8fb6e7-5cec-4b72-879f-a2102180529b', // Use the school ID from JWT token context
+        isBoarding: formData.isBoarding || false,
+        parents: formData.parents ? {
+          father: formData.parents.father ? {
+            name: formData.parents.father.name,
+            phone: formData.parents.father.phone,
+            email: formData.parents.father.email,
+            occupation: formData.parents.father.occupation,
+          } : undefined,
+          mother: formData.parents.mother ? {
+            name: formData.parents.mother.name,
+            phone: formData.parents.mother.phone,
+            email: formData.parents.mother.email,
+            occupation: formData.parents.mother.occupation,
+          } : undefined,
+          guardian: formData.parents.guardian ? {
+            name: formData.parents.guardian.name,
+            phone: formData.parents.guardian.phone,
+            email: formData.parents.guardian.email,
+            relation: formData.parents.guardian.relation,
+          } : undefined,
+        } : undefined,
         medicalInfo: formData.medicalInfo ? {
           bloodGroup: formData.bloodGroup,
           allergies: formData.medicalInfo.allergies,
@@ -187,7 +201,15 @@ export function StudentCreationForm({ onComplete }: StudentCreationFormProps) {
             name: formData.medicalInfo.emergencyContact?.name || '',
             relationship: formData.medicalInfo.emergencyContact?.relationship || '',
             phone: formData.medicalInfo.emergencyContact?.phone || '',
+            email: formData.medicalInfo.emergencyContact?.email,
+            priority: 1,
+            address: '',
           },
+          doctorInfo: formData.medicalInfo.doctorInfo ? {
+            name: formData.medicalInfo.doctorInfo.name,
+            phone: formData.medicalInfo.doctorInfo.phone,
+            clinic: formData.medicalInfo.doctorInfo.clinic,
+          } : undefined,
         } : undefined,
       }
 
@@ -250,15 +272,15 @@ export function StudentCreationForm({ onComplete }: StudentCreationFormProps) {
               <div className="grid grid-cols-2 gap-4">
                 <FormDateInput
                   labelText="Date of Birth *"
-                  value={formData.dateOfBirth || ""}
-                  onChange={(value) => handleInputChange('dateOfBirth', value)}
+                  value={formData.dateOfBirth}
+                  onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
                   required
                 />
                 <FormSelect
                   labelText="Gender *"
                   options={genderOptions}
                   value={formData.gender || ""}
-                  onChange={(value) => handleInputChange('gender', value)}
+                  onChange={(e) => handleInputChange('gender', e.target.value)}
                   placeholder="Select gender"
                   required
                 />
@@ -269,13 +291,13 @@ export function StudentCreationForm({ onComplete }: StudentCreationFormProps) {
                   labelText="Blood Group"
                   options={bloodGroupOptions}
                   value={formData.bloodGroup || ""}
-                  onChange={(value) => handleInputChange('bloodGroup', value)}
+                  onChange={(e) => handleInputChange('bloodGroup', e.target.value)}
                   placeholder="Select blood group"
                 />
                 <FormPhoneInput
                   labelText="Phone Number"
                   value={formData.phone || ""}
-                  onChange={(value) => handleInputChange('phone', value)}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
                   placeholder="Enter phone number"
                 />
               </div>
@@ -314,12 +336,12 @@ export function StudentCreationForm({ onComplete }: StudentCreationFormProps) {
                   <FormRegionSelect
                     labelText="State"
                     value={formData.address?.state || ""}
-                    onChange={(value) => handleInputChange('address', {
+                    onChange={(e) => handleInputChange('address', {
                       ...formData.address,
-                      state: value
+                      state: e.target.value
                     })}
                     placeholder="Select state"
-                    countryCode="NG"
+                    countryCode={formData.address?.country || "NG"}
                   />
                   <FormText
                     labelText="Postal Code"
@@ -332,10 +354,10 @@ export function StudentCreationForm({ onComplete }: StudentCreationFormProps) {
                   />
                   <FormCountrySelect
                     labelText="Country"
-                    value={formData.address?.country || "Nigeria"}
-                    onChange={(value) => handleInputChange('address', {
+                    value={formData.address?.country || "NG"}
+                    onChange={(e) => handleInputChange('address', {
                       ...formData.address,
-                      country: value
+                      country: e.target.value
                     })}
                   />
                 </div>
@@ -363,7 +385,7 @@ export function StudentCreationForm({ onComplete }: StudentCreationFormProps) {
                   labelText="Stage *"
                   options={stageOptions}
                   value={formData.stage || ""}
-                  onChange={(value) => handleInputChange('stage', value)}
+                  onChange={(e) => handleInputChange('stage', e.target.value)}
                   placeholder="Select stage"
                   required
                 />
@@ -371,7 +393,7 @@ export function StudentCreationForm({ onComplete }: StudentCreationFormProps) {
                   labelText="Grade Code *"
                   options={availableGradeCodes}
                   value={formData.gradeCode || ""}
-                  onChange={(value) => handleInputChange('gradeCode', value)}
+                  onChange={(e) => handleInputChange('gradeCode', e.target.value)}
                   placeholder="Select grade"
                   required
                   disabled={!formData.stage}
@@ -383,7 +405,7 @@ export function StudentCreationForm({ onComplete }: StudentCreationFormProps) {
                   labelText="Stream/Section *"
                   options={streamSectionOptions}
                   value={formData.streamSection || ""}
-                  onChange={(value) => handleInputChange('streamSection', value)}
+                  onChange={(e) => handleInputChange('streamSection', e.target.value)}
                   placeholder="Select section"
                   required
                 />
@@ -391,15 +413,15 @@ export function StudentCreationForm({ onComplete }: StudentCreationFormProps) {
                   labelText="Enrollment Type"
                   options={enrollmentTypeOptions}
                   value={formData.enrollmentType || ""}
-                  onChange={(value) => handleInputChange('enrollmentType', value)}
+                  onChange={(e) => handleInputChange('enrollmentType', e.target.value)}
                   placeholder="Select type"
                 />
               </div>
 
               <FormDateInput
                 labelText="Admission Date *"
-                value={formData.admissionDate || ""}
-                onChange={(value) => handleInputChange('admissionDate', value)}
+                value={formData.admissionDate}
+                onChange={(e) => handleInputChange('admissionDate', e.target.value)}
                 required
               />
 
@@ -446,11 +468,11 @@ export function StudentCreationForm({ onComplete }: StudentCreationFormProps) {
                   <FormPhoneInput
                     labelText="Father's Phone"
                     value={formData.parents?.father?.phone || ""}
-                    onChange={(value) => handleInputChange('parents', {
+                    onChange={(e) => handleInputChange('parents', {
                       ...formData.parents,
                       father: {
                         ...formData.parents?.father,
-                        phone: value
+                        phone: e.target.value
                       }
                     })}
                     placeholder="Enter phone number"
@@ -503,11 +525,11 @@ export function StudentCreationForm({ onComplete }: StudentCreationFormProps) {
                   <FormPhoneInput
                     labelText="Mother's Phone"
                     value={formData.parents?.mother?.phone || ""}
-                    onChange={(value) => handleInputChange('parents', {
+                    onChange={(e) => handleInputChange('parents', {
                       ...formData.parents,
                       mother: {
                         ...formData.parents?.mother,
-                        phone: value
+                        phone: e.target.value
                       }
                     })}
                     placeholder="Enter phone number"
@@ -560,11 +582,11 @@ export function StudentCreationForm({ onComplete }: StudentCreationFormProps) {
                   <FormPhoneInput
                     labelText="Guardian's Phone"
                     value={formData.parents?.guardian?.phone || ""}
-                    onChange={(value) => handleInputChange('parents', {
+                    onChange={(e) => handleInputChange('parents', {
                       ...formData.parents,
                       guardian: {
                         ...formData.parents?.guardian,
-                        phone: value
+                        phone: e.target.value
                       }
                     })}
                     placeholder="Enter phone number"
@@ -662,11 +684,11 @@ export function StudentCreationForm({ onComplete }: StudentCreationFormProps) {
                   <FormPhoneInput
                     labelText="Emergency Contact Phone"
                     value={formData.medicalInfo?.emergencyContact?.phone || ""}
-                    onChange={(value) => handleInputChange('medicalInfo', {
+                    onChange={(e) => handleInputChange('medicalInfo', {
                       ...formData.medicalInfo,
                       emergencyContact: {
                         ...formData.medicalInfo?.emergencyContact,
-                        phone: value
+                        phone: e.target.value
                       }
                     })}
                     placeholder="Enter phone number"
@@ -706,11 +728,11 @@ export function StudentCreationForm({ onComplete }: StudentCreationFormProps) {
                   <FormPhoneInput
                     labelText="Doctor's Phone"
                     value={formData.medicalInfo?.doctorInfo?.phone || ""}
-                    onChange={(value) => handleInputChange('medicalInfo', {
+                    onChange={(e) => handleInputChange('medicalInfo', {
                       ...formData.medicalInfo,
                       doctorInfo: {
                         ...formData.medicalInfo?.doctorInfo,
-                        phone: value
+                        phone: e.target.value
                       }
                     })}
                     placeholder="Enter phone number"
@@ -765,7 +787,7 @@ export function StudentCreationForm({ onComplete }: StudentCreationFormProps) {
               </div>
 
               <Separator />
-
+              <ErrorBlock error={createStudentError} />
               <div className="flex justify-end gap-4">
                 <Button
                   variant="outline"

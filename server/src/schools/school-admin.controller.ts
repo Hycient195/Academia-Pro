@@ -1,7 +1,7 @@
 // Academia Pro - School Admin Controller
 // Handles school-specific administration and management
 
-import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, Logger, Inject, Req, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, Logger, Inject, Req, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { SchoolContextService, SchoolContext } from './school-context.service';
 import { School } from './school.entity';
@@ -404,7 +404,7 @@ export class SchoolAdminController {
       limit: Number(limit),
     });
 
-    const students = result.students.map(student => ({
+    const students = result.data.map(student => ({
       id: student.id,
       admissionNumber: student.admissionNumber,
       firstName: student.firstName,
@@ -548,6 +548,67 @@ export class SchoolAdminController {
     return this.studentsService.addDocument(id, addDocumentDto);
   }
 
+  @Delete('students/:id')
+  @Auditable({
+    action: AuditAction.DATA_DELETED,
+    resource: 'student',
+    customAction: 'student_deleted_by_school_admin',
+    severity: AuditSeverity.HIGH,
+    metadata: { deletionType: 'school_admin', requiresConfirmation: true }
+  })
+  @ApiOperation({
+    summary: 'Delete student',
+    description: 'Deletes a student record from the current school. Requires confirmation with full student name.',
+  })
+  @ApiParam({ name: 'id', description: 'Student ID' })
+  @ApiBody({
+    description: 'Deletion confirmation data',
+    schema: {
+      type: 'object',
+      required: ['confirmationName', 'reason'],
+      properties: {
+        confirmationName: {
+          type: 'string',
+          description: 'Full name of the student to confirm deletion'
+        },
+        reason: {
+          type: 'string',
+          description: 'Reason for deletion'
+        }
+      }
+    }
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Student deleted successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Student not found' })
+  @ApiResponse({ status: 400, description: 'Invalid confirmation name' })
+  async deleteSchoolStudent(
+    @Req() request: any,
+    @Param('id') id: string,
+    @Body() deleteData: { confirmationName: string; reason: string },
+  ): Promise<any> {
+    this.logger.log(`Deleting student ID: ${id}`);
+
+    const schoolContext = request.schoolContext;
+    const schoolId = schoolContext.schoolId;
+
+    const student = await this.studentsService.findOne(id);
+
+    if (student.schoolId !== schoolId) {
+      throw new NotFoundException('Student not found in this school');
+    }
+
+    // Verify confirmation name matches
+    const fullName = `${student.firstName} ${student.lastName}`.trim();
+    if (deleteData.confirmationName !== fullName) {
+      throw new BadRequestException('Confirmation name does not match student name');
+    }
+
+    return this.studentsService.delete(id, deleteData.reason);
+  }
+
   // ==================== SCHOOL REPORTS ====================
 
   @Get('reports/academic')
@@ -589,7 +650,7 @@ export class SchoolAdminController {
     });
 
     const totalStudents = studentsResult.total || 0;
-    const students = studentsResult.students || [];
+    const students = studentsResult.data || [];
 
     // Calculate basic statistics from real data
     const activeStudents = students.filter(s => s.status === 'active').length;
@@ -652,7 +713,7 @@ export class SchoolAdminController {
     });
 
     const totalStudents = studentsResult.total || 0;
-    const activeStudents = studentsResult.students?.filter(s => s.status === 'active').length || 0;
+    const activeStudents = studentsResult.data?.filter(s => s.status === 'active').length || 0;
 
     // Calculate financial metrics based on student count
     const estimatedRevenue = activeStudents * 2000; // Rough estimate per student
@@ -715,7 +776,7 @@ export class SchoolAdminController {
     });
 
     const totalStudents = studentsResult.total || 0;
-    const students = studentsResult.students || [];
+    const students = studentsResult.data || [];
     const activeStudents = students.filter(s => s.status === 'active').length;
 
     // Calculate attendance statistics based on real student count

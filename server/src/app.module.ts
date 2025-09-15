@@ -186,18 +186,7 @@ export class AppModule {
       )
       .forRoutes({ path: '*', method: RequestMethod.ALL });
 
-    // Apply CSRF middleware to state-changing operations
-    consumer
-      .apply(CSRFMiddleware)
-      .exclude(
-        { path: 'api/v1/auth/login', method: RequestMethod.POST },
-        { path: 'api/v1/auth/register', method: RequestMethod.POST },
-        { path: 'api/v1/auth/refresh', method: RequestMethod.POST },
-        { path: 'api/v1/auth/csrf-token', method: RequestMethod.GET },
-        { path: 'api/v1/auth/me', method: RequestMethod.GET },
-        { path: 'api/v1/super-admin/auth/login', method: RequestMethod.POST },
-        { path: 'api/v1/super-admin/*', method: RequestMethod.ALL }, // Exclude all super-admin routes
-      )
-      .forRoutes({ path: '*', method: RequestMethod.POST });
+    // CSRF validation is handled by CsrfGuard on protected routes
+    // Removed CSRF middleware as it conflicts with cookie-based CSRF validation
   }
 }

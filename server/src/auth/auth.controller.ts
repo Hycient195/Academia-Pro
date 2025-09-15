@@ -352,7 +352,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Logout successful' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async logout(@Request() req: any, @Response() res: any): Promise<void> {
-    await this.authService.logout(req.user.id);
+    await this.authService.logout(req.user.sub);
     this.authService.clearAuthCookies(res, req.user);
     res.json({ message: 'Logged out successfully' });
   }
@@ -371,7 +371,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Logout successful' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async superAdminLogout(@Request() req: any, @Response() res: any): Promise<void> {
-    await this.authService.logout(req.user.id);
+    await this.authService.logout(req.user.sub);
     this.authService.clearAuthCookies(res, req.user);
     res.json({ message: 'Logged out successfully' });
   }
@@ -395,7 +395,7 @@ export class AuthController {
     @Request() req: any,
     @Body() changePasswordDto: ChangePasswordDto,
   ): Promise<{ message: string }> {
-    await this.authService.changePassword(req.user.id, changePasswordDto);
+    await this.authService.changePassword(req.user.sub, changePasswordDto);
     return { message: 'Password changed successfully' };
   }
 
@@ -418,7 +418,7 @@ export class AuthController {
     @Request() req: any,
     @Body() changePasswordDto: ChangePasswordDto,
   ): Promise<{ message: string }> {
-    await this.authService.changePassword(req.user.id, changePasswordDto);
+    await this.authService.changePassword(req.user.sub, changePasswordDto);
     return { message: 'Password changed successfully' };
   }
 

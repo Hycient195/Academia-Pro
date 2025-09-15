@@ -271,6 +271,7 @@ export interface IUpdateStudentRequest {
   gpa?: number;
   totalCredits?: number;
   academicStanding?: Partial<IAcademicStanding>;
+  reason?: string; // Reason for the student details update (for audit purposes)
 }
 
 export interface IStudentFilters {

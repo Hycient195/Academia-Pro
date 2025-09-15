@@ -3,7 +3,7 @@ import { setupListeners } from '@reduxjs/toolkit/query';
 
 import authReducer from './slices/authSlice';
 import uiReducer from './slices/uiSlice';
-import { baseApi } from './api/baseApi';
+import { baseApi } from './api/userBaseApi';
 
 // All API endpoints are now injected into the baseApi
 

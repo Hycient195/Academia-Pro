@@ -44,7 +44,7 @@ export interface IStaff {
   updatedAt: string;
 }
 
-export interface ICreateStaffDto {
+export interface ICreateStaffRequest {
   employeeId: string;
   firstName: string;
   lastName: string;
@@ -76,7 +76,7 @@ export interface ICreateStaffDto {
   };
 }
 
-export interface IUpdateStaffDto {
+export interface IUpdateStaffRequest {
   firstName?: string;
   lastName?: string;
   middleName?: string;
@@ -217,12 +217,12 @@ export interface IStaffAttendance {
 }
 
 // Bulk operation types
-export interface IBulkCreateStaffDto extends Array<ICreateStaffDto> {}
+export interface IBulkCreateStaffRequest extends Array<ICreateStaffRequest> {}
 
-export interface IBulkUpdateStaffDto {
+export interface IBulkUpdateStaffRequest {
   updates: Array<{
     id: string;
-    data: IUpdateStaffDto;
+    data: IUpdateStaffRequest;
   }>;
 }
 

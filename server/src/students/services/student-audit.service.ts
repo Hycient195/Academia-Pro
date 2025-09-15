@@ -186,45 +186,47 @@ export class StudentAuditService {
   }
 
   /**
-   * Log student profile update
-   */
-  async logStudentUpdated(
-    studentId: string,
-    userId: string,
-    userName: string,
-    userRole: string,
-    oldValues: Record<string, any>,
-    newValues: Record<string, any>,
-    changedFields: string[],
-    ipAddress?: string,
-    userAgent?: string,
-  ): Promise<void> {
-    const isSensitive = this.containsSensitiveFields(changedFields);
+    * Log student profile update
+    */
+   async logStudentUpdated(
+     studentId: string,
+     userId: string,
+     userName: string,
+     userRole: string,
+     oldValues: Record<string, any>,
+     newValues: Record<string, any>,
+     changedFields: string[],
+     reason?: string,
+     ipAddress?: string,
+     userAgent?: string,
+   ): Promise<void> {
+     const isSensitive = this.containsSensitiveFields(changedFields);
 
-    await this.logStudentActivity({
-      studentId,
-      action: AuditAction.UPDATE,
-      entityType: AuditEntityType.STUDENT_PROFILE,
-      entityId: studentId,
-      userId,
-      userName,
-      userRole,
-      oldValues,
-      newValues,
-      changedFields,
-      changeDescription: `Student profile updated: ${changedFields.join(', ')}`,
-      ipAddress,
-      userAgent,
-      isConfidential: isSensitive,
-      requiresParentConsent: isSensitive,
-      gdprCompliant: true,
-      tags: ['student_update', ...(isSensitive ? ['sensitive_data'] : [])],
-      metadata: {
-        fieldCount: changedFields.length,
-        hasSensitiveData: isSensitive,
-      },
-    });
-  }
+     await this.logStudentActivity({
+       studentId,
+       action: AuditAction.UPDATE,
+       entityType: AuditEntityType.STUDENT_PROFILE,
+       entityId: studentId,
+       userId,
+       userName,
+       userRole,
+       oldValues,
+       newValues,
+       changedFields,
+       changeDescription: `Student profile updated: ${changedFields.join(', ')}`,
+       ipAddress,
+       userAgent,
+       isConfidential: isSensitive,
+       requiresParentConsent: isSensitive,
+       gdprCompliant: true,
+       tags: ['student_update', ...(isSensitive ? ['sensitive_data'] : [])],
+       metadata: {
+         fieldCount: changedFields.length,
+         hasSensitiveData: isSensitive,
+         updateReason: reason,
+       },
+     });
+   }
 
   /**
    * Log student transfer

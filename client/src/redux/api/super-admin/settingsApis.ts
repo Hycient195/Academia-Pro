@@ -1,6 +1,6 @@
-import { baseApi } from '../baseApi';
+import { superAdminBaseApi } from './superAdminBaseApi';
 
-export const settingsApi = baseApi.injectEndpoints({
+export const settingsApi = superAdminBaseApi.injectEndpoints({
   endpoints: (builder) => ({
     // General Settings
     getSystemSettings: builder.query<{

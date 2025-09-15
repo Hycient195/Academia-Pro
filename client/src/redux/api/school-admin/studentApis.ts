@@ -1,12 +1,14 @@
-import { baseApi } from '../baseApi';
+import { baseApi } from '../userBaseApi';
 
 // Import consolidated types from common package
 import type {
   IStudent,
-  ICreateStudentDto,
-  IUpdateStudentDto,
-  ITransferStudentDto,
-  IAssignClassDto,
+  ICreateStudentRequest,
+  IUpdateStudentRequest,
+} from '@academia-pro/types/student';
+import type {
+  ITransferStudentRequest,
+  IAssignClassRequest,
   IPromotionRequestDto,
   IBulkImportRequestDto,
   IGraduationRequestDto,
@@ -20,10 +22,10 @@ import { PaginatedResponse } from '@academia-pro/types/shared';
 // Re-export types for backward compatibility
 export type {
   IStudent as Student,
-  ICreateStudentDto as CreateStudentDto,
-  IUpdateStudentDto as UpdateStudentDto,
-  ITransferStudentDto as TransferStudentDto,
-  IAssignClassDto as AssignClassDto,
+  ICreateStudentRequest as CreateStudentRequest,
+  IUpdateStudentRequest as UpdateStudentRequest,
+  ITransferStudentRequest as TransferStudentRequest,
+  IAssignClassRequest as AssignClassRequest,
   IPromotionRequestDto as PromotionRequestDto,
   IBulkImportRequestDto as BulkImportRequestDto,
   IGraduationRequestDto as GraduationRequestDto,
@@ -37,11 +39,28 @@ export const studentApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // Get all students with pagination and filtering
     getStudents: builder.query<PaginatedResponse<IStudent>, IStudentSearchParams>({
-      query: (params) => ({
-        url: 'students',
-        method: 'GET',
-        params,
-      }),
+      query: (params) => {
+        // Ensure arrays are properly serialized for RTK Query cache key
+        const apiParams: Record<string, unknown> = { ...params };
+        if (params.stages) apiParams.stages = params.stages.join(',');
+        if (params.gradeCodes) apiParams.gradeCodes = params.gradeCodes.join(',');
+        if (params.streamSections) apiParams.streamSections = params.streamSections.join(',');
+        if (params.statuses) apiParams.statuses = params.statuses.join(',');
+
+        // Ensure parameter names match backend expectations
+        if (apiParams.stages) apiParams.stages = apiParams.stages;
+        if (apiParams.gradeCodes) apiParams.gradeCodes = apiParams.gradeCodes;
+        if (apiParams.streamSections) apiParams.streamSections = apiParams.streamSections;
+        if (apiParams.statuses) apiParams.statuses = apiParams.statuses;
+
+        console.log('API Debug - Serialized params:', apiParams);
+
+        return {
+          url: 'students',
+          method: 'GET',
+          params: apiParams,
+        };
+      },
       providesTags: ['Students' as const],
     }),
 
@@ -112,7 +131,7 @@ export const studentApi = baseApi.injectEndpoints({
     }),
 
     // Create student
-    createStudent: builder.mutation<IStudent, ICreateStudentDto>({
+    createStudent: builder.mutation<IStudent, ICreateStudentRequest>({
       query: (studentData) => ({
         url: 'students',
         method: 'POST',
@@ -122,11 +141,12 @@ export const studentApi = baseApi.injectEndpoints({
     }),
 
     // Update student
-    updateStudent: builder.mutation<IStudent, { id: string; data: IUpdateStudentDto }>({
-      query: ({ id, data }) => ({
+    updateStudent: builder.mutation<IStudent, { id: string; data: IUpdateStudentRequest; reason?: string }>({
+      query: ({ id, data, reason }) => ({
         url: `students/${id}`,
         method: 'PATCH',
         body: data,
+        params: reason ? { reason } : undefined,
       }),
       invalidatesTags: (result, error, { id }) => [
         { type: 'Students', id },
@@ -152,7 +172,7 @@ export const studentApi = baseApi.injectEndpoints({
     }),
 
     // Transfer student internally
-    transferStudent: builder.mutation<IStudent, { id: string; data: ITransferStudentDto }>({
+    transferStudent: builder.mutation<IStudent, { id: string; data: ITransferStudentRequest }>({
       query: ({ id, data }) => ({
         url: `students/${id}/transfer`,
         method: 'PATCH',
@@ -165,7 +185,7 @@ export const studentApi = baseApi.injectEndpoints({
     }),
 
     // External transfer
-    externalTransferStudent: builder.mutation<IStudent, { id: string; data: ITransferStudentDto }>({
+    externalTransferStudent: builder.mutation<IStudent, { id: string; data: ITransferStudentRequest }>({
       query: ({ id, data }) => ({
         url: `students/${id}/transfer/external`,
         method: 'POST',
@@ -191,7 +211,7 @@ export const studentApi = baseApi.injectEndpoints({
     }),
 
     // Assign class
-    assignStudentClass: builder.mutation<IStudent, { id: string; data: IAssignClassDto }>({
+    assignStudentClass: builder.mutation<IStudent, { id: string; data: IAssignClassRequest }>({
       query: ({ id, data }) => ({
         url: `students/${id}/assign-class`,
         method: 'POST',

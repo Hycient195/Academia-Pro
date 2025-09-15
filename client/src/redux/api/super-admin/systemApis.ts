@@ -1,4 +1,4 @@
-import { baseApi } from '../baseApi';
+import { superAdminBaseApi } from './superAdminBaseApi';
 
 import type {
   ISystemHealth,
@@ -9,7 +9,7 @@ import type {
   ISystemOverviewResponse
 } from '@academia-pro/types/super-admin';
 
-export const systemApi = baseApi.injectEndpoints({
+export const systemApi = superAdminBaseApi.injectEndpoints({
   endpoints: (builder) => ({
     // System Health
     getSystemHealth: builder.query<ISystemHealthResponse, void>({

@@ -44,6 +44,19 @@ interface UserAuthProviderProps {
   children: ReactNode
 }
 
+// Helper function to get CSRF token from cookies
+const getCSRFTokenFromCookies = (): string | null => {
+  if (typeof document === 'undefined') return null;
+  const cookies = document.cookie.split(';');
+  for (const cookie of cookies) {
+    const [name, value] = cookie.trim().split('=');
+    if (name === 'csrfToken') {
+      return decodeURIComponent(value);
+    }
+  }
+  return null;
+};
+
 export const UserAuthProvider: React.FC<UserAuthProviderProps> = ({ children }) => {
   const [authState, setAuthState] = useState<UserAuthState>({
     user: null,
@@ -149,11 +162,13 @@ export const UserAuthProvider: React.FC<UserAuthProviderProps> = ({ children }) 
 
       if (response.ok) {
         const data = await response.json()
+        // Read CSRF token from cookies after successful login
+        const csrfToken = getCSRFTokenFromCookies()
         setAuthState({
           user: data.user,
           isAuthenticated: true,
           isLoading: false,
-          csrfToken: data.csrfToken || null,
+          csrfToken: csrfToken,
         })
         return { success: true }
       } else {

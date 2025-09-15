@@ -31,7 +31,7 @@ export interface IAttendanceRecord {
   updatedAt: string;
 }
 
-export interface IMarkAttendanceDto {
+export interface IMarkAttendanceRequest {
   studentId: string;
   classId: string;
   sectionId?: string;
@@ -45,7 +45,7 @@ export interface IMarkAttendanceDto {
   remarks?: string;
 }
 
-export interface IBulkMarkAttendanceDto {
+export interface IBulkMarkAttendanceRequest {
   classId: string;
   sectionId?: string;
   subjectId?: string;
@@ -61,7 +61,7 @@ export interface IBulkMarkAttendanceDto {
   }>;
 }
 
-export interface IBulkUpdateAttendanceDto {
+export interface IBulkUpdateAttendanceRequest {
   attendanceIds: string[];
   updates: Partial<{
     status: 'present' | 'absent' | 'late' | 'excused' | 'half_day';
@@ -209,14 +209,14 @@ export interface IAttendanceAlertsParams {
 }
 
 // Excuse Student
-export interface IExcuseStudentDto {
+export interface IExcuseStudentRequest {
   attendanceId: string;
   reason: string;
   excusedBy: string;
 }
 
 // Attendance Report Generation
-export interface IAttendanceReportGenerationDto {
+export interface IAttendanceReportGenerationRequest {
   reportType: 'class' | 'student' | 'summary' | 'trends';
   classId?: string;
   studentId?: string;

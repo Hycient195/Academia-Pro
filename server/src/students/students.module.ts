@@ -42,6 +42,7 @@ import { StudentAuditLog } from './entities/student-audit-log.entity';
 // Guards
 import { StudentManagementGuard } from './guards/student-management.guard';
 import { DocumentAccessGuard } from './guards/document-access.guard';
+import { CsrfGuard } from '../auth/guards/csrf.guard';
 
 @Module({
   imports: [
@@ -82,6 +83,7 @@ import { DocumentAccessGuard } from './guards/document-access.guard';
     StudentAlumniService,
     StudentManagementGuard,
     DocumentAccessGuard,
+    CsrfGuard,
   ],
   exports: [
     StudentsService,

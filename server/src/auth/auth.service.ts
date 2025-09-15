@@ -9,7 +9,7 @@ import { Response } from 'express';
 import * as bcrypt from 'bcryptjs';
 import { User } from '../users/user.entity';
 import { UserSession } from '../security/entities/user-session.entity';
-import { LoginDto, RegisterDto, RefreshTokenDto, ChangePasswordDto } from './dtos';
+import { RegisterDto, RefreshTokenDto, ChangePasswordDto } from './dtos';
 import { IAuthTokens } from '@academia-pro/types/auth';
 import { EUserRole, EUserStatus } from '@academia-pro/types/users';
 import { Auditable, AuditAuth, AuditSecurity } from '../common/audit/auditable.decorator';
@@ -326,7 +326,7 @@ export class AuthService {
    */
   setAuthCookies(res: Response, accessToken: string, refreshToken: string, user?: any) {
     const isProduction = process.env.NODE_ENV === 'production';
-    const sameSite = 'lax' as const; // use lax in dev for localhost cross-origin
+    const sameSite = isProduction ? 'strict' as const : 'lax' as const;
 
     const baseCookieOptions = {
       httpOnly: true,
@@ -367,6 +367,7 @@ export class AuthService {
       res.cookie(csrfTokenKey, csrfToken, {
         ...baseCookieOptions,
         httpOnly: false, // Allow client-side access for CSRF token
+        sameSite,
         maxAge: 60 * 60 * 1000, // 1 hour
       });
     } catch (err: any) {
@@ -383,7 +384,7 @@ export class AuthService {
     const cookieOptions = {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'strict' as const,
+      sameSite: isProduction ? 'strict' as const : 'lax' as const,
     };
 
     // Determine cookie names based on user role
@@ -394,7 +395,7 @@ export class AuthService {
 
     res.clearCookie(accessTokenKey, cookieOptions);
     res.clearCookie(refreshTokenKey, cookieOptions);
-    res.clearCookie(csrfTokenKey, { ...cookieOptions, httpOnly: false });
+    res.clearCookie(csrfTokenKey, { ...cookieOptions, httpOnly: false, sameSite: isProduction ? 'strict' as const : 'lax' as const });
   }
 
   /**

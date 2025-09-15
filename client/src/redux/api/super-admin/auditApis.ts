@@ -1,4 +1,4 @@
-import { baseApi } from '../baseApi';
+import { superAdminBaseApi } from './superAdminBaseApi';
 
 import type {
   IAuditLog,
@@ -8,7 +8,7 @@ import type {
   IAuditMetricsResponse
 } from '@academia-pro/types/super-admin';
 
-export const auditApi = baseApi.injectEndpoints({
+export const auditApi = superAdminBaseApi.injectEndpoints({
   endpoints: (builder) => ({
     // Get audit logs with filtering and pagination
     getAuditLogs: builder.query<IAuditLogsResponse, IAuditFilters>({

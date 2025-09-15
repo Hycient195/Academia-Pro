@@ -1,4 +1,4 @@
-import { baseApi } from '../baseApi';
+import { superAdminBaseApi } from './superAdminBaseApi';
 
 import type {
   IAnalyticsDashboard,
@@ -9,7 +9,7 @@ import type {
   ISuperAdminAnalyticsSummary
 } from '@academia-pro/types/super-admin';
 
-export const analyticsApi = baseApi.injectEndpoints({
+export const analyticsApi = superAdminBaseApi.injectEndpoints({
   endpoints: (builder) => ({
     // Dashboard Analytics
     getDashboardAnalytics: builder.query<IAnalyticsDashboard, { timeRange?: string; schoolId?: string }>({

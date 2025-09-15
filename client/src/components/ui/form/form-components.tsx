@@ -822,6 +822,14 @@ export const FormMultiSelect = ({
 }: IMultiSelectProps) => {
   const [selectedValues, setSelectedValues] = React.useState<string[]>(Array.isArray(value) ? value : [])
 
+  // Sync internal state with external value prop
+  React.useEffect(() => {
+    const newValue = Array.isArray(value) ? value : []
+    if (JSON.stringify(newValue) !== JSON.stringify(selectedValues)) {
+      setSelectedValues(newValue)
+    }
+  }, [value, selectedValues])
+
   const onValueChange = (newValues: string[]) => {
     if (maxSelection && newValues.length > maxSelection) {
       return // Don't allow more than max selection

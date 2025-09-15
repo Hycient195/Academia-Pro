@@ -71,7 +71,7 @@ export interface ILearningObjective {
   updatedAt: string;
 }
 
-export interface ICreateSubjectDto {
+export interface ICreateSubjectRequest {
   code: string;
   name: string;
   type: 'core' | 'elective' | 'practical' | 'theory';
@@ -82,7 +82,7 @@ export interface ICreateSubjectDto {
   schoolId: string;
 }
 
-export interface IUpdateSubjectDto {
+export interface IUpdateSubjectRequest {
   name?: string;
   type?: 'core' | 'elective' | 'practical' | 'theory';
   gradeLevel?: string;
@@ -92,7 +92,7 @@ export interface IUpdateSubjectDto {
   isActive?: boolean;
 }
 
-export interface ICreateCurriculumDto {
+export interface ICreateCurriculumRequest {
   name: string;
   gradeLevel: string;
   academicYear: string;
@@ -100,7 +100,7 @@ export interface ICreateCurriculumDto {
   schoolId: string;
 }
 
-export interface ICreateClassDto {
+export interface ICreateClassRequest {
   name: string;
   gradeLevel: string;
   section: string;
@@ -110,7 +110,7 @@ export interface ICreateClassDto {
   classTeacherId?: string;
 }
 
-export interface ICreateLearningObjectiveDto {
+export interface ICreateLearningObjectiveRequest {
   subjectId: string;
   gradeLevel: string;
   objective: string;
@@ -204,7 +204,7 @@ export interface IClassSearchResult {
 }
 
 // Curriculum-Subject Management
-export interface IAddSubjectToCurriculumDto {
+export interface IAddSubjectToCurriculumRequest {
   subjectId: string;
   hoursPerWeek: number;
   assessmentWeight: number;
@@ -212,7 +212,7 @@ export interface IAddSubjectToCurriculumDto {
 }
 
 // Class-Subject-Teacher Assignment
-export interface IAssignSubjectToClassDto {
+export interface IAssignSubjectToClassRequest {
   subjectId: string;
   teacherId: string;
   schedule: Array<{

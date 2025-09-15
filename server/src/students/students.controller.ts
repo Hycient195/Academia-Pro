@@ -38,6 +38,7 @@ import {
 } from './dtos';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { CsrfGuard } from '../auth/guards/csrf.guard';
 import { Roles } from '../common/decorators';
 import { Auditable, AuditCreate, AuditUpdate, AuditRead, AuditDelete } from '../common/audit/auditable.decorator';
 import { AuditAction, AuditSeverity } from '../security/types/audit.types';
@@ -64,6 +65,7 @@ export class StudentsController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
   @ApiResponse({ status: 409, description: 'Student already exists' })
+  @UseGuards(CsrfGuard)
   create(@Body() createStudentDto: CreateStudentDto) {
     return this.studentsService.create(createStudentDto);
   }
@@ -76,9 +78,10 @@ export class StudentsController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'schoolId', required: false, type: String })
-  @ApiQuery({ name: 'grade', required: false, type: String })
-  @ApiQuery({ name: 'section', required: false, type: String })
-  @ApiQuery({ name: 'status', required: false, enum: ['active', 'inactive', 'graduated', 'transferred', 'withdrawn', 'suspended'] })
+  @ApiQuery({ name: 'stages', required: false, type: [String] })
+  @ApiQuery({ name: 'gradeCodes', required: false, type: [String] })
+  @ApiQuery({ name: 'streamSections', required: false, type: [String] })
+  @ApiQuery({ name: 'statuses', required: false, type: [String] })
   @ApiQuery({ name: 'enrollmentType', required: false, enum: ['regular', 'special_needs', 'gifted', 'international', 'transfer'] })
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiResponse({
@@ -89,19 +92,38 @@ export class StudentsController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('schoolId') schoolId?: string,
-    @Query('gradeCode') gradeCode?: string,
-    @Query('streamSection') streamSection?: string,
-    @Query('status') status?: StudentStatus,
+    @Query('stages') stages?: string,
+    @Query('gradeCodes') gradeCodes?: string,
+    @Query('streamSections') streamSections?: string,
+    @Query('statuses') statuses?: string,
     @Query('enrollmentType') enrollmentType?: EnrollmentType,
     @Query('search') search?: string,
   ) {
+    // Parse comma-separated strings back to arrays
+    const parsedStages = stages ? stages.split(',').filter(s => s.trim()) : undefined;
+    const parsedGradeCodes = gradeCodes ? gradeCodes.split(',').filter(s => s.trim()) : undefined;
+    const parsedStreamSections = streamSections ? streamSections.split(',').filter(s => s.trim()) : undefined;
+    const parsedStatuses = statuses ? statuses.split(',').filter(s => s.trim()) : undefined;
+
+    console.log('Controller Debug - Parsed params:', {
+      stages: parsedStages,
+      gradeCodes: parsedGradeCodes,
+      streamSections: parsedStreamSections,
+      statuses: parsedStatuses,
+      search,
+      schoolId,
+      page,
+      limit
+    });
+
     return this.studentsService.findAll({
       page,
       limit,
       schoolId,
-      gradeCode,
-      streamSection,
-      status,
+      stages: parsedStages,
+      gradeCodes: parsedGradeCodes,
+      streamSections: parsedStreamSections,
+      statuses: parsedStatuses,
       enrollmentType,
       search,
     });

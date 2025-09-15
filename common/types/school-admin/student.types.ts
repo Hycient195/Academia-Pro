@@ -1,7 +1,8 @@
 // Academia Pro - Student Types for School Admin
 // Consolidated type definitions for student management
 
-import { TStudentStage, TGradeCode, IParentsInfo, IMedicalInfo, ITransportationInfo, IHostelInfo, IStudentFinancialInfo, IStudentPreferences, IAcademicStanding, IPromotionHistory, ITransferHistory } from '../student';
+import { TStudentStage, TGradeCode, IParentsInfo, IMedicalInfo, ITransportationInfo, IHostelInfo, IStudentFinancialInfo, IStudentPreferences, IAcademicStanding, IPromotionHistory, ITransferHistory, IDoctorInfo } from '../student';
+import { IInsuranceInfo } from '../shared';
 import { IDocument } from '../shared';
 
 export interface IStudent {
@@ -59,7 +60,7 @@ export interface IStudent {
   updatedAt: string;
 }
 
-export interface ICreateStudentDto {
+export interface ICreateStudentRequest {
   admissionNumber: string;
   firstName: string;
   lastName: string;
@@ -103,7 +104,7 @@ export interface ICreateStudentDto {
   };
 }
 
-export interface IUpdateStudentDto {
+export interface IUpdateStudentRequest {
   firstName?: string;
   lastName?: string;
   middleName?: string;
@@ -141,10 +142,12 @@ export interface IUpdateStudentDto {
       relationship: string;
       phone: string;
     };
+    doctorInfo?: IDoctorInfo;
+    insuranceInfo?: IInsuranceInfo;
   }>;
 }
 
-export interface ITransferStudentDto {
+export interface ITransferStudentRequest {
   schoolId: string;
   gradeCode: string;
   streamSection: string;
@@ -152,7 +155,7 @@ export interface ITransferStudentDto {
   transferDate: string;
 }
 
-export interface IAssignClassDto {
+export interface IAssignClassRequest {
   gradeCode: string;
   streamSection: string;
   effectiveDate: string;
@@ -230,9 +233,10 @@ export interface IStudentStatistics {
 
 export interface IStudentFilters {
   schoolId?: string;
-  gradeCode?: string;
-  streamSection?: string;
-  status?: 'active' | 'inactive' | 'graduated' | 'transferred' | 'withdrawn' | 'suspended';
+  stages?: string[];
+  gradeCodes?: string[];
+  streamSections?: string[];
+  statuses?: string[];
   enrollmentType?: 'regular' | 'special_needs' | 'gifted' | 'international' | 'transfer';
   search?: string;
 }

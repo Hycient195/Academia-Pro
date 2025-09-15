@@ -320,7 +320,7 @@ export class StudentsListResponseDto {
     description: 'List of students',
     type: [StudentResponseDto],
   })
-  students: StudentResponseDto[];
+  data: StudentResponseDto[];
 
   @ApiProperty({
     description: 'Total number of students',

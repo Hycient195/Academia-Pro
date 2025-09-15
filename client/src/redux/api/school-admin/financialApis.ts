@@ -1,4 +1,4 @@
-import { baseApi } from '../baseApi';
+import { baseApi } from '../userBaseApi';
 
 // Define types locally for now
 export interface FeeStructure {

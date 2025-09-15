@@ -44,7 +44,7 @@ export class CSRFMiddleware implements NestMiddleware {
 
     const storedToken = this.csrfTokens.get(sessionId);
     if (!storedToken || storedToken.token !== csrfToken) {
-      return res.status(403).json({ message: 'Invalid CSRF token' });
+      return res.status(403).json({ message: 'Invalid CSRF token from middleware' });
     }
 
     // Check if token is expired

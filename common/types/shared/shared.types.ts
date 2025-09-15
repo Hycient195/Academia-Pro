@@ -92,10 +92,10 @@ export interface IInsuranceInfo {
   provider: string;
   policyNumber: string;
   coverageAmount: number;
-  premium: number;
-  startDate: Date;
-  endDate: Date;
-  deductible: number;
+  premium?: number;
+  startDate?: Date;
+  endDate?: Date;
+  deductible?: number;
 }
 
 export interface IFinancialInfo {

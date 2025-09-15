@@ -1,4 +1,4 @@
-import { baseApi } from '../baseApi';
+import { superAdminBaseApi } from './superAdminBaseApi';
 
 import type {
   ISuperAdminSchool,
@@ -12,7 +12,7 @@ import type {
   IGeographicReport
 } from '@academia-pro/types/super-admin';
 
-export const schoolsApi = baseApi.injectEndpoints({
+export const schoolsApi = superAdminBaseApi.injectEndpoints({
   endpoints: (builder) => ({
     // School Management
     getSchools: builder.query<ISuperAdminSchoolListResponse, ISchoolFilters>({

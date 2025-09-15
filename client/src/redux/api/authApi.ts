@@ -1,4 +1,4 @@
-import { baseApi } from './baseApi';
+import { baseApi } from './userBaseApi';
 
 import type { IAuthUser, ILoginRequest, ILoginResponse, IRegisterRequest, IChangePasswordRequest, IChangePasswordResponse } from '@academia-pro/types/auth';
 

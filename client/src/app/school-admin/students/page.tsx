@@ -51,6 +51,8 @@ import { BulkImportWizard } from "./_components/BulkImportWizard"
 import { PromotionWizard } from "./_components/PromotionWizard"
 import { TransferWizard } from "./_components/TransferWizard"
 import { GraduationWizard } from "./_components/GraduationWizard"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 // Constants for form options
 const stageOptions: MultiSelectOption[] = [
@@ -125,23 +127,46 @@ export default function StudentsPage() {
     handlePageSizeChange,
   } = usePagination(10)
 
-  // API hooks
-  const { data, isFetching, refetch } = useGetStudentsQuery({
-    search: searchTerm || undefined,
-    gradeCode: selectedGradeCodes[0] || undefined,
-    streamSection: selectedStreamSections[0] || undefined,
-    status: (selectedStatuses[0] as 'active' | 'inactive' | 'graduated' | 'transferred' | 'withdrawn' | 'suspended') || undefined,
+  const router = useRouter();
+
+  // Build query params dynamically, excluding undefined values
+  const queryParams: {
+    page: number;
+    limit: number;
+    search?: string;
+    stages?: string[];
+    gradeCodes?: string[];
+    streamSections?: string[];
+    statuses?: string[];
+  } = {
     page: currentPage,
     limit: pageSize,
+  }
+
+  if (searchTerm) queryParams.search = searchTerm
+  if (selectedStages.length > 0) queryParams.stages = selectedStages
+  if (selectedGradeCodes.length > 0) queryParams.gradeCodes = selectedGradeCodes
+  if (selectedStreamSections.length > 0) queryParams.streamSections = selectedStreamSections
+  if (selectedStatuses.length > 0) queryParams.statuses = selectedStatuses
+
+  console.log('Filter Debug - Query Params:', queryParams)
+  console.log('Filter Debug - Selected States:', {
+    selectedStages,
+    selectedGradeCodes,
+    selectedStreamSections,
+    selectedStatuses,
+    searchTerm
   })
+
+  const { data, isFetching, refetch } = useGetStudentsQuery(queryParams)
 
   const [createStudent] = useCreateStudentMutation()
   const [updateStudent] = useUpdateStudentMutation()
   const [deleteStudent] = useDeleteStudentMutation()
-
+  console.log(data)
   const students: IStudent[] = data?.data ?? []
   const totalItems = data?.pagination?.total ?? 0
-  const totalPages = Math.ceil(totalItems / pageSize)
+  const totalPages = data?.pagination?.totalPages ?? 1
 
   const getStatusBadge = (status: string) => {
     const s = (status || '').toLowerCase()
@@ -398,7 +423,10 @@ export default function StudentsPage() {
                   labelText=""
                   placeholder="Search students..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value as string)}
+                  onChange={(e) => {
+                    console.log('Search Debug - New search term:', e.target.value);
+                    setSearchTerm(e.target.value as string);
+                  }}
                   icon={<IconSearch className="h-4 w-4" />}
                   wrapperClassName="flex-1 max-w-sm"
                 />
@@ -406,7 +434,10 @@ export default function StudentsPage() {
                 <FormMultiSelect
                   options={stageOptions.map(opt => ({ value: opt.value, text: opt.label }))}
                   value={selectedStages}
-                  onChange={(e) => setSelectedStages(Array.isArray(e.target.value) ? e.target.value : [e.target.value])}
+                  onChange={(arg) => {
+                    console.log('Filter Debug - Stage filter changed:', (arg as { target: { value: string[] } }).target.value);
+                    setSelectedStages((arg as { target: { value: string[] } }).target.value);
+                  }}
                   placeholder="Filter by stage"
                   wrapperClassName="w-40"
                 />
@@ -414,7 +445,10 @@ export default function StudentsPage() {
                 <FormMultiSelect
                   options={gradeCodeOptions.map(opt => ({ value: opt.value, text: opt.label }))}
                   value={selectedGradeCodes}
-                  onChange={(e) => setSelectedGradeCodes(Array.isArray(e.target.value) ? e.target.value : [e.target.value])}
+                  onChange={(arg) => {
+                    console.log('Filter Debug - Grade code filter changed:', (arg as { target: { value: string[] } }).target.value);
+                    setSelectedGradeCodes((arg as { target: { value: string[] } }).target.value);
+                  }}
                   placeholder="Filter by grade code"
                   wrapperClassName="w-48"
                 />
@@ -422,7 +456,10 @@ export default function StudentsPage() {
                 <FormMultiSelect
                   options={streamSectionOptions.map(opt => ({ value: opt.value, text: opt.label }))}
                   value={selectedStreamSections}
-                  onChange={(e) => setSelectedStreamSections(Array.isArray(e.target.value) ? e.target.value : [e.target.value])}
+                  onChange={(arg) => {
+                    console.log('Filter Debug - Stream section filter changed:', (arg as { target: { value: string[] } }).target.value);
+                    setSelectedStreamSections((arg as { target: { value: string[] } }).target.value);
+                  }}
                   placeholder="Filter by stream/section"
                   wrapperClassName="w-48"
                 />
@@ -430,7 +467,10 @@ export default function StudentsPage() {
                 <FormMultiSelect
                   options={statusOptions.map(opt => ({ value: opt.value, text: opt.label }))}
                   value={selectedStatuses}
-                  onChange={(e) => setSelectedStatuses(Array.isArray(e.target.value) ? e.target.value : [e.target.value])}
+                  onChange={(arg) => {
+                    console.log('Filter Debug - Status filter changed:', (arg as { target: { value: string[] } }).target.value);
+                    setSelectedStatuses((arg as { target: { value: string[] } }).target.value);
+                  }}
                   placeholder="Filter by status"
                   wrapperClassName="w-40"
                 />
@@ -512,8 +552,10 @@ export default function StudentsPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuItem>
-                              <IconEye className="mr-2 h-4 w-4" />
-                              View Profile
+                              <Link prefetch href={`/school-admin/students/${student.id}`} className="flex items-center">
+                                <IconEye className="mr-2 h-4 w-4" />
+                                View Profile
+                              </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem>
                               <IconEdit className="mr-2 h-4 w-4" />

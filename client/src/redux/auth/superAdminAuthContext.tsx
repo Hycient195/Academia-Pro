@@ -44,6 +44,19 @@ interface SuperAdminAuthProviderProps {
   children: ReactNode
 }
 
+// Helper function to get super admin CSRF token from cookies
+const getSuperAdminCSRFTokenFromCookies = (): string | null => {
+  if (typeof document === 'undefined') return null;
+  const cookies = document.cookie.split(';');
+  for (const cookie of cookies) {
+    const [name, value] = cookie.trim().split('=');
+    if (name === 'superAdminCsrfToken') {
+      return decodeURIComponent(value);
+    }
+  }
+  return null;
+};
+
 export const SuperAdminAuthProvider: React.FC<SuperAdminAuthProviderProps> = ({ children }) => {
   const [authState, setAuthState] = useState<SuperAdminAuthState>({
     user: null,
@@ -151,11 +164,13 @@ export const SuperAdminAuthProvider: React.FC<SuperAdminAuthProviderProps> = ({ 
 
       if (response.ok) {
         const data = await response.json()
+        // Read CSRF token from cookies after successful login
+        const csrfToken = getSuperAdminCSRFTokenFromCookies()
         setAuthState({
           user: data.user,
           isAuthenticated: true,
           isLoading: false,
-          csrfToken: data.csrfToken || null,
+          csrfToken: csrfToken,
         })
         return { success: true }
       } else {

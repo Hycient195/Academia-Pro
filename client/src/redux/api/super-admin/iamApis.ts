@@ -1,4 +1,4 @@
-import { baseApi } from '../baseApi';
+import { superAdminBaseApi } from './superAdminBaseApi';
 
 import type {
   ISuperAdminUser,
@@ -17,7 +17,7 @@ import type {
   IAuditLogsResponse
 } from '@academia-pro/types/super-admin';
 
-export const iamApi = baseApi.injectEndpoints({
+export const iamApi = superAdminBaseApi.injectEndpoints({
   endpoints: (builder) => ({
     // User Management
     getUsers: builder.query<ISuperAdminUsersListResponse, IUserFilters>({

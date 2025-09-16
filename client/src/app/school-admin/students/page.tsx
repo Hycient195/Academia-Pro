@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -106,6 +106,7 @@ const streamSectionOptions: MultiSelectOption[] = [
 
 export default function StudentsPage() {
   const [searchTerm, setSearchTerm] = useState("")
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
   const [selectedStages, setSelectedStages] = useState<string[]>([])
   const [selectedGradeCodes, setSelectedGradeCodes] = useState<string[]>([])
   const [selectedStreamSections, setSelectedStreamSections] = useState<string[]>([])
@@ -129,6 +130,15 @@ export default function StudentsPage() {
 
   const router = useRouter();
 
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 1500); // 1.5 seconds debounce
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   // Build query params dynamically, excluding undefined values
   const queryParams: {
     page: number;
@@ -143,27 +153,18 @@ export default function StudentsPage() {
     limit: pageSize,
   }
 
-  if (searchTerm) queryParams.search = searchTerm
+  if (debouncedSearchTerm) queryParams.search = debouncedSearchTerm
   if (selectedStages.length > 0) queryParams.stages = selectedStages
   if (selectedGradeCodes.length > 0) queryParams.gradeCodes = selectedGradeCodes
   if (selectedStreamSections.length > 0) queryParams.streamSections = selectedStreamSections
   if (selectedStatuses.length > 0) queryParams.statuses = selectedStatuses
-
-  console.log('Filter Debug - Query Params:', queryParams)
-  console.log('Filter Debug - Selected States:', {
-    selectedStages,
-    selectedGradeCodes,
-    selectedStreamSections,
-    selectedStatuses,
-    searchTerm
-  })
 
   const { data, isFetching, refetch } = useGetStudentsQuery(queryParams)
 
   const [createStudent] = useCreateStudentMutation()
   const [updateStudent] = useUpdateStudentMutation()
   const [deleteStudent] = useDeleteStudentMutation()
-  console.log(data)
+
   const students: IStudent[] = data?.data ?? []
   const totalItems = data?.pagination?.total ?? 0
   const totalPages = data?.pagination?.totalPages ?? 1

@@ -112,7 +112,9 @@ export class StudentPortalSelfServiceService {
         country: student.address?.country,
       },
       emergencyContact: {
-        name: student.medicalInfo?.emergencyContact?.name,
+        name: student.medicalInfo?.emergencyContact
+          ? `${student.medicalInfo.emergencyContact.firstName} ${student.medicalInfo.emergencyContact.lastName}`
+          : undefined,
         relationship: student.medicalInfo?.emergencyContact?.relation,
         phone: student.medicalInfo?.emergencyContact?.phone,
       },

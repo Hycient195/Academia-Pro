@@ -43,6 +43,27 @@ function generateUniqueDoctorInfo() {
   return { name, clinic };
 }
 
+function generateRandomRelationship() {
+  const relationships = ['father', 'mother', 'brother', 'sister', 'uncle', 'aunt', 'grandfather', 'grandmother', 'guardian', 'other'];
+  return relationships[Math.floor(Math.random() * relationships.length)];
+}
+
+function getRelationshipDisplayName(relationship: string): string {
+  const displayNames: Record<string, string> = {
+    'father': 'Father',
+    'mother': 'Mother',
+    'brother': 'Brother',
+    'sister': 'Sister',
+    'uncle': 'Uncle',
+    'aunt': 'Aunt',
+    'grandfather': 'Grandfather',
+    'grandmother': 'Grandmother',
+    'guardian': 'Guardian',
+    'other': 'Other'
+  };
+  return displayNames[relationship] || relationship;
+}
+
 test.describe('Student Management', () => {
   test('Create Student - Full Flow with Validations', async ({ page }) => {
     // Generate unique test data
@@ -63,6 +84,7 @@ test.describe('Student Management', () => {
     const emergencyContactPhone = generateUniquePhone();
     const doctorInfo = generateUniqueDoctorInfo();
     const doctorPhone = generateUniquePhone();
+    const guardianRelationship = generateRandomRelationship();
 
     // Navigate to sign-in page
     await page.goto('http://localhost:3000/auth/sign-in');
@@ -151,8 +173,8 @@ test.describe('Student Management', () => {
     await page.getByRole('option', { name: '🇳🇬 Nigeria +' }).click();
     await page.locator('label').filter({ hasText: 'Guardian\'s Phone🇳🇬+' }).getByPlaceholder('Enter phone number').click();
     await page.locator('label').filter({ hasText: 'Guardian\'s Phone🇳🇬+' }).getByPlaceholder('Enter phone number').fill(guardianPhone);
-    await page.getByRole('textbox', { name: 'Relationship' }).click();
-    await page.getByRole('textbox', { name: 'Relationship' }).fill('Aunt');
+    await page.getByRole('combobox', { name: 'Relationship' }).click();
+    await page.getByRole('option', { name: getRelationshipDisplayName(guardianRelationship) }).click();
     await page.getByRole('textbox', { name: 'Guardian\'s Email' }).click();
     await page.getByRole('textbox', { name: 'Guardian\'s Email' }).fill(guardianEmail);
     await page.getByRole('tab', { name: 'Medical' }).click();
@@ -169,8 +191,8 @@ test.describe('Student Management', () => {
     await page.getByRole('option', { name: '🇳🇬 Nigeria +' }).click();
     await page.locator('label').filter({ hasText: 'Emergency Contact Phone🇳🇬+' }).getByPlaceholder('Enter phone number').click();
     await page.locator('label').filter({ hasText: 'Emergency Contact Phone🇳🇬+' }).getByPlaceholder('Enter phone number').fill(emergencyContactPhone);
-    await page.getByRole('textbox', { name: 'Relationship to Student' }).click();
-    await page.getByRole('textbox', { name: 'Relationship to Student' }).fill('Mother\'s Friend');
+    await page.getByRole('combobox', { name: 'Relationship' }).click();
+    await page.getByRole('option', { name: getRelationshipDisplayName('mother') }).click();
     await page.getByRole('textbox', { name: 'Doctor\'s Name' }).click();
     await page.getByRole('textbox', { name: 'Doctor\'s Name' }).fill(doctorInfo.name);
     await page.getByRole('combobox', { name: 'Doctor\'s Phone' }).click();

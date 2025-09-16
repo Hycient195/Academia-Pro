@@ -24,9 +24,12 @@ export function StudentContactInfoForm({ student, onSave, onCancel }: StudentCon
       postalCode: student.address?.postalCode || '',
     },
     emergencyContact: {
-      name: student.medicalInfo?.emergencyContact?.name || '',
+      firstName: student.medicalInfo?.emergencyContact?.firstName || '',
+      lastName: student.medicalInfo?.emergencyContact?.lastName || '',
       phone: student.medicalInfo?.emergencyContact?.phone || '',
-      relationship: student.medicalInfo?.emergencyContact?.relationship || '',
+      email: student.medicalInfo?.emergencyContact?.email || '',
+      relation: student.medicalInfo?.emergencyContact?.relation || '',
+      occupation: student.medicalInfo?.emergencyContact?.occupation || '',
     },
   })
 
@@ -173,14 +176,23 @@ export function StudentContactInfoForm({ student, onSave, onCancel }: StudentCon
           {/* Emergency Contact */}
           <div className="space-y-4">
             <h4 className="text-sm font-medium text-muted-foreground">Emergency Contact</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="emergencyName">Name</Label>
+                <Label htmlFor="emergencyFirstName">First Name</Label>
                 <Input
-                  id="emergencyName"
-                  value={formData.emergencyContact.name}
-                  onChange={(e) => handleEmergencyContactChange('name', e.target.value)}
-                  placeholder="Enter emergency contact name"
+                  id="emergencyFirstName"
+                  value={formData.emergencyContact.firstName}
+                  onChange={(e) => handleEmergencyContactChange('firstName', e.target.value)}
+                  placeholder="Enter first name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="emergencyLastName">Last Name</Label>
+                <Input
+                  id="emergencyLastName"
+                  value={formData.emergencyContact.lastName}
+                  onChange={(e) => handleEmergencyContactChange('lastName', e.target.value)}
+                  placeholder="Enter last name"
                 />
               </div>
               <div>
@@ -189,16 +201,35 @@ export function StudentContactInfoForm({ student, onSave, onCancel }: StudentCon
                   id="emergencyPhone"
                   value={formData.emergencyContact.phone}
                   onChange={(e) => handleEmergencyContactChange('phone', e.target.value)}
-                  placeholder="Enter emergency contact phone"
+                  placeholder="Enter phone number"
                 />
               </div>
               <div>
-                <Label htmlFor="emergencyRelationship">Relationship</Label>
+                <Label htmlFor="emergencyEmail">Email</Label>
                 <Input
-                  id="emergencyRelationship"
-                  value={formData.emergencyContact.relationship}
-                  onChange={(e) => handleEmergencyContactChange('relationship', e.target.value)}
+                  id="emergencyEmail"
+                  type="email"
+                  value={formData.emergencyContact.email}
+                  onChange={(e) => handleEmergencyContactChange('email', e.target.value)}
+                  placeholder="Enter email address"
+                />
+              </div>
+              <div>
+                <Label htmlFor="emergencyRelation">Relationship</Label>
+                <Input
+                  id="emergencyRelation"
+                  value={formData.emergencyContact.relation}
+                  onChange={(e) => handleEmergencyContactChange('relation', e.target.value)}
                   placeholder="e.g., Parent, Guardian"
+                />
+              </div>
+              <div>
+                <Label htmlFor="emergencyOccupation">Occupation</Label>
+                <Input
+                  id="emergencyOccupation"
+                  value={formData.emergencyContact.occupation}
+                  onChange={(e) => handleEmergencyContactChange('occupation', e.target.value)}
+                  placeholder="Enter occupation"
                 />
               </div>
             </div>

@@ -84,6 +84,18 @@ export class StudentsController {
   @ApiQuery({ name: 'statuses', required: false, type: [String] })
   @ApiQuery({ name: 'enrollmentType', required: false, enum: ['regular', 'special_needs', 'gifted', 'international', 'transfer'] })
   @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'firstName', required: false, type: String })
+  @ApiQuery({ name: 'lastName', required: false, type: String })
+  @ApiQuery({ name: 'middleName', required: false, type: String })
+  @ApiQuery({ name: 'gender', required: false, enum: ['male', 'female', 'other'] })
+  @ApiQuery({ name: 'admissionNumber', required: false, type: String })
+  @ApiQuery({ name: 'dateOfBirthFrom', required: false, type: String })
+  @ApiQuery({ name: 'dateOfBirthTo', required: false, type: String })
+  @ApiQuery({ name: 'admissionDateFrom', required: false, type: String })
+  @ApiQuery({ name: 'admissionDateTo', required: false, type: String })
+  @ApiQuery({ name: 'isBoarding', required: false, type: Boolean })
+  @ApiQuery({ name: 'email', required: false, type: String })
+  @ApiQuery({ name: 'phone', required: false, type: String })
   @ApiResponse({
     status: 200,
     description: 'Students retrieved successfully',
@@ -98,6 +110,18 @@ export class StudentsController {
     @Query('statuses') statuses?: string,
     @Query('enrollmentType') enrollmentType?: EnrollmentType,
     @Query('search') search?: string,
+    @Query('firstName') firstName?: string,
+    @Query('lastName') lastName?: string,
+    @Query('middleName') middleName?: string,
+    @Query('gender') gender?: 'male' | 'female' | 'other',
+    @Query('admissionNumber') admissionNumber?: string,
+    @Query('dateOfBirthFrom') dateOfBirthFrom?: string,
+    @Query('dateOfBirthTo') dateOfBirthTo?: string,
+    @Query('admissionDateFrom') admissionDateFrom?: string,
+    @Query('admissionDateTo') admissionDateTo?: string,
+    @Query('isBoarding') isBoarding?: boolean,
+    @Query('email') email?: string,
+    @Query('phone') phone?: string,
   ) {
     // Parse comma-separated strings back to arrays
     const parsedStages = stages ? stages.split(',').filter(s => s.trim()) : undefined;
@@ -113,7 +137,19 @@ export class StudentsController {
       search,
       schoolId,
       page,
-      limit
+      limit,
+      firstName,
+      lastName,
+      middleName,
+      gender,
+      admissionNumber,
+      dateOfBirthFrom,
+      dateOfBirthTo,
+      admissionDateFrom,
+      admissionDateTo,
+      isBoarding,
+      email,
+      phone
     });
 
     return this.studentsService.findAll({
@@ -126,6 +162,18 @@ export class StudentsController {
       statuses: parsedStatuses,
       enrollmentType,
       search,
+      firstName,
+      lastName,
+      middleName,
+      gender,
+      admissionNumber,
+      dateOfBirthFrom,
+      dateOfBirthTo,
+      admissionDateFrom,
+      admissionDateTo,
+      isBoarding,
+      email,
+      phone,
     });
   }
 

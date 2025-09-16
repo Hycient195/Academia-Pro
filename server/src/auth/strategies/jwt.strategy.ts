@@ -17,17 +17,26 @@ export interface JwtPayload {
    email: string;    // User email
    roles: string[];  // User roles
    schoolId?: string; // School ID (optional)
+   sessionId?: string; // Session ID (optional for compatibility)
    iat?: number;     // Issued at
    exp?: number;     // Expiration time
 }
 
 /**
- * Custom JWT extractor from cookies
+ * Custom JWT extractor from cookies or Authorization header
  * Intelligently selects the appropriate token based on request context
  */
 const cookieExtractor = (req: Request): string | null => {
   let token = null;
-  if (req && req.cookies) {
+
+  // First try to get token from Authorization header
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.substring(7); // Remove 'Bearer ' prefix
+  }
+
+  // If no token in header, try cookies
+  if (!token && req.cookies) {
     const url = req.url || '';
     const isSuperAdminRoute = url.includes('/super-admin/');
 
@@ -39,6 +48,7 @@ const cookieExtractor = (req: Request): string | null => {
       token = req.cookies['accessToken'] || req.cookies['superAdminAccessToken'];
     }
   }
+
   return token;
 };
 

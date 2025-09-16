@@ -68,9 +68,11 @@ export interface IGuardianInfo {
     phone: string;
     email?: string;
     relation: string;
+    customRelation?: string;
     address?: string;
 }
 export interface IMedicalInfo {
+    bloodGroup?: string;
     allergies?: string[];
     medications?: string[];
     conditions?: string[];
@@ -79,9 +81,10 @@ export interface IMedicalInfo {
     insuranceInfo?: IInsuranceInfo;
 }
 export interface IDoctorInfo {
-    name: string;
-    phone: string;
-    clinic: string;
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    clinic?: string;
 }
 export declare enum TTransportationStatus {
     ACTIVE = "active",
@@ -236,6 +239,7 @@ export interface IUpdateStudentRequest {
     gpa?: number;
     totalCredits?: number;
     academicStanding?: Partial<IAcademicStanding>;
+    reason?: string;
 }
 export interface IStudentFilters {
     schoolId?: string;

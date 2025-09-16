@@ -17,6 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { PhoneInput } from "./phone-input";
+import { replaceJSXRecursive } from "@/utils/miscelaneous";
 
 type TElementTypes = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
 
@@ -985,6 +986,174 @@ export const FormMultiSelect = ({
     </label>
   )
 }
+// FormAcademicYearSelector Component
+interface IFormAcademicYearSelectorProps extends Omit<IProps, "onChange">, ISelectProps {
+  onChange?: (arg: { target: { value: string, name?: string } } | React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>) => void
+  startYear?: number;
+  endYear?: number;
+  currentYear?: number;
+}
+
+export const FormAcademicYearSelector = ({
+  labelText,
+  errorText,
+  footerTextClassName,
+  ref,
+  defaultValue = "Select Academic Year",
+  onChange,
+  footerText,
+  name,
+  id,
+  placeholder,
+  value,
+  wrapperClassName,
+  labelClassName,
+  isLoading = false,
+  disabled = false,
+  icon,
+  required,
+  inputClassName,
+  triggerClassName,
+  contentClassName,
+  showHintText = false,
+  inputSize = "MEDIUM",
+  startYear,
+  endYear,
+  currentYear = new Date().getFullYear()
+}: IFormAcademicYearSelectorProps) => {
+  // Generate academic year options
+  const generateAcademicYears = () => {
+    const years: { value: string; text: string }[] = []
+    const start = startYear || (currentYear - 5)
+    const end = endYear || (currentYear + 5)
+
+    for (let year = start; year <= end; year++) {
+      const academicYear = `${year}-${year + 1}`
+      years.push({
+        value: academicYear,
+        text: `${year}-${year + 1}`
+      })
+    }
+
+    return years
+  }
+
+  const academicYearOptions = generateAcademicYears()
+
+  const onValueChange = (e: string | number) => {
+    if (onChange) onChange({ target: { name, value: String(e) } })
+  }
+
+  const handleClearValue = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (onChange) onChange({ target: { name, value: "" } })
+  }
+
+  const sizeClass = inputSize === "LARGE" ? "!py-4" : "!py-3.5"
+
+  return (
+    <label htmlFor={id} className={wrapperClassName}>
+      {labelText && (
+        <p className={cn(
+          "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-1.5",
+          isLoading && "text-muted-foreground",
+          labelClassName
+        )}>
+          {labelText}
+        </p>
+      )}
+      <div className="relative">
+        {showHintText && (
+          <span className={cn(
+            "absolute top-1.5 left-3.5 lg:left-4.5 text-muted text-[10px] animate-fade-in uppercase z-[1]",
+            (showHintText && !value) && "!hidden"
+          )}>
+            {placeholder}
+          </span>
+        )}
+        <Select
+          key={`select-${value || 'empty'}`}
+          required={required}
+          onValueChange={onValueChange}
+          value={value as string || ""}
+          name={name}
+          disabled={disabled}
+        >
+          {value && !isLoading && !disabled && (
+            <button
+              type="button"
+              onMouseUp={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                handleClearValue(e)
+              }}
+              className="flex absolute top-0 bottom-0 my-auto right-3 items-center justify-center w-4.5 h-4.5 rounded-full bg-muted hover:bg-muted-foreground/20 transition-colors ml-2 z-10"
+              aria-label="Clear selection"
+            >
+              <IconX className="!size-3 !stroke-3 !text-slate-500 !font-bold" />
+            </button>
+          )}
+          <SelectTrigger
+            ref={ref as React.LegacyRef<HTMLButtonElement>}
+            className={cn(
+              "flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50",
+              isLoading && "bg-muted animate-pulse",
+              sizeClass,
+              isLoading && "[&_*]:!invisible",
+              !!value ? "!text-foreground [&>svg]:!hidden" : "!text-muted-foreground",
+              icon
+                ? (icon ? "!pr-9 !pl-3 lg:!pl-3.5" : "!pl-10 pr-3 lg:pr-3.5")
+                : "",
+              triggerClassName,
+              inputClassName
+            )}
+          >
+            <SelectValue placeholder={placeholder} />
+
+          </SelectTrigger>
+          <SelectContent className={contentClassName}>
+            {academicYearOptions.map((option, index: number) => (
+              <SelectItem
+                key={`${labelText}-${index}`}
+                value={option.value}
+                className="!font-lexend !font-zinc-600 !font-light"
+              >
+                {option.text}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {icon && (
+          <span className={cn(
+            "absolute top-0 bottom-0 h-max my-auto flex items-center justify-center",
+            isLoading && "invisible",
+            icon ? "right-3" : "left-3"
+          )}>
+            {icon}
+          </span>
+        )}
+      </div>
+      {footerText && (
+        <p className={cn(
+          "text-xs text-muted-foreground mt-1.5",
+          footerTextClassName
+        )}>
+          {footerText}
+        </p>
+      )}
+      {errorText && (
+        <p className={cn(
+          "text-sm mt-1.5 font-light",
+          isLoading ? "text-zinc-300" : "text-red-600"
+        )}>
+          {errorText}
+        </p>
+      )}
+    </label>
+  )
+}
+
 // FormPaginatedSelect Component
 interface IFormPaginatedSelectProps extends IProps, ISelectProps {
   searchPlaceholder?: string;
@@ -1182,5 +1351,30 @@ export const FormPaginatedSelect = ({
         </p>
       )}
     </label>
+  )
+}
+
+
+interface IResponsiveProps {
+  className?: string;
+  href?: string;
+  target?: string;
+  rel?: string;
+  inputref?: React.RefObject<HTMLTextAreaElement>
+  containerClassName?: string;
+  isEditing?: boolean
+}
+
+export const ResponsiveTextInput = ({ className, isEditing = true, ...props }: IResponsiveProps & React.InputHTMLAttributes<HTMLInputElement|HTMLTextAreaElement>) => {
+  return (
+    <span className="relative grid bg-green- py- overflow-hidde">
+      <div className={` l min-w-[20px] bg-green- w- grid `}>
+        {!!props.href && <a rel={props.rel} target={props.target} href={props.href} className={`absolute w-full h-full top-0 left-0 ${className}`}>{replaceJSXRecursive(props.value, { "\n": <br /> })}</a>}
+        <p className={`${!props?.value && "!hidden"} !text-transparen break-word mr-1 max-md:max-w-[200px ${className}`}>{replaceJSXRecursive(props?.value, { "\n": <br />, "\u0020": <div className="inline-block">&nbsp;</div> })}</p>
+        <span className={`${(props.value || props.value === 0) && "!hidden"} text-transparent fle min-w-max flex-row items-center px-1 noExport`}>{props.placeholder?.split("")?.map((x, index) => <span key={`placeholder-char-${index}`}>{x}</span>)}</span>
+      </div>
+      <textarea ref={props.inputref} className={`${!isEditing && "!hidden"} absolute z-[2] bg-tes bg-transparent text-active placeholder:text-muted bg-tes  break-wor resize-none overflow-hidden no-scrollbar py- left-0 top-0 h-full !w-full ${!!props.href && "noExport"} ${className}`} { ...props} value={props?.value} />
+      {/* <textarea ref={props.inputref} className={`absolute z-[2] bg-transparent resize-none no-scrollbar left-0 top-0 h-full !w-full ${!!props.href && "noExport"} ${className}`} { ...props} value={(props?.value as string)?.replace(/\s{2,}/g, " ")} /> */}
+    </span>
   )
 }

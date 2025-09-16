@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+// ...existing code...
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -11,11 +11,11 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+// Textarea intentionally unused in transfer wizard
 import { toast } from "sonner"
 import apis from "@/redux/api"
 const { useGetStudentsQuery } = apis.schoolAdmin.student
-import type { TStudentStage, TGradeCode } from "@academia-pro/types/student/student.types"
+import type { TGradeCode } from "@academia-pro/types/student/student.types"
 import {
   IconArrowRight,
   IconBuilding,
@@ -53,10 +53,12 @@ interface TransferPreview {
 
 export function TransferWizard({ onComplete }: TransferWizardProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const [currentStep, setCurrentStep] = useState<'selection' | 'details' | 'clearance' | 'preview' | 'execute'>('selection')
+  const [currentStep, setCurrentStep] = useState<'selection' | 'clearance' | 'preview' | 'execute'>('selection')
   const [transferRequest, setTransferRequest] = useState<Partial<ITransferStudentRequest>>({
     type: 'internal',
   })
+  // New: allow selecting source grade to target from
+  const [sourceGradeFilter, setSourceGradeFilter] = useState<string | undefined>(undefined)
   const [previewData, setPreviewData] = useState<TransferPreview[]>([])
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set())
   const [executionProgress, setExecutionProgress] = useState(0)
@@ -66,6 +68,9 @@ export function TransferWizard({ onComplete }: TransferWizardProps) {
   })
 
   const students = studentsData?.data || []
+
+  // Batch transfer hook from RTK Query
+  const [batchTransfer] = apis.schoolAdmin.student.useBatchTransferStudentsMutation()
 
   const handleRequestChange = (field: string, value: unknown) => {
     setTransferRequest(prev => ({
@@ -79,12 +84,14 @@ export function TransferWizard({ onComplete }: TransferWizardProps) {
 
     let filteredStudents = students
 
-    // Apply filters if needed
-    if (transferRequest.newGradeCode) {
-      filteredStudents = students.filter(s => s.gradeCode === transferRequest.newGradeCode)
+    // Apply source grade filter: show students who currently belong to a selected source grade
+    if (sourceGradeFilter) {
+      filteredStudents = filteredStudents.filter(s => s.gradeCode === sourceGradeFilter)
     }
 
-    const preview: TransferPreview[] = filteredStudents.slice(0, 10).map(student => { // Limit for demo
+    // If no source filter but a target grade was set, do not filter by target (we want candidates who would move)
+
+  const preview: TransferPreview[] = filteredStudents.slice(0, 200).map(student => { // reasonable limit
       // Mock clearance status
       const clearanceStatus = {
         fees: Math.random() > 0.2,
@@ -94,13 +101,12 @@ export function TransferWizard({ onComplete }: TransferWizardProps) {
       }
 
       const allCleared = Object.values(clearanceStatus).every(status => status)
-      let status: TransferPreview['status'] = 'eligible'
-      let reason = ''
+  const status: TransferPreview['status'] = allCleared ? 'eligible' : 'pending_clearance'
+  let reason = ''
 
       if (!allCleared) {
-        status = 'pending_clearance'
         const pendingItems = Object.entries(clearanceStatus)
-          .filter(([_, cleared]) => !cleared)
+          .filter(([, cleared]) => !cleared)
           .map(([item]) => item)
         reason = `Pending: ${pendingItems.join(', ')}`
       }
@@ -122,42 +128,56 @@ export function TransferWizard({ onComplete }: TransferWizardProps) {
 
     setPreviewData(preview)
     setCurrentStep('clearance')
-  }
-
-  const handleExecute = async () => {
-    setIsLoading(true)
-    try {
-      setExecutionProgress(0)
-
-      // Simulate progress
-      const progressInterval = setInterval(() => {
-        setExecutionProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval)
-            return 90
-          }
-          return prev + 10
-        })
-      }, 300)
-
-      // Mock API call - replace with actual transfer endpoint
-      await new Promise(resolve => setTimeout(resolve, 2000))
-
-      clearInterval(progressInterval)
-      setExecutionProgress(100)
-
-      const transferredCount = selectedStudents.size
-      toast.success(`Successfully transferred ${transferredCount} students!`)
-
-      setCurrentStep('execute')
-    } catch (error) {
-      toast.error("Transfer failed")
-    } finally {
-      setIsLoading(false)
     }
-  }
 
-  const toggleStudentSelection = (studentId: string) => {
+    const handleExecute = async () => {
+      if (!batchTransfer) return
+      setIsLoading(true)
+      setExecutionProgress(0)
+      let progressInterval: NodeJS.Timeout | null = null
+
+      try {
+        progressInterval = setInterval(() => {
+          setExecutionProgress(prev => {
+            if (prev >= 90) {
+              if (progressInterval) clearInterval(progressInterval)
+              return 90
+            }
+            return prev + 10
+          })
+        }, 300)
+
+        const payload = {
+          fromSchoolId: 'current-school-id', // TODO: Get from context
+          toSchoolId: transferRequest.targetSchoolId || 'current-school-id', // TODO: Get from context
+          studentIds: Array.from(selectedStudents),
+          transferReason: transferRequest.transferReason || 'Transfer request',
+          transferDate: new Date().toISOString(),
+          // Additional fields for service compatibility
+          reason: transferRequest.transferReason,
+          newGradeCode: transferRequest.newGradeCode,
+          newStreamSection: transferRequest.newStreamSection,
+          type: transferRequest.type,
+          targetSchoolId: transferRequest.targetSchoolId,
+        }
+
+        const result = await batchTransfer(payload).unwrap()
+
+        if (progressInterval) clearInterval(progressInterval)
+        setExecutionProgress(100)
+        toast.success(result?.message || `Successfully transferred ${result?.transferred ?? selectedStudents.size} students`)
+        // Auto-complete: call onComplete to close parent dialog and refresh
+        onComplete()
+        setCurrentStep('execute')
+      } catch {
+        toast.error('Transfer failed. Please try again.')
+      } finally {
+        if (progressInterval) clearInterval(progressInterval)
+        setIsLoading(false)
+      }
+    }
+  
+    const toggleStudentSelection = (studentId: string) => {
     const newSelected = new Set(selectedStudents)
     if (newSelected.has(studentId)) {
       newSelected.delete(studentId)
@@ -176,17 +196,23 @@ export function TransferWizard({ onComplete }: TransferWizardProps) {
 
   const updateClearanceStatus = (studentId: string, item: keyof TransferPreview['clearanceStatus'], status: boolean) => {
     setPreviewData(prev =>
-      prev.map(student =>
-        student.studentId === studentId
-          ? {
-              ...student,
-              clearanceStatus: {
-                ...student.clearanceStatus,
-                [item]: status
-              }
-            }
-          : student
-      )
+      prev.map(student => {
+        if (student.studentId !== studentId) return student
+
+        const updatedClearance = {
+          ...student.clearanceStatus,
+          [item]: status
+        }
+
+        const allCleared = Object.values(updatedClearance).every(Boolean)
+
+        return {
+          ...student,
+          clearanceStatus: updatedClearance,
+          status: allCleared ? 'eligible' : 'pending_clearance',
+          reason: allCleared ? undefined : `Pending: ${Object.entries(updatedClearance).filter(([, v]) => !v).map(([k]) => k).join(', ')}`,
+        }
+      })
     )
   }
 
@@ -220,11 +246,11 @@ export function TransferWizard({ onComplete }: TransferWizardProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="reason">Transfer Reason</Label>
+            <Label htmlFor="transferReason">Transfer Reason</Label>
             <Input
-              id="reason"
-              value={transferRequest.reason}
-              onChange={(e) => handleRequestChange('reason', e.target.value)}
+              id="transferReason"
+              value={transferRequest.transferReason}
+              onChange={(e) => handleRequestChange('transferReason', e.target.value)}
               placeholder="e.g., Academic performance, Family relocation"
             />
           </div>
@@ -256,7 +282,7 @@ export function TransferWizard({ onComplete }: TransferWizardProps) {
             </div>
 
             <div className="space-y-2">
-              <Label>Target Section</Label>
+                <Label>Target Section</Label>
               <Select
                 value={transferRequest.newStreamSection}
                 onValueChange={(value) => handleRequestChange('newStreamSection', value)}
@@ -454,7 +480,7 @@ export function TransferWizard({ onComplete }: TransferWizardProps) {
                           student.status === 'pending_clearance' ? 'secondary' : 'destructive'
                         }
                       >
-                        {student.status.replace('_', ' ')}
+                        {student.status.replaceAll('_', ' ')}
                       </Badge>
                     </TableCell>
                   </TableRow>
@@ -517,6 +543,31 @@ export function TransferWizard({ onComplete }: TransferWizardProps) {
               <p className="text-sm text-gray-600">{selectedStudents.size} students</p>
             </div>
             <IconUsers className="h-8 w-8 text-purple-600" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-4">
+          <div className="space-y-2">
+            <Label>Source Grade (optional)</Label>
+            <Select
+              value={sourceGradeFilter}
+              onValueChange={(value) => setSourceGradeFilter(value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Filter students by current grade (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={undefined as unknown as string}>All grades</SelectItem>
+                <SelectItem value="PRY1">Primary 1</SelectItem>
+                <SelectItem value="PRY2">Primary 2</SelectItem>
+                <SelectItem value="PRY3">Primary 3</SelectItem>
+                <SelectItem value="JSS1">JSS 1</SelectItem>
+                <SelectItem value="JSS2">JSS 2</SelectItem>
+                <SelectItem value="JSS3">JSS 3</SelectItem>
+                <SelectItem value="SSS1">SSS 1</SelectItem>
+                <SelectItem value="SSS2">SSS 2</SelectItem>
+                <SelectItem value="SSS3">SSS 3</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -596,7 +647,7 @@ export function TransferWizard({ onComplete }: TransferWizardProps) {
             </div>
             <span className="text-sm">Selection</span>
           </div>
-          <div className={`w-12 h-0.5 ${['details', 'clearance', 'preview', 'execute'].includes(currentStep) ? 'bg-blue-600' : 'bg-gray-200'}`} />
+          <div className={`w-12 h-0.5 ${['clearance', 'preview', 'execute'].includes(currentStep) ? 'bg-blue-600' : 'bg-gray-200'}`} />
           <div className={`flex items-center space-x-2 ${currentStep === 'clearance' ? 'text-blue-600' : 'text-gray-400'}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'clearance' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
               2

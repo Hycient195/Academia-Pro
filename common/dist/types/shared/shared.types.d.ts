@@ -15,12 +15,13 @@ export interface IDocument {
     verifiedBy?: string;
 }
 export interface IEmergencyContact {
-    name: string;
-    relationship: string;
+    firstName: string;
+    lastName: string;
     phone: string;
     email?: string;
-    priority: number;
-    address: string;
+    relation: string;
+    occupation?: string;
+    customRelation?: string;
 }
 export interface IDepreciationEntry {
     period: string;
@@ -79,10 +80,10 @@ export interface IInsuranceInfo {
     provider: string;
     policyNumber: string;
     coverageAmount: number;
-    premium: number;
-    startDate: Date;
-    endDate: Date;
-    deductible: number;
+    premium?: number;
+    startDate?: Date;
+    endDate?: Date;
+    deductible?: number;
 }
 export interface IFinancialInfo {
     purchasePrice: number;

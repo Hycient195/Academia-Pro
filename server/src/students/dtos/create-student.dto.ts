@@ -210,44 +210,37 @@ export class CreateStudentDto { // implements ICreateStudentRequest
   @ApiPropertyOptional({
     description: 'Parent/guardian information',
     example: {
-      father: {
-        name: 'John Doe Sr.',
-        phone: '+1234567890',
-        email: 'father@example.com',
-        occupation: 'Engineer',
-      },
-      mother: {
-        name: 'Jane Doe',
-        phone: '+1234567891',
-        email: 'mother@example.com',
-        occupation: 'Teacher',
-      },
+      fatherFirstName: 'John',
+      fatherLastName: 'Doe Sr.',
+      fatherPhone: '+1234567890',
+      fatherEmail: 'father@example.com',
+      fatherOccupation: 'Engineer',
+      motherFirstName: 'Jane',
+      motherLastName: 'Doe',
+      motherPhone: '+1234567891',
+      motherEmail: 'mother@example.com',
+      motherOccupation: 'Teacher',
     },
   })
   @IsOptional()
-  @IsObject({ message: 'Parents information must be an object' })
-  parents?: {
-    father?: {
-      name: string;
-      phone: string;
-      email?: string;
-      occupation?: string;
-      address?: string;
-    };
-    mother?: {
-      name: string;
-      phone: string;
-      email?: string;
-      occupation?: string;
-      address?: string;
-    };
-    guardian?: {
-      name: string;
-      phone: string;
-      email?: string;
-      relation: string;
-      address?: string;
-    };
+  @IsObject({ message: 'Parent information must be an object' })
+  parentInfo?: {
+    fatherFirstName: string;
+    fatherLastName: string;
+    fatherPhone?: string;
+    fatherEmail?: string;
+    fatherOccupation?: string;
+    motherFirstName: string;
+    motherLastName: string;
+    motherPhone?: string;
+    motherEmail?: string;
+    motherOccupation?: string;
+    guardianFirstName?: string;
+    guardianLastName?: string;
+    guardianPhone?: string;
+    guardianEmail?: string;
+    guardianOccupation?: string;
+    guardianRelation?: string;
   };
 
   @ApiPropertyOptional({
@@ -270,15 +263,16 @@ export class CreateStudentDto { // implements ICreateStudentRequest
     medications?: string[];
     conditions?: string[];
     emergencyContact: {
-      name: string;
-      relationship: string;
+      firstName: string;
+      lastName: string;
       phone: string;
       email?: string;
-      priority: number;
-      address: string;
+      relation: string;
+      occupation?: string;
     };
     doctorInfo?: {
-      name: string;
+      firstName: string;
+      lastName: string;
       phone: string;
       clinic: string;
     };

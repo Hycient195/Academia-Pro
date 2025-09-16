@@ -19,11 +19,10 @@ import {
   FormSelect,
   FormDateInput,
   FormPhoneInput,
-  FormTextArea,
-  FormMultiSelect,
   FormCountrySelect,
   FormRegionSelect,
 } from "@/components/ui/form/form-components"
+import FormMultiTextInput from "@/components/ui/form/FormMultiTextInput"
 import ErrorBlock from "@/components/utilities/ErrorBlock"
 
 // Constants for form options
@@ -94,6 +93,19 @@ const enrollmentTypeOptions = [
   { value: "gifted", text: "Gifted" },
   { value: "international", text: "International" },
   { value: "transfer", text: "Transfer" },
+]
+
+const relationOptions = [
+  { value: "father", text: "Father" },
+  { value: "mother", text: "Mother" },
+  { value: "brother", text: "Brother" },
+  { value: "sister", text: "Sister" },
+  { value: "uncle", text: "Uncle" },
+  { value: "aunt", text: "Aunt" },
+  { value: "grandfather", text: "Grandfather" },
+  { value: "grandmother", text: "Grandmother" },
+  { value: "guardian", text: "Guardian" },
+  { value: "other", text: "Other" },
 ]
 
 interface StudentCreationFormProps {
@@ -198,15 +210,16 @@ export function StudentCreationForm({ onComplete }: StudentCreationFormProps) {
           medications: formData.medicalInfo.medications,
           conditions: formData.medicalInfo.conditions,
           emergencyContact: {
-            name: formData.medicalInfo.emergencyContact?.name || '',
-            relationship: formData.medicalInfo.emergencyContact?.relationship || '',
+            firstName: formData.medicalInfo.emergencyContact?.firstName || '',
+            lastName: formData.medicalInfo.emergencyContact?.lastName || '',
             phone: formData.medicalInfo.emergencyContact?.phone || '',
             email: formData.medicalInfo.emergencyContact?.email,
-            priority: 1,
-            address: '',
+            relation: formData.medicalInfo.emergencyContact?.relation || '',
+            occupation: formData.medicalInfo.emergencyContact?.occupation || '',
           },
           doctorInfo: formData.medicalInfo.doctorInfo ? {
-            name: formData.medicalInfo.doctorInfo.name,
+            firstName: formData.medicalInfo.doctorInfo.firstName,
+            lastName: formData.medicalInfo.doctorInfo.lastName,
             phone: formData.medicalInfo.doctorInfo.phone,
             clinic: formData.medicalInfo.doctorInfo.clinic,
           } : undefined,
@@ -593,18 +606,34 @@ export function StudentCreationForm({ onComplete }: StudentCreationFormProps) {
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <FormText
-                    labelText="Relationship"
-                    placeholder="e.g., Uncle, Aunt"
-                    value={formData.parents?.guardian?.relation || ""}
-                    onChange={(e) => handleInputChange('parents', {
-                      ...formData.parents,
-                      guardian: {
-                        ...formData.parents?.guardian,
-                        relation: e.target.value
-                      }
-                    })}
-                  />
+                  <div className="space-y-2">
+                    <FormSelect
+                      labelText="Relationship"
+                      options={relationOptions}
+                      value={formData.parents?.guardian?.relation || ""}
+                      onChange={(e) => handleInputChange('parents', {
+                        ...formData.parents,
+                        guardian: {
+                          ...formData.parents?.guardian,
+                          relation: e.target.value
+                        }
+                      })}
+                    />
+                    {formData.parents?.guardian?.relation === 'other' && (
+                      <FormText
+                        labelText="Specify Relationship"
+                        placeholder="Specify the relationship"
+                        value={formData.parents?.guardian?.customRelation || ''}
+                        onChange={(e) => handleInputChange('parents', {
+                          ...formData.parents,
+                          guardian: {
+                            ...formData.parents?.guardian,
+                            customRelation: e.target.value
+                          }
+                        })}
+                      />
+                    )}
+                  </div>
                   <FormText
                     labelText="Guardian's Email"
                     placeholder="guardian@email.com"
@@ -621,187 +650,235 @@ export function StudentCreationForm({ onComplete }: StudentCreationFormProps) {
                 </div>
               </div>
             </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="medical" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Medical Information</CardTitle>
-              <CardDescription>Add medical details and emergency contacts</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <FormTextArea
-                labelText="Allergies"
-                placeholder="List any allergies (comma separated)"
-                value={formData.medicalInfo?.allergies?.join(', ') || ""}
-                onChange={(e) => handleInputChange('medicalInfo', {
-                  ...formData.medicalInfo,
-                  allergies: (e.target?.value as string || '').split(',').map((s: string) => s.trim()).filter(Boolean)
-                })}
-                rows={2}
-              />
-
-              <FormTextArea
-                labelText="Medications"
-                placeholder="List current medications (comma separated)"
-                value={formData.medicalInfo?.medications?.join(', ') || ""}
-                onChange={(e) => handleInputChange('medicalInfo', {
-                  ...formData.medicalInfo,
-                  medications: (e.target?.value as string || '').split(',').map((s: string) => s.trim()).filter(Boolean)
-                })}
-                rows={2}
-              />
-
-              <FormTextArea
-                labelText="Medical Conditions"
-                placeholder="List any medical conditions (comma separated)"
-                value={formData.medicalInfo?.conditions?.join(', ') || ""}
-                onChange={(e) => handleInputChange('medicalInfo', {
-                  ...formData.medicalInfo,
-                  conditions: (e.target?.value as string || '').split(',').map((s: string) => s.trim()).filter(Boolean)
-                })}
-                rows={2}
-              />
-
-              <Separator />
-
-              <div className="space-y-4">
-                <h4 className="font-medium">Emergency Contact</h4>
-                <div className="grid grid-cols-2 gap-4">
+            </Card>
+          </TabsContent>
+ 
+          <TabsContent value="medical" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Medical Information</CardTitle>
+                <CardDescription>Add medical details and emergency contacts</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormMultiTextInput
+                  values={formData.medicalInfo?.allergies || []}
+                  setFormData={setFormData}
+                  propertyKey="medicalInfo.allergies"
+                  labelText="Allergies"
+                  placeholder="Add an allergy and press Enter"
+                />
+ 
+                <FormMultiTextInput
+                  values={formData.medicalInfo?.medications || []}
+                  setFormData={setFormData}
+                  propertyKey="medicalInfo.medications"
+                  labelText="Medications"
+                  placeholder="Add a medication and press Enter"
+                />
+ 
+                <FormMultiTextInput
+                  values={formData.medicalInfo?.conditions || []}
+                  setFormData={setFormData}
+                  propertyKey="medicalInfo.conditions"
+                  labelText="Medical Conditions"
+                  placeholder="Add a medical condition and press Enter"
+                />
+ 
+                <Separator />
+ 
+                <div className="space-y-4">
+                  <h4 className="font-medium">Emergency Contact</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormText
+                      labelText="First Name"
+                      placeholder="Enter first name"
+                      value={formData.medicalInfo?.emergencyContact?.firstName || ""}
+                      onChange={(e) => handleInputChange('medicalInfo', {
+                        ...formData.medicalInfo,
+                        emergencyContact: {
+                          ...formData.medicalInfo?.emergencyContact,
+                          firstName: e.target.value
+                        }
+                      })}
+                    />
+                    <FormText
+                      labelText="Last Name"
+                      placeholder="Enter last name"
+                      value={formData.medicalInfo?.emergencyContact?.lastName || ""}
+                      onChange={(e) => handleInputChange('medicalInfo', {
+                        ...formData.medicalInfo,
+                        emergencyContact: {
+                          ...formData.medicalInfo?.emergencyContact,
+                          lastName: e.target.value
+                        }
+                      })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormPhoneInput
+                      labelText="Phone"
+                      value={formData.medicalInfo?.emergencyContact?.phone || ""}
+                      onChange={(e) => handleInputChange('medicalInfo', {
+                        ...formData.medicalInfo,
+                        emergencyContact: {
+                          ...formData.medicalInfo?.emergencyContact,
+                          phone: e.target.value
+                        }
+                      })}
+                      placeholder="Enter phone number"
+                    />
+                    <div className="space-y-2">
+                      <FormSelect
+                        labelText="Relationship"
+                        options={relationOptions}
+                        value={formData.medicalInfo?.emergencyContact?.relation || ""}
+                        onChange={(e) => handleInputChange('medicalInfo', {
+                          ...formData.medicalInfo,
+                          emergencyContact: {
+                            ...formData.medicalInfo?.emergencyContact,
+                            relation: e.target.value
+                          }
+                        })}
+                        placeholder="Select relationship"
+                      />
+                      {formData.medicalInfo?.emergencyContact?.relation === 'other' && (
+                        <FormText
+                          labelText="Specify Relationship"
+                          placeholder="Specify the relationship"
+                          value={formData.medicalInfo?.emergencyContact?.customRelation || ''}
+                          onChange={(e) => handleInputChange('medicalInfo', {
+                            ...formData.medicalInfo,
+                            emergencyContact: {
+                              ...formData.medicalInfo?.emergencyContact,
+                              customRelation: e.target.value
+                            }
+                          })}
+                        />
+                      )}
+                    </div>
+                  </div>
                   <FormText
-                    labelText="Emergency Contact Name"
-                    placeholder="Enter contact name"
-                    value={formData.medicalInfo?.emergencyContact?.name || ""}
+                    labelText="Occupation"
+                    placeholder="Enter occupation"
+                    value={formData.medicalInfo?.emergencyContact?.occupation || ""}
                     onChange={(e) => handleInputChange('medicalInfo', {
                       ...formData.medicalInfo,
                       emergencyContact: {
                         ...formData.medicalInfo?.emergencyContact,
-                        name: e.target.value
+                        occupation: e.target.value
                       }
                     })}
-                  />
-                  <FormPhoneInput
-                    labelText="Emergency Contact Phone"
-                    value={formData.medicalInfo?.emergencyContact?.phone || ""}
-                    onChange={(e) => handleInputChange('medicalInfo', {
-                      ...formData.medicalInfo,
-                      emergencyContact: {
-                        ...formData.medicalInfo?.emergencyContact,
-                        phone: e.target.value
-                      }
-                    })}
-                    placeholder="Enter phone number"
                   />
                 </div>
-                <FormText
-                  labelText="Relationship to Student"
-                  placeholder="e.g., Mother, Father, Guardian"
-                  value={formData.medicalInfo?.emergencyContact?.relationship || ""}
-                  onChange={(e) => handleInputChange('medicalInfo', {
-                    ...formData.medicalInfo,
-                    emergencyContact: {
-                      ...formData.medicalInfo?.emergencyContact,
-                      relationship: e.target.value
-                    }
-                  })}
-                />
-              </div>
-
-              <Separator />
-
-              <div className="space-y-4">
-                <h4 className="font-medium">Doctor Information</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormText
-                    labelText="Doctor's Name"
-                    placeholder="Enter doctor's name"
-                    value={formData.medicalInfo?.doctorInfo?.name || ""}
-                    onChange={(e) => handleInputChange('medicalInfo', {
-                      ...formData.medicalInfo,
-                      doctorInfo: {
-                        ...formData.medicalInfo?.doctorInfo,
-                        name: e.target.value
-                      }
-                    })}
-                  />
-                  <FormPhoneInput
-                    labelText="Doctor's Phone"
-                    value={formData.medicalInfo?.doctorInfo?.phone || ""}
-                    onChange={(e) => handleInputChange('medicalInfo', {
-                      ...formData.medicalInfo,
-                      doctorInfo: {
-                        ...formData.medicalInfo?.doctorInfo,
-                        phone: e.target.value
-                      }
-                    })}
-                    placeholder="Enter phone number"
-                  />
-                </div>
-                <FormText
-                  labelText="Clinic/Hospital"
-                  placeholder="Enter clinic or hospital name"
-                  value={formData.medicalInfo?.doctorInfo?.clinic || ""}
-                  onChange={(e) => handleInputChange('medicalInfo', {
-                    ...formData.medicalInfo,
-                    doctorInfo: {
-                      ...formData.medicalInfo?.doctorInfo,
-                      clinic: e.target.value
-                    }
-                  })}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="review" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Review & Submit</CardTitle>
-              <CardDescription>Please review all information before submitting</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-2 gap-6">
+ 
+                <Separator />
+ 
                 <div className="space-y-4">
-                  <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Personal Information</h4>
-                  <div className="space-y-2 text-sm">
-                    <p><span className="font-medium">Name:</span> {formData.firstName} {formData.middleName} {formData.lastName}</p>
-                    <p><span className="font-medium">Date of Birth:</span> {formData.dateOfBirth}</p>
-                    <p><span className="font-medium">Gender:</span> {formData.gender}</p>
-                    <p><span className="font-medium">Phone:</span> {formData.phone}</p>
-                    <p><span className="font-medium">Email:</span> {formData.email}</p>
+                  <h4 className="font-medium">Doctor Information</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormText
+                      labelText="First Name"
+                      placeholder="Enter doctor's first name"
+                      value={formData.medicalInfo?.doctorInfo?.firstName || ""}
+                      onChange={(e) => handleInputChange('medicalInfo', {
+                        ...formData.medicalInfo,
+                        doctorInfo: {
+                          ...formData.medicalInfo?.doctorInfo,
+                          firstName: e.target.value
+                        }
+                      })}
+                    />
+                    <FormText
+                      labelText="Last Name"
+                      placeholder="Enter doctor's last name"
+                      value={formData.medicalInfo?.doctorInfo?.lastName || ""}
+                      onChange={(e) => handleInputChange('medicalInfo', {
+                        ...formData.medicalInfo,
+                        doctorInfo: {
+                          ...formData.medicalInfo?.doctorInfo,
+                          lastName: e.target.value
+                        }
+                      })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormPhoneInput
+                      labelText="Phone"
+                      value={formData.medicalInfo?.doctorInfo?.phone || ""}
+                      onChange={(e) => handleInputChange('medicalInfo', {
+                        ...formData.medicalInfo,
+                        doctorInfo: {
+                          ...formData.medicalInfo?.doctorInfo,
+                          phone: e.target.value
+                        }
+                      })}
+                      placeholder="Enter phone number"
+                    />
+                    <FormText
+                      labelText="Clinic/Hospital"
+                      placeholder="Enter clinic or hospital name"
+                      value={formData.medicalInfo?.doctorInfo?.clinic || ""}
+                      onChange={(e) => handleInputChange('medicalInfo', {
+                        ...formData.medicalInfo,
+                        doctorInfo: {
+                          ...formData.medicalInfo?.doctorInfo,
+                          clinic: e.target.value
+                        }
+                      })}
+                    />
                   </div>
                 </div>
-
-                <div className="space-y-4">
-                  <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Academic Information</h4>
-                  <div className="space-y-2 text-sm">
-                    <p><span className="font-medium">Admission Number:</span> {formData.admissionNumber || 'Auto-generated'}</p>
-                    <p><span className="font-medium">Stage:</span> {formData.stage}</p>
-                    <p><span className="font-medium">Grade:</span> {formData.gradeCode}</p>
-                    <p><span className="font-medium">Section:</span> {formData.streamSection}</p>
-                    <p><span className="font-medium">Boarding:</span> {formData.isBoarding ? 'Yes' : 'No'}</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+ 
+          <TabsContent value="review" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Review & Submit</CardTitle>
+                <CardDescription>Please review all information before submitting</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Personal Information</h4>
+                    <div className="space-y-2 text-sm">
+                      <p><span className="font-medium">Name:</span> {formData.firstName} {formData.middleName} {formData.lastName}</p>
+                      <p><span className="font-medium">Date of Birth:</span> {formData.dateOfBirth}</p>
+                      <p><span className="font-medium">Gender:</span> {formData.gender}</p>
+                      <p><span className="font-medium">Phone:</span> {formData.phone}</p>
+                      <p><span className="font-medium">Email:</span> {formData.email}</p>
+                    </div>
+                  </div>
+ 
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Academic Information</h4>
+                    <div className="space-y-2 text-sm">
+                      <p><span className="font-medium">Admission Number:</span> {formData.admissionNumber || 'Auto-generated'}</p>
+                      <p><span className="font-medium">Stage:</span> {formData.stage}</p>
+                      <p><span className="font-medium">Grade:</span> {formData.gradeCode}</p>
+                      <p><span className="font-medium">Section:</span> {formData.streamSection}</p>
+                      <p><span className="font-medium">Boarding:</span> {formData.isBoarding ? 'Yes' : 'No'}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-
-              <Separator />
-              <ErrorBlock error={createStudentError} />
-              <div className="flex justify-end gap-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentTab("medical")}
-                >
-                  Back to Medical
-                </Button>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Creating Student..." : "Create Student"}
-                </Button>
-              </div>
+ 
+                <Separator />
+                <ErrorBlock error={createStudentError} />
+                <div className="flex justify-end gap-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentTab("medical")}
+                  >
+                    Back to Medical
+                  </Button>
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Creating Student..." : "Create Student"}
+                  </Button>
+                </div>
             </CardContent>
           </Card>
         </TabsContent>

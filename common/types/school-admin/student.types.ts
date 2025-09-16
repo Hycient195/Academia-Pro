@@ -33,15 +33,22 @@ export interface IStudent {
   isBoarding: boolean;
   avatar?: string;
   parentInfo: {
-    fatherName: string;
+    fatherFirstName: string;
+    fatherLastName: string;
     fatherPhone?: string;
     fatherEmail?: string;
-    motherName: string;
+    fatherOccupation?: string;
+    motherFirstName: string;
+    motherLastName: string;
     motherPhone?: string;
     motherEmail?: string;
-    guardianName?: string;
+    motherOccupation?: string;
+    guardianFirstName?: string;
+    guardianLastName?: string;
     guardianPhone?: string;
     guardianEmail?: string;
+    guardianOccupation?: string;
+    guardianRelation?: string;
   };
   parents?: IParentsInfo;
   medicalInfo?: IMedicalInfo;
@@ -81,15 +88,22 @@ export interface ICreateStudentRequest {
   streamSection: string;
   enrollmentType: 'regular' | 'special_needs' | 'gifted' | 'international' | 'transfer';
   parentInfo: {
-    fatherName: string;
+    fatherFirstName: string;
+    fatherLastName: string;
     fatherPhone?: string;
     fatherEmail?: string;
-    motherName: string;
+    fatherOccupation?: string;
+    motherFirstName: string;
+    motherLastName: string;
     motherPhone?: string;
     motherEmail?: string;
-    guardianName?: string;
+    motherOccupation?: string;
+    guardianFirstName?: string;
+    guardianLastName?: string;
     guardianPhone?: string;
     guardianEmail?: string;
+    guardianOccupation?: string;
+    guardianRelation?: string;
   };
   medicalInfo?: {
     bloodGroup?: string;
@@ -97,10 +111,20 @@ export interface ICreateStudentRequest {
     medications?: string[];
     conditions?: string[];
     emergencyContact: {
-      name: string;
-      relationship: string;
+      firstName: string;
+      lastName: string;
       phone: string;
+      email?: string;
+      relation: string;
     };
+    doctorInfo?: {
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      clinic?: string;
+      occupation?: string;
+    };
+    insuranceInfo?: IInsuranceInfo;
   };
 }
 
@@ -122,15 +146,23 @@ export interface IUpdateStudentRequest {
   enrollmentType?: 'regular' | 'special_needs' | 'gifted' | 'international' | 'transfer';
   status?: 'active' | 'inactive' | 'graduated' | 'transferred' | 'withdrawn' | 'suspended';
   parentInfo?: Partial<{
-    fatherName: string;
+    fatherFirstName: string;
+    fatherLastName: string;
     fatherPhone?: string;
     fatherEmail?: string;
-    motherName: string;
+    fatherOccupation?: string;
+    motherFirstName: string;
+    motherLastName: string;
     motherPhone?: string;
     motherEmail?: string;
-    guardianName?: string;
+    motherOccupation?: string;
+    guardianFirstName?: string;
+    guardianLastName?: string;
     guardianPhone?: string;
     guardianEmail?: string;
+    guardianOccupation?: string;
+    guardianRelation?: string;
+    guardianCustomRelation?: string;
   }>;
   medicalInfo?: Partial<{
     bloodGroup?: string;
@@ -138,21 +170,35 @@ export interface IUpdateStudentRequest {
     medications?: string[];
     conditions?: string[];
     emergencyContact: {
-      name: string;
-      relationship: string;
+      firstName: string;
+      lastName: string;
       phone: string;
+      email?: string;
+      relation: string;
+      occupation?: string;
+      customRelation?: string;
     };
-    doctorInfo?: IDoctorInfo;
+    doctorInfo?: {
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      clinic?: string;
+      occupation?: string;
+    };
     insuranceInfo?: IInsuranceInfo;
   }>;
 }
 
 export interface ITransferStudentRequest {
-  schoolId: string;
-  gradeCode: string;
-  streamSection: string;
-  transferReason: string;
-  transferDate: string;
+  type?: 'internal' | 'external';
+  schoolId?: string;
+  gradeCode?: string;
+  streamSection?: string;
+  transferReason?: string;
+  transferDate?: string;
+  targetSchoolId?: string;
+  newGradeCode?: string;
+  newStreamSection?: string;
 }
 
 export interface IAssignClassRequest {
@@ -162,16 +208,14 @@ export interface IAssignClassRequest {
 }
 
 export interface IPromotionRequestDto {
-  schoolId: string;
-  fromGrade: string;
-  toGrade: string;
-  academicYear: string;
-  promotionCriteria?: {
-    minimumAttendance?: number;
-    minimumGrade?: string;
-    passAllSubjects?: boolean;
-  };
+  scope: 'all' | 'grade' | 'section' | 'students';
+  gradeCode?: string;
+  streamSection?: string;
   studentIds?: string[];
+  targetGradeCode: string;
+  academicYear: string;
+  includeRepeaters?: boolean;
+  reason?: string;
 }
 
 export interface IBulkImportRequestDto {
@@ -239,6 +283,18 @@ export interface IStudentFilters {
   statuses?: string[];
   enrollmentType?: 'regular' | 'special_needs' | 'gifted' | 'international' | 'transfer';
   search?: string;
+  firstName?: string;
+  lastName?: string;
+  middleName?: string;
+  gender?: 'male' | 'female' | 'other';
+  admissionNumber?: string;
+  dateOfBirthFrom?: string;
+  dateOfBirthTo?: string;
+  admissionDateFrom?: string;
+  admissionDateTo?: string;
+  isBoarding?: boolean;
+  email?: string;
+  phone?: string;
 }
 
 export interface IStudentSearchParams extends IStudentFilters {

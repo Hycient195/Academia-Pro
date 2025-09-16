@@ -85,7 +85,7 @@ export default function StudentProfilePage() {
     )
   }
 
-  const handleSave = (updates: Partial<IUpdateStudentRequest>) => {
+  const handleSave = async (updates: Partial<IUpdateStudentRequest>) => {
     setPendingUpdates(updates)
     setIsReasonModalOpen(true)
   }
@@ -246,7 +246,7 @@ export default function StudentProfilePage() {
               />
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 gap-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Personal Information</CardTitle>
@@ -332,7 +332,7 @@ export default function StudentProfilePage() {
                   <div className="space-y-2">
                     <div>
                       <Label className="text-sm font-medium">Name</Label>
-                      <p>{student.medicalInfo?.emergencyContact?.name || 'Not specified'}</p>
+                      <p>{student.medicalInfo?.emergencyContact ? `${student.medicalInfo.emergencyContact.firstName} ${student.medicalInfo.emergencyContact.lastName}` : 'Not specified'}</p>
                     </div>
                     <div>
                       <Label className="text-sm font-medium">Phone</Label>
@@ -340,7 +340,7 @@ export default function StudentProfilePage() {
                     </div>
                     <div>
                       <Label className="text-sm font-medium">Relation</Label>
-                      <p>{student.medicalInfo?.emergencyContact?.relationship || 'Not specified'}</p>
+                      <p>{student.medicalInfo?.emergencyContact?.relation || 'Not specified'}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -365,19 +365,19 @@ export default function StudentProfilePage() {
                   <div className="space-y-3">
                     <div>
                       <Label className="text-sm font-medium">Father</Label>
-                      <p className="text-sm">{student.parentInfo?.fatherName || 'Not specified'}</p>
+                      <p className="text-sm">{student.parentInfo ? `${student.parentInfo.fatherFirstName} ${student.parentInfo.fatherLastName}` : 'Not specified'}</p>
                       <p className="text-xs text-muted-foreground">{student.parentInfo?.fatherPhone || ''}</p>
                     </div>
                     <div>
                       <Label className="text-sm font-medium">Mother</Label>
-                      <p className="text-sm">{student.parentInfo?.motherName || 'Not specified'}</p>
+                      <p className="text-sm">{student.parentInfo ? `${student.parentInfo.motherFirstName} ${student.parentInfo.motherLastName}` : 'Not specified'}</p>
                       <p className="text-xs text-muted-foreground">{student.parentInfo?.motherPhone || ''}</p>
                     </div>
-                    {student.parentInfo?.guardianName && (
+                    {(student.parentInfo?.guardianFirstName || student.parentInfo?.guardianLastName) && (
                       <div>
                         <Label className="text-sm font-medium">Guardian</Label>
-                        <p className="text-sm">{student.parentInfo.guardianName}</p>
-                        <p className="text-xs text-muted-foreground">{student.parentInfo.guardianPhone || ''}</p>
+                        <p className="text-sm">{student.parentInfo ? `${student.parentInfo.guardianFirstName || ''} ${student.parentInfo.guardianLastName || ''}`.trim() : ''}</p>
+                        <p className="text-xs text-muted-foreground">{student.parentInfo?.guardianPhone || ''}</p>
                       </div>
                     )}
                   </div>
@@ -399,7 +399,7 @@ export default function StudentProfilePage() {
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <div>
                   <CardTitle>Parent Information</CardTitle>
-                  <CardDescription>Student's parent and guardian details</CardDescription>
+                  <CardDescription>Student&apos;s parent and guardian details</CardDescription>
                 </div>
                 <Button
                   variant="ghost"
@@ -413,28 +413,28 @@ export default function StudentProfilePage() {
               <CardContent className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="p-4 border rounded-lg bg-blue-50">
-                    <Label className="text-sm font-medium">Father's Information</Label>
+                    <Label className="text-sm font-medium">Father&apos;s Information</Label>
                     <div className="mt-2 space-y-1">
-                      <p className="font-medium">{student.parentInfo?.fatherName || 'Not specified'}</p>
+                      <p className="font-medium">{student.parentInfo ? `${student.parentInfo.fatherFirstName} ${student.parentInfo.fatherLastName}` : 'Not specified'}</p>
                       <p className="text-sm text-muted-foreground">{student.parentInfo?.fatherPhone || ''}</p>
                       <p className="text-sm text-muted-foreground">{student.parentInfo?.fatherEmail || ''}</p>
                     </div>
                   </div>
                   <div className="p-4 border rounded-lg bg-pink-50">
-                    <Label className="text-sm font-medium">Mother's Information</Label>
+                    <Label className="text-sm font-medium">Mother&apos;s Information</Label>
                     <div className="mt-2 space-y-1">
-                      <p className="font-medium">{student.parentInfo?.motherName || 'Not specified'}</p>
+                      <p className="font-medium">{student.parentInfo ? `${student.parentInfo.motherFirstName} ${student.parentInfo.motherLastName}` : 'Not specified'}</p>
                       <p className="text-sm text-muted-foreground">{student.parentInfo?.motherPhone || ''}</p>
                       <p className="text-sm text-muted-foreground">{student.parentInfo?.motherEmail || ''}</p>
                     </div>
                   </div>
                 </div>
 
-                {student.parentInfo?.guardianName && (
+                {(student.parentInfo?.guardianFirstName || student.parentInfo?.guardianLastName) && (
                   <div className="p-4 border rounded-lg bg-green-50">
-                    <Label className="text-sm font-medium">Guardian's Information</Label>
+                    <Label className="text-sm font-medium">Guardian&apos;s Information</Label>
                     <div className="mt-2 space-y-1">
-                      <p className="font-medium">{student.parentInfo.guardianName}</p>
+                      <p className="font-medium">{student.parentInfo ? `${student.parentInfo.guardianFirstName || ''} ${student.parentInfo.guardianLastName || ''}`.trim() : ''}</p>
                       <p className="text-sm text-muted-foreground">{student.parentInfo.guardianPhone || ''}</p>
                       <p className="text-sm text-muted-foreground">{student.parentInfo.guardianEmail || ''}</p>
                     </div>
@@ -525,7 +525,7 @@ export default function StudentProfilePage() {
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <div>
                   <CardTitle>Medical Information</CardTitle>
-                  <CardDescription>Student's health and medical details</CardDescription>
+                  <CardDescription>Student&apos;s health and medical details</CardDescription>
                 </div>
                 <Button
                   variant="ghost"
@@ -544,9 +544,9 @@ export default function StudentProfilePage() {
                   </div>
                   <div>
                     <Label className="text-sm font-medium">Emergency Contact</Label>
-                    <p className="mt-1">{student.medicalInfo?.emergencyContact?.name || 'Not specified'}</p>
+                    <p className="mt-1">{student.medicalInfo?.emergencyContact ? `${student.medicalInfo.emergencyContact.firstName} ${student.medicalInfo.emergencyContact.lastName}` : 'Not specified'}</p>
                     <p className="text-sm text-muted-foreground">{student.medicalInfo?.emergencyContact?.phone || ''}</p>
-                    <p className="text-sm text-muted-foreground">{student.medicalInfo?.emergencyContact?.relationship || ''}</p>
+                    <p className="text-sm text-muted-foreground">{student.medicalInfo?.emergencyContact?.relation || ''}</p>
                   </div>
                 </div>
 
@@ -593,7 +593,7 @@ export default function StudentProfilePage() {
                   <div className="p-4 border rounded-lg bg-blue-50">
                     <Label className="text-sm font-medium">Primary Care Physician</Label>
                     <div className="mt-2 space-y-1">
-                      <p className="font-medium">{student.medicalInfo.doctorInfo.name}</p>
+                      <p className="font-medium">{student.medicalInfo.doctorInfo.firstName} {student.medicalInfo.doctorInfo.lastName}</p>
                       <p className="text-sm text-muted-foreground">{student.medicalInfo.doctorInfo.phone}</p>
                       <p className="text-sm text-muted-foreground">{student.medicalInfo.doctorInfo.clinic}</p>
                     </div>

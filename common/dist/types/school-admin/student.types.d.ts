@@ -1,3 +1,6 @@
+import { TStudentStage, TGradeCode, IParentsInfo, IMedicalInfo, ITransportationInfo, IHostelInfo, IStudentFinancialInfo, IStudentPreferences, IAcademicStanding, IPromotionHistory, ITransferHistory } from '../student';
+import { IInsuranceInfo } from '../shared';
+import { IDocument } from '../shared';
 export interface IStudent {
     id: string;
     admissionNumber: string;
@@ -16,44 +19,50 @@ export interface IStudent {
         postalCode: string;
     };
     schoolId: string;
-    gradeCode: string;
+    stage: TStudentStage;
+    gradeCode: TGradeCode;
     streamSection: string;
+    admissionDate: string;
     enrollmentType: 'regular' | 'special_needs' | 'gifted' | 'international' | 'transfer';
     status: 'active' | 'inactive' | 'graduated' | 'transferred' | 'withdrawn' | 'suspended';
     enrollmentDate: string;
+    isBoarding: boolean;
+    avatar?: string;
     parentInfo: {
-        fatherName: string;
+        fatherFirstName: string;
+        fatherLastName: string;
         fatherPhone?: string;
         fatherEmail?: string;
-        motherName: string;
+        fatherOccupation?: string;
+        motherFirstName: string;
+        motherLastName: string;
         motherPhone?: string;
         motherEmail?: string;
-        guardianName?: string;
+        motherOccupation?: string;
+        guardianFirstName?: string;
+        guardianLastName?: string;
         guardianPhone?: string;
         guardianEmail?: string;
+        guardianOccupation?: string;
+        guardianRelation?: string;
     };
-    medicalInfo?: {
-        bloodGroup?: string;
-        allergies?: string[];
-        medications?: string[];
-        conditions?: string[];
-        emergencyContact: {
-            name: string;
-            relationship: string;
-            phone: string;
-        };
-    };
-    documents?: Array<{
-        id: string;
-        type: string;
-        name: string;
-        url: string;
-        uploadedAt: string;
-    }>;
+    parents?: IParentsInfo;
+    medicalInfo?: IMedicalInfo;
+    transportation?: ITransportationInfo;
+    hostel?: IHostelInfo;
+    financialInfo?: IStudentFinancialInfo;
+    documents?: IDocument[];
+    preferences?: IStudentPreferences;
+    gpa?: number;
+    totalCredits?: number;
+    academicStanding?: IAcademicStanding;
+    promotionHistory?: IPromotionHistory[];
+    transferHistory?: ITransferHistory[];
+    graduationYear?: number;
     createdAt: string;
     updatedAt: string;
 }
-export interface ICreateStudentDto {
+export interface ICreateStudentRequest {
     admissionNumber: string;
     firstName: string;
     lastName: string;
@@ -74,15 +83,22 @@ export interface ICreateStudentDto {
     streamSection: string;
     enrollmentType: 'regular' | 'special_needs' | 'gifted' | 'international' | 'transfer';
     parentInfo: {
-        fatherName: string;
+        fatherFirstName: string;
+        fatherLastName: string;
         fatherPhone?: string;
         fatherEmail?: string;
-        motherName: string;
+        fatherOccupation?: string;
+        motherFirstName: string;
+        motherLastName: string;
         motherPhone?: string;
         motherEmail?: string;
-        guardianName?: string;
+        motherOccupation?: string;
+        guardianFirstName?: string;
+        guardianLastName?: string;
         guardianPhone?: string;
         guardianEmail?: string;
+        guardianOccupation?: string;
+        guardianRelation?: string;
     };
     medicalInfo?: {
         bloodGroup?: string;
@@ -90,13 +106,23 @@ export interface ICreateStudentDto {
         medications?: string[];
         conditions?: string[];
         emergencyContact: {
-            name: string;
-            relationship: string;
+            firstName: string;
+            lastName: string;
             phone: string;
+            email?: string;
+            relation: string;
         };
+        doctorInfo?: {
+            firstName?: string;
+            lastName?: string;
+            phone?: string;
+            clinic?: string;
+            occupation?: string;
+        };
+        insuranceInfo?: IInsuranceInfo;
     };
 }
-export interface IUpdateStudentDto {
+export interface IUpdateStudentRequest {
     firstName?: string;
     lastName?: string;
     middleName?: string;
@@ -114,15 +140,23 @@ export interface IUpdateStudentDto {
     enrollmentType?: 'regular' | 'special_needs' | 'gifted' | 'international' | 'transfer';
     status?: 'active' | 'inactive' | 'graduated' | 'transferred' | 'withdrawn' | 'suspended';
     parentInfo?: Partial<{
-        fatherName: string;
+        fatherFirstName: string;
+        fatherLastName: string;
         fatherPhone?: string;
         fatherEmail?: string;
-        motherName: string;
+        fatherOccupation?: string;
+        motherFirstName: string;
+        motherLastName: string;
         motherPhone?: string;
         motherEmail?: string;
-        guardianName?: string;
+        motherOccupation?: string;
+        guardianFirstName?: string;
+        guardianLastName?: string;
         guardianPhone?: string;
         guardianEmail?: string;
+        guardianOccupation?: string;
+        guardianRelation?: string;
+        guardianCustomRelation?: string;
     }>;
     medicalInfo?: Partial<{
         bloodGroup?: string;
@@ -130,35 +164,49 @@ export interface IUpdateStudentDto {
         medications?: string[];
         conditions?: string[];
         emergencyContact: {
-            name: string;
-            relationship: string;
+            firstName: string;
+            lastName: string;
             phone: string;
+            email?: string;
+            relation: string;
+            occupation?: string;
+            customRelation?: string;
         };
+        doctorInfo?: {
+            firstName?: string;
+            lastName?: string;
+            phone?: string;
+            clinic?: string;
+            occupation?: string;
+        };
+        insuranceInfo?: IInsuranceInfo;
     }>;
 }
-export interface ITransferStudentDto {
-    schoolId: string;
-    gradeCode: string;
-    streamSection: string;
-    transferReason: string;
-    transferDate: string;
+export interface ITransferStudentRequest {
+    type?: 'internal' | 'external';
+    schoolId?: string;
+    gradeCode?: string;
+    streamSection?: string;
+    transferReason?: string;
+    transferDate?: string;
+    targetSchoolId?: string;
+    newGradeCode?: string;
+    newStreamSection?: string;
 }
-export interface IAssignClassDto {
+export interface IAssignClassRequest {
     gradeCode: string;
     streamSection: string;
     effectiveDate: string;
 }
 export interface IPromotionRequestDto {
-    schoolId: string;
-    fromGrade: string;
-    toGrade: string;
-    academicYear: string;
-    promotionCriteria?: {
-        minimumAttendance?: number;
-        minimumGrade?: string;
-        passAllSubjects?: boolean;
-    };
+    scope: 'all' | 'grade' | 'section' | 'students';
+    gradeCode?: string;
+    streamSection?: string;
     studentIds?: string[];
+    targetGradeCode: string;
+    academicYear: string;
+    includeRepeaters?: boolean;
+    reason?: string;
 }
 export interface IBulkImportRequestDto {
     schoolId: string;
@@ -215,11 +263,24 @@ export interface IStudentStatistics {
 }
 export interface IStudentFilters {
     schoolId?: string;
-    gradeCode?: string;
-    streamSection?: string;
-    status?: 'active' | 'inactive' | 'graduated' | 'transferred' | 'withdrawn' | 'suspended';
+    stages?: string[];
+    gradeCodes?: string[];
+    streamSections?: string[];
+    statuses?: string[];
     enrollmentType?: 'regular' | 'special_needs' | 'gifted' | 'international' | 'transfer';
     search?: string;
+    firstName?: string;
+    lastName?: string;
+    middleName?: string;
+    gender?: 'male' | 'female' | 'other';
+    admissionNumber?: string;
+    dateOfBirthFrom?: string;
+    dateOfBirthTo?: string;
+    admissionDateFrom?: string;
+    admissionDateTo?: string;
+    isBoarding?: boolean;
+    email?: string;
+    phone?: string;
 }
 export interface IStudentSearchParams extends IStudentFilters {
     page?: number;

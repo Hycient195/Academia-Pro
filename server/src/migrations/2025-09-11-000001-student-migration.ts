@@ -1,57 +1,57 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 import type { TStudentStage, TGradeCode } from '@academia-pro/types/student/student.types';
 
-export class StudentMigration20250911 implements MigrationInterface {
+export class StudentMigration20250911000001 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Migrate legacy currentGrade to stage and gradeCode
     // This assumes a mapping; adjust based on actual legacy data
     await queryRunner.query(`
-      UPDATE students 
-      SET 
-        stage = CASE 
-          WHEN currentGrade LIKE '%Nursery%' OR currentGrade LIKE '%KG%' THEN 'EY'
-          WHEN currentGrade LIKE '%Primary%' THEN 'PRY'
-          WHEN currentGrade LIKE '%JSS%' THEN 'JSS'
-          WHEN currentGrade LIKE '%SSS%' THEN 'SSS'
+      UPDATE students
+      SET
+        "stage" = CASE
+          WHEN "currentGrade" LIKE '%Nursery%' OR "currentGrade" LIKE '%KG%' THEN 'EY'
+          WHEN "currentGrade" LIKE '%Primary%' THEN 'PRY'
+          WHEN "currentGrade" LIKE '%JSS%' THEN 'JSS'
+          WHEN "currentGrade" LIKE '%SSS%' THEN 'SSS'
           ELSE 'PRY' -- default
         END,
-        gradeCode = CASE 
-          WHEN currentGrade = 'Primary 1' THEN 'PRY1'
-          WHEN currentGrade = 'Primary 2' THEN 'PRY2'
+        "grade_code" = CASE
+          WHEN "currentGrade" = 'Primary 1' THEN 'PRY1'
+          WHEN "currentGrade" = 'Primary 2' THEN 'PRY2'
           -- Add more mappings as needed
-          WHEN currentGrade = 'JSS 1' THEN 'JSS1'
-          WHEN currentGrade = 'SSS 3' THEN 'SSS3'
+          WHEN "currentGrade" = 'JSS 1' THEN 'JSS1'
+          WHEN "currentGrade" = 'SSS 3' THEN 'SSS3'
           ELSE 'PRY1' -- default
         END,
-        streamSection = currentSection
-      WHERE stage IS NULL OR gradeCode IS NULL
+        "stream_section" = "currentSection"
+      WHERE "stage" IS NULL OR "grade_code" IS NULL
     `);
 
-    // Set streamSection to currentSection for legacy data
+    // Set stream_section to currentSection for legacy data
     await queryRunner.query(`
-      UPDATE students 
-      SET streamSection = COALESCE(streamSection, currentSection)
-      WHERE streamSection IS NULL
+      UPDATE students
+      SET "stream_section" = COALESCE("stream_section", "currentSection")
+      WHERE "stream_section" IS NULL
     `);
 
     // Set isBoarding to false if not set
     await queryRunner.query(`
-      UPDATE students 
-      SET isBoarding = false 
-      WHERE isBoarding IS NULL
+      UPDATE students
+      SET "isBoarding" = false
+      WHERE "isBoarding" IS NULL
     `);
 
     // Initialize empty histories if null
     await queryRunner.query(`
-      UPDATE students 
-      SET promotionHistory = '[]'::jsonb 
-      WHERE promotionHistory IS NULL
+      UPDATE students
+      SET "promotionHistory" = '[]'::jsonb
+      WHERE "promotionHistory" IS NULL
     `);
 
     await queryRunner.query(`
-      UPDATE students 
-      SET transferHistory = '[]'::jsonb 
-      WHERE transferHistory IS NULL
+      UPDATE students
+      SET "transferHistory" = '[]'::jsonb
+      WHERE "transferHistory" IS NULL
     `);
   }
 

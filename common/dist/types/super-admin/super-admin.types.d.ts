@@ -1,4 +1,4 @@
-import { TSchoolType, TSchoolStatus, IAlert } from '../shared';
+import { TSchoolType, TSchoolStatus, IAlert, PaginatedResponse } from '../shared';
 import { IActivity } from '../parent-portal';
 import { EUserRole, EUserStatus } from '../users';
 export declare enum TAuditActionType {
@@ -443,11 +443,7 @@ export interface ISuperAdminSchoolResponse extends Omit<ISuperAdminSchool, 'crea
         activeTeachers: number;
     };
 }
-export interface ISuperAdminSchoolListResponse {
-    schools: ISuperAdminSchoolResponse[];
-    total: number;
-    page: number;
-    limit: number;
+export interface ISuperAdminSchoolListResponse extends PaginatedResponse<ISuperAdminSchoolResponse> {
     totalPages: number;
     summary: {
         totalSchools: number;
@@ -462,11 +458,7 @@ export interface ISuperAdminUserResponse extends Omit<ISuperAdminUser, 'createdA
     createdAt: Date;
     updatedAt: Date;
 }
-export interface ISuperAdminUsersListResponse {
-    users: ISuperAdminUserResponse[];
-    total: number;
-    page: number;
-    limit: number;
+export interface ISuperAdminUsersListResponse extends PaginatedResponse<ISuperAdminUserResponse> {
     summary?: {
         activeUsers: number;
         totalStudents: number;
@@ -474,11 +466,7 @@ export interface ISuperAdminUsersListResponse {
         totalStaff: number;
     };
 }
-export interface IAuditLogsResponse {
-    logs: IAuditLog[];
-    total: number;
-    page: number;
-    limit: number;
+export interface IAuditLogsResponse extends PaginatedResponse<IAuditLog> {
     totalPages: number;
 }
 export interface IAuditMetricsResponse extends IAuditMetrics {
@@ -502,18 +490,91 @@ export interface ISchoolComparisonResponse extends ISchoolComparison {
 export interface IGeographicReportResponse extends IGeographicReport {
     generatedAt: string;
 }
-export interface IDelegatedAccountsResponse {
-    accounts: IDelegatedAccount[];
-    total: number;
-    page: number;
-    limit: number;
+export interface IDelegatedAccountsResponse extends PaginatedResponse<IDelegatedAccount> {
 }
-export interface IPermissionsResponse {
-    permissions: IPermission[];
-    total: number;
+export interface IPermissionsResponse extends PaginatedResponse<IPermission> {
 }
-export interface IRolesResponse {
-    roles: IRole[];
-    total: number;
+export interface IRolesResponse extends PaginatedResponse<IRole> {
+}
+export interface IAnalyticsDashboard {
+    summary: ISuperAdminAnalyticsSummary;
+    charts: {
+        userGrowth: IAnalyticsChartData;
+        revenue: IAnalyticsChartData;
+        schoolPerformance: IAnalyticsChartData;
+    };
+    metrics: IAnalyticsMetrics;
+    recentActivity: IActivity[];
+    alerts: IAlert[];
+}
+export interface IAnalyticsMetrics {
+    totalUsers: number;
+    activeUsers: number;
+    totalSchools: number;
+    activeSchools: number;
+    totalRevenue: number;
+    monthlyRevenue: number;
+    systemUptime: number;
+    averageResponseTime: number;
+    errorRate: number;
+    apiRequests: number;
+    storageUsage: number;
+}
+export interface IAnalyticsReport {
+    id: string;
+    name: string;
+    type: 'user-activity' | 'revenue' | 'school-performance' | 'system-health' | 'custom';
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+    format: 'pdf' | 'excel' | 'csv';
+    filters: IAnalyticsFilters;
+    createdAt: string;
+    completedAt?: string;
+    downloadUrl?: string;
+    fileSize?: number;
+    generatedBy: string;
+    schedule?: {
+        frequency: 'daily' | 'weekly' | 'monthly';
+        nextRun?: string;
+        recipients: string[];
+    };
+}
+export interface IAnalyticsFilters {
+    dateRange?: {
+        start: string;
+        end: string;
+    };
+    schoolIds?: string[];
+    userRoles?: string[];
+    regions?: string[];
+    status?: string[];
+    categories?: string[];
+}
+export interface IAnalyticsChartData {
+    labels: string[];
+    datasets: Array<{
+        label: string;
+        data: number[];
+        backgroundColor?: string | string[];
+        borderColor?: string | string[];
+        borderWidth?: number;
+    }>;
+}
+export interface ISuperAdminAnalyticsSummary {
+    period: string;
+    totalSchools: number;
+    totalUsers: number;
+    totalRevenue: number;
+    activeSubscriptions: number;
+    systemHealthScore: number;
+    growthMetrics: {
+        schools: number;
+        users: number;
+        revenue: number;
+    };
+    topPerformingSchools: Array<{
+        id: string;
+        name: string;
+        performanceScore: number;
+    }>;
 }
 export type { ISchoolFilters } from '../shared';

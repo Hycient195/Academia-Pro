@@ -21,12 +21,13 @@ export interface IDocument {
 }
 
 export interface IEmergencyContact {
-  name: string;
-  relationship: string;
+  firstName: string;
+  lastName: string;
   phone: string;
   email?: string;
-  priority: number;
-  address: string
+  relation: string;
+  occupation?: string;
+  customRelation?: string;
 }
 
 export interface IDepreciationEntry {

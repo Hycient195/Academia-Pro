@@ -6,12 +6,20 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class EmergencyContactDto {
   @ApiProperty({
-    description: 'Emergency contact name',
-    example: 'Jane Doe',
+    description: 'Emergency contact first name',
+    example: 'Jane',
   })
-  @IsNotEmpty({ message: 'Emergency contact name is required' })
-  @IsString({ message: 'Emergency contact name must be a string' })
-  name: string;
+  @IsNotEmpty({ message: 'Emergency contact first name is required' })
+  @IsString({ message: 'Emergency contact first name must be a string' })
+  firstName: string;
+
+  @ApiProperty({
+    description: 'Emergency contact last name',
+    example: 'Doe',
+  })
+  @IsNotEmpty({ message: 'Emergency contact last name is required' })
+  @IsString({ message: 'Emergency contact last name must be a string' })
+  lastName: string;
 
   @ApiProperty({
     description: 'Emergency contact phone number',
@@ -20,6 +28,14 @@ export class EmergencyContactDto {
   @IsNotEmpty({ message: 'Emergency contact phone is required' })
   @IsString({ message: 'Emergency contact phone must be a string' })
   phone: string;
+
+  @ApiPropertyOptional({
+    description: 'Emergency contact email address',
+    example: 'emergency@example.com',
+  })
+  @IsOptional()
+  @IsString({ message: 'Emergency contact email must be a string' })
+  email?: string;
 
   @ApiProperty({
     description: 'Emergency contact relation to student',
@@ -32,12 +48,20 @@ export class EmergencyContactDto {
 
 export class DoctorInfoDto {
   @ApiPropertyOptional({
-    description: 'Doctor name',
-    example: 'Dr. Smith',
+    description: 'Doctor first name',
+    example: 'John',
   })
   @IsOptional()
-  @IsString({ message: 'Doctor name must be a string' })
-  name?: string;
+  @IsString({ message: 'Doctor first name must be a string' })
+  firstName?: string;
+
+  @ApiPropertyOptional({
+    description: 'Doctor last name',
+    example: 'Smith',
+  })
+  @IsOptional()
+  @IsString({ message: 'Doctor last name must be a string' })
+  lastName?: string;
 
   @ApiPropertyOptional({
     description: 'Doctor phone number',
@@ -54,6 +78,14 @@ export class DoctorInfoDto {
   @IsOptional()
   @IsString({ message: 'Clinic name must be a string' })
   clinic?: string;
+
+  @ApiPropertyOptional({
+    description: 'Doctor occupation/specialty',
+    example: 'Pediatrician',
+  })
+  @IsOptional()
+  @IsString({ message: 'Doctor occupation must be a string' })
+  occupation?: string;
 }
 
 export class InsuranceInfoDto {

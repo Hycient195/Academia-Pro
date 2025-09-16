@@ -93,7 +93,9 @@ export class StudentHealthService {
       recordTitle: 'Health Record Update',
       recordDescription: `Health information update for ${student.firstName} ${student.lastName}`,
       recordDate: new Date(),
-      healthcareProviderName: createDto.doctorInfo?.name || 'School Health Service',
+      healthcareProviderName: createDto.doctorInfo?.firstName && createDto.doctorInfo?.lastName
+        ? `${createDto.doctorInfo.firstName} ${createDto.doctorInfo.lastName}`
+        : 'School Health Service',
       healthcareProviderType: 'school_health',
       status: MedicalStatus.ACTIVE,
       academicYear: new Date().getFullYear().toString(),

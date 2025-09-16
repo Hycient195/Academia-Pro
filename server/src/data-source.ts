@@ -1,0 +1,38 @@
+import { DataSource } from 'typeorm';
+
+export const AppDataSource = new DataSource({
+  type: 'postgres',
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '5432'),
+  username: process.env.DB_USERNAME || 'academia_user',
+  password: process.env.DB_PASSWORD || 'admin',
+  database: process.env.DB_NAME || 'academia_pro',
+  entities: [
+    'src/users/**/*.entity{.ts,.js}',
+    'src/schools/**/*.entity{.ts,.js}',
+    'src/students/**/*.entity{.ts,.js}',
+    'src/academic/**/*.entity{.ts,.js}',
+    'src/attendance/**/*.entity{.ts,.js}',
+    'src/examination/**/*.entity{.ts,.js}',
+    'src/fee/**/*.entity{.ts,.js}',
+    'src/library/**/*.entity{.ts,.js}',
+    'src/hostel/**/*.entity{.ts,.js}',
+    'src/transportation/**/*.entity{.ts,.js}',
+    'src/inventory/**/*.entity{.ts,.js}',
+    'src/communication/**/*.entity{.ts,.js}',
+    'src/iam/**/*.entity{.ts,.js}',
+    'src/common/**/*.entity{.ts,.js}',
+    'src/auth/**/*.entity{.ts,.js}',
+    'src/security/**/*.entity{.ts,.js}',
+  ],
+  migrations: ['src/migrations/*{.ts,.js}'],
+  synchronize: false,
+  logging: process.env.NODE_ENV === 'development',
+  ssl: process.env.NODE_ENV === 'production',
+  extra: {
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
+  },
+  dropSchema: false,
+});

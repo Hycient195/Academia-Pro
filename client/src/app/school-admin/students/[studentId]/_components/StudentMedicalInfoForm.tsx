@@ -1,7 +1,5 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Save, X, Loader2, Plus, Trash2 } from "lucide-react"
@@ -11,8 +9,12 @@ import type { IStudent, IUpdateStudentRequest } from "@academia-pro/types/school
 import {
   FormText,
   FormSelect,
-  FormMultiSelect,
+  FormPhoneInput,
+  FormNumberInput,
 } from "@/components/ui/form/form-components"
+
+// Import multi text input
+import FormMultiTextInput from "@/components/ui/form/FormMultiTextInput"
 
 // Constants for form options
 const bloodGroupOptions = [
@@ -26,45 +28,35 @@ const bloodGroupOptions = [
   { value: "O-", text: "O-" },
 ]
 
-const allergyOptions = [
-  { value: "peanuts", text: "Peanuts" },
-  { value: "shellfish", text: "Shellfish" },
-  { value: "dairy", text: "Dairy" },
-  { value: "eggs", text: "Eggs" },
-  { value: "soy", text: "Soy" },
-  { value: "wheat", text: "Wheat" },
-  { value: "tree_nuts", text: "Tree Nuts" },
-  { value: "fish", text: "Fish" },
-  { value: "sesame", text: "Sesame" },
-]
-
-const medicationOptions = [
-  { value: "aspirin", text: "Aspirin" },
-  { value: "ibuprofen", text: "Ibuprofen" },
-  { value: "acetaminophen", text: "Acetaminophen" },
-  { value: "antihistamine", text: "Antihistamine" },
-  { value: "cough_syrup", text: "Cough Syrup" },
-]
-
-const conditionOptions = [
-  { value: "asthma", text: "Asthma" },
-  { value: "diabetes", text: "Diabetes" },
-  { value: "adhd", text: "ADHD" },
-  { value: "epilepsy", text: "Epilepsy" },
-  { value: "anemia", text: "Anemia" },
-  { value: "hypertension", text: "Hypertension" },
+const relationOptions = [
+  { value: "father", text: "Father" },
+  { value: "mother", text: "Mother" },
+  { value: "brother", text: "Brother" },
+  { value: "sister", text: "Sister" },
+  { value: "uncle", text: "Uncle" },
+  { value: "aunt", text: "Aunt" },
+  { value: "grandfather", text: "Grandfather" },
+  { value: "grandmother", text: "Grandmother" },
+  { value: "guardian", text: "Guardian" },
+  { value: "other", text: "Other" },
 ]
 
 interface EmergencyContact {
-  name: string;
+  firstName: string;
+  lastName: string;
   phone: string;
-  relationship: string;
+  email: string;
+  relation: string;
+  occupation: string;
+  customRelation: string;
 }
 
 interface DoctorInfo {
-  name: string;
+  firstName: string;
+  lastName: string;
   phone: string;
   clinic: string;
+  occupation: string;
 }
 
 interface InsuranceInfo {
@@ -87,12 +79,17 @@ export function StudentMedicalInfoForm({ student, onSave, onCancel }: StudentMed
     medications: student.medicalInfo?.medications || [],
     conditions: student.medicalInfo?.conditions || [],
     emergencyContact: {
-      name: student.medicalInfo?.emergencyContact?.name || '',
+      firstName: student.medicalInfo?.emergencyContact?.firstName || '',
+      lastName: student.medicalInfo?.emergencyContact?.lastName || '',
       phone: student.medicalInfo?.emergencyContact?.phone || '',
-      relationship: student.medicalInfo?.emergencyContact?.relationship || '',
+      email: student.medicalInfo?.emergencyContact?.email || '',
+      relation: student.medicalInfo?.emergencyContact?.relation || '',
+      occupation: student.medicalInfo?.emergencyContact?.occupation || '',
+      customRelation: student.medicalInfo?.emergencyContact?.customRelation || '',
     },
     doctorInfo: {
-      name: student.medicalInfo?.doctorInfo?.name || '',
+      firstName: student.medicalInfo?.doctorInfo?.firstName || '',
+      lastName: student.medicalInfo?.doctorInfo?.lastName || '',
       phone: student.medicalInfo?.doctorInfo?.phone || '',
       clinic: student.medicalInfo?.doctorInfo?.clinic || '',
     },
@@ -103,12 +100,6 @@ export function StudentMedicalInfoForm({ student, onSave, onCancel }: StudentMed
     },
   })
 
-  const handleMultiSelectChange = (field: 'allergies' | 'medications' | 'conditions', values: string[]) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: values
-    }))
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -122,11 +113,20 @@ export function StudentMedicalInfoForm({ student, onSave, onCancel }: StudentMed
           medications: formData.medications.length > 0 ? formData.medications : undefined,
           conditions: formData.conditions.length > 0 ? formData.conditions : undefined,
           emergencyContact: {
-            name: formData.emergencyContact.name,
+            firstName: formData.emergencyContact.firstName,
+            lastName: formData.emergencyContact.lastName,
             phone: formData.emergencyContact.phone,
-            relationship: formData.emergencyContact.relationship,
+            email: formData.emergencyContact.email,
+            relation: formData.emergencyContact.relation,
+            occupation: formData.emergencyContact.occupation,
+            customRelation: formData.emergencyContact.customRelation,
           },
-          doctorInfo: formData.doctorInfo.name ? formData.doctorInfo : undefined,
+          doctorInfo: (formData.doctorInfo.firstName || formData.doctorInfo.lastName) ? {
+            firstName: formData.doctorInfo.firstName,
+            lastName: formData.doctorInfo.lastName,
+            phone: formData.doctorInfo.phone,
+            clinic: formData.doctorInfo.clinic,
+          } : undefined,
           insuranceInfo: formData.insuranceInfo.provider ? formData.insuranceInfo : undefined,
         },
       }
@@ -203,7 +203,7 @@ export function StudentMedicalInfoForm({ student, onSave, onCancel }: StudentMed
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Medical Info */}
           <div>
-            <Label className="text-sm font-medium mb-3 block">Basic Information</Label>
+            <h3 className="text-sm font-medium mb-3">Basic Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormSelect
                 labelText="Blood Group"
@@ -216,132 +216,159 @@ export function StudentMedicalInfoForm({ student, onSave, onCancel }: StudentMed
           </div>
 
           {/* Allergies */}
-          <FormMultiSelect
+          <FormMultiTextInput
             labelText="Allergies"
-            value={formData.allergies}
-            options={allergyOptions}
-            onChange={(arg) => handleMultiSelectChange('allergies', (arg as { target: { value: string[] } }).target.value)}
-            placeholder="Select allergies"
+            values={formData.allergies}
+            setFormData={setFormData as React.Dispatch<React.SetStateAction<Record<string, unknown>>>}
+            propertyKey="allergies"
+            placeholder="Add allergy"
           />
 
           {/* Medications */}
-          <FormMultiSelect
+          <FormMultiTextInput
             labelText="Medications"
-            value={formData.medications}
-            options={medicationOptions}
-            onChange={(arg) => handleMultiSelectChange('medications', (arg as { target: { value: string[] } }).target.value)}
-            placeholder="Select medications"
+            values={formData.medications}
+            setFormData={setFormData as React.Dispatch<React.SetStateAction<Record<string, unknown>>>}
+            propertyKey="medications"
+            placeholder="Add medication"
           />
 
           {/* Medical Conditions */}
-          <FormMultiSelect
+          <FormMultiTextInput
             labelText="Medical Conditions"
-            value={formData.conditions}
-            options={conditionOptions}
-            onChange={(arg) => handleMultiSelectChange('conditions', (arg as { target: { value: string[] } }).target.value)}
-            placeholder="Select medical conditions"
+            values={formData.conditions}
+            setFormData={setFormData as React.Dispatch<React.SetStateAction<Record<string, unknown>>>}
+            propertyKey="conditions"
+            placeholder="Add medical condition"
           />
 
           {/* Emergency Contact */}
           <div>
-            <Label className="text-sm font-medium mb-3 block">Emergency Contact</Label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="emergencyName">Name</Label>
-                <Input
-                  id="emergencyName"
-                  value={formData.emergencyContact.name}
-                  onChange={(e) => handleNestedInputChange('emergencyContact', 'name', e.target.value)}
-                  placeholder="Contact name"
+            <h3 className="text-sm font-medium mb-3">Emergency Contact</h3>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <FormText
+                labelText="First Name"
+                id="emergencyFirstName"
+                name="emergencyFirstName"
+                value={formData.emergencyContact.firstName}
+                onChange={(e) => handleNestedInputChange('emergencyContact', 'firstName', String(e.target.value))}
+                placeholder="First name"
+              />
+              <FormText
+                labelText="Last Name"
+                id="emergencyLastName"
+                name="emergencyLastName"
+                value={formData.emergencyContact.lastName}
+                onChange={(e) => handleNestedInputChange('emergencyContact', 'lastName', String(e.target.value))}
+                placeholder="Last name"
+              />
+              <FormPhoneInput
+                labelText="Phone"
+                id="emergencyPhone"
+                name="emergencyPhone"
+                value={formData.emergencyContact.phone}
+                onChange={(e) => handleNestedInputChange('emergencyContact', 'phone', String(e.target.value))}
+                placeholder="Contact phone"
+              />
+              <div className="space-y-2">
+                <FormSelect
+                  labelText="Relationship"
+                  id="emergencyRelation"
+                  name="emergencyRelation"
+                  options={relationOptions}
+                  value={formData.emergencyContact.relation}
+                  onChange={(e) => handleNestedInputChange('emergencyContact', 'relation', String(e.target.value))}
+                  placeholder="Select relationship"
                 />
+                {formData.emergencyContact.relation === 'other' && (
+                  <FormText
+                    labelText="Specify Relationship"
+                    id="emergencyRelationOther"
+                    name="emergencyRelationOther"
+                    value={formData.emergencyContact.customRelation}
+                    onChange={(e) => handleNestedInputChange('emergencyContact', 'customRelation', String(e.target.value))}
+                    placeholder="Specify the relationship"
+                  />
+                )}
               </div>
-              <div>
-                <Label htmlFor="emergencyPhone">Phone</Label>
-                <Input
-                  id="emergencyPhone"
-                  value={formData.emergencyContact.phone}
-                  onChange={(e) => handleNestedInputChange('emergencyContact', 'phone', e.target.value)}
-                  placeholder="Contact phone"
-                />
-              </div>
-              <div>
-                <Label htmlFor="emergencyRelationship">Relationship</Label>
-                <Input
-                  id="emergencyRelationship"
-                  value={formData.emergencyContact.relationship}
-                  onChange={(e) => handleNestedInputChange('emergencyContact', 'relationship', e.target.value)}
-                  placeholder="e.g., Parent, Guardian"
-                />
-              </div>
+              <FormText
+                labelText="Occupation"
+                id="emergencyOccupation"
+                name="emergencyOccupation"
+                value={formData.emergencyContact.occupation}
+                onChange={(e) => handleNestedInputChange('emergencyContact', 'occupation', String(e.target.value))}
+                placeholder="Occupation"
+              />
             </div>
           </div>
 
           {/* Doctor Information */}
           <div>
-            <Label className="text-sm font-medium mb-3 block">Doctor Information</Label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="doctorName">Doctor Name</Label>
-                <Input
-                  id="doctorName"
-                  value={formData.doctorInfo.name}
-                  onChange={(e) => handleNestedInputChange('doctorInfo', 'name', e.target.value)}
-                  placeholder="Doctor's name"
-                />
-              </div>
-              <div>
-                <Label htmlFor="doctorPhone">Phone</Label>
-                <Input
-                  id="doctorPhone"
-                  value={formData.doctorInfo.phone}
-                  onChange={(e) => handleNestedInputChange('doctorInfo', 'phone', e.target.value)}
-                  placeholder="Doctor's phone"
-                />
-              </div>
-              <div>
-                <Label htmlFor="doctorClinic">Clinic</Label>
-                <Input
-                  id="doctorClinic"
-                  value={formData.doctorInfo.clinic}
-                  onChange={(e) => handleNestedInputChange('doctorInfo', 'clinic', e.target.value)}
-                  placeholder="Clinic name"
-                />
-              </div>
+            <h3 className="text-sm font-medium mb-3">Doctor Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <FormText
+                labelText="First Name"
+                id="doctorFirstName"
+                name="doctorFirstName"
+                value={formData.doctorInfo.firstName}
+                onChange={(e) => handleNestedInputChange('doctorInfo', 'firstName', String(e.target.value))}
+                placeholder="Doctor's first name"
+              />
+              <FormText
+                labelText="Last Name"
+                id="doctorLastName"
+                name="doctorLastName"
+                value={formData.doctorInfo.lastName}
+                onChange={(e) => handleNestedInputChange('doctorInfo', 'lastName', String(e.target.value))}
+                placeholder="Doctor's last name"
+              />
+              <FormPhoneInput
+                labelText="Phone"
+                id="doctorPhone"
+                name="doctorPhone"
+                value={formData.doctorInfo.phone}
+                onChange={(e) => handleNestedInputChange('doctorInfo', 'phone', String(e.target.value))}
+                placeholder="Doctor's phone"
+              />
+              <FormText
+                labelText="Clinic"
+                id="doctorClinic"
+                name="doctorClinic"
+                value={formData.doctorInfo.clinic}
+                onChange={(e) => handleNestedInputChange('doctorInfo', 'clinic', String(e.target.value))}
+                placeholder="Clinic name"
+              />
             </div>
           </div>
 
           {/* Insurance Information */}
           <div>
-            <Label className="text-sm font-medium mb-3 block">Insurance Information</Label>
+            <h3 className="text-sm font-medium mb-3">Insurance Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="insuranceProvider">Provider</Label>
-                <Input
-                  id="insuranceProvider"
-                  value={formData.insuranceInfo.provider}
-                  onChange={(e) => handleNestedInputChange('insuranceInfo', 'provider', e.target.value)}
-                  placeholder="Insurance provider"
-                />
-              </div>
-              <div>
-                <Label htmlFor="policyNumber">Policy Number</Label>
-                <Input
-                  id="policyNumber"
-                  value={formData.insuranceInfo.policyNumber}
-                  onChange={(e) => handleNestedInputChange('insuranceInfo', 'policyNumber', e.target.value)}
-                  placeholder="Policy number"
-                />
-              </div>
-              <div>
-                <Label htmlFor="coverageAmount">Coverage Amount</Label>
-                <Input
-                  id="coverageAmount"
-                  type="number"
-                  value={formData.insuranceInfo.coverageAmount}
-                  onChange={(e) => handleNestedInputChange('insuranceInfo', 'coverageAmount', parseFloat(e.target.value) || 0)}
-                  placeholder="Coverage amount"
-                />
-              </div>
+              <FormText
+                labelText="Provider"
+                id="insuranceProvider"
+                name="insuranceProvider"
+                value={formData.insuranceInfo.provider}
+                onChange={(e) => handleNestedInputChange('insuranceInfo', 'provider', String(e.target.value))}
+                placeholder="Insurance provider"
+              />
+              <FormText
+                labelText="Policy Number"
+                id="policyNumber"
+                name="policyNumber"
+                value={formData.insuranceInfo.policyNumber}
+                onChange={(e) => handleNestedInputChange('insuranceInfo', 'policyNumber', String(e.target.value))}
+                placeholder="Policy number"
+              />
+              <FormNumberInput
+                labelText="Coverage Amount"
+                id="coverageAmount"
+                name="coverageAmount"
+                value={formData.insuranceInfo.coverageAmount}
+                onChange={(e) => handleNestedInputChange('insuranceInfo', 'coverageAmount', Number(e.target.value))}
+                placeholder="Coverage amount"
+              />
             </div>
           </div>
         </form>

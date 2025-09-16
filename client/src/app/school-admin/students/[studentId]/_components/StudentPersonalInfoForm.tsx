@@ -1,11 +1,13 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Save, X, Loader2 } from "lucide-react"
 import type { IStudent, IUpdateStudentRequest } from "@academia-pro/types/school-admin"
+
+// Import form components
+import {
+  FormText,
+} from "@/components/ui/form/form-components"
 
 interface StudentPersonalInfoFormProps {
    student: IStudent
@@ -75,33 +77,30 @@ export function StudentPersonalInfoForm({ student, onSave, onCancel }: StudentPe
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="firstName">First Name</Label>
-              <Input
-                id="firstName"
-                value={formData.firstName}
-                onChange={(e) => handleInputChange('firstName', e.target.value)}
-                placeholder="Enter first name"
-              />
-            </div>
-            <div>
-              <Label htmlFor="middleName">Middle Name</Label>
-              <Input
-                id="middleName"
-                value={formData.middleName}
-                onChange={(e) => handleInputChange('middleName', e.target.value)}
-                placeholder="Enter middle name"
-              />
-            </div>
-            <div>
-              <Label htmlFor="lastName">Last Name</Label>
-              <Input
-                id="lastName"
-                value={formData.lastName}
-                onChange={(e) => handleInputChange('lastName', e.target.value)}
-                placeholder="Enter last name"
-              />
-            </div>
+            <FormText
+              labelText="First Name"
+              id="firstName"
+              name="firstName"
+              value={formData.firstName}
+              onChange={(e) => handleInputChange('firstName', String(e.target.value))}
+              placeholder="Enter first name"
+            />
+            <FormText
+              labelText="Middle Name"
+              id="middleName"
+              name="middleName"
+              value={formData.middleName}
+              onChange={(e) => handleInputChange('middleName', String(e.target.value))}
+              placeholder="Enter middle name"
+            />
+            <FormText
+              labelText="Last Name"
+              id="lastName"
+              name="lastName"
+              value={formData.lastName}
+              onChange={(e) => handleInputChange('lastName', String(e.target.value))}
+              placeholder="Enter last name"
+            />
           </div>
 
 

@@ -40,7 +40,7 @@ export interface IStaff {
     createdAt: string;
     updatedAt: string;
 }
-export interface ICreateStaffDto {
+export interface ICreateStaffRequest {
     employeeId: string;
     firstName: string;
     lastName: string;
@@ -71,7 +71,7 @@ export interface ICreateStaffDto {
         phone: string;
     };
 }
-export interface IUpdateStaffDto {
+export interface IUpdateStaffRequest {
     firstName?: string;
     lastName?: string;
     middleName?: string;
@@ -203,12 +203,12 @@ export interface IStaffAttendance {
         hoursWorked?: number;
     }>;
 }
-export interface IBulkCreateStaffDto extends Array<ICreateStaffDto> {
+export interface IBulkCreateStaffRequest extends Array<ICreateStaffRequest> {
 }
-export interface IBulkUpdateStaffDto {
+export interface IBulkUpdateStaffRequest {
     updates: Array<{
         id: string;
-        data: IUpdateStaffDto;
+        data: IUpdateStaffRequest;
     }>;
 }
 export interface IBulkStaffOperationResult {

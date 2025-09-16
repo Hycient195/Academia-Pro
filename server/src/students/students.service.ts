@@ -4,7 +4,7 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Student, StudentStatus, EnrollmentType, BloodGroup, TGradeCode } from './student.entity';
+import { Student, StudentStatus, EnrollmentType, BloodGroup, TGradeCode, TStudentStage } from './student.entity';
 import {
   CreateStudentDto,
   UpdateStudentDto,
@@ -76,7 +76,7 @@ export class StudentsService {
        ...(createStudentDto.enrollmentType && { enrollmentType: createStudentDto.enrollmentType as unknown as EnrollmentType }),
        schoolId: createStudentDto.schoolId,
        userId: createStudentDto.userId,
-       parents: createStudentDto.parents,
+       parentInfo: createStudentDto.parentInfo,
        medicalInfo: createStudentDto.medicalInfo,
        transportation: createStudentDto.transportation,
        hostel: createStudentDto.hostel,
@@ -126,11 +126,25 @@ export class StudentsService {
     statuses?: string[];
     enrollmentType?: EnrollmentType;
     search?: string;
+    firstName?: string;
+    lastName?: string;
+    middleName?: string;
+    gender?: 'male' | 'female' | 'other';
+    admissionNumber?: string;
+    dateOfBirthFrom?: string;
+    dateOfBirthTo?: string;
+    admissionDateFrom?: string;
+    admissionDateTo?: string;
+    isBoarding?: boolean;
+    email?: string;
+    phone?: string;
   }): Promise<StudentsListResponseDto> {
-    const { page = 1, limit = 10, schoolId, stages, gradeCodes, streamSections, statuses, enrollmentType, search } = options || {};
+    const { page = 1, limit = 10, schoolId, stages, gradeCodes, streamSections, statuses, enrollmentType, search, firstName, lastName, middleName, gender, admissionNumber, dateOfBirthFrom, dateOfBirthTo, admissionDateFrom, admissionDateTo, isBoarding, email, phone } = options || {};
 
     console.log('Backend Debug - Received filter options:', {
-      stages, gradeCodes, streamSections, statuses, search, schoolId, page, limit
+      stages, gradeCodes, streamSections, statuses, search, schoolId, page, limit,
+      firstName, lastName, middleName, gender, admissionNumber, dateOfBirthFrom, dateOfBirthTo,
+      admissionDateFrom, admissionDateTo, isBoarding, email, phone
     });
 
     // Build where conditions for filtering
@@ -181,6 +195,56 @@ export class StudentsService {
         '(student.firstName ILIKE :search OR student.lastName ILIKE :search OR student.admissionNumber ILIKE :search)',
         { search: `%${search}%` }
       );
+    }
+
+    // Apply name filters
+    if (firstName) {
+      queryBuilder = queryBuilder.andWhere('student.firstName ILIKE :firstName', { firstName: `%${firstName}%` });
+    }
+    if (lastName) {
+      queryBuilder = queryBuilder.andWhere('student.lastName ILIKE :lastName', { lastName: `%${lastName}%` });
+    }
+    if (middleName) {
+      queryBuilder = queryBuilder.andWhere('student.middleName ILIKE :middleName', { middleName: `%${middleName}%` });
+    }
+
+    // Apply gender filter
+    if (gender) {
+      queryBuilder = queryBuilder.andWhere('student.gender = :gender', { gender });
+    }
+
+    // Apply admission number filter
+    if (admissionNumber) {
+      queryBuilder = queryBuilder.andWhere('student.admissionNumber ILIKE :admissionNumber', { admissionNumber: `%${admissionNumber}%` });
+    }
+
+    // Apply date of birth range filter
+    if (dateOfBirthFrom) {
+      queryBuilder = queryBuilder.andWhere('student.dateOfBirth >= :dateOfBirthFrom', { dateOfBirthFrom: new Date(dateOfBirthFrom) });
+    }
+    if (dateOfBirthTo) {
+      queryBuilder = queryBuilder.andWhere('student.dateOfBirth <= :dateOfBirthTo', { dateOfBirthTo: new Date(dateOfBirthTo) });
+    }
+
+    // Apply admission date range filter
+    if (admissionDateFrom) {
+      queryBuilder = queryBuilder.andWhere('student.admissionDate >= :admissionDateFrom', { admissionDateFrom: new Date(admissionDateFrom) });
+    }
+    if (admissionDateTo) {
+      queryBuilder = queryBuilder.andWhere('student.admissionDate <= :admissionDateTo', { admissionDateTo: new Date(admissionDateTo) });
+    }
+
+    // Apply boarding filter
+    if (isBoarding !== undefined) {
+      queryBuilder = queryBuilder.andWhere('student.isBoarding = :isBoarding', { isBoarding });
+    }
+
+    // Apply contact filters
+    if (email) {
+      queryBuilder = queryBuilder.andWhere('student.email ILIKE :email', { email: `%${email}%` });
+    }
+    if (phone) {
+      queryBuilder = queryBuilder.andWhere('student.phone ILIKE :phone', { phone: `%${phone}%` });
     }
 
     // Get total count
@@ -273,6 +337,17 @@ export class StudentsService {
        status: student.status,
      };
 
+     // Handle parentInfo mapping if present
+     if ((updateData as any).parentInfo) {
+       const newParentInfo = (updateData as any).parentInfo;
+
+       // Merge with existing parentInfo to preserve existing values for undefined fields
+       (updateData as any).parentInfo = {
+         ...student.parentInfo,
+         ...newParentInfo,
+       };
+     }
+
      // Update student
      Object.assign(student, updateData);
 
@@ -288,7 +363,7 @@ export class StudentsService {
        try {
          await this.studentAuditService.logStudentUpdated(
            id,
-           updateData.userId || 'system',
+           updateData.userId || null, // Use null instead of 'system' for UUID field
            'System', // TODO: Get actual user name
            'admin', // TODO: Get actual user role
            oldValues,
@@ -428,8 +503,8 @@ export class StudentsService {
     // Add to promotionHistory if it's a promotion
     if (gradeCode && gradeCode > student.gradeCode) { // Simple comparison, adjust logic as needed
       student.promotionHistory.push({
-        fromGrade: student.gradeCode,
-        toGrade: gradeCode,
+        fromGrade: student.gradeCode as any,
+        toGrade: gradeCode as any,
         academicYear: new Date().getFullYear().toString(),
         performedBy: 'system',
         timestamp: new Date(),
@@ -474,7 +549,7 @@ export class StudentsService {
       }
 
       student.promotionHistory.push({
-        fromGrade: student.gradeCode,
+        fromGrade: student.gradeCode as any,
         toGrade: targetGradeCode,
         academicYear,
         performedBy: 'system',
@@ -484,6 +559,12 @@ export class StudentsService {
 
       student.gradeCode = targetGradeCode as any;
       student.streamSection = streamSection || student.streamSection;
+
+      // Update stage if promotion crosses stage boundaries
+      const newStage = this.getStageFromGradeCode(targetGradeCode);
+      if (newStage && newStage !== student.stage) {
+        student.stage = newStage;
+      }
 
       const saved = await this.studentsRepository.save(student);
       results.push(saved.id);
@@ -964,6 +1045,22 @@ export class StudentsService {
   }
 
   // Private helper methods
+  private getStageFromGradeCode(gradeCode: string): string | null {
+    const gradeCodeUpper = gradeCode.toUpperCase();
+
+    if (gradeCodeUpper.startsWith('CRECHE') || gradeCodeUpper.startsWith('N') || gradeCodeUpper.startsWith('KG')) {
+      return 'EY';
+    } else if (gradeCodeUpper.startsWith('PRY')) {
+      return 'PRY';
+    } else if (gradeCodeUpper.startsWith('JSS')) {
+      return 'JSS';
+    } else if (gradeCodeUpper.startsWith('SSS')) {
+      return 'SSS';
+    }
+
+    return null;
+  }
+
   private async findStudentEntity(id: string): Promise<Student> {
     const student = await this.studentsRepository.findOne({
       where: { id },

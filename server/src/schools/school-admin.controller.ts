@@ -395,10 +395,10 @@ export class SchoolAdminController {
 
     const result = await this.studentsService.findAll({
       schoolId,
-      stage,
-      gradeCode,
-      streamSection,
-      status: status as any,
+      stages: stage ? [stage] : undefined,
+      gradeCodes: gradeCode ? [gradeCode] : undefined,
+      streamSections: streamSection ? [streamSection] : undefined,
+      statuses: status ? [status] : undefined,
       search,
       page: Number(page),
       limit: Number(limit),

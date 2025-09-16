@@ -87,6 +87,7 @@ export interface IGuardianInfo {
   phone: string;
   email?: string;
   relation: string;
+  customRelation?: string;
   address?: string;
 }
 
@@ -101,9 +102,10 @@ export interface IMedicalInfo {
 }
 
 export interface IDoctorInfo {
-  name: string;
-  phone: string;
-  clinic: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  clinic?: string;
 }
 
 export enum TTransportationStatus {

@@ -102,13 +102,13 @@ export class Student {
   currentSection: string; // e.g., 'A', 'B', 'C' - legacy
 
   @Column({
-    type: 'enum',
-    enum: TStudentStage,
+    type: 'varchar',
+    length: 10,
   })
   stage: TStudentStage;
 
   @Column({ type: 'varchar', length: 10 })
-  gradeCode: TGradeCode;
+  gradeCode: string;
 
   @Column({ type: 'varchar', length: 20 })
   streamSection: string; // e.g., 'Science Stream A'
@@ -169,28 +169,24 @@ export class Student {
 
   // Family Information
   @Column({ type: 'jsonb', nullable: true })
-  parents: {
-    father: {
-      name: string;
-      phone: string;
-      email?: string;
-      occupation?: string;
-      address?: string;
-    };
-    mother: {
-      name: string;
-      phone: string;
-      email?: string;
-      occupation?: string;
-      address?: string;
-    };
-    guardian?: {
-      name: string;
-      phone: string;
-      email?: string;
-      relation: string;
-      address?: string;
-    };
+  parentInfo: {
+    fatherFirstName: string;
+    fatherLastName: string;
+    fatherPhone?: string;
+    fatherEmail?: string;
+    fatherOccupation?: string;
+    motherFirstName: string;
+    motherLastName: string;
+    motherPhone?: string;
+    motherEmail?: string;
+    motherOccupation?: string;
+    guardianFirstName?: string;
+    guardianLastName?: string;
+    guardianPhone?: string;
+    guardianEmail?: string;
+    guardianOccupation?: string;
+    guardianRelation?: string;
+    guardianCustomRelation?: string;
   };
 
   // Medical Information
@@ -200,12 +196,16 @@ export class Student {
     medications?: string[];
     conditions?: string[];
     emergencyContact?: {
-      name: string;
+      firstName: string;
+      lastName: string;
       phone: string;
+      email?: string;
       relation: string;
+      occupation?: string;
     };
     doctorInfo?: {
-      name?: string;
+      firstName?: string;
+      lastName?: string;
       phone?: string;
       clinic?: string;
     };

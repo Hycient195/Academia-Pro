@@ -2,11 +2,11 @@ import { baseApi } from '../userBaseApi';
 
 // Import consolidated types from common package
 import type {
-  IStudent,
   ICreateStudentRequest,
-  IUpdateStudentRequest,
 } from '@academia-pro/types/student';
 import type {
+  IStudent,
+  IUpdateStudentRequest,
   ITransferStudentRequest,
   IAssignClassRequest,
   IPromotionRequestDto,
@@ -141,7 +141,7 @@ export const studentApi = baseApi.injectEndpoints({
     }),
 
     // Update student
-    updateStudent: builder.mutation<IStudent, { id: string; data: IUpdateStudentRequest; reason?: string }>({
+    updateStudent: builder.mutation<IStudent, { id: string; data: Partial<IUpdateStudentRequest>; reason?: string }>({
       query: ({ id, data, reason }) => ({
         url: `students/${id}`,
         method: 'PATCH',
@@ -272,7 +272,16 @@ export const studentApi = baseApi.injectEndpoints({
     }),
 
     // Batch operations
-    executePromotion: builder.mutation<{ success: boolean; message: string; processed: number }, IPromotionRequestDto>({
+    executePromotion: builder.mutation<{ promotedStudents: number; studentIds: string[] }, {
+      scope: 'all' | 'grade' | 'section' | 'students';
+      gradeCode?: string;
+      streamSection?: string;
+      studentIds?: string[];
+      targetGradeCode: string;
+      academicYear: string;
+      includeRepeaters?: boolean;
+      reason?: string;
+    }>({
       query: (data) => ({
         url: 'students/promotion',
         method: 'POST',

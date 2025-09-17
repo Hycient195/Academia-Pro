@@ -5,6 +5,7 @@ import { Injectable, NotFoundException, BadRequestException, ConflictException, 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, MoreThanOrEqual, LessThanOrEqual, In, Like } from 'typeorm';
 import { Staff, StaffType, StaffStatus, EmploymentType, Gender, MaritalStatus, BloodGroup, QualificationLevel } from '../entities/staff.entity';
+import { Department } from '../entities/department.entity';
 import { CreateStaffDto, UpdateStaffDto } from '../dtos';
 import { AuditService } from '../../security/services/audit.service';
 import { AuditAction, AuditSeverity } from '../../security/types/audit.types';
@@ -16,6 +17,8 @@ export class StaffService {
   constructor(
     @InjectRepository(Staff)
     private readonly staffRepository: Repository<Staff>,
+    @InjectRepository(Department)
+    private readonly departmentRepository: Repository<Department>,
     private readonly auditService: AuditService,
   ) {}
 
@@ -473,7 +476,9 @@ export class StaffService {
 
     // Group by department
     const byDepartment = allStaff.reduce((acc, staff) => {
-      acc[staff.department] = (acc[staff.department] || 0) + 1;
+      // Handle departments array - use first department or 'Unassigned'
+      const deptName = staff.departments?.[0]?.name || 'Unassigned';
+      acc[deptName] = (acc[deptName] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
@@ -635,6 +640,205 @@ export class StaffService {
     }
 
     this.logger.log(`Bulk updated salaries for ${updatedStaff.length} staff members`);
+    return updatedStaff;
+  }
+
+  /**
+   * Assign staff member to department
+   */
+  async assignStaffToDepartment(staffId: string, departmentId: string, assignedBy: string): Promise<Staff> {
+    const staff = await this.getStaffById(staffId);
+    const department = await this.departmentRepository.findOne({
+      where: { id: departmentId },
+    });
+
+    if (!department) {
+      throw new NotFoundException(`Department with ID ${departmentId} not found`);
+    }
+
+    // Check if staff is already assigned to this department
+    const isAlreadyAssigned = staff.departments.some(dept => dept.id === departmentId);
+    if (isAlreadyAssigned) {
+      throw new ConflictException('Staff member is already assigned to this department');
+    }
+
+    // Add department to staff
+    staff.departments.push(department);
+    staff.updatedBy = assignedBy;
+
+    const updatedStaff = await this.staffRepository.save(staff);
+
+    this.logger.log(`Assigned staff member ${staffId} to department ${departmentId}`);
+
+    // Audit the assignment
+    await this.auditService.logActivity({
+      action: AuditAction.DATA_UPDATED,
+      resource: 'staff_department',
+      resourceId: staffId,
+      severity: AuditSeverity.MEDIUM,
+      userId: assignedBy,
+      schoolId: staff.schoolId,
+      details: {
+        departmentId,
+        departmentName: department.name,
+        action: 'assigned',
+        timestamp: new Date(),
+        module: 'staff',
+        eventType: 'staff_department_assignment',
+      },
+    });
+
+    return updatedStaff;
+  }
+
+  /**
+   * Remove staff member from department
+   */
+  async removeStaffFromDepartment(staffId: string, departmentId: string, removedBy: string): Promise<Staff> {
+    const staff = await this.getStaffById(staffId);
+    const department = await this.departmentRepository.findOne({
+      where: { id: departmentId },
+    });
+
+    if (!department) {
+      throw new NotFoundException(`Department with ID ${departmentId} not found`);
+    }
+
+    // Check if staff is assigned to this department
+    const departmentIndex = staff.departments.findIndex(dept => dept.id === departmentId);
+    if (departmentIndex === -1) {
+      throw new NotFoundException('Staff member is not assigned to this department');
+    }
+
+    // Remove department from staff
+    staff.departments.splice(departmentIndex, 1);
+    staff.updatedBy = removedBy;
+
+    const updatedStaff = await this.staffRepository.save(staff);
+
+    this.logger.log(`Removed staff member ${staffId} from department ${departmentId}`);
+
+    // Audit the removal
+    await this.auditService.logActivity({
+      action: AuditAction.DATA_UPDATED,
+      resource: 'staff_department',
+      resourceId: staffId,
+      severity: AuditSeverity.MEDIUM,
+      userId: removedBy,
+      schoolId: staff.schoolId,
+      details: {
+        departmentId,
+        departmentName: department.name,
+        action: 'removed',
+        timestamp: new Date(),
+        module: 'staff',
+        eventType: 'staff_department_removal',
+      },
+    });
+
+    return updatedStaff;
+  }
+
+  /**
+   * Get staff member with departments
+   */
+  async getStaffWithDepartments(staffId: string): Promise<Staff> {
+    const staff = await this.staffRepository.findOne({
+      where: { id: staffId },
+      relations: ['departments'],
+    });
+
+    if (!staff) {
+      throw new NotFoundException(`Staff member with ID ${staffId} not found`);
+    }
+
+    return staff;
+  }
+
+  /**
+   * Get staff members by department ID
+   */
+  async getStaffByDepartmentId(departmentId: string, options?: {
+    status?: StaffStatus;
+    limit?: number;
+    offset?: number;
+  }): Promise<Staff[]> {
+    const department = await this.departmentRepository.findOne({
+      where: { id: departmentId },
+      relations: ['staff'],
+    });
+
+    if (!department) {
+      throw new NotFoundException(`Department with ID ${departmentId} not found`);
+    }
+
+    let staff = department.staff;
+
+    // Filter by status if provided
+    if (options?.status) {
+      staff = staff.filter(s => s.status === options.status);
+    }
+
+    // Apply pagination if provided
+    if (options?.limit) {
+      const offset = options?.offset || 0;
+      staff = staff.slice(offset, offset + options.limit);
+    }
+
+    return staff;
+  }
+
+  /**
+   * Get staff departments
+   */
+  async getStaffDepartments(staffId: string): Promise<Department[]> {
+    const staff = await this.getStaffWithDepartments(staffId);
+    return staff.departments;
+  }
+
+  /**
+   * Update staff departments (replace all)
+   */
+  async updateStaffDepartments(staffId: string, departmentIds: string[], updatedBy: string): Promise<Staff> {
+    const staff = await this.getStaffById(staffId);
+
+    // Validate all department IDs exist
+    const departments = await this.departmentRepository.findBy({
+      id: In(departmentIds),
+    });
+
+    if (departments.length !== departmentIds.length) {
+      const foundIds = departments.map(d => d.id);
+      const missingIds = departmentIds.filter(id => !foundIds.includes(id));
+      throw new NotFoundException(`Departments not found: ${missingIds.join(', ')}`);
+    }
+
+    // Update departments
+    staff.departments = departments;
+    staff.updatedBy = updatedBy;
+
+    const updatedStaff = await this.staffRepository.save(staff);
+
+    this.logger.log(`Updated departments for staff member ${staffId}: ${departmentIds.join(', ')}`);
+
+    // Audit the update
+    await this.auditService.logActivity({
+      action: AuditAction.DATA_UPDATED,
+      resource: 'staff_departments',
+      resourceId: staffId,
+      severity: AuditSeverity.MEDIUM,
+      userId: updatedBy,
+      schoolId: staff.schoolId,
+      details: {
+        departmentIds,
+        departmentNames: departments.map(d => d.name),
+        action: 'updated_all',
+        timestamp: new Date(),
+        module: 'staff',
+        eventType: 'staff_departments_update',
+      },
+    });
+
     return updatedStaff;
   }
 

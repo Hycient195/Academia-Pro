@@ -2,7 +2,7 @@
 // Academia Pro - Staff & HR Management Types
 // Shared type definitions for staff and HR management module
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TLeaveStatus = exports.TLeaveType = exports.TQualificationLevel = exports.TPosition = exports.TDepartment = exports.TEmploymentStatus = exports.TEmploymentType = exports.TBloodGroup = void 0;
+exports.EDepartmentType = exports.TLeaveStatus = exports.TLeaveType = exports.TQualificationLevel = exports.TPosition = exports.TDepartment = exports.TEmploymentStatus = exports.TEmploymentType = exports.TBloodGroup = void 0;
 const shared_1 = require("../shared");
 Object.defineProperty(exports, "TBloodGroup", { enumerable: true, get: function () { return shared_1.TBloodGroup; } });
 // Enums
@@ -80,4 +80,24 @@ var TLeaveStatus;
     TLeaveStatus["CANCELLED"] = "cancelled";
     TLeaveStatus["COMPLETED"] = "completed";
 })(TLeaveStatus || (exports.TLeaveStatus = TLeaveStatus = {}));
+// Department Types
+var EDepartmentType;
+(function (EDepartmentType) {
+    EDepartmentType["ADMINISTRATION"] = "administration";
+    EDepartmentType["TEACHING"] = "teaching";
+    EDepartmentType["MEDICAL"] = "medical";
+    EDepartmentType["COUNSELING"] = "counseling";
+    EDepartmentType["BOARDING"] = "boarding";
+    EDepartmentType["TRANSPORTATION"] = "transportation";
+    EDepartmentType["CATERING"] = "catering";
+    EDepartmentType["FACILITIES"] = "facilities";
+    EDepartmentType["SECURITY"] = "security";
+    EDepartmentType["FINANCE"] = "finance";
+    EDepartmentType["HR"] = "hr";
+    EDepartmentType["IT"] = "it";
+    EDepartmentType["LIBRARY"] = "library";
+    EDepartmentType["SPORTS"] = "sports";
+    EDepartmentType["ARTS"] = "arts";
+    EDepartmentType["EXAMINATIONS"] = "examinations";
+})(EDepartmentType || (exports.EDepartmentType = EDepartmentType = {}));
 // All types are exported above with their declarations

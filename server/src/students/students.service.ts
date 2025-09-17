@@ -15,6 +15,7 @@ import {
 import { StudentAuditService } from './services/student-audit.service';
 import { AuditAction, AuditEntityType } from './entities/student-audit-log.entity';
 import { IGraduationRequestDto } from '@academia-pro/types/school-admin';
+import { QueueService, JobType } from '../queue/queue.service';
 
 @Injectable()
 export class StudentsService {
@@ -22,6 +23,7 @@ export class StudentsService {
     @InjectRepository(Student)
     private studentsRepository: Repository<Student>,
     private readonly studentAuditService: StudentAuditService,
+    private readonly queueService: QueueService,
   ) {}
 
   /**
@@ -523,345 +525,81 @@ export class StudentsService {
     return StudentResponseDto.fromEntity(savedStudent);
   }
 
-  async executePromotion(promotionDto: any): Promise<any> {
-    const { scope, gradeCode, streamSection, studentIds, targetGradeCode, academicYear, includeRepeaters, reason } = promotionDto;
+  async executePromotion(promotionDto: any): Promise<{ jobId: string; message: string }> {
+    const { schoolId, userId } = promotionDto;
 
-    // Use find() to get students - the test mock handles repeater filtering based on currentTestScope
-    let studentsToPromote;
-
-    if (scope === 'all') {
-      studentsToPromote = await this.studentsRepository.find({
-        where: { status: StudentStatus.ACTIVE },
-      });
-    } else if (scope === 'grade') {
-      studentsToPromote = await this.studentsRepository.find({
-        where: { gradeCode, status: StudentStatus.ACTIVE },
-      });
-    } else if (scope === 'section') {
-      studentsToPromote = await this.studentsRepository.find({
-        where: { gradeCode, streamSection, status: StudentStatus.ACTIVE },
-      });
-    } else if (scope === 'students') {
-      studentsToPromote = await this.studentsRepository.findByIds(studentIds || []);
-    }
-
-    if (!studentsToPromote || studentsToPromote.length === 0) {
-      return { promotedStudents: 0, studentIds: [] };
-    }
-
-    // Filter students based on repeater logic
-    const filteredStudents = includeRepeaters ? studentsToPromote : studentsToPromote.filter(student => !(student.academicStanding as any)?.probation);
-
-    // Update each student individually to ensure they are saved in the mock
-    const updatedStudents = [];
-    for (const student of filteredStudents) {
-      // Update stage based on target grade
-      const newStage = this.getStageFromGradeCode(targetGradeCode);
-
-      student.gradeCode = targetGradeCode as any;
-      student.streamSection = streamSection || student.streamSection;
-
-      // Only update stage if it changed
-      if (newStage && newStage !== student.stage) {
-        student.stage = newStage;
-      }
-
-      const savedStudent = await this.studentsRepository.save(student);
-      updatedStudents.push(savedStudent.id);
-    }
+    // Add job to queue for processing
+    const job = await this.queueService.addJob(JobType.BATCH_PROMOTION, {
+      operationId: `batch-promotion-${Date.now()}`,
+      userId,
+      schoolId,
+      data: promotionDto,
+    });
 
     return {
-      promotedStudents: updatedStudents.length,
-      studentIds: updatedStudents
+      jobId: job.id.toString(),
+      message: 'Promotion job queued successfully. You will be notified when processing is complete.',
     };
   }
 
   /**
-   * Bulk import students from CSV data
+   * Bulk import students from CSV data - now uses job queue
    */
-  async bulkImport(bulkImportDto: any): Promise<any> {
-    const { schoolId, data } = bulkImportDto;
+  async bulkImport(bulkImportDto: any): Promise<{ jobId: string; message: string }> {
+    const { schoolId, data, userId } = bulkImportDto;
 
-    const results = {
-      total: data.length,
-      successful: 0,
-      failed: 0,
-      errors: [],
-      importedIds: []
+    // Add job to queue for processing
+    const job = await this.queueService.addJob(JobType.BULK_IMPORT, {
+      operationId: `bulk-import-${Date.now()}`,
+      userId,
+      schoolId,
+      data: { students: data },
+    });
+
+    return {
+      jobId: job.id.toString(),
+      message: 'Bulk import job queued successfully. You will be notified when processing is complete.',
     };
-
-    for (let i = 0; i < data.length; i++) {
-      const studentData = data[i];
-
-      try {
-        // Transform CSV data to student creation format
-        const createStudentDto = {
-          firstName: studentData.FirstName,
-          lastName: studentData.LastName,
-          middleName: studentData.MiddleName,
-          dateOfBirth: studentData.DateOfBirth,
-          gender: studentData.Gender,
-          bloodGroup: studentData.BloodGroup,
-          email: studentData.Email,
-          phone: studentData.Phone,
-          admissionNumber: studentData.AdmissionNumber,
-          stage: studentData.Stage,
-          gradeCode: studentData.GradeCode,
-          streamSection: studentData.StreamSection,
-          admissionDate: studentData.AdmissionDate,
-          enrollmentType: studentData.EnrollmentType,
-          schoolId,
-          address: {
-            street: studentData.AddressStreet,
-            city: studentData.AddressCity,
-            state: studentData.AddressState,
-            postalCode: studentData.AddressPostalCode,
-            country: studentData.AddressCountry,
-          },
-          parents: {
-            father: studentData.FatherName ? {
-              name: studentData.FatherName,
-              phone: studentData.FatherPhone,
-              email: studentData.FatherEmail,
-            } : undefined,
-            mother: studentData.MotherName ? {
-              name: studentData.MotherName,
-              phone: studentData.MotherPhone,
-              email: studentData.MotherEmail,
-            } : undefined,
-          },
-        };
-
-        const createdStudent = await this.create(createStudentDto);
-        results.successful++;
-        results.importedIds.push(createdStudent.id);
-
-      } catch (error: any) {
-        // Retry once if we hit a unique constraint on admission number while auto-generating
-        const uniqueAdmissionViolation =
-          !studentData.AdmissionNumber && (
-            (error && error.code === '23505') ||
-            /duplicate key value/i.test(error?.message || '') ||
-            /admission/i.test(error?.detail || '')
-          );
-
-        if (uniqueAdmissionViolation) {
-          try {
-            const retryDto = {
-              firstName: studentData.FirstName,
-              lastName: studentData.LastName,
-              middleName: studentData.MiddleName,
-              dateOfBirth: studentData.DateOfBirth,
-              gender: studentData.Gender,
-              bloodGroup: studentData.BloodGroup,
-              email: studentData.Email,
-              phone: studentData.Phone,
-              admissionNumber: await this.generateAdmissionNumber(schoolId),
-              stage: studentData.Stage,
-              gradeCode: studentData.GradeCode,
-              streamSection: studentData.StreamSection,
-              admissionDate: studentData.AdmissionDate,
-              enrollmentType: studentData.EnrollmentType,
-              schoolId,
-              address: {
-                street: studentData.AddressStreet,
-                city: studentData.AddressCity,
-                state: studentData.AddressState,
-                postalCode: studentData.AddressPostalCode,
-                country: studentData.AddressCountry,
-              },
-              parents: {
-                father: studentData.FatherName ? {
-                  name: studentData.FatherName,
-                  phone: studentData.FatherPhone,
-                  email: studentData.FatherEmail,
-                } : undefined,
-                mother: studentData.MotherName ? {
-                  name: studentData.MotherName,
-                  phone: studentData.MotherPhone,
-                  email: studentData.MotherEmail,
-                } : undefined,
-              },
-            };
-
-            const createdStudent = await this.create(retryDto as any);
-            results.successful++;
-            results.importedIds.push(createdStudent.id);
-            continue;
-          } catch (retryErr: any) {
-            error = retryErr;
-          }
-        }
-
-        // Log detailed error for diagnostics
-        console.error(`[bulkImport] failed row=${i + 1} message=${error?.message || 'unknown'} detail=${(error as any)?.detail || ''}`);
-
-        results.failed++;
-        results.errors.push({
-          row: i + 1,
-          field: 'general',
-          message: error?.message || 'Import failed',
-          data: studentData,
-        });
-      }
-    }
-
-    return results;
   }
 
   /**
-   * Batch graduation of students
+   * Batch graduation of students - now uses job queue
    */
-  async batchGraduate(graduationDto: IGraduationRequestDto): Promise<any> {
-    const { schoolId, gradeCode = 'SSS3', studentIds, graduationYear, clearanceStatus } = graduationDto;
-    const effectiveClearanceStatus = clearanceStatus || 'cleared';
+  async batchGraduate(graduationDto: IGraduationRequestDto & { userId?: string }): Promise<{ jobId: string; message: string }> {
+    const { schoolId, userId } = graduationDto;
 
-    console.log('Debug: batchGraduate called with clearanceStatus:', clearanceStatus, 'effectiveClearanceStatus:', effectiveClearanceStatus);
+    // Add job to queue for processing
+    const job = await this.queueService.addJob(JobType.BATCH_GRADUATION, {
+      operationId: `batch-graduation-${Date.now()}`,
+      userId,
+      schoolId,
+      data: graduationDto,
+    });
 
-    let studentsToGraduate;
-
-    if (studentIds && studentIds.length > 0) {
-      studentsToGraduate = await this.studentsRepository.findByIds(studentIds);
-    } else {
-      // Graduate all eligible students from specified grade in the school
-      const allStudents = await this.studentsRepository.find({
-        where: { schoolId, gradeCode, status: StudentStatus.ACTIVE }
-      });
-      studentsToGraduate = allStudents;
-    }
-
-    const results = {
-      graduatedStudents: 0,
-      studentIds: [],
-      errors: []
+    return {
+      jobId: job.id.toString(),
+      message: 'Graduation job queued successfully. You will be notified when processing is complete.',
     };
-
-    for (const student of studentsToGraduate) {
-      try {
-        // Validate graduation eligibility
-        const eligibilityCheck = this.validateGraduationEligibility(student);
-        if (!eligibilityCheck.eligible) {
-          results.errors.push({
-            studentId: student.id,
-            error: eligibilityCheck.reason || 'Student does not meet graduation requirements'
-          });
-          continue;
-        }
-
-        // Additional clearance check based on clearance status
-        if (effectiveClearanceStatus === 'cleared') {
-          console.log('Debug: Performing additional clearance check for student:', student.admissionNumber);
-          // Check for additional clearance requirements beyond basic eligibility
-          // This could include library clearance, hostel clearance, etc.
-          const hasAdditionalClearance = this.checkAdditionalClearance(student);
-          console.log('Debug: Additional clearance result for student:', student.admissionNumber, 'result:', hasAdditionalClearance);
-          if (!hasAdditionalClearance) {
-            results.errors.push({
-              studentId: student.id,
-              error: 'Additional clearance requirements not met'
-            });
-            continue;
-          }
-        } else if (effectiveClearanceStatus === 'pending') {
-          console.log('Debug: Skipping additional clearance check for student:', student.admissionNumber, '- clearance waived');
-          // When clearance status is 'pending', we skip the additional clearance check
-          // This allows graduation even if additional clearances are not met (waived)
-        }
-
-        student.status = StudentStatus.GRADUATED;
-        student.graduationYear = graduationYear;
-
-        await this.studentsRepository.save(student);
-
-        // Audit logging for student graduation
-        try {
-          await this.studentAuditService.logStudentGraduated(
-            student.id,
-            null, // System operation - no user ID
-            'System',
-            'admin',
-            graduationYear ? new Date(graduationYear, 0, 1) : undefined,
-          );
-        } catch (auditError) {
-          console.error('Failed to log student graduation audit:', auditError);
-        }
-
-        results.graduatedStudents++;
-        results.studentIds.push(student.id);
-
-      } catch (error) {
-        results.errors.push({
-          studentId: student.id,
-          error: error.message || 'Graduation failed'
-        });
-      }
-    }
-
-    return results;
   }
 
   /**
-   * Batch transfer of students
+   * Batch transfer of students - now uses job queue
    */
-  async batchTransfer(transferDto: any): Promise<any> {
-    const { studentIds, newGradeCode, newStreamSection, reason, type, targetSchoolId } = transferDto;
+  async batchTransfer(transferDto: any): Promise<{ jobId: string; message: string }> {
+    const { schoolId, userId } = transferDto;
 
-    const studentsToTransfer = await this.studentsRepository.findByIds(studentIds || []);
+    // Add job to queue for processing
+    const job = await this.queueService.addJob(JobType.BATCH_TRANSFER, {
+      operationId: `batch-transfer-${Date.now()}`,
+      userId,
+      schoolId,
+      data: transferDto,
+    });
 
-    const results = {
-      transferredStudents: 0,
-      studentIds: [],
-      errors: []
+    return {
+      jobId: job.id.toString(),
+      message: 'Transfer job queued successfully. You will be notified when processing is complete.',
     };
-
-    for (const student of studentsToTransfer) {
-      try {
-        // Check clearance
-        const hasClearance = Math.random() > 0.15; // 85% have clearance
-        if (!hasClearance) {
-          results.errors.push({
-            studentId: student.id,
-            error: 'Clearance not complete'
-          });
-          continue;
-        }
-
-        // Add to transfer history
-        student.transferHistory.push({
-          fromSection: student.streamSection,
-          toSection: newStreamSection || student.streamSection,
-          reason: reason || 'Batch transfer',
-          timestamp: new Date(),
-          type: type || 'internal',
-          ...(targetSchoolId && { toSchool: targetSchoolId }),
-        });
-
-        // Update student details
-        if (newGradeCode) {
-          student.gradeCode = newGradeCode as any;
-        }
-        if (newStreamSection) {
-          student.streamSection = newStreamSection;
-        }
-
-        if (type === 'external') {
-          student.status = StudentStatus.TRANSFERRED;
-        }
-
-        await this.studentsRepository.save(student);
-
-        results.transferredStudents++;
-        results.studentIds.push(student.id);
-
-      } catch (error) {
-        results.errors.push({
-          studentId: student.id,
-          error: error.message || 'Transfer failed'
-        });
-      }
-    }
-
-    return results;
   }
 
   /**

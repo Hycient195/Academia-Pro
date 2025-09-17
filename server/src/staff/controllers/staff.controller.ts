@@ -28,6 +28,8 @@ import { AuditCreate, AuditUpdate, AuditDelete, AuditRead, SampleAudit, MonitorP
 import { StaffService } from '../services/staff.service';
 import { CreateStaffDto, UpdateStaffDto } from '../dtos';
 import { StaffType, StaffStatus, EmploymentType } from '../entities/staff.entity';
+import { AssignStaffToDepartmentDto } from '../dtos/assign-staff-to-department.dto';
+import { StaffDepartmentResponseDto } from '../dtos/staff-department-response.dto';
 
 @ApiTags('Staff Management')
 @ApiBearerAuth()
@@ -658,13 +660,15 @@ export class StaffController {
       averageGrossSalary: staff.length > 0 ? staff.reduce((sum, s) => sum + s.grossSalary, 0) / staff.length : 0,
       averageNetSalary: staff.length > 0 ? staff.reduce((sum, s) => sum + s.netSalary, 0) / staff.length : 0,
       salaryByDepartment: staff.reduce((acc, s) => {
-        acc[s.department] = (acc[s.department] || 0) + s.netSalary;
+        // Handle departments array - use first department or 'Unassigned'
+        const deptName = s.departments?.[0]?.name || 'Unassigned';
+        acc[deptName] = (acc[deptName] || 0) + s.netSalary;
         return acc;
       }, {} as Record<string, number>),
       staffDetails: staff.map(s => ({
         employeeId: s.employeeId,
         name: s.fullName,
-        department: s.department,
+        department: s.departments?.[0]?.name || 'Unassigned',
         designation: s.designation,
         grossSalary: s.grossSalary,
         netSalary: s.netSalary,
@@ -674,5 +678,173 @@ export class StaffController {
     };
 
     return report;
+  }
+
+  // ==================== DEPARTMENT OPERATIONS ====================
+
+  @Get(':id/departments')
+  @ApiOperation({
+    summary: 'Get staff departments',
+    description: 'Retrieve all departments assigned to a specific staff member',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Staff member ID',
+    example: 'staff-uuid-123',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Staff departments retrieved successfully',
+    type: [StaffDepartmentResponseDto],
+  })
+  async getStaffDepartments(@Param('id', ParseUUIDPipe) staffId: string) {
+    const departments = await this.staffService.getStaffDepartments(staffId);
+    return departments.map(dept => ({
+      id: dept.id,
+      type: dept.type,
+      name: dept.name,
+      description: dept.description,
+      staffCount: dept.staff?.length || 0,
+      createdAt: dept.createdAt,
+      updatedAt: dept.updatedAt,
+    }));
+  }
+
+  @Get(':id/with-departments')
+  @ApiOperation({
+    summary: 'Get staff with departments',
+    description: 'Retrieve a staff member with their assigned departments',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Staff member ID',
+    example: 'staff-uuid-123',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Staff with departments retrieved successfully',
+  })
+  async getStaffWithDepartments(@Param('id', ParseUUIDPipe) staffId: string) {
+    return this.staffService.getStaffWithDepartments(staffId);
+  }
+
+  @Post(':id/departments')
+  @ApiOperation({
+    summary: 'Assign staff to department',
+    description: 'Assign a staff member to a specific department',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Staff member ID',
+    example: 'staff-uuid-123',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Staff assigned to department successfully',
+  })
+  async assignStaffToDepartment(
+    @Param('id', ParseUUIDPipe) staffId: string,
+    @Body() dto: AssignStaffToDepartmentDto,
+    @Request() req: any,
+  ) {
+    const assignedBy = req.user?.id || 'system';
+    return this.staffService.assignStaffToDepartment(staffId, dto.departmentId, assignedBy);
+  }
+
+  @Delete(':id/departments/:departmentId')
+  @ApiOperation({
+    summary: 'Remove staff from department',
+    description: 'Remove a staff member from a specific department',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Staff member ID',
+    example: 'staff-uuid-123',
+  })
+  @ApiParam({
+    name: 'departmentId',
+    description: 'Department ID',
+    example: 'department-uuid-456',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Staff removed from department successfully',
+  })
+  async removeStaffFromDepartment(
+    @Param('id', ParseUUIDPipe) staffId: string,
+    @Param('departmentId', ParseUUIDPipe) departmentId: string,
+    @Request() req: any,
+  ) {
+    const removedBy = req.user?.id || 'system';
+    return this.staffService.removeStaffFromDepartment(staffId, departmentId, removedBy);
+  }
+
+  @Put(':id/departments')
+  @ApiOperation({
+    summary: 'Update staff departments',
+    description: 'Replace all departments assigned to a staff member',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Staff member ID',
+    example: 'staff-uuid-123',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Staff departments updated successfully',
+  })
+  async updateStaffDepartments(
+    @Param('id', ParseUUIDPipe) staffId: string,
+    @Body() body: { departmentIds: string[] },
+    @Request() req: any,
+  ) {
+    const updatedBy = req.user?.id || 'system';
+    return this.staffService.updateStaffDepartments(staffId, body.departmentIds, updatedBy);
+  }
+
+  @Get('department-id/:departmentId/staff')
+  @ApiOperation({
+    summary: 'Get staff by department ID',
+    description: 'Retrieve all staff members assigned to a specific department',
+  })
+  @ApiParam({
+    name: 'departmentId',
+    description: 'Department ID',
+    example: 'department-uuid-456',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'Filter by staff status',
+    enum: StaffStatus,
+    example: StaffStatus.ACTIVE,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of records to return',
+    example: 20,
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    description: 'Number of records to skip',
+    example: 0,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Department staff retrieved successfully',
+  })
+  async getStaffByDepartmentId(
+    @Param('departmentId', ParseUUIDPipe) departmentId: string,
+    @Query() query: any,
+  ) {
+    const options = {
+      status: query.status,
+      limit: query.limit ? parseInt(query.limit) : undefined,
+      offset: query.offset ? parseInt(query.offset) : undefined,
+    };
+
+    return this.staffService.getStaffByDepartmentId(departmentId, options);
   }
 }

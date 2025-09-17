@@ -5,6 +5,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthJwtModule } from '../auth/auth-jwt.module';
 import { AuditSharedModule } from '../common/audit/audit.shared.module';
+import { QueueModule } from '../queue/queue.module';
 
 // Controllers
 import { StudentsController } from './students.controller';
@@ -58,6 +59,7 @@ import { CsrfGuard } from '../auth/guards/csrf.guard';
     ]),
     AuthJwtModule,
     AuditSharedModule,
+    QueueModule,
   ],
   controllers: [
     StudentsController,

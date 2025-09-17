@@ -1,7 +1,8 @@
 // Academia Pro - Staff Entity
 // Database entity for managing all staff members and their information
 
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn, Index, Unique } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn, Index, Unique, ManyToMany, JoinTable } from 'typeorm';
+import { Department } from './department.entity';
 
 export enum StaffType {
   TEACHING = 'teaching',
@@ -78,7 +79,6 @@ export enum QualificationLevel {
 @Index(['schoolId', 'status'])
 @Index(['email'])
 @Index(['phone'])
-@Index(['department'])
 export class Staff {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -175,8 +175,15 @@ export class Staff {
   })
   staffType: StaffType;
 
-  @Column({ name: 'department', type: 'varchar', length: 100 })
-  department: string;
+  @ManyToMany(() => Department, (department) => department.staff, {
+    cascade: true,
+  })
+  @JoinTable({
+    name: 'staff_departments', // join table name
+    joinColumn: { name: 'staffId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'departmentId', referencedColumnName: 'id' },
+  })
+  departments: Department[];
 
   @Column({ name: 'designation', type: 'varchar', length: 100 })
   designation: string;

@@ -68,6 +68,34 @@ export declare enum TLeaveStatus {
     CANCELLED = "cancelled",
     COMPLETED = "completed"
 }
+export declare enum EDepartmentType {
+    ADMINISTRATION = "administration",
+    TEACHING = "teaching",
+    MEDICAL = "medical",
+    COUNSELING = "counseling",
+    BOARDING = "boarding",
+    TRANSPORTATION = "transportation",
+    CATERING = "catering",
+    FACILITIES = "facilities",
+    SECURITY = "security",
+    FINANCE = "finance",
+    OPERATIONS = "operations",
+    HR = "hr",
+    IT = "it",
+    LIBRARY = "library",
+    SPORTS = "sports",
+    ARTS = "arts",
+    EXAMINATIONS = "examinations"
+}
+export interface IDepartment {
+    id: string;
+    type: EDepartmentType;
+    name: string;
+    description?: string;
+    staffCount?: number;
+    createdAt: Date;
+    updatedAt: Date;
+}
 export interface IStaff {
     id: string;
     employeeId: string;
@@ -295,6 +323,21 @@ export interface IUpdatePerformanceReviewRequest {
     comments?: string;
     nextReviewDate?: Date;
 }
+export interface ICreateDepartmentRequest {
+    type: EDepartmentType;
+    name: string;
+    description?: string;
+}
+export interface IUpdateDepartmentRequest {
+    type?: EDepartmentType;
+    name?: string;
+    description?: string;
+}
+export interface IAssignStaffToDepartmentRequest {
+    staffId: string;
+    departmentId: string;
+    notes?: string;
+}
 export interface IStaffResponse extends Omit<IStaff, 'userId' | 'salary' | 'performance' | 'leaves' | 'documents' | 'createdBy' | 'updatedBy'> {
     fullName: string;
     age: number;
@@ -378,6 +421,31 @@ export interface IPerformanceReviewListResponse {
     total: number;
     page: number;
     limit: number;
+}
+export interface IDepartmentResponse extends IDepartment {
+    staffCount: number;
+}
+export interface IDepartmentListResponse {
+    departments: IDepartmentResponse[];
+    total: number;
+    page: number;
+    limit: number;
+}
+export interface IDepartmentStatisticsResponse {
+    totalDepartments: number;
+    departmentsByType: Record<EDepartmentType, number>;
+    totalStaffAssigned: number;
+    averageStaffPerDepartment: number;
+    mostPopulatedDepartment: {
+        id: string;
+        name: string;
+        staffCount: number;
+    };
+    leastPopulatedDepartment: {
+        id: string;
+        name: string;
+        staffCount: number;
+    };
 }
 export interface IStaffFilters {
     schoolId: string;

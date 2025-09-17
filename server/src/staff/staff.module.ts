@@ -15,6 +15,10 @@ import { StaffService } from './services/staff.service';
 
 // Entities
 import { Staff } from './entities/staff.entity';
+import { Department } from './entities/department.entity';
+
+// Modules
+import { DepartmentModule } from './department.module';
 
 // Guards
 import { StaffGuard } from './guards/staff.guard';
@@ -24,7 +28,8 @@ import { StaffInterceptor } from './interceptors/staff.interceptor';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Staff]),
+    TypeOrmModule.forFeature([Staff, Department]),
+    DepartmentModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

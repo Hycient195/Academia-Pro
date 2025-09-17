@@ -37,6 +37,7 @@ import { SecurityModule } from './security/security.module';
 import { CommonModule } from './common/common.module';
 import { RedisModule } from './redis/redis.module';
 import { SeedersModule } from './database/seeders/seeders.module';
+import { QueueModule } from './queue/queue.module';
 
 // Guards, interceptors, and filters
 import { ThrottlerGuard } from './common/guards/throttler.guard';
@@ -90,6 +91,7 @@ import { AppService } from './app.service';
     // Feature modules
     forwardRef(() => CommonModule),
     AuditSharedModule,
+    forwardRef(() => QueueModule),
     // forwardRef(() => RedisModule),
     forwardRef(() => SeedersModule),
     forwardRef(() => AuthModule),

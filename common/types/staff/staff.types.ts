@@ -82,6 +82,38 @@ export enum TLeaveStatus {
   COMPLETED = 'completed',
 }
 
+// Department Types
+export enum EDepartmentType {
+  ADMINISTRATION = 'administration',
+  TEACHING = 'teaching',
+  MEDICAL = 'medical',
+  COUNSELING = 'counseling',
+  BOARDING = 'boarding',
+  TRANSPORTATION = 'transportation',
+  CATERING = 'catering',
+  FACILITIES = 'facilities',
+  OPERATIONS = "operations",
+  SECURITY = 'security',
+  FINANCE = 'finance',
+  HR = 'hr',
+  IT = 'it',
+  LIBRARY = 'library',
+  SPORTS = 'sports',
+  ARTS = 'arts',
+  EXAMINATIONS = 'examinations',
+}
+
+// Department Interfaces
+export interface IDepartment {
+  id: string;
+  type: EDepartmentType;
+  name: string;
+  description?: string;
+  staffCount?: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // Interfaces
 export interface IStaff {
   id: string;
@@ -330,6 +362,25 @@ export interface IUpdatePerformanceReviewRequest {
   nextReviewDate?: Date;
 }
 
+// Department Request Interfaces
+export interface ICreateDepartmentRequest {
+  type: EDepartmentType;
+  name: string;
+  description?: string;
+}
+
+export interface IUpdateDepartmentRequest {
+  type?: EDepartmentType;
+  name?: string;
+  description?: string;
+}
+
+export interface IAssignStaffToDepartmentRequest {
+  staffId: string;
+  departmentId: string;
+  notes?: string;
+}
+
 // Response Interfaces
 export interface IStaffResponse extends Omit<IStaff, 'userId' | 'salary' | 'performance' | 'leaves' | 'documents' | 'createdBy' | 'updatedBy'> {
   fullName: string;
@@ -420,6 +471,35 @@ export interface IPerformanceReviewListResponse {
   total: number;
   page: number;
   limit: number;
+}
+
+// Department Response Interfaces
+export interface IDepartmentResponse extends IDepartment {
+  staffCount: number;
+}
+
+export interface IDepartmentListResponse {
+  departments: IDepartmentResponse[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface IDepartmentStatisticsResponse {
+  totalDepartments: number;
+  departmentsByType: Record<EDepartmentType, number>;
+  totalStaffAssigned: number;
+  averageStaffPerDepartment: number;
+  mostPopulatedDepartment: {
+    id: string;
+    name: string;
+    staffCount: number;
+  };
+  leastPopulatedDepartment: {
+    id: string;
+    name: string;
+    staffCount: number;
+  };
 }
 
 // Filter and Query Interfaces

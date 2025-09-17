@@ -5,9 +5,11 @@ import { IsString, IsNotEmpty, IsOptional, IsEnum, IsUUID, IsArray, IsNumber } f
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 interface IGraduationRequest {
+  schoolId: string;
+  gradeCode?: string;
   studentIds?: string[];
   graduationYear: number;
-  clearanceStatus: 'cleared' | 'pending';
+  clearanceStatus?: 'cleared' | 'pending';
 }
 
 interface IGraduationResult {
@@ -20,8 +22,24 @@ interface IGraduationResult {
 }
 
 export class GraduationRequestDto implements IGraduationRequest {
+  @ApiProperty({
+    description: 'School ID for the graduation operation',
+    example: 'school-uuid-123',
+  })
+  @IsString({ message: 'School ID must be a string' })
+  @IsNotEmpty({ message: 'School ID is required' })
+  schoolId: string;
+
   @ApiPropertyOptional({
-    description: 'Specific student IDs to graduate (if not provided, graduates eligible SSS3 students)',
+    description: 'Grade code to graduate from (defaults to SSS3)',
+    example: 'SSS3',
+  })
+  @IsOptional()
+  @IsString({ message: 'Grade code must be a string' })
+  gradeCode?: string;
+
+  @ApiPropertyOptional({
+    description: 'Specific student IDs to graduate (if not provided, graduates eligible students)',
     example: ['student-uuid-1', 'student-uuid-2'],
   })
   @IsOptional()
@@ -37,16 +55,16 @@ export class GraduationRequestDto implements IGraduationRequest {
   @IsNotEmpty({ message: 'Graduation year is required' })
   graduationYear: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Clearance status requirement',
     example: 'cleared',
     enum: ['cleared', 'pending'],
   })
+  @IsOptional()
   @IsEnum(['cleared', 'pending'], {
     message: 'Clearance status must be either cleared or pending'
   })
-  @IsNotEmpty({ message: 'Clearance status is required' })
-  clearanceStatus: 'cleared' | 'pending';
+  clearanceStatus?: 'cleared' | 'pending';
 }
 
 export class GraduationResultDto implements IGraduationResult {

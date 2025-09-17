@@ -17,31 +17,11 @@ import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
 import {
   IconSchool,
-  IconDashboard,
-  IconUsers,
   IconUserShield,
-  IconBook,
-  IconBuildingBank,
-  IconMail,
-  IconChartBar,
-  IconSettings,
-  IconHome,
-  IconFileText,
-  IconMessage,
-  IconBell,
-  IconUser,
-  IconCalendar,
-  IconClipboardList,
-  IconUserCheck,
-  IconBooks,
-  IconDeviceDesktop,
-  IconHeart,
-  IconShield,
-  IconTools,
-  IconUserHeart,
 } from "@tabler/icons-react"
 import type { Icon } from "@tabler/icons-react"
 import { useSelector, useDispatch } from "react-redux"
+import { createSelector } from "@reduxjs/toolkit"
 import type { RootState } from "@/redux/store"
 import { setActiveRole } from "@/redux/slices/authSlice"
 import type { User as AuthUser } from "@/redux/slices/authSlice"
@@ -57,6 +37,11 @@ import {
 export type PortalRole = "student" | "parent" | "staff" | "school-admin"
 
 type CollapsibleMode = "offcanvas" | "icon" | "none"
+
+const selectRoles = createSelector(
+  (state: RootState) => state.auth.user?.roles,
+  (roles) => roles ?? []
+)
 
 type PortalSidebarProps = React.ComponentProps<typeof Sidebar> & {
   navData: RoleConfig
@@ -103,7 +88,7 @@ export function PortalSidebar({ navData, user, onLogout, redirectTo, ...sidebarP
   const pathname = usePathname()
   const router = useRouter()
   const dispatch = useDispatch()
-  const roles = useSelector((state: RootState) => state.auth.user?.roles ?? []) as AuthUser["roles"]
+  const roles = useSelector(selectRoles) as AuthUser["roles"]
   const activeRole = useSelector((state: RootState) => state.auth.activeRole ?? ((roles?.[0] as AuthUser["roles"][number]) ?? null))
 
   const roleLabel = (role: string) => {

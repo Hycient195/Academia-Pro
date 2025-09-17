@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useEffect } from "react"
+import { useSelector } from "react-redux"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -13,6 +14,7 @@ import { MultiSelect, MultiSelectOption } from "@/components/ui/multi-select"
 import { Pagination, usePagination } from "@/components/ui/pagination"
 import apis from "@/redux/api"
 const { useGetStudentsQuery, useCreateStudentMutation, useUpdateStudentMutation, useDeleteStudentMutation } = apis.schoolAdmin.student
+import type { RootState } from "@/redux/store"
 import type { ISchoolAdminStudent, IStudent } from "@academia-pro/types/school-admin"
 import type { TStudentStage, TGradeCode, ICreateStudentRequest } from "@academia-pro/types/student/student.types"
 import {
@@ -139,10 +141,14 @@ export default function StudentsPage() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
+  // Get schoolId from auth state
+  const schoolId = useSelector((state: RootState) => state.auth?.user?.schoolId)
+
   // Build query params dynamically, excluding undefined values
   const queryParams: {
     page: number;
     limit: number;
+    schoolId?: string;
     search?: string;
     stages?: string[];
     gradeCodes?: string[];
@@ -153,6 +159,7 @@ export default function StudentsPage() {
     limit: pageSize,
   }
 
+  if (schoolId) queryParams.schoolId = schoolId
   if (debouncedSearchTerm) queryParams.search = debouncedSearchTerm
   if (selectedStages.length > 0) queryParams.stages = selectedStages
   if (selectedGradeCodes.length > 0) queryParams.gradeCodes = selectedGradeCodes

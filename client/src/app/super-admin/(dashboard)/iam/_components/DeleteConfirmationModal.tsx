@@ -13,6 +13,8 @@ import {
 import { IconTrash } from "@tabler/icons-react"
 import apis from "@/redux/api"
 import ErrorBlock from "@/components/utilities/ErrorBlock"
+import ErrorToast from "@/components/utilities/ErrorToast"
+import { toast } from "sonner"
 
 interface DeleteConfirmationModalProps {
   isOpen: boolean
@@ -42,13 +44,23 @@ export function DeleteConfirmationModal({
     })
   }, [accountId, accountEmail])
 
-  const handleConfirm = async () => {
-    try {
-      await deleteDelegatedAccount(formData.accountId).unwrap()
-      onClose()
-    } catch (error) {
-      console.error("Failed to delete account:", error)
+  const handleConfirm = () => {
+    // Client-side validations
+    if (!formData.accountId) {
+      toast.error("Account ID is required.")
+      return
     }
+
+    deleteDelegatedAccount(formData.accountId)
+    .unwrap()
+    .then(() => {
+      toast.success("Delegated account deleted successfully!")
+      onClose()
+    })
+    .catch((err) => {
+      console.error(err)
+      toast.error("Failed to delete delegated account.", { description: <ErrorToast error={error} /> })
+    })
   }
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

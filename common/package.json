@@ -1,5 +1,5 @@
 {
-  "name": "@academia/pro",
+  "name": "@academia-pro",
   "version": "1.0.0",
   "description": "Shared TypeScript types and interfaces for Academia Pro",
   "main": "dist/index.js",

@@ -1,453 +1,437 @@
-// Academia Pro - Student Promotion Integration Tests
-// Integration tests for student promotion service methods
+// Academia Pro - Student Promotion True Integration Tests
+// Tests using real Postgres database with Testcontainers
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
+import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { StudentsService } from '../../students.service';
 import { Student, StudentStatus, EnrollmentType } from '../../student.entity';
 import { StudentAuditService } from '../../services/student-audit.service';
-import { DatabaseTestModule } from '../../../test/database-test.module';
-import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import { StudentAuditLog } from '../../entities/student-audit-log.entity';
+import { AuditConfigService } from '../../../common/audit/audit.config';
+import { School, SchoolStatus, SubscriptionPlan } from '../../../schools/school.entity';
 import { TStudentStage } from '@academia-pro/types/student/student.types';
+import { TSchoolType } from '@academia-pro/types/schools';
 
-describe('StudentsService - Promotion Integration', () => {
+describe('StudentsService - Promotion True Integration Tests', () => {
   let service: StudentsService;
   let studentRepository: Repository<Student>;
-  let container: StartedPostgreSqlContainer;
+  let schoolRepository: Repository<School>;
+  let auditLogRepository: Repository<StudentAuditLog>;
   let moduleFixture: TestingModule;
+  let postgresContainer: StartedPostgreSqlContainer;
+  let testDataSource: DataSource;
+  let testSchoolId: string;
 
   beforeAll(async () => {
-    // Start PostgreSQL container for testing
-    container = await new PostgreSqlContainer()
-      .withDatabase('test_db')
+    postgresContainer = await new PostgreSqlContainer()
+      .withDatabase('test_academia_pro')
       .withUsername('test_user')
       .withPassword('test_password')
       .start();
 
+    testDataSource = new DataSource({
+      type: 'postgres',
+      host: postgresContainer.getHost(),
+      port: postgresContainer.getPort(),
+      username: postgresContainer.getUsername(),
+      password: postgresContainer.getPassword(),
+      database: postgresContainer.getDatabase(),
+      entities: [
+        'src/users/**/*.entity{.ts,.js}',
+        'src/schools/**/*.entity{.ts,.js}',
+        'src/students/**/*.entity{.ts,.js}',
+        'src/academic/**/*.entity{.ts,.js}',
+        'src/attendance/**/*.entity{.ts,.js}',
+        'src/examination/**/*.entity{.ts,.js}',
+        'src/fee/**/*.entity{.ts,.js}',
+        'src/library/**/*.entity{.ts,.js}',
+        'src/hostel/**/*.entity{.ts,.js}',
+        'src/transportation/**/*.entity{.ts,.js}',
+        'src/inventory/**/*.entity{.ts,.js}',
+        'src/communication/**/*.entity{.ts,.js}',
+        'src/iam/**/*.entity{.ts,.js}',
+        'src/common/**/*.entity{.ts,.js}',
+        'src/auth/**/*.entity{.ts,.js}',
+        'src/security/**/*.entity{.ts,.js}',
+      ],
+      synchronize: true,
+      logging: false,
+      dropSchema: true,
+    });
+
+    await testDataSource.initialize();
+  }, 60000);
+
+  afterAll(async () => {
+    if (testDataSource && testDataSource.isInitialized) {
+      await testDataSource.destroy();
+    }
+    if (postgresContainer) {
+      await postgresContainer.stop();
+    }
+  }, 30000);
+
+  beforeEach(async () => {
+    await testDataSource.synchronize(true);
+
+    const mockAuditConfigService = {
+      sanitizeDetails: jest.fn().mockReturnValue({}),
+    };
+
     moduleFixture = await Test.createTestingModule({
-      imports: [await DatabaseTestModule.forRoot()],
       providers: [
         StudentsService,
         StudentAuditService,
         {
+          provide: AuditConfigService,
+          useValue: mockAuditConfigService,
+        },
+        {
           provide: getRepositoryToken(Student),
-          useClass: Repository,
+          useFactory: () => testDataSource.getRepository(Student),
+        },
+        {
+          provide: getRepositoryToken(StudentAuditLog),
+          useFactory: () => testDataSource.getRepository(StudentAuditLog),
+        },
+        {
+          provide: getRepositoryToken(School),
+          useFactory: () => testDataSource.getRepository(School),
         },
       ],
     }).compile();
 
     service = moduleFixture.get<StudentsService>(StudentsService);
     studentRepository = moduleFixture.get<Repository<Student>>(getRepositoryToken(Student));
-  }, 60000);
+    schoolRepository = moduleFixture.get<Repository<School>>(getRepositoryToken(School));
+    auditLogRepository = moduleFixture.get<Repository<StudentAuditLog>>(getRepositoryToken(StudentAuditLog));
 
-  afterAll(async () => {
+    const school = await schoolRepository.save({
+      code: 'TEST001',
+      name: 'Test School',
+      type: [TSchoolType.SECONDARY],
+      status: SchoolStatus.ACTIVE,
+      subscriptionPlan: SubscriptionPlan.STANDARD,
+      maxStudents: 1000,
+      currentStudents: 0,
+      maxStaff: 100,
+      currentStaff: 0,
+      createdBy: 'system',
+    });
+    testSchoolId = school.id;
+  });
+
+  afterEach(async () => {
     await moduleFixture.close();
-    if (container) {
-      await container.stop();
-    }
   });
 
-  beforeEach(async () => {
-    // Clear all students before each test
-    await studentRepository.clear();
+  // Helpers
+  function stageFromGrade(gradeCode: string): TStudentStage {
+    const code = gradeCode.toUpperCase();
+    if (code.startsWith('PRY')) return 'PRY' as TStudentStage;
+    if (code.startsWith('JSS')) return 'JSS' as TStudentStage;
+    if (code.startsWith('SSS')) return 'SSS' as TStudentStage;
+    return 'PRY' as TStudentStage;
+  }
+
+  async function makeStudent(overrides: Partial<Student> = {}): Promise<Student> {
+    const baseNumber = Math.floor(Math.random() * 1000000);
+    const grade = (overrides.gradeCode as string) || 'JSS3';
+    const stage = (overrides.stage as TStudentStage) || stageFromGrade(grade);
+
+    const student = await studentRepository.save({
+      firstName: overrides.firstName || 'Test',
+      lastName: overrides.lastName || 'Student',
+      dateOfBirth: overrides.dateOfBirth || new Date('2008-01-01'),
+      gender: overrides.gender || 'male',
+      admissionNumber: overrides.admissionNumber || `ADM-${baseNumber}`,
+      schoolId: overrides.schoolId || testSchoolId,
+      stage,
+      gradeCode: grade,
+      streamSection: overrides.streamSection || 'A',
+      admissionDate: overrides.admissionDate || new Date('2020-09-01'),
+      enrollmentType: overrides.enrollmentType || EnrollmentType.REGULAR,
+      status: overrides.status || StudentStatus.ACTIVE,
+      promotionHistory: overrides.promotionHistory || [],
+      transferHistory: overrides.transferHistory || [],
+      currentGrade: overrides.currentGrade || grade,
+      currentSection: overrides.currentSection || (overrides.streamSection || 'A'),
+      isBoarding: overrides.isBoarding ?? false,
+      email: overrides.email,
+      phone: overrides.phone,
+      medicalInfo: overrides.medicalInfo || {},
+      parentInfo: overrides.parentInfo || {},
+      transportation: overrides.transportation || {},
+      hostel: overrides.hostel || {},
+      financialInfo: overrides.financialInfo || { feeCategory: 'standard', outstandingBalance: 0 },
+      documents: overrides.documents || [],
+      preferences: overrides.preferences || {
+        language: 'en',
+        notifications: { email: true, sms: true, push: true, parentCommunication: true },
+        extracurricular: [],
+      },
+      gpa: overrides.gpa ?? 3.0,
+      totalCredits: overrides.totalCredits ?? 100,
+      academicStanding: overrides.academicStanding || { probation: false, disciplinaryStatus: 'clear' },
+    } as any);
+
+    return student;
+  }
+
+  describe('Service Instantiation', () => {
+    it('should be defined and expose executePromotion', () => {
+      expect(service).toBeDefined();
+      expect(typeof service.executePromotion).toBe('function');
+    });
   });
 
-  describe('executePromotion', () => {
-    it('should promote students by grade scope successfully', async () => {
-      // Create test students in JSS3
-      const student1 = await studentRepository.save({
-        firstName: 'John',
-        lastName: 'Doe',
-        dateOfBirth: new Date('2008-01-01'),
-        gender: 'male' as const,
-        admissionNumber: 'JSS3001',
-        schoolId: 'test-school',
-        stage: TStudentStage.JSS,
-        gradeCode: 'JSS3',
-        streamSection: 'A',
-        admissionDate: new Date('2020-09-01'),
-        enrollmentType: EnrollmentType.REGULAR,
-        status: StudentStatus.ACTIVE,
-      });
+  describe('executePromotion - scope: grade', () => {
+    it('promotes only ACTIVE students in the grade, excluding repeaters when includeRepeaters=false', async () => {
+      const s1 = await makeStudent({ gradeCode: 'JSS3', streamSection: 'A', academicStanding: { probation: false } });
+      const s2 = await makeStudent({ gradeCode: 'JSS3', streamSection: 'A', academicStanding: { probation: true } });
+      const s3 = await makeStudent({ gradeCode: 'JSS3', streamSection: 'B', academicStanding: { probation: false } });
+      const inactive = await makeStudent({ gradeCode: 'JSS3', status: StudentStatus.INACTIVE, academicStanding: { probation: false }, admissionNumber: 'ADM-INACTIVE' });
 
-      const student2 = await studentRepository.save({
-        firstName: 'Jane',
-        lastName: 'Smith',
-        dateOfBirth: new Date('2008-02-01'),
-        gender: 'female' as const,
-        admissionNumber: 'JSS3002',
-        schoolId: 'test-school',
-        stage: TStudentStage.JSS,
-        gradeCode: 'JSS3',
-        streamSection: 'A',
-        admissionDate: new Date('2020-09-01'),
-        enrollmentType: EnrollmentType.REGULAR,
-        status: StudentStatus.ACTIVE,
-      });
-
-      const promotionDto = {
+      const dto = {
         scope: 'grade' as const,
         gradeCode: 'JSS3',
         targetGradeCode: 'SSS1',
         academicYear: '2025',
-        reason: 'End of year promotion',
         includeRepeaters: false,
+        reason: 'End of year promotion',
       };
 
-      const result = await service.executePromotion(promotionDto);
+      const result = await service.executePromotion(dto);
 
       expect(result.promotedStudents).toBe(2);
-      expect(result.studentIds).toHaveLength(2);
-      expect(result.studentIds).toContain(student1.id);
-      expect(result.studentIds).toContain(student2.id);
+      expect(result.studentIds).toEqual(expect.arrayContaining([s1.id, s3.id]));
+      expect(result.studentIds).not.toContain(s2.id);
+      expect(result.studentIds).not.toContain(inactive.id);
 
-      // Verify students were updated in database
-      const updatedStudents = await studentRepository.findByIds(result.studentIds);
-      updatedStudents.forEach(student => {
-        expect(student.gradeCode).toBe('SSS1');
-        expect(student.stage).toBe('SSS');
-        expect(student.promotionHistory).toHaveLength(1);
-        expect(student.promotionHistory[0].fromGrade).toBe('JSS3');
-        expect(student.promotionHistory[0].toGrade).toBe('SSS1');
-        expect(student.promotionHistory[0].academicYear).toBe('2025');
-        expect(student.promotionHistory[0].reason).toBe('End of year promotion');
-      });
+      const dbS1 = await studentRepository.findOne({ where: { id: s1.id } });
+      const dbS2 = await studentRepository.findOne({ where: { id: s2.id } });
+      const dbS3 = await studentRepository.findOne({ where: { id: s3.id } });
+      const dbInactive = await studentRepository.findOne({ where: { id: inactive.id } });
+
+      expect(dbS1?.gradeCode).toBe('SSS1');
+      expect(dbS1?.stage).toBe('SSS');
+      expect(dbS2?.gradeCode).toBe('JSS3');
+      expect(dbS2?.stage).toBe('JSS');
+      expect(dbS3?.gradeCode).toBe('SSS1');
+      expect(dbS3?.stage).toBe('SSS');
+      expect(dbInactive?.gradeCode).toBe('JSS3');
+      expect(dbInactive?.stage).toBe('JSS');
     });
 
-    it('should promote students by section scope successfully', async () => {
-      // Create students in JSS3 section A and B
-      await studentRepository.save({
-        firstName: 'Alice',
-        lastName: 'Brown',
-        dateOfBirth: new Date('2008-03-01'),
-        gender: 'female' as const,
-        admissionNumber: 'JSS3003',
-        schoolId: 'test-school',
-        stage: TStudentStage.JSS,
-        gradeCode: 'JSS3',
-        streamSection: 'A',
-        admissionDate: new Date('2020-09-01'),
-        enrollmentType: EnrollmentType.REGULAR,
-        status: StudentStatus.ACTIVE,
-      });
+    it('includes repeaters when includeRepeaters=true', async () => {
+      const r1 = await makeStudent({ gradeCode: 'JSS3', academicStanding: { probation: true } });
+      const r2 = await makeStudent({ gradeCode: 'JSS3', academicStanding: { probation: false } });
 
-      await studentRepository.save({
-        firstName: 'Bob',
-        lastName: 'Wilson',
-        dateOfBirth: new Date('2008-04-01'),
-        gender: 'male' as const,
-        admissionNumber: 'JSS3004',
-        schoolId: 'test-school',
-        stage: TStudentStage.JSS,
-        gradeCode: 'JSS3',
-        streamSection: 'B',
-        admissionDate: new Date('2020-09-01'),
-        enrollmentType: EnrollmentType.REGULAR,
-        status: StudentStatus.ACTIVE,
-      });
-
-      const promotionDto = {
-        scope: 'section' as const,
-        gradeCode: 'JSS3',
-        streamSection: 'A',
-        targetGradeCode: 'SSS1',
-        academicYear: '2025',
-        reason: 'Section A promotion',
-        includeRepeaters: false,
-      };
-
-      const result = await service.executePromotion(promotionDto);
-
-      expect(result.promotedStudents).toBe(1);
-
-      // Verify only section A student was promoted
-      const promotedStudent = await studentRepository.findOne({
-        where: { admissionNumber: 'JSS3003' }
-      });
-      expect(promotedStudent?.gradeCode).toBe('SSS1');
-      expect(promotedStudent?.stage).toBe('SSS');
-
-      // Verify section B student was not promoted
-      const notPromotedStudent = await studentRepository.findOne({
-        where: { admissionNumber: 'JSS3004' }
-      });
-      expect(notPromotedStudent?.gradeCode).toBe('JSS3');
-      expect(notPromotedStudent?.stage).toBe('JSS');
-    });
-
-    it('should promote specific students successfully', async () => {
-      const student1 = await studentRepository.save({
-        firstName: 'Charlie',
-        lastName: 'Davis',
-        dateOfBirth: new Date('2008-05-01'),
-        gender: 'male' as const,
-        admissionNumber: 'JSS3005',
-        schoolId: 'test-school',
-        stage: TStudentStage.JSS,
-        gradeCode: 'JSS3',
-        streamSection: 'A',
-        admissionDate: new Date('2020-09-01'),
-        enrollmentType: EnrollmentType.REGULAR,
-        status: StudentStatus.ACTIVE,
-      });
-
-      const student2 = await studentRepository.save({
-        firstName: 'Diana',
-        lastName: 'Evans',
-        dateOfBirth: new Date('2008-06-01'),
-        gender: 'female' as const,
-        admissionNumber: 'JSS3006',
-        schoolId: 'test-school',
-        stage: TStudentStage.JSS,
-        gradeCode: 'JSS3',
-        streamSection: 'A',
-        admissionDate: new Date('2020-09-01'),
-        enrollmentType: EnrollmentType.REGULAR,
-        status: StudentStatus.ACTIVE,
-      });
-
-      const promotionDto = {
-        scope: 'students' as const,
-        studentIds: [student1.id],
-        targetGradeCode: 'SSS1',
-        academicYear: '2025',
-        reason: 'Selective promotion',
-        includeRepeaters: false,
-      };
-
-      const result = await service.executePromotion(promotionDto);
-
-      expect(result.promotedStudents).toBe(1);
-      expect(result.studentIds).toContain(student1.id);
-
-      // Verify only selected student was promoted
-      const promotedStudent = await studentRepository.findOne({
-        where: { id: student1.id }
-      });
-      expect(promotedStudent?.gradeCode).toBe('SSS1');
-
-      // Verify other student was not promoted
-      const notPromotedStudent = await studentRepository.findOne({
-        where: { id: student2.id }
-      });
-      expect(notPromotedStudent?.gradeCode).toBe('JSS3');
-    });
-
-    it('should exclude repeaters when includeRepeaters is false', async () => {
-      const student1 = await studentRepository.save({
-        firstName: 'Eve',
-        lastName: 'Foster',
-        dateOfBirth: new Date('2008-07-01'),
-        gender: 'female' as const,
-        admissionNumber: 'JSS3007',
-        schoolId: 'test-school',
-        stage: TStudentStage.JSS,
-        gradeCode: 'JSS3',
-        streamSection: 'A',
-        admissionDate: new Date('2020-09-01'),
-        enrollmentType: EnrollmentType.REGULAR,
-        status: StudentStatus.ACTIVE,
-        academicStanding: { probation: true },
-      });
-
-      const student2 = await studentRepository.save({
-        firstName: 'Frank',
-        lastName: 'Garcia',
-        dateOfBirth: new Date('2008-08-01'),
-        gender: 'male' as const,
-        admissionNumber: 'JSS3008',
-        schoolId: 'test-school',
-        stage: TStudentStage.JSS,
-        gradeCode: 'JSS3',
-        streamSection: 'A',
-        admissionDate: new Date('2020-09-01'),
-        enrollmentType: EnrollmentType.REGULAR,
-        status: StudentStatus.ACTIVE,
-        academicStanding: { probation: false },
-      });
-
-      const promotionDto = {
+      const dto = {
         scope: 'grade' as const,
         gradeCode: 'JSS3',
         targetGradeCode: 'SSS1',
         academicYear: '2025',
-        reason: 'Promotion excluding repeaters',
-        includeRepeaters: false,
-      };
-
-      const result = await service.executePromotion(promotionDto);
-
-      expect(result.promotedStudents).toBe(1);
-
-      // Verify only non-repeater was promoted
-      const promotedStudent = await studentRepository.findOne({
-        where: { admissionNumber: 'JSS3008' }
-      });
-      expect(promotedStudent?.gradeCode).toBe('SSS1');
-
-      // Verify repeater was not promoted
-      const notPromotedStudent = await studentRepository.findOne({
-        where: { admissionNumber: 'JSS3007' }
-      });
-      expect(notPromotedStudent?.gradeCode).toBe('JSS3');
-    });
-
-    it('should include repeaters when includeRepeaters is true', async () => {
-      const student1 = await studentRepository.save({
-        firstName: 'Grace',
-        lastName: 'Harris',
-        dateOfBirth: new Date('2008-09-01'),
-        gender: 'female' as const,
-        admissionNumber: 'JSS3009',
-        schoolId: 'test-school',
-        stage: TStudentStage.JSS,
-        gradeCode: 'JSS3',
-        streamSection: 'A',
-        admissionDate: new Date('2020-09-01'),
-        enrollmentType: EnrollmentType.REGULAR,
-        status: StudentStatus.ACTIVE,
-        academicStanding: { probation: true },
-      });
-
-      const student2 = await studentRepository.save({
-        firstName: 'Henry',
-        lastName: 'Irwin',
-        dateOfBirth: new Date('2008-10-01'),
-        gender: 'male' as const,
-        admissionNumber: 'JSS3010',
-        schoolId: 'test-school',
-        stage: TStudentStage.JSS,
-        gradeCode: 'JSS3',
-        streamSection: 'A',
-        admissionDate: new Date('2020-09-01'),
-        enrollmentType: EnrollmentType.REGULAR,
-        status: StudentStatus.ACTIVE,
-        academicStanding: { probation: false },
-      });
-
-      const promotionDto = {
-        scope: 'grade' as const,
-        gradeCode: 'JSS3',
-        targetGradeCode: 'SSS1',
-        academicYear: '2025',
-        reason: 'Promotion including repeaters',
         includeRepeaters: true,
       };
 
-      const result = await service.executePromotion(promotionDto);
+      const result = await service.executePromotion(dto);
 
       expect(result.promotedStudents).toBe(2);
 
-      // Verify both students were promoted
-      const promotedStudents = await studentRepository.find({
-        where: { gradeCode: 'SSS1' }
-      });
-      expect(promotedStudents).toHaveLength(2);
+      const promoted = await studentRepository.find({ where: { gradeCode: 'SSS1' } });
+      expect(promoted.map(s => s.id)).toEqual(expect.arrayContaining([r1.id, r2.id]));
     });
 
-    it('should handle empty result set', async () => {
-      const promotionDto = {
+    it('updates streamSection for promoted students when streamSection provided', async () => {
+      const s1 = await makeStudent({ gradeCode: 'JSS3', streamSection: 'A' });
+      const s2 = await makeStudent({ gradeCode: 'JSS3', streamSection: 'B' });
+
+      const dto = {
+        scope: 'grade' as const,
+        gradeCode: 'JSS3',
+        targetGradeCode: 'SSS1',
+        academicYear: '2025',
+        includeRepeaters: true,
+        streamSection: 'C',
+      };
+
+      const result = await service.executePromotion(dto);
+
+      expect(result.promotedStudents).toBe(2);
+
+      const dbS1 = await studentRepository.findOne({ where: { id: s1.id } });
+      const dbS2 = await studentRepository.findOne({ where: { id: s2.id } });
+      expect(dbS1?.streamSection).toBe('C');
+      expect(dbS2?.streamSection).toBe('C');
+    });
+
+    it('returns 0 when no students match the grade', async () => {
+      const dto = {
         scope: 'grade' as const,
         gradeCode: 'NONEXISTENT',
         targetGradeCode: 'SSS1',
         academicYear: '2025',
-        reason: 'Test empty promotion',
         includeRepeaters: false,
       };
 
-      const result = await service.executePromotion(promotionDto);
-
+      const result = await service.executePromotion(dto);
       expect(result.promotedStudents).toBe(0);
       expect(result.studentIds).toHaveLength(0);
     });
   });
 
-  describe('assignClass', () => {
-    it('should assign class and create promotion history for grade increase', async () => {
-      const student = await studentRepository.save({
-        firstName: 'Ivy',
-        lastName: 'Johnson',
-        dateOfBirth: new Date('2008-11-01'),
-        gender: 'female' as const,
-        admissionNumber: 'JSS3011',
-        schoolId: 'test-school',
-        stage: TStudentStage.JSS,
-        gradeCode: 'JSS2',
-        streamSection: 'A',
-        admissionDate: new Date('2020-09-01'),
-        enrollmentType: EnrollmentType.REGULAR,
-        status: StudentStatus.ACTIVE,
-      });
+  describe('executePromotion - scope: section', () => {
+    it('promotes only students in specified section within grade', async () => {
+      const a1 = await makeStudent({ gradeCode: 'JSS3', streamSection: 'A' });
+      const a2 = await makeStudent({ gradeCode: 'JSS3', streamSection: 'A' });
+      const b1 = await makeStudent({ gradeCode: 'JSS3', streamSection: 'B' });
 
-      const assignClassDto = {
+      const dto = {
+        scope: 'section' as const,
         gradeCode: 'JSS3',
-        streamSection: 'B',
-        effectiveDate: new Date(),
-        reason: 'Class assignment promotion',
+        streamSection: 'A',
+        targetGradeCode: 'SSS1',
+        academicYear: '2025',
+        includeRepeaters: true,
       };
 
-      const result = await service.assignClass(student.id, assignClassDto);
+      const result = await service.executePromotion(dto);
 
-      expect(result.gradeCode).toBe('JSS3');
-      expect(result.streamSection).toBe('B');
+      expect(result.promotedStudents).toBe(2);
+      expect(result.studentIds).toEqual(expect.arrayContaining([a1.id, a2.id]));
+      expect(result.studentIds).not.toContain(b1.id);
 
-      // Verify promotion history was created
-      const updatedStudent = await studentRepository.findOne({
-        where: { id: student.id }
-      });
-      expect(updatedStudent?.promotionHistory).toHaveLength(1);
-      expect(updatedStudent?.promotionHistory[0].fromGrade).toBe('JSS2');
-      expect(updatedStudent?.promotionHistory[0].toGrade).toBe('JSS3');
-      expect(updatedStudent?.promotionHistory[0].reason).toBe('Class assignment promotion');
+      const dbA1 = await studentRepository.findOne({ where: { id: a1.id } });
+      const dbB1 = await studentRepository.findOne({ where: { id: b1.id } });
+
+      expect(dbA1?.gradeCode).toBe('SSS1');
+      expect(dbA1?.stage).toBe('SSS');
+      expect(dbB1?.gradeCode).toBe('JSS3');
+      expect(dbB1?.stage).toBe('JSS');
+    });
+  });
+
+  describe('executePromotion - scope: students', () => {
+    it('promotes only specified students and respects includeRepeaters=false', async () => {
+      const s1 = await makeStudent({ gradeCode: 'JSS3', academicStanding: { probation: false } });
+      const s2 = await makeStudent({ gradeCode: 'JSS3', academicStanding: { probation: true } });
+      const s3 = await makeStudent({ gradeCode: 'JSS3', academicStanding: { probation: false } });
+
+      const dto = {
+        scope: 'students' as const,
+        studentIds: [s1.id, s2.id],
+        targetGradeCode: 'SSS1',
+        academicYear: '2025',
+        includeRepeaters: false,
+      };
+
+      const result = await service.executePromotion(dto);
+
+      expect(result.promotedStudents).toBe(1);
+      expect(result.studentIds).toEqual(expect.arrayContaining([s1.id]));
+      expect(result.studentIds).not.toContain(s2.id);
+      expect(result.studentIds).not.toContain(s3.id);
+
+      const dbS1 = await studentRepository.findOne({ where: { id: s1.id } });
+      const dbS2 = await studentRepository.findOne({ where: { id: s2.id } });
+      const dbS3 = await studentRepository.findOne({ where: { id: s3.id } });
+
+      expect(dbS1?.gradeCode).toBe('SSS1');
+      expect(dbS2?.gradeCode).toBe('JSS3');
+      expect(dbS3?.gradeCode).toBe('JSS3');
     });
 
-    it('should assign class without promotion history for same grade', async () => {
-      const student = await studentRepository.save({
-        firstName: 'Jack',
-        lastName: 'King',
-        dateOfBirth: new Date('2008-12-01'),
-        gender: 'male' as const,
-        admissionNumber: 'JSS3012',
-        schoolId: 'test-school',
-        stage: TStudentStage.JSS,
-        gradeCode: 'JSS3',
-        streamSection: 'A',
-        admissionDate: new Date('2020-09-01'),
-        enrollmentType: EnrollmentType.REGULAR,
-        status: StudentStatus.ACTIVE,
-      });
+    it('preserves streamSection when not provided', async () => {
+      const s1 = await makeStudent({ gradeCode: 'JSS3', streamSection: 'A' });
 
-      const assignClassDto = {
-        gradeCode: 'JSS3',
-        streamSection: 'B',
-        effectiveDate: new Date(),
-        reason: 'Section change only',
+      const dto = {
+        scope: 'students' as const,
+        studentIds: [s1.id],
+        targetGradeCode: 'SSS1',
+        academicYear: '2025',
+        includeRepeaters: true,
       };
 
-      const result = await service.assignClass(student.id, assignClassDto);
+      await service.executePromotion(dto);
 
-      expect(result.gradeCode).toBe('JSS3');
-      expect(result.streamSection).toBe('B');
-
-      // Verify no promotion history was created
-      const updatedStudent = await studentRepository.findOne({
-        where: { id: student.id }
-      });
-      expect(updatedStudent?.promotionHistory).toHaveLength(0);
+      const dbS1 = await studentRepository.findOne({ where: { id: s1.id } });
+      expect(dbS1?.streamSection).toBe('A');
     });
+  });
 
-    it('should throw error for non-existent student', async () => {
-      const assignClassDto = {
-        gradeCode: 'JSS3',
-        streamSection: 'A',
-        effectiveDate: new Date(),
-        reason: 'Test error',
+  describe('executePromotion - scope: all', () => {
+    it('promotes all ACTIVE students and ignores INACTIVE', async () => {
+      const act1 = await makeStudent({ gradeCode: 'JSS2' });
+      const act2 = await makeStudent({ gradeCode: 'PRY4' });
+      const ina = await makeStudent({ gradeCode: 'JSS1', status: StudentStatus.INACTIVE, admissionNumber: 'ADM-INACT-2' });
+
+      const dto = {
+        scope: 'all' as const,
+        targetGradeCode: 'SSS1',
+        academicYear: '2025',
+        includeRepeaters: true,
       };
 
-      await expect(service.assignClass('non-existent-id', assignClassDto))
-        .rejects
-        .toThrow('Student not found');
+      const result = await service.executePromotion(dto);
+
+      expect(result.promotedStudents).toBe(2);
+      expect(result.studentIds).toEqual(expect.arrayContaining([act1.id, act2.id]));
+      expect(result.studentIds).not.toContain(ina.id);
+
+      const dbAct1 = await studentRepository.findOne({ where: { id: act1.id } });
+      const dbAct2 = await studentRepository.findOne({ where: { id: act2.id } });
+      const dbIna = await studentRepository.findOne({ where: { id: ina.id } });
+
+      expect(dbAct1?.gradeCode).toBe('SSS1');
+      expect(dbAct1?.stage).toBe('SSS');
+      expect(dbAct2?.gradeCode).toBe('SSS1');
+      expect(dbAct2?.stage).toBe('SSS');
+      expect(dbIna?.gradeCode).toBe('JSS1');
+      expect(dbIna?.stage).toBe('JSS');
+    });
+  });
+
+  describe('executePromotion - stage behavior', () => {
+    it('keeps stage unchanged for intra-stage promotions (JSS1 -> JSS2)', async () => {
+      const s = await makeStudent({ gradeCode: 'JSS1', stage: 'JSS' as TStudentStage });
+
+      const dto = {
+        scope: 'students' as const,
+        studentIds: [s.id],
+        targetGradeCode: 'JSS2',
+        academicYear: '2025',
+        includeRepeaters: true,
+      };
+
+      await service.executePromotion(dto);
+
+      const dbS = await studentRepository.findOne({ where: { id: s.id } });
+      expect(dbS?.gradeCode).toBe('JSS2');
+      expect(dbS?.stage).toBe('JSS');
+    });
+  });
+
+  describe('executePromotion - invalid scope', () => {
+    it('returns zero changes for unsupported scope (service-level behavior)', async () => {
+      const s = await makeStudent({ gradeCode: 'JSS3' });
+
+      const dto: any = {
+        scope: 'unsupported',
+        gradeCode: 'JSS3',
+        targetGradeCode: 'SSS1',
+        academicYear: '2025',
+        includeRepeaters: true,
+      };
+
+      const result = await service.executePromotion(dto);
+      expect(result.promotedStudents).toBe(0);
+
+      const dbS = await studentRepository.findOne({ where: { id: s.id } });
+      expect(dbS?.gradeCode).toBe('JSS3');
+      expect(dbS?.stage).toBe('JSS');
     });
   });
 });

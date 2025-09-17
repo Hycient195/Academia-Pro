@@ -26,6 +26,13 @@ export class DatabaseTestModule {
           synchronize: true, // Use synchronize for tests
           dropSchema: true,  // Clean database between tests
           logging: false,    // Disable logging for tests
+          cache: false,      // Disable cache for tests
+          extra: {
+            // Additional PostgreSQL options for tests
+            connectionTimeoutMillis: 5000,
+            query_timeout: 5000,
+            statement_timeout: 5000,
+          },
         }),
       ],
       providers: [

@@ -30,6 +30,20 @@ import { usePagination } from "@/components/ui/pagination"
 import { FormStudentSelect } from "@/components/ui/form/FormStudentSelect"
 import { FormAcademicYearSelector, FormSelect, FormText } from "@/components/ui/form/form-components"
 
+// Utilities
+const computeDefaultAcademicYear = (): string => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth(); // 0 = Jan, 7 = Aug
+  const start = month >= 7 ? year : year - 1;
+  const end = start + 1;
+  return `${start}-${end}`;
+};
+
+type ApiErrorShape = { status?: number; data?: unknown; message?: string };
+
+const isApiError = (err: unknown): err is ApiErrorShape =>
+  typeof err === 'object' && err !== null;
 interface PromotionWizardProps {
   onComplete: () => void
 }
@@ -50,7 +64,7 @@ export function PromotionWizard({ onComplete }: PromotionWizardProps) {
   const [currentStep, setCurrentStep] = useState<'scope-preview' | 'execute'>('scope-preview')
   const [promotionRequest, setPromotionRequest] = useState<Partial<IPromotionRequest>>({
     scope: 'all',
-    academicYear: new Date().getFullYear().toString(),
+    academicYear: computeDefaultAcademicYear(),
     includeRepeaters: false,
   })
   const [previewData, setPreviewData] = useState<PromotionPreview[]>([])
@@ -227,6 +241,22 @@ export function PromotionWizard({ onComplete }: PromotionWizardProps) {
       }
     }
 
+    // For 'all' and 'section' scopes, target grade must be explicitly provided
+    if (promotionRequest.scope === 'all' || promotionRequest.scope === 'section') {
+      if (!promotionRequest.targetGradeCode) {
+        errors.push('Target grade is required for all/section promotions')
+      } else if (!validateGradeCode(promotionRequest.targetGradeCode)) {
+        errors.push('Invalid target grade selected')
+      }
+    }
+
+    // If user manually set a target grade for students/grade, validate it as well
+    if ((promotionRequest.scope === 'students' || promotionRequest.scope === 'grade') && promotionRequest.targetGradeCode) {
+      if (!validateGradeCode(promotionRequest.targetGradeCode)) {
+        errors.push('Invalid target grade selected')
+      }
+    }
+
     return { isValid: errors.length === 0, errors }
   }
 
@@ -371,7 +401,7 @@ export function PromotionWizard({ onComplete }: PromotionWizardProps) {
     setCurrentStep('scope-preview')
     setPromotionRequest({
       scope: 'all',
-      academicYear: new Date().getFullYear().toString(),
+      academicYear: computeDefaultAcademicYear(),
       includeRepeaters: false,
     })
     setPreviewData([])
@@ -399,34 +429,47 @@ export function PromotionWizard({ onComplete }: PromotionWizardProps) {
         })
       }, 300)
 
-      // Calculate target grade based on scope with better error handling
-      let targetGradeCode: TGradeCode | null = null;
+      // Determine target grade with support for manual override and required selection for certain scopes
+      let computedTargetGradeCode: TGradeCode | null = null;
       let calculationError = ''
-
+      
       try {
-        if (promotionRequest.scope === 'grade' && promotionRequest.gradeCode) {
-          // If promoting a specific grade, calculate next grade for that grade
-          const nextGradeResult = getNextGrade(promotionRequest.gradeCode as TGradeCode);
-          targetGradeCode = nextGradeResult.grade;
-          if (!targetGradeCode) {
-            calculationError = `No valid next grade found for ${promotionRequest.gradeCode}. This may be the highest grade level.`
+        if (promotionRequest.scope === 'all' || promotionRequest.scope === 'section') {
+          // Require manual target grade for bulk scopes
+          if (promotionRequest.targetGradeCode && validateTargetGrade(promotionRequest.targetGradeCode as TGradeCode)) {
+            computedTargetGradeCode = promotionRequest.targetGradeCode as TGradeCode
+          } else {
+            calculationError = 'Please select a valid target grade for the selected scope.'
+          }
+        } else if (promotionRequest.scope === 'grade' && promotionRequest.gradeCode) {
+          // Allow manual override; otherwise compute next grade
+          if (promotionRequest.targetGradeCode && validateTargetGrade(promotionRequest.targetGradeCode as TGradeCode)) {
+            computedTargetGradeCode = promotionRequest.targetGradeCode as TGradeCode
+          } else {
+            const nextGradeResult = getNextGrade(promotionRequest.gradeCode as TGradeCode);
+            computedTargetGradeCode = nextGradeResult.grade;
+            if (!computedTargetGradeCode) {
+              calculationError = `No valid next grade found for ${promotionRequest.gradeCode}. This may be the highest grade level.`
+            }
           }
         } else if (promotionRequest.scope === 'students' && selectedStudentIds.size > 0) {
-          // For specific students, we need to determine target grade
-          // This is a simplified approach - in production, you might want to calculate per student
-          const firstStudent = students.find(s => selectedStudentIds.has(s.id))
-          if (firstStudent) {
-            const nextGradeResult = getNextGrade(firstStudent.gradeCode as TGradeCode)
-            targetGradeCode = nextGradeResult.grade
-            if (!targetGradeCode) {
-              calculationError = `Selected students are already at the highest grade level.`
-            }
+          // For specific students, allow manual override; otherwise infer from first selected student
+          if (promotionRequest.targetGradeCode && validateTargetGrade(promotionRequest.targetGradeCode as TGradeCode)) {
+            computedTargetGradeCode = promotionRequest.targetGradeCode as TGradeCode
           } else {
-            calculationError = 'Unable to find selected students in the system.'
+            const firstStudent = students.find(s => selectedStudentIds.has(s.id))
+            if (firstStudent) {
+              const nextGradeResult = getNextGrade(firstStudent.gradeCode as TGradeCode)
+              computedTargetGradeCode = nextGradeResult.grade
+              if (!computedTargetGradeCode) {
+                calculationError = `Selected students are already at the highest grade level.`
+              }
+            } else {
+              calculationError = 'Unable to find selected students in the system.'
+            }
           }
         } else {
-          // For 'all' or 'section' scope, this is complex and should ideally be handled differently
-          calculationError = 'Bulk promotion for all/section scope requires manual target grade specification.'
+          calculationError = 'Invalid promotion scope or configuration.'
         }
       } catch (calcError) {
         console.error('Grade calculation error:', calcError)
@@ -439,14 +482,14 @@ export function PromotionWizard({ onComplete }: PromotionWizardProps) {
         return
       }
 
-      if (!targetGradeCode) {
+      if (!computedTargetGradeCode) {
         toast.error('Cannot determine target grade for promotion. No valid next grade found.')
         if (progressInterval) clearInterval(progressInterval)
         return
       }
 
       // Validate target grade
-      if (!validateTargetGrade(targetGradeCode)) {
+      if (!validateTargetGrade(computedTargetGradeCode)) {
         toast.error('Invalid target grade calculated. Please check the promotion configuration.')
         if (progressInterval) clearInterval(progressInterval)
         return
@@ -455,12 +498,12 @@ export function PromotionWizard({ onComplete }: PromotionWizardProps) {
       // Prepare promotion request using the state
       const requestData = {
         scope: promotionRequest.scope || 'all',
-        academicYear: promotionRequest.academicYear || new Date().getFullYear().toString(),
+        academicYear: promotionRequest.academicYear || computeDefaultAcademicYear(),
         includeRepeaters: promotionRequest.includeRepeaters,
         ...(promotionRequest.scope === 'grade' && { gradeCode: promotionRequest.gradeCode }),
         ...(promotionRequest.scope === 'section' && { streamSection: promotionRequest.streamSection }),
         ...(promotionRequest.scope === 'students' && { studentIds: Array.from(selectedStudentIds) }),
-        targetGradeCode,
+        targetGradeCode: computedTargetGradeCode,
       }
 
       console.log('Executing promotion with data:', requestData)
@@ -476,7 +519,7 @@ export function PromotionWizard({ onComplete }: PromotionWizardProps) {
       if (promotedCount < selectedStudentIds.size) {
         toast.warning(`${promotedCount} out of ${selectedStudentIds.size} students promoted successfully. Some promotions may have failed.`)
       } else {
-        toast.success(`Successfully promoted ${promotedCount} students to ${targetGradeCode}`)
+        toast.success(`Successfully promoted ${promotedCount} students to ${computedTargetGradeCode}`)
       }
 
       setExecutionCompleted(true)
@@ -671,6 +714,23 @@ export function PromotionWizard({ onComplete }: PromotionWizardProps) {
                       </Button>
                     </div>
                   </div>
+                )}
+              </div>
+            )}
+
+            {(promotionRequest.scope === 'all' || promotionRequest.scope === 'section' || promotionRequest.scope === 'students') && (
+              <div className="space-y-2">
+                <FormSelect
+                  labelText="Target Grade"
+                  value={promotionRequest.targetGradeCode}
+                  onChange={(e) => handleScopeChange('targetGradeCode', e.target.value)}
+                  options={Object.entries(gradeOptions).flatMap(([, grades]) =>
+                    grades.map(grade => ({ value: grade.value, text: grade.text }))
+                  )}
+                  placeholder="Select target grade"
+                />
+                {(promotionRequest.scope === 'all' || promotionRequest.scope === 'section') && (
+                  <p className="text-xs text-muted-foreground">Required for {promotionRequest.scope} promotions</p>
                 )}
               </div>
             )}

@@ -88,7 +88,7 @@ export class StudentAuditLog {
   severity: AuditSeverity;
 
   // User Information
-  @Column({ name: 'user_id', type: 'uuid' })
+  @Column({ name: 'user_id', type: 'uuid', nullable: true })
   userId: string;
 
   @Column({ name: 'user_name', type: 'varchar', length: 100 })

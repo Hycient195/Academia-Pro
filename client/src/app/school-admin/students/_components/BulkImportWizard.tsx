@@ -19,10 +19,30 @@ import {
   IconEye,
   IconRefresh,
 } from "@tabler/icons-react"
-import type { IStudentImportData } from "@academia-pro/types/student"
+import { FormText, FormSelect, FormDateInput, FormPhoneInput } from "@/components/ui/form/form-components"
+import ErrorBlock from "@/components/utilities/ErrorBlock"
+import ErrorToast from "@/components/utilities/ErrorToast"
+import { useBulkImportStudentsMutation } from "@/redux/api/school-admin/studentApis"
+import { useUserAuth } from "@/redux/auth/userAuthContext"
+import type { IBulkImportRequestDto } from "@academia-pro/types/school-admin"
 
 interface BulkImportWizardProps {
   onComplete: () => void
+}
+
+interface StudentImportRow {
+  FirstName: string
+  LastName: string
+  MiddleName?: string
+  DateOfBirth: string
+  Gender: string
+  AdmissionNumber?: string
+  GradeCode: string
+  StreamSection: string
+  FatherName: string
+  MotherName: string
+  Phone?: string
+  Email?: string
 }
 
 interface ImportResult {
@@ -33,25 +53,43 @@ interface ImportResult {
     row: number
     field: string
     message: string
-    data: IStudentImportData
+    data: StudentImportRow
   }>
   preview: Array<{
     row: number
-    data: IStudentImportData
+    data: StudentImportRow
     valid: boolean
     errors: string[]
   }>
 }
 
 export function BulkImportWizard({ onComplete }: BulkImportWizardProps) {
-  const [isLoading, setIsLoading] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const { user } = useUserAuth()
+  const [bulkImportStudents, { isLoading: bulkImportIsLoading, error: bulkImportError, isSuccess: bulkImportIsSuccess, reset: bulkImportReset }] = useBulkImportStudentsMutation()
 
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [currentStep, setCurrentStep] = useState<'upload' | 'preview' | 'import'>('upload')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [parsedData, setParsedData] = useState<StudentImportRow[]>([])
   const [importResult, setImportResult] = useState<ImportResult | null>(null)
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set())
   const [importProgress, setImportProgress] = useState(0)
+  const [isProcessingFile, setIsProcessingFile] = useState(false)
+
+  // Form state for manual entry
+  const [manualEntry, setManualEntry] = useState({
+    firstName: '',
+    lastName: '',
+    middleName: '',
+    dateOfBirth: '',
+    gender: '',
+    gradeCode: '',
+    streamSection: '',
+    fatherName: '',
+    motherName: '',
+    phone: '',
+    email: ''
+  })
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -63,7 +101,7 @@ export function BulkImportWizard({ onComplete }: BulkImportWizardProps) {
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       ]
 
-      if (!allowedTypes.includes(file.type)) {
+      if (!allowedTypes.includes(file.type) && !file.name.endsWith('.csv')) {
         toast.error("Please select a CSV or Excel file")
         return
       }
@@ -79,95 +117,184 @@ export function BulkImportWizard({ onComplete }: BulkImportWizardProps) {
     }
   }
 
+  const parseCSV = (csvText: string): StudentImportRow[] => {
+    const lines = csvText.split('\n').filter(line => line.trim())
+    if (lines.length < 2) return []
+
+    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''))
+    const data: StudentImportRow[] = []
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''))
+      if (values.length === headers.length) {
+        const row: Partial<StudentImportRow> = {}
+        headers.forEach((header, index) => {
+          row[header as keyof StudentImportRow] = values[index] || ''
+        })
+        data.push(row as StudentImportRow)
+      }
+    }
+
+    return data
+  }
+
+  const validateRow = (row: StudentImportRow, index: number): { valid: boolean; errors: string[] } => {
+    const errors: string[] = []
+
+    if (!row.FirstName?.trim()) errors.push('First name is required')
+    if (!row.LastName?.trim()) errors.push('Last name is required')
+    if (!row.DateOfBirth?.trim()) errors.push('Date of birth is required')
+    if (!row.Gender?.trim()) errors.push('Gender is required')
+    if (!row.GradeCode?.trim()) errors.push('Grade code is required')
+    if (!row.StreamSection?.trim()) errors.push('Stream section is required')
+    if (!row.FatherName?.trim()) errors.push('Father name is required')
+    if (!row.MotherName?.trim()) errors.push('Mother name is required')
+
+    // Validate date format
+    if (row.DateOfBirth && !/^\d{4}-\d{2}-\d{2}$/.test(row.DateOfBirth)) {
+      errors.push('Date of birth must be in YYYY-MM-DD format')
+    }
+
+    // Validate email format
+    if (row.Email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.Email)) {
+      errors.push('Invalid email format')
+    }
+
+    return { valid: errors.length === 0, errors }
+  }
+
   const handleUpload = async () => {
     if (!selectedFile) return
 
-    setIsLoading(true)
+    setIsProcessingFile(true)
     try {
-      // Mock implementation - replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      const text = await selectedFile.text()
+      const data = parseCSV(text)
 
-      // Mock result
-      const mockResult: ImportResult = {
-        total: 100,
-        successful: 85,
-        failed: 15,
-        errors: [
-          { row: 5, field: 'email', message: 'Invalid email format', data: { FirstName: 'Invalid', LastName: 'Student', DateOfBirth: 'invalid', Gender: 'male', AdmissionNumber: 'ADM001', Stage: 'PRY', GradeCode: 'PRY1', StreamSection: 'A', AdmissionDate: '2024-01-01', EnrollmentType: 'regular' } },
-          { row: 12, field: 'dateOfBirth', message: 'Invalid date format', data: { FirstName: 'Another', LastName: 'Student', DateOfBirth: 'invalid', Gender: 'female', AdmissionNumber: 'ADM002', Stage: 'JSS', GradeCode: 'JSS1', StreamSection: 'B', AdmissionDate: '2024-01-01', EnrollmentType: 'regular' } },
-        ],
-        preview: Array.from({ length: 100 }, (_, i) => ({
-          row: i + 1,
-          data: {
-            FirstName: `Student${i + 1}`,
-            LastName: `Last${i + 1}`,
-            DateOfBirth: `200${5 + (i % 5)}-03-15`,
-            Gender: i % 2 === 0 ? 'male' : 'female',
-            AdmissionNumber: `ADM${String(i + 1).padStart(4, '0')}`,
-            Stage: i % 3 === 0 ? 'PRY' : i % 3 === 1 ? 'JSS' : 'SSS',
-            GradeCode: i % 3 === 0 ? 'PRY1' : i % 3 === 1 ? 'JSS1' : 'SSS1',
-            StreamSection: 'A',
-            AdmissionDate: '2024-08-01',
-            EnrollmentType: 'regular'
-          },
-          valid: i < 85,
-          errors: i >= 85 ? ['Invalid data'] : []
-        }))
+      if (data.length === 0) {
+        toast.error("No valid data found in file")
+        return
       }
 
-      setImportResult(mockResult)
+      const preview = data.map((row, index) => {
+        const validation = validateRow(row, index)
+        return {
+          row: index + 1,
+          data: row,
+          valid: validation.valid,
+          errors: validation.errors
+        }
+      })
+
+      const result: ImportResult = {
+        total: data.length,
+        successful: preview.filter(p => p.valid).length,
+        failed: preview.filter(p => !p.valid).length,
+        errors: preview.filter(p => !p.valid).map(p => ({
+          row: p.row,
+          field: 'general',
+          message: p.errors.join(', '),
+          data: p.data
+        })),
+        preview
+      }
+
+      setParsedData(data)
+      setImportResult(result)
       setCurrentStep('preview')
+      toast.success(`File processed successfully. ${result.successful} valid, ${result.failed} invalid rows.`)
     } catch (error) {
       toast.error("Failed to process file")
     } finally {
-      setIsLoading(false)
+      setIsProcessingFile(false)
     }
   }
 
-  const handleImport = async () => {
-    if (!selectedFile || !importResult) return
+  const handleImport = () => {
+    if (!parsedData.length || !user?.schoolId) return
 
-    setIsLoading(true)
-    try {
-      setImportProgress(0)
+    const selectedData = parsedData.filter((_, index) => selectedRows.has(index + 1))
 
-      // Simulate progress for better UX
-      const progressInterval = setInterval(() => {
-        setImportProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval)
-            return 90
-          }
-          return prev + 10
-        })
-      }, 200)
-
-      // Mock implementation - replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 3000))
-
-      clearInterval(progressInterval)
-      setImportProgress(100)
-
-      // Update result with final import data
-      const finalResult = {
-        ...importResult,
-        successful: selectedRows.size,
-        failed: importResult.total - selectedRows.size
-      }
-
-      setImportResult(finalResult)
-      setCurrentStep('import')
-
-      if (finalResult.failed === 0) {
-        toast.success(`Successfully imported ${finalResult.successful} students`)
-      } else {
-        toast.warning(`Imported ${finalResult.successful} students with ${finalResult.failed} errors`)
-      }
-    } catch (error) {
-      toast.error("Import failed")
-    } finally {
-      setIsLoading(false)
+    if (selectedData.length === 0) {
+      toast.error("Please select at least one student to import")
+      return
     }
+
+    const importData: IBulkImportRequestDto = {
+      schoolId: user.schoolId,
+      data: selectedData.map(row => ({
+        admissionNumber: row.AdmissionNumber || '',
+        firstName: row.FirstName,
+        lastName: row.LastName,
+        middleName: row.MiddleName || '',
+        dateOfBirth: row.DateOfBirth,
+        gender: row.Gender.toLowerCase() as 'male' | 'female' | 'other',
+        gradeCode: row.GradeCode,
+        streamSection: row.StreamSection,
+        fatherName: row.FatherName,
+        motherName: row.MotherName,
+        phone: row.Phone || '',
+        email: row.Email || ''
+      }))
+    }
+
+    setImportProgress(0)
+
+    bulkImportStudents(importData)
+      .unwrap()
+      .then((result) => {
+        toast.success(`Successfully imported ${result.imported} students`)
+        setCurrentStep('import')
+        setImportProgress(100)
+      })
+      .catch((err) => {
+        console.error(err)
+        toast.error("Failed to import students.", { description: <ErrorToast error={bulkImportError} /> })
+      })
+      .finally(() => {
+        // Cleanup if needed
+      })
+  }
+
+  const addManualEntry = () => {
+    if (!manualEntry.firstName || !manualEntry.lastName || !manualEntry.dateOfBirth || !manualEntry.gender || !manualEntry.gradeCode || !manualEntry.streamSection) {
+      toast.error("Please fill in all required fields")
+      return
+    }
+
+    const newRow: StudentImportRow = {
+      FirstName: manualEntry.firstName,
+      LastName: manualEntry.lastName,
+      MiddleName: manualEntry.middleName,
+      DateOfBirth: manualEntry.dateOfBirth,
+      Gender: manualEntry.gender,
+      AdmissionNumber: '',
+      GradeCode: manualEntry.gradeCode,
+      StreamSection: manualEntry.streamSection,
+      FatherName: manualEntry.fatherName,
+      MotherName: manualEntry.motherName,
+      Phone: manualEntry.phone,
+      Email: manualEntry.email
+    }
+
+    setParsedData(prev => [...prev, newRow])
+
+    // Reset form
+    setManualEntry({
+      firstName: '',
+      lastName: '',
+      middleName: '',
+      dateOfBirth: '',
+      gender: '',
+      gradeCode: '',
+      streamSection: '',
+      fatherName: '',
+      motherName: '',
+      phone: '',
+      email: ''
+    })
+
+    toast.success("Student added to import list")
   }
 
   const downloadTemplate = () => {
@@ -266,47 +393,146 @@ export function BulkImportWizard({ onComplete }: BulkImportWizardProps) {
           Upload Student Data
         </CardTitle>
         <CardDescription>
-          Select a CSV or Excel file containing student information
+          Select a CSV or Excel file containing student information, or add students manually
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-          <IconFileText className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-          <div className="space-y-2">
-            <p className="text-sm text-gray-600">
-              {selectedFile ? selectedFile.name : "No file selected"}
-            </p>
-            <p className="text-xs text-gray-500">
-              Supported formats: CSV, XLS, XLSX (Max 10MB)
-            </p>
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv,.xls,.xlsx"
-            onChange={handleFileSelect}
-            className="hidden"
-          />
-          <Button
-            variant="outline"
-            onClick={() => fileInputRef.current?.click()}
-            className="mt-4"
-          >
-            Choose File
-          </Button>
-        </div>
+        <Tabs defaultValue="file" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="file">Upload File</TabsTrigger>
+            <TabsTrigger value="manual">Manual Entry</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="file" className="space-y-4">
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+              <IconFileText className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600">
+                  {selectedFile ? selectedFile.name : "No file selected"}
+                </p>
+                <p className="text-xs text-gray-500">
+                  Supported formats: CSV, XLS, XLSX (Max 10MB)
+                </p>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,.xls,.xlsx"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              <Button
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                className="mt-4"
+              >
+                Choose File
+              </Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="manual" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormText
+                labelText="First Name"
+                value={manualEntry.firstName}
+                onChange={(e) => setManualEntry(prev => ({ ...prev, firstName: String(e.target.value) }))}
+                placeholder="Enter first name"
+                required
+              />
+              <FormText
+                labelText="Last Name"
+                value={manualEntry.lastName}
+                onChange={(e) => setManualEntry(prev => ({ ...prev, lastName: String(e.target.value) }))}
+                placeholder="Enter last name"
+                required
+              />
+              <FormText
+                labelText="Middle Name"
+                value={manualEntry.middleName}
+                onChange={(e) => setManualEntry(prev => ({ ...prev, middleName: String(e.target.value) }))}
+                placeholder="Enter middle name"
+              />
+              <FormDateInput
+                labelText="Date of Birth"
+                value={manualEntry.dateOfBirth}
+                onChange={(e) => setManualEntry(prev => ({ ...prev, dateOfBirth: String(e.target.value) }))}
+                placeholder="Select date of birth"
+                required
+              />
+              <FormSelect
+                labelText="Gender"
+                value={manualEntry.gender}
+                onChange={(e) => setManualEntry(prev => ({ ...prev, gender: String(e.target.value) }))}
+                options={[
+                  { value: 'male', text: 'Male' },
+                  { value: 'female', text: 'Female' },
+                  { value: 'other', text: 'Other' }
+                ]}
+                placeholder="Select gender"
+                required
+              />
+              <FormText
+                labelText="Grade Code"
+                value={manualEntry.gradeCode}
+                onChange={(e) => setManualEntry(prev => ({ ...prev, gradeCode: String(e.target.value) }))}
+                placeholder="e.g., JSS1, SSS2"
+                required
+              />
+              <FormText
+                labelText="Stream Section"
+                value={manualEntry.streamSection}
+                onChange={(e) => setManualEntry(prev => ({ ...prev, streamSection: String(e.target.value) }))}
+                placeholder="e.g., A, B, Science"
+                required
+              />
+              <FormText
+                labelText="Father's Name"
+                value={manualEntry.fatherName}
+                onChange={(e) => setManualEntry(prev => ({ ...prev, fatherName: String(e.target.value) }))}
+                placeholder="Enter father's name"
+                required
+              />
+              <FormText
+                labelText="Mother's Name"
+                value={manualEntry.motherName}
+                onChange={(e) => setManualEntry(prev => ({ ...prev, motherName: String(e.target.value) }))}
+                placeholder="Enter mother's name"
+                required
+              />
+              <FormPhoneInput
+                labelText="Phone"
+                value={manualEntry.phone}
+                onChange={(e) => setManualEntry(prev => ({ ...prev, phone: String(e.target.value) }))}
+                placeholder="Enter phone number"
+              />
+              <FormText
+                labelText="Email"
+                value={manualEntry.email}
+                onChange={(e) => setManualEntry(prev => ({ ...prev, email: String(e.target.value) }))}
+                placeholder="Enter email address"
+                type="email"
+              />
+            </div>
+            <Button onClick={addManualEntry} className="w-full">
+              Add Student to List
+            </Button>
+          </TabsContent>
+        </Tabs>
 
         <div className="flex gap-4">
           <Button variant="outline" onClick={downloadTemplate}>
             <IconDownload className="h-4 w-4 mr-2" />
             Download Template
           </Button>
-          <Button
-            onClick={handleUpload}
-            disabled={!selectedFile || isLoading}
-          >
-            {isLoading ? "Processing..." : "Upload & Preview"}
-          </Button>
+          {(selectedFile || parsedData.length > 0) && (
+            <Button
+              onClick={handleUpload}
+              disabled={(!selectedFile && parsedData.length === 0) || isProcessingFile}
+            >
+              {isProcessingFile ? "Processing..." : "Upload & Preview"}
+            </Button>
+          )}
         </div>
 
         <Card className="border-amber-200 bg-amber-50">
@@ -315,7 +541,7 @@ export function BulkImportWizard({ onComplete }: BulkImportWizardProps) {
               <IconAlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
               <div className="text-sm text-amber-800">
                 <strong>Important:</strong> Ensure your file follows the template format.
-                Required fields: FirstName, LastName, DateOfBirth, Gender, Stage, GradeCode, StreamSection.
+                Required fields: FirstName, LastName, DateOfBirth, Gender, GradeCode, StreamSection, FatherName, MotherName.
               </div>
             </div>
           </CardContent>
@@ -428,7 +654,7 @@ export function BulkImportWizard({ onComplete }: BulkImportWizardProps) {
             </Button>
             <Button
               onClick={handleImport}
-              disabled={selectedRows.size === 0 || isLoading}
+              disabled={selectedRows.size === 0 || bulkImportIsLoading}
             >
               Import {selectedRows.size} Students
             </Button>
@@ -510,6 +736,9 @@ export function BulkImportWizard({ onComplete }: BulkImportWizardProps) {
   return (
     <div className="max-h-[80vh] overflow-y-auto">
       <div className="space-y-6">
+        {/* Error Block */}
+        <ErrorBlock error={bulkImportError} />
+
         {/* Progress indicator */}
         <div className="flex items-center justify-center space-x-4">
           <div className={`flex items-center space-x-2 ${currentStep === 'upload' ? 'text-blue-600' : 'text-gray-400'}`}>
@@ -538,10 +767,10 @@ export function BulkImportWizard({ onComplete }: BulkImportWizardProps) {
         {currentStep === 'preview' && renderPreviewStep()}
         {currentStep === 'import' && renderImportStep()}
 
-        {isLoading && (
+        {(isProcessingFile || bulkImportIsLoading) && (
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span>Processing...</span>
+              <span>{bulkImportIsLoading ? 'Importing...' : 'Processing...'}</span>
               <span>{importProgress}%</span>
             </div>
             <Progress value={importProgress} />

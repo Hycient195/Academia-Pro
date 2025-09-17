@@ -242,9 +242,10 @@ export interface IBulkImportRequestDto {
 
 export interface IGraduationRequestDto {
   schoolId: string;
-  gradeCode: string;
+  gradeCode?: string;
   graduationYear: number;
   studentIds?: string[];
+  clearanceStatus?: 'cleared' | 'pending';
 }
 
 export interface ITransferStudentRequestDto {

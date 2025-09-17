@@ -10,6 +10,7 @@ import { IconPlus, IconSearch } from "@tabler/icons-react"
 import { FormText, FormTextArea } from "@/components/ui/form/form-components"
 import apis from "@/redux/api"
 import ErrorBlock from "@/components/utilities/ErrorBlock"
+import ErrorToast from "@/components/utilities/ErrorToast"
 import { toast } from "sonner"
 import type { IPermission } from '@academia-pro/types/super-admin'
 
@@ -34,7 +35,7 @@ export function CreateRoleModal({ defaultPermissions, onRoleCreated }: CreateRol
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
 
-  const [createRole, { error: createRoleError }] = apis.superAdmin.iam.useCreateRoleMutation()
+  const [createRole, { isLoading, error: createRoleError }] = apis.superAdmin.iam.useCreateRoleMutation()
 
   // Filter and sort permissions based on search term
   const filteredAndSortedPermissions = defaultPermissions
@@ -53,7 +54,7 @@ export function CreateRoleModal({ defaultPermissions, onRoleCreated }: CreateRol
     }))
   }
 
-  const handleCreateRole = async () => {
+  const handleCreateRole = () => {
     // Validation
     if (!formData.name.trim()) {
       toast.error("Please enter a role name")
@@ -65,15 +66,15 @@ export function CreateRoleModal({ defaultPermissions, onRoleCreated }: CreateRol
       return
     }
 
-    try {
-      const roleData = {
-        name: formData.name.trim(),
-        description: formData.description.trim() || '',
-        permissions: formData.selectedPermissions
-      }
+    const roleData = {
+      name: formData.name.trim(),
+      description: formData.description.trim() || '',
+      permissions: formData.selectedPermissions
+    }
 
-      await createRole(roleData).unwrap()
-
+    createRole(roleData)
+    .unwrap()
+    .then(() => {
       toast.success("Role created successfully!")
 
       // Reset form
@@ -85,10 +86,14 @@ export function CreateRoleModal({ defaultPermissions, onRoleCreated }: CreateRol
       })
       setIsCreateDialogOpen(false)
       onRoleCreated?.()
-    } catch (error) {
-      console.error("Failed to create role:", error)
-      toast.error("Failed to create role. Please try again.")
-    }
+    })
+    .catch((err) => {
+      console.error(err)
+      toast.error("Failed to create role.", { description: <ErrorToast error={createRoleError} /> })
+    })
+    .finally(() => {
+      // Cleanup actions if needed
+    })
   }
 
   return (
@@ -170,8 +175,8 @@ export function CreateRoleModal({ defaultPermissions, onRoleCreated }: CreateRol
         </div>
         <ErrorBlock error={createRoleError} />
         <DialogFooter>
-          <Button onClick={handleCreateRole}>
-            Create Role
+          <Button onClick={handleCreateRole} disabled={isLoading}>
+            {isLoading ? 'Creating...' : 'Create Role'}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input"
 import apis from "@/redux/api"
 import { ISuperAdminSchool } from "@academia-pro/types/super-admin"
 import { toast } from "sonner"
+import ErrorBlock from "@/components/utilities/ErrorBlock"
+import ErrorToast from "@/components/utilities/ErrorToast"
 
 interface DeleteSchoolModalProps {
   isOpen: boolean
@@ -16,7 +18,7 @@ interface DeleteSchoolModalProps {
 }
 
 export default function DeleteSchoolModal({ isOpen, onOpenChange, school, onSuccess }: DeleteSchoolModalProps) {
-  const [deleteSchool] = apis.superAdmin.schools.useDeleteSchoolMutation()
+  const [deleteSchool, { isLoading, error: deleteSchoolError }] = apis.superAdmin.schools.useDeleteSchoolMutation()
   const [deleteConfirmation, setDeleteConfirmation] = useState('')
 
   const confirmDeleteSchool = async () => {
@@ -25,16 +27,20 @@ export default function DeleteSchoolModal({ isOpen, onOpenChange, school, onSucc
       return
     }
 
-    deleteSchool({ id: school.id }).unwrap()
+    deleteSchool({ id: school.id })
+    .unwrap()
     .then(() => {
       toast.success(`School ${school.name} deleted successfully!`)
       onOpenChange(false)
       setDeleteConfirmation('')
       onSuccess?.()
     })
-    .catch((error) => {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-      toast.error(`Failed to delete school: ${errorMessage}`)
+    .catch((err) => {
+      console.error(err)
+      toast.error("Failed to delete school.", { description: <ErrorToast error={deleteSchoolError} /> })
+    })
+    .finally(() => {
+      // Cleanup actions if needed
     })
   }
 
@@ -69,6 +75,7 @@ export default function DeleteSchoolModal({ isOpen, onOpenChange, school, onSucc
             />
           </div>
         </div>
+        <ErrorBlock error={deleteSchoolError} />
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
@@ -76,9 +83,9 @@ export default function DeleteSchoolModal({ isOpen, onOpenChange, school, onSucc
           <Button
             variant="destructive"
             onClick={confirmDeleteSchool}
-            disabled={deleteConfirmation !== school?.name}
+            disabled={deleteConfirmation !== school?.name || isLoading}
           >
-            Delete School
+            {isLoading ? 'Deleting...' : 'Delete School'}
           </Button>
         </div>
       </DialogContent>

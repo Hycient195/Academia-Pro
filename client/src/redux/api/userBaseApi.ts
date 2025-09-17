@@ -44,31 +44,13 @@ const baseQueryWithCSRF = async (args: string | FetchArgs, api: BaseQueryApi, ex
     isMutation = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method.toUpperCase());
   }
 
-  // console.log('Frontend CSRF Debug:', {
-  //   url: typeof args === 'object' ? args.url : args,
-  //   method,
-  //   isMutation,
-  //   cookies: typeof document !== 'undefined' ? document.cookie : 'no document',
-  //   allCookies: typeof document !== 'undefined' ? Object.fromEntries(document.cookie.split(';').map(c => c.trim().split('='))) : 'no document',
-  // });
-
   // For mutations, add CSRF token
   if (isMutation) {
     const csrfToken = getCSRFTokenFromCookies();
-    // console.log('Frontend CSRF Debug - Mutation:', {
-    //   csrfToken: csrfToken ? '[PRESENT]' : '[MISSING]',
-    //   csrfTokenValue: csrfToken,
-    //   csrfTokenLength: csrfToken?.length,
-    //   cookieNames: typeof document !== 'undefined' ? document.cookie.split(';').map(c => c.trim().split('=')[0]) : [],
-    // });
 
     if (csrfToken) {
       if (typeof args === 'object') {
         args = { ...args, headers: { ...args.headers, 'X-CSRF-Token': csrfToken } };
-        console.log('Frontend CSRF Debug - Added token to headers:', {
-          headerValue: csrfToken,
-          finalHeaders: args.headers,
-        });
       }
     } else {
       console.log('Frontend CSRF Debug - No CSRF token found, not adding to headers');
@@ -120,5 +102,6 @@ export const baseApi = createApi({
     'Health',
     'Metrics',
     'Logs',
+    'SchoolOverview',
   ],
 });

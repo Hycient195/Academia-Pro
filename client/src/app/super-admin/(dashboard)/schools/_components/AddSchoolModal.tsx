@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { FormCountrySelect, FormRegionSelect, FormSelect, FormText, FormTextArea, FormPhoneInput, FormMultiSelect } from "@/components/ui/form/form-components"
 import ErrorBlock from "@/components/utilities/ErrorBlock"
+import ErrorToast from "@/components/utilities/ErrorToast"
 import apis from "@/redux/api"
 import { ICreateSchoolRequest, IUpdateSchoolRequest, ISuperAdminSchool } from "@academia-pro/types/super-admin"
 import { toast } from "sonner"
@@ -85,8 +86,12 @@ export default function AddSchoolModal({ mode, isOpen, onOpenChange, schoolData,
           onOpenChange(false)
           onSuccess?.()
         })
-        .catch((error) => {
-          toast.error(`Failed to create school: ${error.message}`)
+        .catch((err) => {
+          console.error(err)
+          toast.error("Failed to create school.", { description: <ErrorToast error={createSchoolError} /> })
+        })
+        .finally(() => {
+          // Cleanup actions if needed
         })
     } else {
       if (!schoolData) {
@@ -97,15 +102,19 @@ export default function AddSchoolModal({ mode, isOpen, onOpenChange, schoolData,
       updateSchool({
         id: schoolData.id,
         updates: formData as IUpdateSchoolRequest
-      }).unwrap()
+      })
+      .unwrap()
       .then(() => {
         toast.success(`School ${formData.name} updated successfully!`)
         onOpenChange(false)
         onSuccess?.()
       })
-      .catch((error) => {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-        toast.error(`Failed to update school: ${errorMessage}`)
+      .catch((err) => {
+        console.error(err)
+        toast.error("Failed to update school.", { description: <ErrorToast error={updateError} /> })
+      })
+      .finally(() => {
+        // Cleanup actions if needed
       })
     }
   }

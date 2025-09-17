@@ -321,23 +321,27 @@ export class StudentTransferService {
     }
 
     // Update transfer with appeal review
+    const decisionIsUpheld = appealReviewData.decision === 'upheld';
     await this.transferRepository.update(requestId, {
       appealDecision: appealReviewData.decision,
       appealDecisionDate: new Date(),
       appealNotes: appealReviewData.notes,
-      status: appealReviewData.decision === 'upheld' ? TransferStatus.APPROVED : TransferStatus.REJECTED,
+      status: decisionIsUpheld ? TransferStatus.APPROVED : TransferStatus.REJECTED,
       updatedBy: userId,
     });
 
-    // Log audit event
+    // Log audit event (use APPROVE when appeal upheld, REJECT when denied)
+    const logAction = decisionIsUpheld ? AuditAction.APPROVE : AuditAction.REJECT;
+    const description = decisionIsUpheld ? 'Transfer appeal reviewed - approved' : 'Transfer appeal reviewed - rejected';
+
     await this.logAuditEvent(
       this.dataSource.manager,
       transfer.studentId,
-      AuditAction.UPDATE,
+      logAction,
       AuditEntityType.STUDENT_TRANSFER,
       { appealReviewData },
       userId,
-      'Transfer appeal reviewed'
+      description
     );
 
     return {

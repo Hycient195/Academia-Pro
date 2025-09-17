@@ -1,9 +1,10 @@
 import { DataSource } from 'typeorm';
 import { School, SchoolStatus, SubscriptionPlan } from '../schools/school.entity';
 import { Student, StudentStatus, EnrollmentType, BloodGroup } from '../students/student.entity';
+import { TStudentStage } from '@academia-pro/types/student/student.types';
 import { User } from '../users/user.entity';
 import { EUserRole, EUserStatus } from '@academia-pro/types/users';
-import * as bcrypt from 'bcrypt';
+import { TSchoolType } from '@academia-pro/types/schools';
 
 export class TestSeeder {
   constructor(private dataSource: DataSource) {}
@@ -17,7 +18,7 @@ export class TestSeeder {
       code: 'TEST_SCH_001',
       name: 'Test Academy',
       description: 'A test school for integration testing',
-      type: ['secondary'],
+      type: [TSchoolType.SECONDARY],
       status: SchoolStatus.ACTIVE,
       address: '123 Test Street',
       city: 'Test City',
@@ -69,7 +70,7 @@ export class TestSeeder {
         admissionNumber: 'ADM001',
         currentGrade: 'Grade 10',
         currentSection: 'A',
-        stage: 'SSS',
+        stage: TStudentStage.SSS,
         gradeCode: 'G10',
         streamSection: 'Science A',
         admissionDate: new Date('2020-09-01'),
@@ -138,7 +139,7 @@ export class TestSeeder {
         admissionNumber: 'ADM002',
         currentGrade: 'Grade 9',
         currentSection: 'B',
-        stage: 'SSS',
+        stage: TStudentStage.SSS,
         gradeCode: 'G9',
         streamSection: 'Arts B',
         admissionDate: new Date('2021-09-01'),
@@ -228,7 +229,7 @@ export class TestSeeder {
         admissionNumber: `ADM${String(i + 3).padStart(3, '0')}`,
         currentGrade: `Grade ${10 - Math.floor(i / 2)}`,
         currentSection: String.fromCharCode(65 + (i % 3)), // A, B, C
-        stage: 'SSS',
+        stage: TStudentStage.SSS,
         gradeCode: `G${10 - Math.floor(i / 2)}`,
         streamSection: `Stream ${String.fromCharCode(65 + (i % 3))}`,
         admissionDate: new Date(2020 - Math.floor(i / 2), 8, 1),
@@ -298,7 +299,7 @@ export class TestSeeder {
       code: 'TEST_SCH_001',
       name: 'Test Academy',
       description: 'A test school for integration testing',
-      type: ['secondary'],
+      type: [TSchoolType.SECONDARY],
       status: SchoolStatus.ACTIVE,
       address: '123 Test Street',
       city: 'Test City',
@@ -364,20 +365,20 @@ export class TestSeeder {
     return student;
   }
 
-  private getStageFromGradeCode(gradeCode: string): string {
+  private getStageFromGradeCode(gradeCode: string): TStudentStage {
     const gradeCodeUpper = gradeCode.toUpperCase();
 
     if (gradeCodeUpper.startsWith('CRECHE') || gradeCodeUpper.startsWith('N') || gradeCodeUpper.startsWith('KG')) {
-      return 'EY';
+      return TStudentStage.EY;
     } else if (gradeCodeUpper.startsWith('PRY')) {
-      return 'PRY';
+      return TStudentStage.PRY;
     } else if (gradeCodeUpper.startsWith('JSS')) {
-      return 'JSS';
+      return TStudentStage.JSS;
     } else if (gradeCodeUpper.startsWith('SSS')) {
-      return 'SSS';
+      return TStudentStage.SSS;
     }
 
-    return 'EY'; // Default fallback
+    return TStudentStage.EY; // Default fallback
   }
 
   async seedSchoolAdmin(schoolId: string): Promise<User> {

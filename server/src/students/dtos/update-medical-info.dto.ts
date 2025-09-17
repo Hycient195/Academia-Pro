@@ -39,7 +39,8 @@ export class UpdateMedicalInfoDto implements IUpdateMedicalInfoRequest {
   @ApiPropertyOptional({
     description: 'Emergency contact information',
     example: {
-      name: 'Jane Doe',
+      firstName: 'Jane',
+      lastName: 'Doe',
       phone: '+1234567891',
       relation: 'Mother',
     },
@@ -47,12 +48,13 @@ export class UpdateMedicalInfoDto implements IUpdateMedicalInfoRequest {
   @IsOptional()
   @IsObject({ message: 'Emergency contact must be an object' })
   emergencyContact?: {
-    name: string;
-    relationship: string;
+    firstName: string;
+    lastName: string;
     phone: string;
     email?: string;
-    priority: number;
-    address: string;
+    relation: string;
+    occupation?: string;
+    customRelation?: string;
   };
 
   @ApiPropertyOptional({

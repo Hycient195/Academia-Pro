@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { FormSelect, FormText, FormPhoneInput } from "@/components/ui/form/form-components"
 import ErrorBlock from "@/components/utilities/ErrorBlock"
+import ErrorToast from "@/components/utilities/ErrorToast"
 import apis from "@/redux/api"
 import { ISuperAdminUser, ISuperAdminUserResponse } from "@academia-pro/types/super-admin"
 import { EUserRole, EUserStatus } from "@academia-pro/types/users"
@@ -104,9 +105,12 @@ export default function AddUserModal({ mode, isOpen, onOpenChange, userData, onS
           onOpenChange(false)
           onSuccess?.()
         })
-        .catch((error) => {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-          toast.error(`Failed to create user: ${errorMessage}`)
+        .catch((err) => {
+          console.error(err)
+          toast.error("Failed to create user.", { description: <ErrorToast error={createUserError} /> })
+        })
+        .finally(() => {
+          // Cleanup actions if needed
         })
     } else {
       if (!userData) {
@@ -126,15 +130,19 @@ export default function AddUserModal({ mode, isOpen, onOpenChange, userData, onS
       updateUser({
         id: userData.id,
         updates: apiData
-      }).unwrap()
+      })
+      .unwrap()
       .then(() => {
         toast.success(`User ${formData.firstName} ${formData.lastName} updated successfully!`)
         onOpenChange(false)
         onSuccess?.()
       })
-      .catch((error) => {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-        toast.error(`Failed to update user: ${errorMessage}`)
+      .catch((err) => {
+        console.error(err)
+        toast.error("Failed to update user.", { description: <ErrorToast error={updateError} /> })
+      })
+      .finally(() => {
+        // Cleanup actions if needed
       })
     }
   }

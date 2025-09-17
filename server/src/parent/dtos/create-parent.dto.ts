@@ -3,6 +3,7 @@
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsEnum, IsObject, IsOptional, IsBoolean, IsArray, IsEmail, IsPhoneNumber, IsDateString, ValidateNested, Min, Max } from 'class-validator';
+import { Type } from 'class-transformer';
 import {
   TParentRelationship,
   TPortalAccessLevel,
@@ -12,6 +13,7 @@ import {
   IParentProfile,
   IParentChildRequest
 } from '@academia-pro/types/parent/parent.types';
+import { IEmergencyContact } from '@academia-pro/types/shared';
 
 export class CreateParentDto implements ICreateParentRequest {
   @ApiProperty({
@@ -218,6 +220,60 @@ export class ParentContactDto implements IParentContact {
   };
 }
 
+export class EmergencyContactDto implements IEmergencyContact {
+  @ApiProperty({
+    description: 'First name of the emergency contact',
+    example: 'Jane',
+  })
+  @IsString()
+  firstName: string;
+
+  @ApiProperty({
+    description: 'Last name of the emergency contact',
+    example: 'Doe',
+  })
+  @IsString()
+  lastName: string;
+
+  @ApiProperty({
+    description: 'Phone number of the emergency contact',
+    example: '+1234567890',
+  })
+  @IsString()
+  phone: string;
+
+  @ApiPropertyOptional({
+    description: 'Email address of the emergency contact',
+    example: 'jane@example.com',
+  })
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @ApiProperty({
+    description: 'Relationship to the parent',
+    example: 'Sister',
+  })
+  @IsString()
+  relation: string;
+
+  @ApiPropertyOptional({
+    description: 'Occupation of the emergency contact',
+    example: 'Teacher',
+  })
+  @IsOptional()
+  @IsString()
+  occupation?: string;
+
+  @ApiPropertyOptional({
+    description: 'Custom relationship description if needed',
+    example: 'Close family friend',
+  })
+  @IsOptional()
+  @IsString()
+  customRelation?: string;
+}
+
 export class ParentProfileDto implements IParentProfile {
   @ApiProperty({
     description: 'First name',
@@ -291,17 +347,12 @@ export class ParentProfileDto implements IParentProfile {
 
   @ApiProperty({
     description: 'Emergency contacts',
-    type: [Object],
+    type: [EmergencyContactDto],
   })
   @IsArray()
-  emergencyContacts: Array<{
-    name: string;
-    relationship: string;
-    phone: string;
-    email?: string;
-    priority: number;
-    address: string;
-  }>;
+  @ValidateNested({ each: true })
+  @Type(() => EmergencyContactDto)
+  emergencyContacts: EmergencyContactDto[];
 }
 
 export class ParentChildRequestDto implements IParentChildRequest {
@@ -417,44 +468,6 @@ export class ChildAccessPermissionsDto {
   scheduleMeetings: boolean;
 }
 
-export class EmergencyContactDto {
-  @ApiProperty({
-    description: 'Contact name',
-    example: 'Jane Doe',
-  })
-  @IsString()
-  name: string;
-
-  @ApiProperty({
-    description: 'Relationship to parent',
-    example: 'Sister',
-  })
-  @IsString()
-  relationship: string;
-
-  @ApiProperty({
-    description: 'Contact phone number',
-    example: '+1234567890',
-  })
-  @IsString()
-  phone: string;
-
-  @ApiPropertyOptional({
-    description: 'Contact email',
-    example: 'jane@example.com',
-  })
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
-  @ApiProperty({
-    description: 'Contact priority (1 = highest)',
-    example: 1,
-    minimum: 1,
-  })
-  @Min(1)
-  priority: number;
-}
 
 export class AddressDto {
   @ApiProperty({

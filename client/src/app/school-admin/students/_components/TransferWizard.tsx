@@ -1,17 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useCallback, useMemo, useState } from "react"
+import type React from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-// ...existing code...
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-// Textarea intentionally unused in transfer wizard
 import { toast } from "sonner"
 import apis from "@/redux/api"
 const { useGetStudentsQuery } = apis.schoolAdmin.student
@@ -20,13 +16,27 @@ import {
   IconArrowRight,
   IconBuilding,
   IconCheck,
-  IconX,
   IconAlertTriangle,
   IconFileText,
   IconUsers,
   IconClipboardList,
+  IconX,
 } from "@tabler/icons-react"
 import { ITransferStudentRequest } from "@academia-pro/types/school-admin"
+import type { ITransferStudentRequestDto } from "@academia-pro/types/school-admin"
+
+// Custom form inputs
+import { FormSelect, FormText, FormDateInput } from "@/components/ui/form/form-components"
+import { FormSchoolSelect } from "@/components/ui/form/FormSchoolSelect"
+import { FormStudentSelect } from "@/components/ui/form/FormStudentSelect"
+import ErrorBlock from "@/components/utilities/ErrorBlock"
+import ErrorToast from "@/components/utilities/ErrorToast"
+
+type FormValue = string | number | boolean
+type FormChangeArg =
+  | { target: { value: FormValue; name?: string } }
+  | React.ChangeEvent<HTMLInputElement>
+  | React.ChangeEvent<HTMLTextAreaElement>
 
 interface TransferWizardProps {
   onComplete: () => void
@@ -54,10 +64,16 @@ interface TransferPreview {
 export function TransferWizard({ onComplete }: TransferWizardProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState<'selection' | 'clearance' | 'preview' | 'execute'>('selection')
-  const [transferRequest, setTransferRequest] = useState<Partial<ITransferStudentRequest>>({
+
+  // Request state augmented to include dates
+  const [transferRequest, setTransferRequest] = useState<Partial<ITransferStudentRequest> & {
+    applicationDate?: string
+    transferDate?: string
+  }>({
     type: 'internal',
   })
-  // New: allow selecting source grade to target from
+
+  // New: allow selecting source grade to target from (for preview filtering)
   const [sourceGradeFilter, setSourceGradeFilter] = useState<string | undefined>(undefined)
   const [previewData, setPreviewData] = useState<TransferPreview[]>([])
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set())
@@ -69,29 +85,126 @@ export function TransferWizard({ onComplete }: TransferWizardProps) {
 
   const students = studentsData?.data || []
 
-  // Batch transfer hook from RTK Query
-  const [batchTransfer] = apis.schoolAdmin.student.useBatchTransferStudentsMutation()
+  // Candidate selection (optional)
+  const [selectedCandidateIds, setSelectedCandidateIds] = useState<Set<string>>(new Set())
+  const [studentToAddId, setStudentToAddId] = useState<string>("")
+  const selectedCandidateStudents = useMemo(
+    () => students.filter(s => selectedCandidateIds.has(s.id)),
+    [students, selectedCandidateIds]
+  )
+  
 
-  const handleRequestChange = (field: string, value: unknown) => {
-    setTransferRequest(prev => ({
-      ...prev,
-      [field]: value
-    }))
-  }
+  // Batch transfer hook from RTK Query
+  const [batchTransfer, { isLoading: batchTransferIsLoading, error: batchTransferError, isSuccess: batchTransferIsSuccess, reset: batchTransferReset }] = apis.schoolAdmin.student.useBatchTransferStudentsMutation()
+
+  // Generic form onChange handler compatible with our custom form components
+  const handleFormChange = useCallback(
+    (arg: FormChangeArg) => {
+      const tName = (arg.target as { name?: string }).name
+      const raw = (arg.target as { value: unknown }).value
+      const value: FormValue =
+        typeof raw === "string" || typeof raw === "number" || typeof raw === "boolean"
+          ? raw
+          : String(raw ?? "")
+
+      if (!tName) return
+
+      if (tName === "sourceGradeFilter") {
+        setSourceGradeFilter(value ? String(value) : undefined)
+        return
+      }
+
+      setTransferRequest(prev => ({
+        ...prev,
+        [tName]: value,
+      }))
+    },
+    []
+  )
+
+  // Options
+  const gradeOptions = useMemo(
+    () => ([
+      { value: "PRY1", text: "Primary 1" },
+      { value: "PRY2", text: "Primary 2" },
+      { value: "PRY3", text: "Primary 3" },
+      { value: "JSS1", text: "JSS 1" },
+      { value: "JSS2", text: "JSS 2" },
+      { value: "JSS3", text: "JSS 3" },
+      { value: "SSS1", text: "SSS 1" },
+      { value: "SSS2", text: "SSS 2" },
+      { value: "SSS3", text: "SSS 3" },
+    ]), []
+  )
+
+  const sectionOptions = useMemo(
+    () => ([
+      { value: "A", text: "Section A" },
+      { value: "B", text: "Section B" },
+      { value: "C", text: "Section C" },
+      { value: "Science", text: "Science Stream" },
+      { value: "Arts", text: "Arts Stream" },
+      { value: "Commercial", text: "Commercial Stream" },
+    ]), []
+  )
+
+  const transferTypeOptions = useMemo(
+    () => ([
+      { value: "internal", text: "Internal Transfer (Within School)" },
+      { value: "external", text: "External Transfer (To Another School)" },
+    ]), []
+  )
+
+ // Validate inputs before generating preview
+ const validatePreviewInputs = (): string[] => {
+   const errs: string[] = []
+   const t = transferRequest.type
+
+   if (!t) errs.push("Transfer type is required")
+
+   if (t === "internal") {
+     if (!transferRequest.newGradeCode) errs.push("Target grade is required for internal transfers")
+     if (!transferRequest.newStreamSection) errs.push("Target section is required for internal transfers")
+   }
+
+   if (t === "external") {
+     if (!transferRequest.targetSchoolId) errs.push("Target school is required for external transfers")
+   }
+
+   return errs
+ }
 
   const generateTransferPreview = () => {
-    if (!students.length) return
+    const validationErrors = validatePreviewInputs()
 
-    let filteredStudents = students
+    // Ensure student list is loaded
+    if (!students || students.length === 0) {
+      toast.error('Students list is still loading. Please try again.')
+      return
+    }
+
+    let filteredStudents = [...students]
+
+    // Limit to explicitly selected candidates if any
+    if (selectedCandidateIds.size > 0) {
+      filteredStudents = filteredStudents.filter(s => selectedCandidateIds.has(s.id))
+      if (filteredStudents.length === 0) {
+        validationErrors.push("No selected students found in current filters")
+      }
+    }
 
     // Apply source grade filter: show students who currently belong to a selected source grade
     if (sourceGradeFilter) {
       filteredStudents = filteredStudents.filter(s => s.gradeCode === sourceGradeFilter)
     }
 
-    // If no source filter but a target grade was set, do not filter by target (we want candidates who would move)
 
-  const preview: TransferPreview[] = filteredStudents.slice(0, 200).map(student => { // reasonable limit
+    if (validationErrors.length > 0) {
+      validationErrors.forEach(msg => toast.error(msg))
+      return
+    }
+
+    const preview: TransferPreview[] = filteredStudents.slice(0, 200).map(student => {
       // Mock clearance status
       const clearanceStatus = {
         fees: Math.random() > 0.2,
@@ -101,8 +214,8 @@ export function TransferWizard({ onComplete }: TransferWizardProps) {
       }
 
       const allCleared = Object.values(clearanceStatus).every(status => status)
-  const status: TransferPreview['status'] = allCleared ? 'eligible' : 'pending_clearance'
-  let reason = ''
+      const status: TransferPreview['status'] = allCleared ? 'eligible' : 'pending_clearance'
+      let reason = ''
 
       if (!allCleared) {
         const pendingItems = Object.entries(clearanceStatus)
@@ -118,7 +231,7 @@ export function TransferWizard({ onComplete }: TransferWizardProps) {
         currentSection: student.streamSection || 'Unknown',
         targetGrade: transferRequest.newGradeCode as TGradeCode,
         targetSection: transferRequest.newStreamSection,
-        transferType: transferRequest.type || 'internal',
+        transferType: (transferRequest.type as 'internal' | 'external') || 'internal',
         targetSchool: transferRequest.targetSchoolId,
         clearanceStatus,
         status,
@@ -126,58 +239,115 @@ export function TransferWizard({ onComplete }: TransferWizardProps) {
       }
     })
 
-    setPreviewData(preview)
-    setCurrentStep('clearance')
+    if (preview.length === 0) {
+      toast.error("No students matched your selection and filters")
+      return
     }
 
-    const handleExecute = async () => {
-      if (!batchTransfer) return
-      setIsLoading(true)
-      setExecutionProgress(0)
-      let progressInterval: NodeJS.Timeout | null = null
+    setPreviewData(preview)
+    setCurrentStep('clearance')
+  }
 
-      try {
-        progressInterval = setInterval(() => {
-          setExecutionProgress(prev => {
-            if (prev >= 90) {
-              if (progressInterval) clearInterval(progressInterval)
-              return 90
-            }
-            return prev + 10
-          })
-        }, 300)
+  // Candidate selection handlers
+  const addCandidate = () => {
+    const id = String(studentToAddId || "").trim()
+    if (!id) {
+      toast.error("Select a student to add")
+      return
+    }
+    if (selectedCandidateIds.has(id)) {
+      toast.error("Student already added")
+      return
+    }
+    const next = new Set(selectedCandidateIds)
+    next.add(id)
+    setSelectedCandidateIds(next)
+    setStudentToAddId("")
+    toast.success("Student added to candidates")
+  }
 
-        const payload = {
-          fromSchoolId: 'current-school-id', // TODO: Get from context
-          toSchoolId: transferRequest.targetSchoolId || 'current-school-id', // TODO: Get from context
-          studentIds: Array.from(selectedStudents),
-          transferReason: transferRequest.transferReason || 'Transfer request',
-          transferDate: new Date().toISOString(),
-          // Additional fields for service compatibility
-          reason: transferRequest.transferReason,
-          newGradeCode: transferRequest.newGradeCode,
-          newStreamSection: transferRequest.newStreamSection,
-          type: transferRequest.type,
-          targetSchoolId: transferRequest.targetSchoolId,
+  const removeCandidate = (id: string) => {
+    const next = new Set(selectedCandidateIds)
+    next.delete(id)
+    setSelectedCandidateIds(next)
+  }
+
+  const clearCandidates = () => {
+    setSelectedCandidateIds(new Set())
+  }
+
+  const handleExecute = () => {
+    // Client-side validations
+    if (selectedStudents.size === 0) {
+      toast.error("No students selected for transfer.")
+      return
+    }
+
+    if (!transferRequest.type) {
+      toast.error("Transfer type is required.")
+      return
+    }
+
+    if (transferRequest.type === 'internal' && (!transferRequest.newGradeCode || !transferRequest.newStreamSection)) {
+      toast.error("Target grade and section are required for internal transfers.")
+      return
+    }
+
+    if (transferRequest.type === 'external' && !transferRequest.targetSchoolId) {
+      toast.error("Target school is required for external transfers.")
+      return
+    }
+
+    setExecutionProgress(0)
+    let progressInterval: NodeJS.Timeout | null = null
+
+    progressInterval = setInterval(() => {
+      setExecutionProgress(prev => {
+        if (prev >= 90) {
+          if (progressInterval) clearInterval(progressInterval)
+          return 90
         }
+        return prev + 10
+      })
+    }, 300)
 
-        const result = await batchTransfer(payload).unwrap()
+    const payload = {
+      fromSchoolId: 'current-school-id', // TODO: Get from context
+      toSchoolId: transferRequest.targetSchoolId || 'current-school-id', // TODO: Get from context
+      studentIds: Array.from(selectedStudents),
+      transferReason: transferRequest.transferReason || 'Transfer request',
+      // informational; backend may ignore these:
+      applicationDate: transferRequest.applicationDate,
+      transferDate: transferRequest.transferDate,
+      // Additional fields for service compatibility
+      reason: transferRequest.transferReason,
+      newGradeCode: transferRequest.newGradeCode,
+      newStreamSection: transferRequest.newStreamSection,
+      type: transferRequest.type,
+      targetSchoolId: transferRequest.targetSchoolId,
+    }
 
+    batchTransfer(payload as unknown as ITransferStudentRequestDto)
+      .unwrap()
+      .then((result) => {
         if (progressInterval) clearInterval(progressInterval)
         setExecutionProgress(100)
         toast.success(result?.message || `Successfully transferred ${result?.transferred ?? selectedStudents.size} students`)
         // Auto-complete: call onComplete to close parent dialog and refresh
         onComplete()
         setCurrentStep('execute')
-      } catch {
-        toast.error('Transfer failed. Please try again.')
-      } finally {
+      })
+      .catch((err) => {
+        console.error(err)
+        toast.error("Transfer failed. Please try again.", { description: <ErrorToast error={batchTransferError} /> })
+      })
+      .finally(() => {
         if (progressInterval) clearInterval(progressInterval)
-        setIsLoading(false)
-      }
-    }
-  
-    const toggleStudentSelection = (studentId: string) => {
+        // Cleanup actions if needed
+      })
+  }
+
+  const toggleStudentSelection = (studentId: string) => {
     const newSelected = new Set(selectedStudents)
     if (newSelected.has(studentId)) {
       newSelected.delete(studentId)
@@ -229,98 +399,133 @@ export function TransferWizard({ onComplete }: TransferWizardProps) {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="transferType">Transfer Type</Label>
-            <Select
-              value={transferRequest.type}
-              onValueChange={(value) => handleRequestChange('type', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select transfer type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="internal">Internal Transfer (Within School)</SelectItem>
-                <SelectItem value="external">External Transfer (To Another School)</SelectItem>
-              </SelectContent>
-            </Select>
+          <FormSelect
+            labelText="Transfer Type"
+            name="type"
+            value={String(transferRequest.type || "")}
+            options={transferTypeOptions}
+            onChange={handleFormChange}
+            placeholder="Select transfer type"
+            required
+          />
+
+          <FormText
+            labelText="Transfer Reason"
+            name="transferReason"
+            value={String(transferRequest.transferReason || "")}
+            onChange={handleFormChange}
+            placeholder="e.g., Academic performance, Family relocation"
+          />
+        </div>
+
+        {/* Dates */}
+        <div className="grid grid-cols-2 gap-4">
+          <FormDateInput
+            labelText="Application Date"
+            name="applicationDate"
+            value={transferRequest.applicationDate || ""}
+            onChange={handleFormChange}
+            placeholder="Pick application date"
+          />
+          <FormDateInput
+            labelText="Transfer Date"
+            name="transferDate"
+            value={transferRequest.transferDate || ""}
+            onChange={handleFormChange}
+            placeholder="Pick transfer date"
+          />
+        </div>
+
+        {/* Student selection (optional) */}
+        <div className="space-y-3">
+          <h4 className="text-sm font-medium">Select Students (optional)</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+            <FormStudentSelect
+              labelText="Find student"
+              name="studentToAddId"
+              value={studentToAddId}
+              onChange={(arg) => {
+                if ('target' in arg) {
+                  setStudentToAddId(String(arg.target.value || ""))
+                }
+              }}
+              placeholder="Search by name or admission number"
+            />
+            <Button type="button" onClick={addCandidate} className="h-[2.35rem]">
+              Add
+            </Button>
+            <Button type="button" variant="outline" onClick={clearCandidates} className="h-[2.35rem]">
+              Clear Selected
+            </Button>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="transferReason">Transfer Reason</Label>
-            <Input
-              id="transferReason"
-              value={transferRequest.transferReason}
-              onChange={(e) => handleRequestChange('transferReason', e.target.value)}
-              placeholder="e.g., Academic performance, Family relocation"
-            />
-          </div>
+          {selectedCandidateStudents.length > 0 && (
+            <div className="border rounded-md p-3">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-muted-foreground">
+                  Selected candidates: <span className="font-medium text-foreground">{selectedCandidateStudents.length}</span>
+                </p>
+              </div>
+              <div className="max-h-48 overflow-y-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Student</TableHead>
+                      <TableHead>Admission</TableHead>
+                      <TableHead>Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedCandidateStudents.map(s => (
+                      <TableRow key={s.id}>
+                        <TableCell>{s.firstName} {s.lastName}</TableCell>
+                        <TableCell>{s.admissionNumber || "-"}</TableCell>
+                        <TableCell>
+                          <Button type="button" variant="ghost" size="sm" onClick={() => removeCandidate(s.id)}>
+                            <IconX className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
         </div>
 
         {transferRequest.type === 'internal' && (
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Target Grade</Label>
-              <Select
-                value={transferRequest.newGradeCode}
-                onValueChange={(value) => handleRequestChange('newGradeCode', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select target grade" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="PRY1">Primary 1</SelectItem>
-                  <SelectItem value="PRY2">Primary 2</SelectItem>
-                  <SelectItem value="PRY3">Primary 3</SelectItem>
-                  <SelectItem value="JSS1">JSS 1</SelectItem>
-                  <SelectItem value="JSS2">JSS 2</SelectItem>
-                  <SelectItem value="JSS3">JSS 3</SelectItem>
-                  <SelectItem value="SSS1">SSS 1</SelectItem>
-                  <SelectItem value="SSS2">SSS 2</SelectItem>
-                  <SelectItem value="SSS3">SSS 3</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <FormSelect
+              labelText="Target Grade"
+              name="newGradeCode"
+              value={String(transferRequest.newGradeCode || "")}
+              options={gradeOptions}
+              onChange={handleFormChange}
+              placeholder="Select target grade"
+            />
 
-            <div className="space-y-2">
-                <Label>Target Section</Label>
-              <Select
-                value={transferRequest.newStreamSection}
-                onValueChange={(value) => handleRequestChange('newStreamSection', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select target section" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="A">Section A</SelectItem>
-                  <SelectItem value="B">Section B</SelectItem>
-                  <SelectItem value="C">Section C</SelectItem>
-                  <SelectItem value="Science">Science Stream</SelectItem>
-                  <SelectItem value="Arts">Arts Stream</SelectItem>
-                  <SelectItem value="Commercial">Commercial Stream</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <FormSelect
+              labelText="Target Section"
+              name="newStreamSection"
+              value={String(transferRequest.newStreamSection || "")}
+              options={sectionOptions}
+              onChange={handleFormChange}
+              placeholder="Select target section"
+            />
           </div>
         )}
 
         {transferRequest.type === 'external' && (
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Target School</Label>
-              <Select
-                value={transferRequest.targetSchoolId}
-                onValueChange={(value) => handleRequestChange('targetSchoolId', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select target school" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="school-1">Green Valley International School</SelectItem>
-                  <SelectItem value="school-2">Lagos Academy</SelectItem>
-                  <SelectItem value="school-3">Nigerian International School</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <FormSchoolSelect
+              labelText="Target School"
+              name="targetSchoolId"
+              value={String(transferRequest.targetSchoolId || "")}
+              onChange={handleFormChange}
+              placeholder="Select target school"
+              required
+            />
 
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
               <div className="flex items-start space-x-3">
@@ -477,7 +682,7 @@ export function TransferWizard({ onComplete }: TransferWizardProps) {
                       <Badge
                         variant={
                           student.status === 'eligible' ? 'default' :
-                          student.status === 'pending_clearance' ? 'secondary' : 'destructive'
+                            student.status === 'pending_clearance' ? 'secondary' : 'destructive'
                         }
                       >
                         {student.status.replaceAll('_', ' ')}
@@ -514,6 +719,7 @@ export function TransferWizard({ onComplete }: TransferWizardProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        <ErrorBlock error={batchTransferError} className="mb-2" scrollIntoView />
         <div className="space-y-4">
           <div className="flex items-center justify-between p-4 border rounded-lg">
             <div>
@@ -528,14 +734,28 @@ export function TransferWizard({ onComplete }: TransferWizardProps) {
               <div>
                 <h4 className="font-medium">Target School</h4>
                 <p className="text-sm text-gray-600">
-                  {transferRequest.targetSchoolId === 'school-1' && 'Green Valley International School'}
-                  {transferRequest.targetSchoolId === 'school-2' && 'Lagos Academy'}
-                  {transferRequest.targetSchoolId === 'school-3' && 'Nigerian International School'}
+                  {/* Target school label is fetched in selection step; here we just show ID */}
+                  {transferRequest.targetSchoolId}
                 </p>
               </div>
               <IconBuilding className="h-8 w-8 text-green-600" />
             </div>
           )}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div>
+                <h4 className="font-medium">Application Date</h4>
+                <p className="text-sm text-gray-600">{transferRequest.applicationDate || '-'}</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div>
+                <h4 className="font-medium">Transfer Date</h4>
+                <p className="text-sm text-gray-600">{transferRequest.transferDate || '-'}</p>
+              </div>
+            </div>
+          </div>
 
           <div className="flex items-center justify-between p-4 border rounded-lg">
             <div>
@@ -545,30 +765,19 @@ export function TransferWizard({ onComplete }: TransferWizardProps) {
             <IconUsers className="h-8 w-8 text-purple-600" />
           </div>
         </div>
+
         <div className="grid grid-cols-1 gap-4">
-          <div className="space-y-2">
-            <Label>Source Grade (optional)</Label>
-            <Select
-              value={sourceGradeFilter}
-              onValueChange={(value) => setSourceGradeFilter(value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Filter students by current grade (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={undefined as unknown as string}>All grades</SelectItem>
-                <SelectItem value="PRY1">Primary 1</SelectItem>
-                <SelectItem value="PRY2">Primary 2</SelectItem>
-                <SelectItem value="PRY3">Primary 3</SelectItem>
-                <SelectItem value="JSS1">JSS 1</SelectItem>
-                <SelectItem value="JSS2">JSS 2</SelectItem>
-                <SelectItem value="JSS3">JSS 3</SelectItem>
-                <SelectItem value="SSS1">SSS 1</SelectItem>
-                <SelectItem value="SSS2">SSS 2</SelectItem>
-                <SelectItem value="SSS3">SSS 3</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <FormSelect
+            labelText="Source Grade (optional)"
+            name="sourceGradeFilter"
+            value={String(sourceGradeFilter || "")}
+            onChange={handleFormChange}
+            placeholder="Filter students by current grade (optional)"
+            options={[
+              { value: "", text: "All grades" },
+              ...gradeOptions
+            ]}
+          />
         </div>
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -589,7 +798,7 @@ export function TransferWizard({ onComplete }: TransferWizardProps) {
           </Button>
           <Button
             onClick={handleExecute}
-            disabled={selectedStudents.size === 0 || isLoading}
+            disabled={selectedStudents.size === 0 || batchTransferIsLoading}
           >
             Process Transfer
           </Button>
@@ -675,7 +884,7 @@ export function TransferWizard({ onComplete }: TransferWizardProps) {
         {currentStep === 'preview' && renderPreviewStep()}
         {currentStep === 'execute' && renderExecuteStep()}
 
-        {isLoading && (
+        {batchTransferIsLoading && (
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span>Processing transfer...</span>

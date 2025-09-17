@@ -98,3 +98,11 @@ export type {
   IBulkMarkAttendanceResult,
   IBulkUpdateAttendanceResult,
 } from './attendance.types';
+
+export type {
+  IDepartment,
+  ICreateDepartmentRequest,
+  IUpdateDepartmentRequest,
+  IDepartmentFilters,
+  IDepartmentStatistics,
+} from './school-admin.types';

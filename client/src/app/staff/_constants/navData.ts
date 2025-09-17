@@ -67,6 +67,7 @@ export const staffNavData: RoleConfig = {
         icon: IconFileText,
         shortForm: "Admin",
         items: [
+          { title: "Departments", url: "/staff/departments" },
           { title: "School Policies", url: "/staff/admin#policies" },
           { title: "Timetable", url: "/staff/admin#timetable" },
           { title: "Curriculum", url: "/staff/admin#curriculum" },

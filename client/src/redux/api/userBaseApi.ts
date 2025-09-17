@@ -77,6 +77,7 @@ export const baseApi = createApi({
     'Alerts',
     'Students',
     'Staff',
+    'Department',
     'Academic',
     'Attendance',
     'Examination',

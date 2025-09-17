@@ -59,10 +59,10 @@ function Button({
       disabled={disabled || isLoading}
       {...props}
     >
-      <>
+      <span className="flex items-center gap-1">
         {isLoading && <IconLoader className="animate-spin" />}
         {children}
-      </>
+      </span>
     </Comp>
   )
 }

@@ -2,6 +2,7 @@
 // Shared type definitions for school admin module
 
 import { IClass, ISubject, PaginatedResponse } from '../shared';
+import { IStaff } from './staff.types';
 
 // Dashboard and Overview
 export interface ISchoolAdminOverview {
@@ -354,6 +355,49 @@ export interface ISchoolAdminAlert {
   title: string;
   description: string;
   timestamp: string;
+}
+
+// Department Management
+export interface IDepartment {
+  id: string;
+  type: 'administration' | 'teaching' | 'medical' | 'counseling' | 'boarding' | 'transportation' | 'catering' | 'facilities' | 'security' | 'finance' | 'hr' | 'it' | 'library' | 'sports' | 'arts' | 'examinations';
+  name: string;
+  description?: string;
+  staff?: IStaff[];
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+  updatedBy?: string;
+}
+
+export interface ICreateDepartmentRequest {
+  type: IDepartment['type'];
+  name: string;
+  description?: string;
+}
+
+export interface IUpdateDepartmentRequest {
+  type?: IDepartment['type'];
+  name?: string;
+  description?: string;
+}
+
+export interface IDepartmentFilters {
+  type?: IDepartment['type'];
+  search?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface IDepartmentStatistics {
+  totalDepartments: number;
+  departmentsByType: Record<string, number>;
+  averageStaffPerDepartment: number;
+  departmentsWithMostStaff: Array<{
+    departmentId: string;
+    departmentName: string;
+    staffCount: number;
+  }>;
 }
 
 // API Response Types

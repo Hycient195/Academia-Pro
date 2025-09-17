@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { AppModule } from '../src/app.module';
-import { DatabaseTestModule } from '../src/test/database-test.module';
+import { AppModule } from '../app.module';
+import { DatabaseTestModule } from './database-test.module';
 import { PostgreSqlContainer } from '@testcontainers/postgresql';
 
 describe('Students (e2e)', () => {

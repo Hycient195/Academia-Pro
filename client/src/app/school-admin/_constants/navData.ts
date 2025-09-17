@@ -10,6 +10,7 @@ import {
   IconMail,
   IconChartBar,
   IconSettings,
+  IconBuilding,
 } from "@tabler/icons-react"
 
 export const schoolAdminNavData: RoleConfig =  {
@@ -26,6 +27,7 @@ export const schoolAdminNavData: RoleConfig =  {
       { title: "Dashboard", url: "/school-admin/overview", icon: IconDashboard, shortForm: "Dash" },
       { title: "Students", url: "/school-admin/students", icon: IconUsers, shortForm: "Stud" },
       { title: "Staff", url: "/school-admin/staff", icon: IconUserShield, shortForm: "Staff" },
+      { title: "Departments", url: "/school-admin/departments", icon: IconBuilding, shortForm: "Depts" },
       { title: "Academic", url: "/school-admin/academic", icon: IconBook, shortForm: "Acad" },
       { title: "Financial", url: "/school-admin/financial", icon: IconBuildingBank, shortForm: "Fin" },
       { title: "Communication", url: "/school-admin/communication", icon: IconMail, shortForm: "Comm" },

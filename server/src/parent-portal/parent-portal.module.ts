@@ -32,6 +32,7 @@ import { Appointment } from './entities/appointment.entity';
 import { PaymentRecord } from './entities/payment-record.entity';
 import { EmergencyContact } from './entities/emergency-contact.entity';
 import { ResourceAccessLog } from './entities/resource-access-log.entity';
+import { Parent } from '../parent/parent.entity';
 
 // Guards
 import { ParentPortalGuard } from './guards/parent-portal.guard';
@@ -48,6 +49,7 @@ import { ChildAccessGuard } from './guards/child-access.guard';
       PaymentRecord,
       EmergencyContact,
       ResourceAccessLog,
+      Parent,
     ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],

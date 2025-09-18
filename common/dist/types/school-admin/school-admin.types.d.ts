@@ -1,3 +1,4 @@
+import { IStaff } from './staff.types';
 export interface ISchoolAdminOverview {
     schoolName: string;
     totalStudents: number;
@@ -306,6 +307,43 @@ export interface ISchoolAdminAlert {
     title: string;
     description: string;
     timestamp: string;
+}
+export interface IDepartment {
+    id: string;
+    type: 'administration' | 'teaching' | 'medical' | 'counseling' | 'boarding' | 'transportation' | 'catering' | 'facilities' | 'security' | 'finance' | 'hr' | 'it' | 'library' | 'sports' | 'arts' | 'examinations';
+    name: string;
+    description?: string;
+    staff?: IStaff[];
+    createdAt: string;
+    updatedAt: string;
+    createdBy: string;
+    updatedBy?: string;
+}
+export interface ICreateDepartmentRequest {
+    type: IDepartment['type'];
+    name: string;
+    description?: string;
+}
+export interface IUpdateDepartmentRequest {
+    type?: IDepartment['type'];
+    name?: string;
+    description?: string;
+}
+export interface IDepartmentFilters {
+    type?: IDepartment['type'];
+    search?: string;
+    limit?: number;
+    offset?: number;
+}
+export interface IDepartmentStatistics {
+    totalDepartments: number;
+    departmentsByType: Record<string, number>;
+    averageStaffPerDepartment: number;
+    departmentsWithMostStaff: Array<{
+        departmentId: string;
+        departmentName: string;
+        staffCount: number;
+    }>;
 }
 export interface IApiResponse<T> {
     success: boolean;

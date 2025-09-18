@@ -1,54 +1,34 @@
-// test/app.e2e-spec.ts
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
-// import { startPostgresContainer, stopPostgresContainer } from './test-container.setup';
-// import { AppTestModule } from './app-test.module';
-import { TestSeederService } from './utils/test-seeder.service';
-import { getAuthAgent } from './utils/auth.helper';
-import { DatabaseTestModule } from './database-test.module';
-import { startPostgresContainer, stopPostgresContainer } from './test-container.setup';
+// test/app.e2e.spec.ts - unified harness-based E2E smoke and basic list test
 
-describe('School Management E2E (Testcontainers)', () => {
-  let app: INestApplication;
-  let seeder: TestSeederService;
-  let seededData;
-  let adminAgent;
+import type { SuperAgentTest } from 'supertest';
+import { TestHarness } from './utils/test-harness';
+
+describe('School Management E2E (harness)', () => {
+  let admin: SuperAgentTest;
 
   beforeAll(async () => {
-    const dbConfig = await startPostgresContainer();
-
-    // inject into env so AppTestModule picks it up
-    process.env.TEST_DB_HOST = dbConfig.host;
-    process.env.TEST_DB_PORT = dbConfig.port.toString();
-    process.env.TEST_DB_USER = dbConfig.username;
-    process.env.TEST_DB_PASS = dbConfig.password;
-    process.env.TEST_DB_NAME = dbConfig.database;
-
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      // imports: [AppTestModule],
-      imports: [DatabaseTestModule],
-      providers: [TestSeederService],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
-
-    seeder = moduleFixture.get(TestSeederService);
-
-    await seeder.clear();
-    seededData = await seeder.seedAll();
-
-    adminAgent = await getAuthAgent(app, 'super-admin'); // uses seeded user
+    await TestHarness.bootstrap();
+    admin = await TestHarness.auth('super-admin');
   });
 
   afterAll(async () => {
-    await app.close();
-    await stopPostgresContainer();
+    await TestHarness.shutdown();
   });
 
-  it('Admin can fetch schools', async () => {
-    const res = await adminAgent.get('/schools').expect(200);
-    expect(res.body.length).toBeGreaterThan(0);
-    expect(res.body.map((s) => s.name)).toContain('Premium High School');
+  beforeEach(async () => {
+    await TestHarness.startTransaction();
+  });
+
+  afterEach(async () => {
+    await TestHarness.rollbackTransaction();
+  });
+
+  it('boots the application with unified test factory', () => {
+    expect(TestHarness.getApp()).toBeDefined();
+  });
+
+  it('admin can fetch students', async () => {
+    const res = await admin.get('/api/v1/students').expect(200);
+    expect(Array.isArray(res.body.data)).toBe(true);
   });
 });

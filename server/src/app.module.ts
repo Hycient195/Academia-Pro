@@ -28,6 +28,7 @@ import { LibraryModule } from './library/library.module';
 import { HostelModule } from './hostel/hostel.module';
 import { FeeModule } from './fee/fee.module';
 import { CommunicationModule } from './communication/communication.module';
+import { ParentModule } from './parent/parent.module';
 import { ParentPortalModule } from './parent-portal/parent-portal.module';
 import { TransportationModule } from './transportation/transportation.module';
 import { InventoryModule } from './inventory/inventory.module';
@@ -67,23 +68,29 @@ import { AppService } from './app.service';
     // Database connection
     // TypeOrmModule.forRoot(databaseConfig),
 
-    forwardRef(() =>
-      TypeOrmModule.forRootAsync({
-        imports: [ConfigModule],
-        useFactory: async (configService: ConfigService) => await getDatabaseConfig(configService),
-        inject: [ConfigService],
-      }),
+    ...(process.env.NODE_ENV === 'test'
+      ? []
+      : [forwardRef(() =>
+          TypeOrmModule.forRootAsync({
+            imports: [ConfigModule],
+            useFactory: async (configService: ConfigService) => await getDatabaseConfig(configService),
+            inject: [ConfigService],
+          }),
+        )]
     ),
 
     // Add User entity for global middleware access
     TypeOrmModule.forFeature([]),
     
 
-    // Rate limiting
-    ThrottlerModule.forRoot([{
-      ttl: 60 * 1000,    // Time window in milliseconds
-      limit: 100, // Number of requests per window
-    }]),
+    // Rate limiting (disabled in test to avoid duplicate global providers)
+    ...(process.env.NODE_ENV === 'test'
+      ? []
+      : [ThrottlerModule.forRoot([{
+          ttl: 60 * 1000,    // Time window in milliseconds
+          limit: 100, // Number of requests per window
+        }])]
+    ),
 
     // Redis module (before database for cache)
     forwardRef(() => RedisModule),
@@ -128,10 +135,13 @@ import { AppService } from './app.service';
   ],
   providers: [
     // Global guards
-    {
-      provide: APP_GUARD,
-      useClass: ThrottlerGuard,
-    },
+    ...(process.env.NODE_ENV === 'test'
+      ? []
+      : [{
+          provide: APP_GUARD,
+          useClass: ThrottlerGuard,
+        }]
+    ),
 
     // Global interceptors
     {

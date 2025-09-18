@@ -101,8 +101,8 @@ export class StudentsController {
     description: 'Students retrieved successfully',
   })
   findAll(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
     @Query('schoolId') schoolId?: string,
     @Query('stages') stages?: string,
     @Query('gradeCodes') gradeCodes?: string,
@@ -129,32 +129,36 @@ export class StudentsController {
     const parsedStreamSections = streamSections ? streamSections.split(',').filter(s => s.trim()) : undefined;
     const parsedStatuses = statuses ? statuses.split(',').filter(s => s.trim()) : undefined;
 
-    console.log('Controller Debug - Parsed params:', {
-      stages: parsedStages,
-      gradeCodes: parsedGradeCodes,
-      streamSections: parsedStreamSections,
-      statuses: parsedStatuses,
-      search,
-      schoolId,
-      page,
-      limit,
-      firstName,
-      lastName,
-      middleName,
-      gender,
-      admissionNumber,
-      dateOfBirthFrom,
-      dateOfBirthTo,
-      admissionDateFrom,
-      admissionDateTo,
-      isBoarding,
-      email,
-      phone
-    });
+    // Parse numeric parameters
+    const parsedPage = page ? parseInt(page, 10) : undefined;
+    const parsedLimit = limit ? parseInt(limit, 10) : undefined;
+
+    // console.log('Controller Debug - Parsed params:', {
+    //   stages: parsedStages,
+    //   gradeCodes: parsedGradeCodes,
+    //   streamSections: parsedStreamSections,
+    //   statuses: parsedStatuses,
+    //   search,
+    //   schoolId,
+    //   page: parsedPage,
+    //   limit: parsedLimit,
+    //   firstName,
+    //   lastName,
+    //   middleName,
+    //   gender,
+    //   admissionNumber,
+    //   dateOfBirthFrom,
+    //   dateOfBirthTo,
+    //   admissionDateFrom,
+    //   admissionDateTo,
+    //   isBoarding,
+    //   email,
+    //   phone
+    // });
 
     return this.studentsService.findAll({
-      page,
-      limit,
+      page: parsedPage,
+      limit: parsedLimit,
       schoolId,
       stages: parsedStages,
       gradeCodes: parsedGradeCodes,
@@ -195,9 +199,10 @@ export class StudentsController {
     @Query('schoolId') schoolId?: string,
     @Query('grade') grade?: string,
     @Query('section') section?: string,
-    @Query('limit') limit?: number,
+    @Query('limit') limit?: string,
   ) {
-    return this.studentsService.search(query, schoolId, { grade, section, limit });
+    const parsedLimit = limit ? parseInt(limit, 10) : undefined;
+    return this.studentsService.search(query, schoolId, { grade, section, limit: parsedLimit });
   }
 
   @Get('by-grade/:schoolId/:gradeCode')

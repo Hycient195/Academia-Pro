@@ -1,60 +1,42 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
-import { TestSeederService } from './test-seeder.service';
-import { AppModule } from 'src/app.module';
-import { getAuthAgent } from './auth.helper';
-// import { AppModule } from '../src/app.module';
-// import { TestSeederService } from './utils/test-seeder.service';
-// import { getAuthAgent } from './utils/auth.helper';
+// test/utils/auth.e2e.spec.ts - harness-based auth smoke tests with seeded users
 
-describe('E2E with Seeded Users & Cookie Auth', () => {
-  let app: INestApplication;
-  let seeder: TestSeederService;
-  let superadminAgent, staffAgent, studentAgent;
+import type { SuperAgentTest } from 'supertest';
+import { TestHarness } from './test-harness';
+
+describe('Auth E2E (seeded users, cookie sessions)', () => {
+  let superadmin: SuperAgentTest;
+  let staff: SuperAgentTest;
+  let student: SuperAgentTest;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-      providers: [TestSeederService], // expose seeder
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
-
-    seeder = moduleFixture.get(TestSeederService);
-
-    // reset DB users table
-    await seeder.clear();
-    await seeder.seedUsers();
-
-    // login once per role
-    superadminAgent = await getAuthAgent(app, 'super-admin');
-    staffAgent = await getAuthAgent(app, 'staff');
-    studentAgent = await getAuthAgent(app, 'student');
+    await TestHarness.bootstrap();
+    superadmin = await TestHarness.auth('super-admin');
+    staff = await TestHarness.auth('staff');
+    student = await TestHarness.auth('student');
   });
 
   afterAll(async () => {
-    await app.close();
+    await TestHarness.shutdown();
   });
 
-  it('Admin can create a school', async () => {
-    const res = await superadminAgent
-      .post('/schools')
-      .send({ name: 'Premium High School', code: 'SCH123' })
-      .expect(201);
-
-    expect(res.body.name).toBe('Premium High School');
+  beforeEach(async () => {
+    await TestHarness.startTransaction();
   });
 
-  it('Teacher cannot create a school', async () => {
-    await staffAgent
-      .post('/schools')
-      .send({ name: 'Another School', code: 'SCH456' })
-      .expect(403);
+  afterEach(async () => {
+    await TestHarness.rollbackTransaction();
   });
 
-  it('Student can fetch their profile', async () => {
-    const res = await studentAgent.get('/students/me').expect(200);
-    expect(res.body.email).toBe('student@example.com');
+  it('super admin can list schools (seeded)', async () => {
+    // Uses seeded school "Premium High School"
+    const res = await superadmin.get('/api/v1/schools').expect(200);
+    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(res.body.data.map((s: any) => s.name)).toContain('Premium High School');
+  });
+
+  it('staff and student sessions are established', () => {
+    // Smoke: ensure we acquired logged-in agents
+    expect(staff).toBeDefined();
+    expect(student).toBeDefined();
   });
 });

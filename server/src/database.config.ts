@@ -47,9 +47,40 @@ const ensureDatabaseExists = async (configService: ConfigService): Promise<void>
 };
 
 export const getDatabaseConfig = async (configService: ConfigService): Promise<TypeOrmModuleOptions> => {
-  // Ensure database exists before configuring TypeORM
-  await ensureDatabaseExists(configService);
+  const isTest = process.env.NODE_ENV === 'test' || !!process.env.TEST_DB_HOST;
 
+  // Only ensure/create DB in non-test environments
+  if (!isTest) {
+    await ensureDatabaseExists(configService);
+  }
+
+  // Optimized config for e2e/integration tests (use PostgreSQL on dynamic port)
+  if (isTest) {
+    const testDbPort = process.env.TEST_DB_PORT ? parseInt(process.env.TEST_DB_PORT) : 5432;
+    console.log('Using PostgreSQL database config for tests on port', testDbPort);
+
+    return {
+      type: 'postgres',
+      host: 'localhost',
+      port: testDbPort,
+      username: 'testuser',
+      password: 'testpass',
+      database: 'school_test',
+      synchronize: true,
+      dropSchema: true,
+      logging: ['error', 'warn'],
+      autoLoadEntities: true,
+      retryAttempts: 5,
+      retryDelay: 1000,
+      extra: {
+        connectionTimeoutMillis: 10000,
+        query_timeout: 10000,
+        statement_timeout: 10000,
+      },
+    };
+  }
+
+  // Default app config
   return {
     type: 'postgres',
     host: configService.get('DB_HOST', 'localhost'),
@@ -94,5 +125,5 @@ export const getDatabaseConfig = async (configService: ConfigService): Promise<T
     //   },
     //   duration: 300000, // 5 minutes
     // },
-  }
+  };
 };

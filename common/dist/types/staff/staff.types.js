@@ -91,6 +91,7 @@ var EDepartmentType;
     EDepartmentType["TRANSPORTATION"] = "transportation";
     EDepartmentType["CATERING"] = "catering";
     EDepartmentType["FACILITIES"] = "facilities";
+    EDepartmentType["OPERATIONS"] = "operations";
     EDepartmentType["SECURITY"] = "security";
     EDepartmentType["FINANCE"] = "finance";
     EDepartmentType["HR"] = "hr";

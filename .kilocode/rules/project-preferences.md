@@ -16,7 +16,8 @@ Project-specific guidelines for the Academia Pro school management system, cover
 - Ensure all tests pass before considering refactoring complete
 - Handle mock database conflicts by ensuring unique entity IDs in test data
 - After each service is updated, its associated integration test must be refactored accordingly, and the code must be tested and refactored until it passes the test
-- Use `@faker-js/faker` for generating realistic test data in end-to-end tests to ensure comprehensive coverage and avoid hardcoded test values
+- Use `@faker-js/faker` for generating realistic test data in integration and end-to-end tests to ensure comprehensive coverage and avoid hardcoded test values
+- Wherever multiple instances of any kind of random unique data need to be generated in integration or end-to-end tests, `@faker-js/faker` must be utilized to create diverse, realistic test scenarios
 
 ## Code organization
 - Maintain clear separation between service logic and test mocks

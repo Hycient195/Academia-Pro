@@ -16,7 +16,7 @@ export interface AuditConfig {
 @Injectable()
 export class AuditConfigService {
   private config: AuditConfig = {
-    enabled: true,
+    enabled: process.env.NODE_ENV !== 'test',
     bufferSize: 50,
     flushInterval: 30000, // 30 seconds
     retentionDays: 90,

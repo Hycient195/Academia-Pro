@@ -11,6 +11,7 @@ import {
   HttpCode,
   UseGuards,
   Request,
+  ParseEnumPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -124,7 +125,7 @@ export class DepartmentController {
     description: 'Invalid department type',
   })
   async getDepartmentsByType(
-    @Param('type') type: EDepartmentType,
+    @Param('type', new ParseEnumPipe(EDepartmentType)) type: EDepartmentType,
   ): Promise<Department[]> {
     return this.departmentService.getDepartmentsByType(type);
   }

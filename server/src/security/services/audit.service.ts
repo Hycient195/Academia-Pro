@@ -25,7 +25,11 @@ export class AuditService implements OnModuleDestroy {
     private readonly auditGateway?: AuditGateway,
   ) {
     // AuditService initialized successfully
-    this.startBufferFlushTimer();
+    if (this.auditConfig?.isEnabled && this.auditConfig.isEnabled()) {
+      this.startBufferFlushTimer();
+    } else {
+      this.logger.log('Audit logging disabled in this environment; skipping buffer flush timer');
+    }
   }
 
   /**
@@ -62,24 +66,25 @@ export class AuditService implements OnModuleDestroy {
       throw new MissingUserIdException();
     }
 
-    // Allow system user IDs for authentication endpoints and system operations
-    if (userId.trim() === 'auth-system' || userId.trim() === SYSTEM_USER_ID || userId.trim() === 'system') {
-      return userId.trim();
+    const uid = userId.trim();
+
+    // Normalize special/system identifiers to a valid UUID
+    if (uid === 'auth-system' || uid === 'system') {
+      return SYSTEM_USER_ID;
     }
 
-    // Skip validation for system user IDs
-    if (userId === '00000000-0000-0000-0000-000000000000' || userId === SYSTEM_USER_ID) {
-      return;
+    // Accept canonical system UUIDs
+    if (uid === SYSTEM_USER_ID || uid === '00000000-0000-0000-0000-000000000000') {
+      return SYSTEM_USER_ID;
     }
-
 
     // Basic UUID format validation
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(userId.trim())) {
-      throw new InvalidUserIdFormatException(userId.trim());
+    if (!uuidRegex.test(uid)) {
+      throw new InvalidUserIdFormatException(uid);
     }
 
-    return userId.trim();
+    return uid;
   }
 
   /**

@@ -127,7 +127,7 @@ export class AuthService {
      metadata: { authType: 'user' }
    })
    async validateUser(email: string, password: string): Promise<Partial<User>> {
-     console.log('[AuthService] validateUser start', { email });
+    //  console.log('[AuthService] validateUser start', { email });
  
      const user = await this.usersRepository.findOne({
        where: { email },
@@ -224,7 +224,7 @@ export class AuthService {
    metadata: { sessionType: 'login' }
  })
  async login(user: any): Promise<IAuthTokens & { requiresPasswordReset?: boolean }> {
-   console.log('[AuthService] login: creating session', { userId: user?.id });
+  //  console.log('[AuthService] login: creating session', { userId: user?.id });
 
    // Create user session
    const sessionId = this.generateSessionId();
@@ -239,7 +239,7 @@ export class AuthService {
      loginAt: new Date(),
      isActive: true,
    });
-   console.log('[AuthService] login: session created', { sessionId: session?.id });
+  //  console.log('[AuthService] login: session created', { sessionId: session?.id });
 
    const payload = {
      email: user.email,
@@ -274,7 +274,7 @@ export class AuthService {
      tokenType: 'Bearer',
      issuedAt: new Date(),
    };
-   console.log('[AuthService] login: tokens generated');
+  //  console.log('[AuthService] login: tokens generated');
 
    // Check if user needs to reset password (first-time login)
    if (user.isFirstLogin) {
@@ -342,16 +342,6 @@ export class AuthService {
     const csrfTokenKey = isSuperAdmin ? 'superAdminCsrfToken' : 'csrfToken';
 
     try {
-      console.log('[AuthService] setAuthCookies', {
-        secure: baseCookieOptions.secure,
-        sameSite: baseCookieOptions.sameSite,
-        origin: (res as any)?.req?.headers?.origin,
-        isSuperAdmin,
-        accessTokenKey,
-        refreshTokenKey,
-        csrfTokenKey,
-      });
-
       res.cookie(accessTokenKey, accessToken, {
         ...baseCookieOptions,
         maxAge: 24 * 60 * 60 * 1000, // 24 hours

@@ -24,7 +24,7 @@ export class AuditLog {
   @Column({ name: 'user_id', type: 'uuid', nullable: false })
   userId: string;
 
-  @ManyToOne(() => User, { nullable: true })
+  @ManyToOne(() => User, { nullable: true, createForeignKeyConstraints: false })
   @JoinColumn({ name: 'user_id' })
   user?: User;
 

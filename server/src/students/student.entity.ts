@@ -102,8 +102,8 @@ export class Student {
   currentSection: string; // e.g., 'A', 'B', 'C' - legacy
 
   @Column({
-    type: 'varchar',
-    length: 10,
+    type: 'enum',
+    enum: TStudentStage,
   })
   stage: TStudentStage;
 

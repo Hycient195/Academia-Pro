@@ -42,6 +42,10 @@ export class AuditInterceptor implements NestInterceptor {
     const handler = context.getHandler();
     const controller = context.getClass();
 
+    // Globally skip auditing when disabled (e.g., in test environment)
+    if (!this.auditConfig?.isEnabled || !this.auditConfig.isEnabled()) {
+      return next.handle();
+    }
 
     // Skip audit for excluded endpoints
     if (this.auditConfig.isExcludedEndpoint(request.url)) {
@@ -96,8 +100,8 @@ export class AuditInterceptor implements NestInterceptor {
     const safeResource = resource && resource.length > 100 ? resource.substring(0, 100) : (resource || 'api');
 
     // Log the resource for debugging
-    console.log('Audit resource:', safeResource, 'length:', safeResource.length);
-    console.log('Original resource:', resource, 'length:', resource?.length);
+    // console.log('Audit resource:', safeResource, 'length:', safeResource.length);
+    // console.log('Original resource:', resource, 'length:', resource?.length);
     const crudAction = auditableOptions?.action || this.detectCrudAction(auditData.method, auditData.url);
     const resourceId = auditableOptions?.resourceId || this.extractResourceId(auditData.url);
     const severity = auditableOptions?.severity || this.getSeverityFromStatus(200, crudAction);

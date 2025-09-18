@@ -2,13 +2,27 @@
   "moduleFileExtensions": ["js", "json", "ts"],
   "rootDir": ".",
   "testEnvironment": "node",
-  "testRegex": ".e2e-spec.ts$",
+  "testMatch": ["**/*.e2e-spec.ts", "**/*.e2e.spec.ts"],
   "transform": {
-    "^.+\\.(t|j)s$": "ts-jest"
+    "^.+\\.ts$": ["ts-jest", {
+      "tsconfig": {
+        "isolatedModules": true
+      },
+      "diagnostics": {
+        "warnOnly": true
+      }
+    }]
   },
   "collectCoverageFrom": ["**/*.(t|j)s"],
   "coverageDirectory": "../coverage-e2e",
-  "testEnvironment": "node",
-  "testTimeout": 30000,
-  "setupFilesAfterEnv": ["<rootDir>/test/setup.ts"]
+  "testTimeout": 240000,
+  "maxWorkers": 1,
+  "moduleNameMapper": {
+    "^(\\.{1,2}/.*)\\.js$": "$1",
+    "^src/(.*)$": "<rootDir>/../$1",
+    "^@academia-pro/(.*)$": "<rootDir>/../../../common/dist/$1"
+  },
+  "transformIgnorePatterns": [
+    "node_modules/(?!(@faker-js/faker)/)"
+  ]
 }

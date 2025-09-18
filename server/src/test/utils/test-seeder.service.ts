@@ -15,27 +15,36 @@
 // School-affiliated users have a placeholder schoolId that should be updated for actual tests
 
 import { Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
+import { User } from '../../users/user.entity';
+import { School } from '../../schools/school.entity';
+import { Student } from '../../students/student.entity';
+import { Department } from '../../staff/entities/department.entity';
+import { EUserRole, EUserStatus } from '@academia-pro/types/users';
+import { TStudentStage } from '@academia-pro/types/student/student.types';
 
-// Local enums for test seeder (to avoid import issues in test environment)
-enum EUserRole {
-  SUPER_ADMIN = 'super-admin',
-  DELEGATED_SUPER_ADMIN = 'delegated-super-admin',
-  SCHOOL_ADMIN = 'school-admin',
-  STAFF = 'staff',
-  STUDENT = 'student',
-  PARENT = 'parent',
+// Lazy-load faker to work in CommonJS (Jest/ts-jest) without ESM issues
+// Using 'any' typing here avoids TypeScript's ESM type import restrictions under ts-jest.
+type FakerInstance = any;
+let __fakerInstance: FakerInstance | null = null;
+async function getFaker(): Promise<FakerInstance> {
+  if (!__fakerInstance) {
+    const mod = await import('@faker-js/faker');
+    __fakerInstance = mod.faker;
+  }
+  return __fakerInstance;
 }
-
-enum EUserStatus {
-  ACTIVE = 'active',
-  INACTIVE = 'inactive',
-  SUSPENDED = 'suspended',
-  PENDING = 'pending',
-  DELETED = 'deleted',
-}
+// Deterministic IDs for seeded users to keep JWTs valid across per-test truncations
+const TEST_IDS = {
+  AUTH_SYSTEM: '550e8400-e29b-41d4-a716-446655440000',
+  SUPERADMIN: '11111111-1111-1111-1111-111111111111',
+  SCHOOLADMIN: '22222222-2222-2222-2222-222222222222',
+  TEACHER: '33333333-3333-3333-3333-333333333333',
+  STUDENT: '44444444-4444-4444-4444-444444444444',
+  PARENT: '55555555-5555-5555-5555-555555555555',
+};
 
 enum SchoolStatus {
   ACTIVE = 'active',
@@ -101,14 +110,38 @@ enum BloodGroup {
 
 @Injectable()
 export class TestSeederService {
-  constructor(private dataSource: DataSource) {}
+  private userRepository: Repository<User>;
+  private schoolRepository: Repository<School>;
+  private studentRepository: Repository<Student>;
+  private departmentRepository: Repository<Department>;
+
+  constructor(private dataSource: DataSource) {
+    this.userRepository = this.dataSource.getRepository(User);
+    this.schoolRepository = this.dataSource.getRepository(School);
+    this.studentRepository = this.dataSource.getRepository(Student);
+    this.departmentRepository = this.dataSource.getRepository(Department);
+  }
 
   async clear() {
-    // ⚠️ order matters because of FK constraints
-    await this.dataSource.query('TRUNCATE TABLE students RESTART IDENTITY CASCADE');
-    await this.dataSource.query('TRUNCATE TABLE departments RESTART IDENTITY CASCADE');
-    await this.dataSource.query('TRUNCATE TABLE schools RESTART IDENTITY CASCADE');
-    await this.dataSource.query('TRUNCATE TABLE users RESTART IDENTITY CASCADE');
+    // Truncate all public tables to guarantee full isolation between tests
+    // Excludes migration/metadata tables if present
+    const rows: Array<{ tablename: string }> = await this.dataSource.query(`
+      SELECT tablename
+      FROM pg_tables
+      WHERE schemaname = 'public'
+        AND tablename NOT IN ('migrations', 'typeorm_metadata')
+    `);
+
+    if (!rows || rows.length === 0) {
+      return;
+    }
+
+    const tables = rows
+      .map((r) => `"public"."${r.tablename}"`)
+      .join(', ');
+
+    // RESTART IDENTITY resets sequences; CASCADE handles FK relationships
+    await this.dataSource.query(`TRUNCATE TABLE ${tables} RESTART IDENTITY CASCADE;`);
   }
 
   async seedAll() {
@@ -137,54 +170,74 @@ export class TestSeederService {
 
   // Create additional students for bulk testing
   async createAdditionalStudents(schoolId: string, count: number = 5) {
+    // Ensure provided schoolId exists; fallback to first available school
+    try {
+      const exists = await this.dataSource.query('SELECT 1 FROM schools WHERE id = $1 LIMIT 1', [schoolId]);
+      if (!exists || exists.length === 0) {
+        const row = await this.dataSource.query('SELECT id FROM schools LIMIT 1');
+        if (row && row.length > 0) {
+          schoolId = row[0].id;
+        }
+      }
+    } catch (e) {
+      // If any error occurs, continue with the provided schoolId
+    }
+
+    const faker = await getFaker();
     const students = [];
 
     for (let i = 0; i < count; i++) {
+      const gender = faker.person.sex();
+      const firstName = faker.person.firstName(gender as 'female' | 'male');
+      const lastName = faker.person.lastName();
+      const gradeLevel = 10 - Math.floor(i / 2);
+      const section = String.fromCharCode(65 + (i % 3)); // A, B, C
+
       const student = {
         id: randomUUID(),
-        firstName: `Test${i + 1}`,
-        lastName: `Student${i + 1}`,
-        dateOfBirth: new Date(2005 - i, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
-        gender: Math.random() > 0.5 ? 'male' : 'female',
-        email: `test${i + 1}.student@testacademy.com`,
-        phone: `+1234567${890 + i}`,
+        firstName,
+        lastName,
+        dateOfBirth: faker.date.birthdate({ min: 8, max: 18, mode: 'age' }),
+        gender: gender.toLowerCase(),
+        email: faker.internet.email({ firstName, lastName, provider: 'testacademy.com' }),
+        phone: faker.phone.number(),
         address: {
-          street: `${100 + i} Test St`,
-          city: 'Test City',
-          state: 'Test State',
-          postalCode: '12345',
-          country: 'Test Country',
+          street: faker.location.streetAddress(),
+          city: faker.location.city(),
+          state: faker.location.state(),
+          postalCode: faker.location.zipCode(),
+          country: faker.location.country(),
         },
-        admissionNumber: `ADM${String(i + 3).padStart(3, '0')}`,
-        currentGrade: `Grade ${10 - Math.floor(i / 2)}`,
-        currentSection: String.fromCharCode(65 + (i % 3)), // A, B, C
-        stage: 'secondary',
-        gradeCode: `G${10 - Math.floor(i / 2)}`,
-        streamSection: `Stream ${String.fromCharCode(65 + (i % 3))}`,
-        admissionDate: new Date(2020 - Math.floor(i / 2), 8, 1),
+        admissionNumber: `ADM-${Date.now()}-${faker.string.numeric(6)}-${i}`,
+        currentGrade: `Grade ${gradeLevel}`,
+        currentSection: section,
+        stage: 'SSS',
+        gradeCode: `G${gradeLevel}`,
+        streamSection: `Stream ${section}`,
+        admissionDate: faker.date.past({ years: 4 }),
         enrollmentType: EnrollmentType.REGULAR,
-        isBoarding: Math.random() > 0.7,
+        isBoarding: faker.datatype.boolean({ probability: 0.3 }),
         schoolId,
         status: StudentStatus.ACTIVE,
-        gpa: Math.round((3.0 + Math.random() * 1.0) * 100) / 100,
+        gpa: faker.number.float({ min: 2.0, max: 4.0, fractionDigits: 2 }),
         financialInfo: {
           feeCategory: 'Regular',
-          outstandingBalance: Math.floor(Math.random() * 1000),
+          outstandingBalance: faker.number.int({ min: 0, max: 2000 }),
         },
-        createdBy: 'test-user-id',
-        updatedBy: 'test-user-id',
+        createdBy: '550e8400-e29b-41d4-a716-446655440000',
+        updatedBy: '550e8400-e29b-41d4-a716-446655440000',
       };
 
       await this.dataSource.query(
         `INSERT INTO students (
-          id, first_name, last_name, date_of_birth, gender, email, phone, address,
-          admission_number, current_grade, current_section, stage, grade_code, stream_section,
-          admission_date, enrollment_type, is_boarding, school_id, status, gpa, financial_info,
-          created_by, updated_by
+          id, "firstName", "lastName", "dateOfBirth", gender, email, phone, address,
+          "admissionNumber", "currentGrade", "currentSection", stage, "gradeCode", "streamSection",
+          "admissionDate", "enrollmentType", "isBoarding", "schoolId", status, gpa, "financialInfo",
+          "createdBy", "updatedBy"
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
         )
-        ON CONFLICT (admission_number) DO NOTHING`,
+        ON CONFLICT ("admissionNumber") DO NOTHING`,
         [
           student.id,
           student.firstName,
@@ -314,41 +367,46 @@ export class TestSeederService {
 
   // Private helper method to seed individual student
   private async seedStudent(schoolId: string, overrides: any = {}) {
+    const faker = await getFaker();
+    const gender = faker.person.sex();
+    const firstName = faker.person.firstName(gender as 'female' | 'male');
+    const lastName = faker.person.lastName();
+
     const student = {
       id: randomUUID(),
-      firstName: `Test${Math.floor(Math.random() * 1000)}`,
-      lastName: `Student${Math.floor(Math.random() * 1000)}`,
-      dateOfBirth: new Date(2005, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
-      gender: Math.random() > 0.5 ? 'male' : 'female',
-      email: `test${Math.floor(Math.random() * 1000)}.student@testacademy.com`,
-      phone: `+1234567${Math.floor(Math.random() * 1000)}`,
+      firstName,
+      lastName,
+      dateOfBirth: faker.date.birthdate({ min: 8, max: 18, mode: 'age' }),
+      gender: gender.toLowerCase(),
+      email: faker.internet.email({ firstName, lastName, provider: 'testacademy.com' }),
+      phone: faker.phone.number(),
       address: {
-        street: `${Math.floor(Math.random() * 1000)} Test St`,
-        city: 'Test City',
-        state: 'Test State',
-        postalCode: '12345',
-        country: 'Test Country',
+        street: faker.location.streetAddress(),
+        city: faker.location.city(),
+        state: faker.location.state(),
+        postalCode: faker.location.zipCode(),
+        country: faker.location.country(),
       },
-      admissionNumber: `ADM${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
-      admissionDate: new Date(2020, 8, 1),
+      admissionNumber: `ADM${faker.string.numeric(3)}`,
+      admissionDate: faker.date.past({ years: 4 }),
       enrollmentType: EnrollmentType.REGULAR,
-      isBoarding: false,
+      isBoarding: faker.datatype.boolean({ probability: 0.2 }),
       schoolId,
       status: StudentStatus.ACTIVE,
-      createdBy: 'test-user-id',
-      updatedBy: 'test-user-id',
+      createdBy: '550e8400-e29b-41d4-a716-446655440000',
+      updatedBy: '550e8400-e29b-41d4-a716-446655440000',
       ...overrides,
     };
 
     await this.dataSource.query(
       `INSERT INTO students (
-        id, first_name, last_name, date_of_birth, gender, email, phone, address,
-        admission_number, admission_date, enrollment_type, is_boarding, school_id, status,
-        created_by, updated_by
+        id, "firstName", "lastName", "dateOfBirth", gender, email, phone, address,
+        "admissionNumber", "admissionDate", "enrollmentType", "isBoarding", "schoolId", status,
+        "createdBy", "updatedBy"
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
       )
-      ON CONFLICT (admission_number) DO NOTHING`,
+      ON CONFLICT ("admissionNumber") DO NOTHING`,
       [
         student.id,
         student.firstName,
@@ -373,27 +431,59 @@ export class TestSeederService {
   }
 
   // Helper method to determine stage from grade code
-  private getStageFromGradeCode(gradeCode: string): string {
+  private getStageFromGradeCode(gradeCode: string): TStudentStage {
     const gradeCodeUpper = gradeCode.toUpperCase();
 
     if (gradeCodeUpper.startsWith('CRECHE') || gradeCodeUpper.startsWith('N') || gradeCodeUpper.startsWith('KG')) {
-      return 'early_years';
+      return TStudentStage.EY;
     } else if (gradeCodeUpper.startsWith('PRY')) {
-      return 'primary';
+      return TStudentStage.PRY;
     } else if (gradeCodeUpper.startsWith('JSS')) {
-      return 'junior_secondary';
+      return TStudentStage.JSS;
     } else if (gradeCodeUpper.startsWith('SSS')) {
-      return 'secondary';
+      return TStudentStage.SSS;
     }
 
-    return 'secondary'; // Default fallback
+    return TStudentStage.SSS; // Default fallback
   }
 
   async seedUsers() {
     const hash = await bcrypt.hash('Test1234$', 10);
+    const schools = await this.schoolRepository.find();
+    const schoolId = schools.length > 0 ? schools[0].id : null;
+
     const users = [
       {
-        id: randomUUID(),
+        id: '550e8400-e29b-41d4-a716-446655440000',
+        email: 'auth-system@local',
+        passwordHash: hash,
+        firstName: 'Auth',
+        lastName: 'System',
+        roles: [EUserRole.SUPER_ADMIN],
+        status: EUserStatus.ACTIVE,
+        isEmailVerified: true,
+        isFirstLogin: false,
+        schoolId: null,
+        preferences: {
+          language: 'en',
+          timezone: 'UTC',
+          theme: 'light' as const,
+          notifications: {
+            email: false,
+            sms: false,
+            push: false,
+            marketing: false,
+            system: true,
+          },
+          privacy: {
+            profileVisibility: 'private' as const,
+            contactVisibility: 'private' as const,
+            dataSharing: false,
+          },
+        },
+      },
+      {
+        id: TEST_IDS.SUPERADMIN,
         email: 'superadmin@example.com',
         passwordHash: hash,
         firstName: 'Super',
@@ -421,7 +511,7 @@ export class TestSeederService {
         },
       },
       {
-        id: randomUUID(),
+        id: TEST_IDS.SCHOOLADMIN,
         email: 'schooladmin@example.com',
         passwordHash: hash,
         firstName: 'School',
@@ -430,7 +520,7 @@ export class TestSeederService {
         status: EUserStatus.ACTIVE,
         isEmailVerified: true,
         isFirstLogin: false,
-        schoolId: 'test-school-id', // This would need to be set to an actual school ID
+        schoolId,
         preferences: {
           language: 'en',
           timezone: 'UTC',
@@ -450,16 +540,16 @@ export class TestSeederService {
         },
       },
       {
-        id: randomUUID(),
+        id: TEST_IDS.TEACHER,
         email: 'teacher@example.com',
         passwordHash: hash,
         firstName: 'John',
         lastName: 'Teacher',
-        roles: [EUserRole.STAFF],
+        roles: [EUserRole.TEACHER],
         status: EUserStatus.ACTIVE,
         isEmailVerified: true,
         isFirstLogin: false,
-        schoolId: 'test-school-id', // This would need to be set to an actual school ID
+        schoolId,
         preferences: {
           language: 'en',
           timezone: 'UTC',
@@ -479,7 +569,7 @@ export class TestSeederService {
         },
       },
       {
-        id: randomUUID(),
+        id: TEST_IDS.STUDENT,
         email: 'student@example.com',
         passwordHash: hash,
         firstName: 'Jane',
@@ -488,7 +578,7 @@ export class TestSeederService {
         status: EUserStatus.ACTIVE,
         isEmailVerified: true,
         isFirstLogin: false,
-        schoolId: 'test-school-id', // This would need to be set to an actual school ID
+        schoolId,
         dateOfBirth: new Date('2005-05-15'),
         gender: 'female' as const,
         preferences: {
@@ -510,7 +600,7 @@ export class TestSeederService {
         },
       },
       {
-        id: randomUUID(),
+        id: TEST_IDS.PARENT,
         email: 'parent@example.com',
         passwordHash: hash,
         firstName: 'Bob',
@@ -519,7 +609,7 @@ export class TestSeederService {
         status: EUserStatus.ACTIVE,
         isEmailVerified: true,
         isFirstLogin: false,
-        schoolId: 'test-school-id', // This would need to be set to an actual school ID
+        schoolId,
         preferences: {
           language: 'en',
           timezone: 'UTC',
@@ -540,31 +630,14 @@ export class TestSeederService {
       },
     ];
 
-    for (const user of users) {
-      await this.dataSource.query(
-        `INSERT INTO users (
-          email, password_hash, first_name, last_name, roles, status,
-          is_email_verified, is_first_login, school_id, date_of_birth, gender, preferences
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-        ON CONFLICT (email) DO NOTHING`,
-        [
-          user.email,
-          user.passwordHash,
-          user.firstName,
-          user.lastName,
-          user.roles,
-          user.status,
-          user.isEmailVerified,
-          user.isFirstLogin,
-          user.schoolId || null,
-          user.dateOfBirth || null,
-          user.gender || null,
-          JSON.stringify(user.preferences),
-        ],
-      );
+    const savedUsers = [];
+    for (const userData of users) {
+      const user = this.userRepository.create(userData);
+      const savedUser = await this.userRepository.save(user);
+      savedUsers.push(savedUser);
     }
 
-    return users;
+    return savedUsers;
   }
 
   async seedSchools() {
@@ -574,7 +647,7 @@ export class TestSeederService {
         code: 'SCH001',
         name: 'Premium High School',
         description: 'A premier educational institution offering comprehensive secondary education',
-        type: ['secondary'],
+        type: ['secondary' as any],
         status: SchoolStatus.ACTIVE,
         address: '123 Education Street',
         city: 'Academic City',
@@ -606,7 +679,7 @@ export class TestSeederService {
         branding: {
           logo: 'https://premiumhigh.edu/logo.png',
           favicon: 'https://premiumhigh.edu/favicon.ico',
-          theme: 'light',
+          theme: 'light' as const,
           customCss: '',
         },
         settings: {
@@ -637,7 +710,7 @@ export class TestSeederService {
         code: 'SCH002',
         name: 'City Junior Academy',
         description: 'A nurturing environment for young minds in their formative years',
-        type: ['primary', 'junior_secondary'],
+        type: ['primary' as any, 'junior_secondary' as any],
         status: SchoolStatus.ACTIVE,
         address: '456 Learning Avenue',
         city: 'Metropolitan City',
@@ -669,7 +742,7 @@ export class TestSeederService {
         branding: {
           logo: 'https://cityjunior.edu/logo.png',
           favicon: 'https://cityjunior.edu/favicon.ico',
-          theme: 'light',
+          theme: 'light' as const,
           customCss: '',
         },
         settings: {
@@ -697,531 +770,429 @@ export class TestSeederService {
       },
     ];
 
-    for (const school of schools) {
-      await this.dataSource.query(
-        `INSERT INTO schools (
-          id, code, name, description, type, status, address, city, state, zip_code, country,
-          phone, email, website, principal_name, principal_phone, principal_email,
-          opening_time, closing_time, timezone, currency, language, max_students, current_students,
-          max_staff, current_staff, subscription_plan, subscription_start_date, subscription_end_date,
-          is_active_subscription, logo_url, primary_color, secondary_color, branding, settings,
-          created_by, updated_by
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
-          $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37
-        )
-        ON CONFLICT (code) DO NOTHING`,
-        [
-          school.id,
-          school.code,
-          school.name,
-          school.description,
-          school.type,
-          school.status,
-          school.address,
-          school.city,
-          school.state,
-          school.zipCode,
-          school.country,
-          school.phone,
-          school.email,
-          school.website,
-          school.principalName,
-          school.principalPhone,
-          school.principalEmail,
-          school.openingTime,
-          school.closingTime,
-          school.timezone,
-          school.currency,
-          school.language,
-          school.maxStudents,
-          school.currentStudents,
-          school.maxStaff,
-          school.currentStaff,
-          school.subscriptionPlan,
-          school.subscriptionStartDate,
-          school.subscriptionEndDate,
-          school.isActiveSubscription,
-          school.logoUrl,
-          school.primaryColor,
-          school.secondaryColor,
-          JSON.stringify(school.branding),
-          JSON.stringify(school.settings),
-          school.createdBy,
-          school.updatedBy,
-        ],
-      );
+    const savedSchools = [];
+    for (const schoolData of schools) {
+      const school = this.schoolRepository.create(schoolData);
+      const savedSchool = await this.schoolRepository.save(school);
+      savedSchools.push(savedSchool);
     }
 
-    return schools;
+    return savedSchools;
   }
 
   async seedDepartments(schoolId: string) {
+    const systemUserId = randomUUID(); // Use a consistent UUID for system operations
+
     const departments = [
       {
         id: randomUUID(),
         type: EDepartmentType.TEACHING,
         name: 'Mathematics Department',
         description: 'Mathematics teaching and curriculum development',
-        createdBy: 'system',
-        updatedBy: 'system',
+        createdBy: systemUserId,
+        updatedBy: systemUserId,
       },
       {
         id: randomUUID(),
         type: EDepartmentType.TEACHING,
         name: 'English Department',
         description: 'English language and literature teaching',
-        createdBy: 'system',
-        updatedBy: 'system',
+        createdBy: systemUserId,
+        updatedBy: systemUserId,
       },
       {
         id: randomUUID(),
         type: EDepartmentType.TEACHING,
         name: 'Science Department',
         description: 'Physics, Chemistry, and Biology teaching',
-        createdBy: 'system',
-        updatedBy: 'system',
+        createdBy: systemUserId,
+        updatedBy: systemUserId,
       },
       {
         id: randomUUID(),
         type: EDepartmentType.MEDICAL,
         name: 'School Clinic',
         description: 'Student health and medical services',
-        createdBy: 'system',
-        updatedBy: 'system',
+        createdBy: systemUserId,
+        updatedBy: systemUserId,
       },
       {
         id: randomUUID(),
         type: EDepartmentType.ADMINISTRATION,
         name: 'School Administration',
         description: 'Overall school administration and management',
-        createdBy: 'system',
-        updatedBy: 'system',
+        createdBy: systemUserId,
+        updatedBy: systemUserId,
       },
       {
         id: randomUUID(),
         type: EDepartmentType.COUNSELING,
         name: 'Student Counseling',
         description: 'Academic and personal counseling services',
-        createdBy: 'system',
-        updatedBy: 'system',
+        createdBy: systemUserId,
+        updatedBy: systemUserId,
       },
       {
         id: randomUUID(),
         type: EDepartmentType.FACILITIES,
         name: 'Facilities Management',
         description: 'Building and grounds maintenance',
-        createdBy: 'system',
-        updatedBy: 'system',
+        createdBy: systemUserId,
+        updatedBy: systemUserId,
       },
       {
         id: randomUUID(),
         type: EDepartmentType.IT,
         name: 'Information Technology',
         description: 'School IT infrastructure and support',
-        createdBy: 'system',
-        updatedBy: 'system',
+        createdBy: systemUserId,
+        updatedBy: systemUserId,
       },
     ];
 
-    for (const department of departments) {
-      await this.dataSource.query(
-        `INSERT INTO departments (id, type, name, description, created_by, updated_by)
-         VALUES ($1, $2, $3, $4, $5, $6)
-         ON CONFLICT (name) DO NOTHING`,
-        [
-          department.id,
-          department.type,
-          department.name,
-          department.description,
-          department.createdBy,
-          department.updatedBy,
-        ],
-      );
+    const savedDepartments = [];
+    for (const departmentData of departments) {
+      const department = this.departmentRepository.create(departmentData);
+      const savedDepartment = await this.departmentRepository.save(department);
+      savedDepartments.push(savedDepartment);
     }
 
-    return departments;
+    return savedDepartments;
   }
 
   async seedStudents(schoolId: string) {
+    const systemUserId = randomUUID(); // Use a consistent UUID for system operations
+    const faker = await getFaker();
+
     const students = [
       {
         id: randomUUID(),
-        firstName: 'Alice',
-        lastName: 'Johnson',
-        middleName: 'Marie',
-        dateOfBirth: new Date('2008-03-15'),
+        firstName: faker.person.firstName('female'),
+        lastName: faker.person.lastName(),
+        middleName: faker.person.middleName('female'),
+        dateOfBirth: faker.date.birthdate({ min: 14, max: 17, mode: 'age' }),
         gender: 'female' as const,
-        bloodGroup: BloodGroup.A_POSITIVE,
-        email: 'alice.johnson@student.com',
-        phone: '+1-555-1001',
+        bloodGroup: faker.helpers.arrayElement(Object.values(BloodGroup)),
+        email: faker.internet.email(),
+        phone: faker.phone.number(),
         address: {
-          street: '123 Maple Street',
-          city: 'Springfield',
-          state: 'IL',
-          postalCode: '62701',
+          street: faker.location.streetAddress(),
+          city: faker.location.city(),
+          state: faker.location.state({ abbreviated: true }),
+          postalCode: faker.location.zipCode(),
           country: 'USA',
           coordinates: {
-            latitude: 39.7817,
-            longitude: -89.6501,
+            latitude: faker.location.latitude(),
+            longitude: faker.location.longitude(),
           },
         },
-        admissionNumber: 'STU2024001',
+        admissionNumber: `STU${faker.date.recent({ days: 365 }).getFullYear()}001`,
         currentGrade: 'Grade 10',
         currentSection: 'A',
-        stage: 'secondary',
+        stage: TStudentStage.SSS,
         gradeCode: '10',
         streamSection: 'Science Stream A',
-        admissionDate: new Date('2020-08-15'),
+        admissionDate: faker.date.past({ years: 4 }),
         enrollmentType: EnrollmentType.REGULAR,
-        isBoarding: false,
+        isBoarding: faker.datatype.boolean({ probability: 0.1 }),
         promotionHistory: [],
         transferHistory: [],
-        graduationYear: 2026,
+        graduationYear: faker.date.future({ years: 2 }).getFullYear(),
         schoolId: schoolId,
         status: StudentStatus.ACTIVE,
         parentInfo: {
-          fatherFirstName: 'John',
-          fatherLastName: 'Johnson',
-          fatherPhone: '+1-555-1002',
-          fatherEmail: 'john.johnson@email.com',
-          fatherOccupation: 'Engineer',
-          motherFirstName: 'Sarah',
-          motherLastName: 'Johnson',
-          motherPhone: '+1-555-1003',
-          motherEmail: 'sarah.johnson@email.com',
-          motherOccupation: 'Teacher',
+          fatherFirstName: faker.person.firstName('male'),
+          fatherLastName: faker.person.lastName(),
+          fatherPhone: faker.phone.number(),
+          fatherEmail: faker.internet.email(),
+          fatherOccupation: faker.person.jobTitle(),
+          motherFirstName: faker.person.firstName('female'),
+          motherLastName: faker.person.lastName(),
+          motherPhone: faker.phone.number(),
+          motherEmail: faker.internet.email(),
+          motherOccupation: faker.person.jobTitle(),
         },
         medicalInfo: {
-          allergies: ['Peanuts'],
-          medications: [],
-          conditions: [],
+          allergies: faker.helpers.arrayElements(['Peanuts', 'Dust', 'Shellfish', 'Pollen'], { min: 0, max: 2 }),
+          medications: faker.helpers.arrayElements(['Antihistamine', 'Asthma Inhaler'], { min: 0, max: 1 }),
+          conditions: faker.helpers.arrayElements(['Asthma', 'Allergies'], { min: 0, max: 1 }),
           emergencyContact: {
-            firstName: 'John',
-            lastName: 'Johnson',
-            phone: '+1-555-1002',
-            email: 'john.johnson@email.com',
-            relation: 'Father',
-            occupation: 'Engineer',
+            firstName: faker.person.firstName(),
+            lastName: faker.person.lastName(),
+            phone: faker.phone.number(),
+            email: faker.internet.email(),
+            relation: faker.helpers.arrayElement(['Father', 'Mother', 'Guardian']),
+            occupation: faker.person.jobTitle(),
           },
         },
-        gpa: 3.8,
-        totalCredits: 45,
+        gpa: faker.number.float({ min: 3.0, max: 4.0, fractionDigits: 1 }),
+        totalCredits: faker.number.int({ min: 30, max: 60 }),
         academicStanding: {
-          honors: true,
+          honors: faker.datatype.boolean({ probability: 0.3 }),
           probation: false,
           academicWarning: false,
-          disciplinaryStatus: 'Good',
+          disciplinaryStatus: faker.helpers.arrayElement(['Excellent', 'Good', 'Satisfactory']),
         },
         transportation: {
-          required: false,
+          required: faker.datatype.boolean({ probability: 0.2 }),
         },
         hostel: {
-          required: false,
+          required: faker.datatype.boolean({ probability: 0.1 }),
         },
         financialInfo: {
-          feeCategory: 'Standard',
-          outstandingBalance: 0,
-          paymentPlan: 'Monthly',
+          feeCategory: faker.helpers.arrayElement(['Standard', 'Premium', 'Scholarship']),
+          outstandingBalance: faker.number.int({ min: 0, max: 1000 }),
+          paymentPlan: faker.helpers.arrayElement(['Monthly', 'Quarterly', 'Annual']),
         },
         documents: [
           {
             type: 'birth_certificate',
-            fileName: 'alice_birth_certificate.pdf',
-            fileUrl: '/documents/alice_birth_certificate.pdf',
-            uploadedAt: new Date(),
-            verified: true,
+            fileName: `${faker.person.firstName().toLowerCase()}_birth_certificate.pdf`,
+            fileUrl: `/documents/${faker.person.firstName().toLowerCase()}_birth_certificate.pdf`,
+            uploadedAt: faker.date.recent(),
+            verified: faker.datatype.boolean({ probability: 0.9 }),
           },
         ],
         preferences: {
           language: 'en',
           notifications: {
-            email: true,
-            sms: false,
-            push: true,
-            parentCommunication: true,
+            email: faker.datatype.boolean({ probability: 0.8 }),
+            sms: faker.datatype.boolean({ probability: 0.3 }),
+            push: faker.datatype.boolean({ probability: 0.6 }),
+            parentCommunication: faker.datatype.boolean({ probability: 0.9 }),
           },
-          extracurricular: ['Basketball', 'Debate Club'],
+          extracurricular: faker.helpers.arrayElements(['Basketball', 'Debate Club', 'Chess', 'Music', 'Drama'], { min: 1, max: 3 }),
         },
-        createdBy: 'system',
-        updatedBy: 'system',
+        createdBy: systemUserId,
+        updatedBy: systemUserId,
       },
       {
         id: randomUUID(),
-        firstName: 'Bob',
-        lastName: 'Smith',
-        dateOfBirth: new Date('2007-07-22'),
+        firstName: faker.person.firstName('male'),
+        lastName: faker.person.lastName(),
+        dateOfBirth: faker.date.birthdate({ min: 15, max: 18, mode: 'age' }),
         gender: 'male' as const,
-        bloodGroup: BloodGroup.O_POSITIVE,
-        email: 'bob.smith@student.com',
-        phone: '+1-555-1004',
+        bloodGroup: faker.helpers.arrayElement(Object.values(BloodGroup)),
+        email: faker.internet.email(),
+        phone: faker.phone.number(),
         address: {
-          street: '456 Oak Avenue',
-          city: 'Springfield',
-          state: 'IL',
-          postalCode: '62702',
+          street: faker.location.streetAddress(),
+          city: faker.location.city(),
+          state: faker.location.state({ abbreviated: true }),
+          postalCode: faker.location.zipCode(),
           country: 'USA',
           coordinates: {
-            latitude: 39.7817,
-            longitude: -89.6501,
+            latitude: faker.location.latitude(),
+            longitude: faker.location.longitude(),
           },
         },
-        admissionNumber: 'STU2024002',
+        admissionNumber: `STU${faker.date.recent({ days: 365 }).getFullYear()}002`,
         currentGrade: 'Grade 11',
         currentSection: 'B',
-        stage: 'secondary',
+        stage: TStudentStage.SSS,
         gradeCode: '11',
         streamSection: 'Arts Stream B',
-        admissionDate: new Date('2019-08-15'),
+        admissionDate: faker.date.past({ years: 5 }),
         enrollmentType: EnrollmentType.REGULAR,
-        isBoarding: false,
+        isBoarding: faker.datatype.boolean({ probability: 0.1 }),
         promotionHistory: [
           {
-            fromGrade: '10',
-            toGrade: '11',
+            fromGrade: '10' as any,
+            toGrade: '11' as any,
             academicYear: '2023-2024',
-            performedBy: 'system',
-            timestamp: new Date('2024-06-15'),
+            performedBy: systemUserId,
+            timestamp: faker.date.recent({ days: 60 }),
           },
         ],
         transferHistory: [],
-        graduationYear: 2025,
+        graduationYear: faker.date.future({ years: 1 }).getFullYear(),
         schoolId: schoolId,
         status: StudentStatus.ACTIVE,
         parentInfo: {
-          fatherFirstName: 'Michael',
-          fatherLastName: 'Smith',
-          fatherPhone: '+1-555-1005',
-          fatherEmail: 'michael.smith@email.com',
-          fatherOccupation: 'Doctor',
-          motherFirstName: 'Jennifer',
-          motherLastName: 'Smith',
-          motherPhone: '+1-555-1006',
-          motherEmail: 'jennifer.smith@email.com',
-          motherOccupation: 'Nurse',
+          fatherFirstName: faker.person.firstName('male'),
+          fatherLastName: faker.person.lastName(),
+          fatherPhone: faker.phone.number(),
+          fatherEmail: faker.internet.email(),
+          fatherOccupation: faker.person.jobTitle(),
+          motherFirstName: faker.person.firstName('female'),
+          motherLastName: faker.person.lastName(),
+          motherPhone: faker.phone.number(),
+          motherEmail: faker.internet.email(),
+          motherOccupation: faker.person.jobTitle(),
         },
         medicalInfo: {
-          allergies: [],
-          medications: [],
+          allergies: faker.helpers.arrayElements(['Peanuts', 'Dust', 'Shellfish'], { min: 0, max: 1 }),
+          medications: faker.helpers.arrayElements(['Vitamin D'], { min: 0, max: 1 }),
           conditions: [],
           emergencyContact: {
-            firstName: 'Michael',
-            lastName: 'Smith',
-            phone: '+1-555-1005',
-            email: 'michael.smith@email.com',
-            relation: 'Father',
-            occupation: 'Doctor',
+            firstName: faker.person.firstName(),
+            lastName: faker.person.lastName(),
+            phone: faker.phone.number(),
+            email: faker.internet.email(),
+            relation: faker.helpers.arrayElement(['Father', 'Mother']),
+            occupation: faker.person.jobTitle(),
           },
         },
-        gpa: 3.6,
-        totalCredits: 52,
+        gpa: faker.number.float({ min: 3.0, max: 4.0, fractionDigits: 1 }),
+        totalCredits: faker.number.int({ min: 40, max: 65 }),
         academicStanding: {
-          honors: false,
+          honors: faker.datatype.boolean({ probability: 0.2 }),
           probation: false,
           academicWarning: false,
-          disciplinaryStatus: 'Good',
+          disciplinaryStatus: faker.helpers.arrayElement(['Good', 'Excellent']),
         },
         transportation: {
-          required: true,
-          routeId: 'route_001',
-          stopId: 'stop_001',
-          pickupTime: '07:30',
-          dropTime: '15:30',
-          distance: 5.2,
-          fee: 50,
+          required: faker.datatype.boolean({ probability: 0.4 }),
+          routeId: faker.datatype.boolean() ? `route_${faker.string.numeric(3)}` : undefined,
+          stopId: faker.datatype.boolean() ? `stop_${faker.string.numeric(3)}` : undefined,
+          pickupTime: faker.datatype.boolean() ? '07:30' : undefined,
+          dropTime: faker.datatype.boolean() ? '15:30' : undefined,
+          distance: faker.datatype.boolean() ? faker.number.float({ min: 2, max: 15, fractionDigits: 1 }) : undefined,
+          fee: faker.datatype.boolean() ? faker.number.int({ min: 30, max: 100 }) : undefined,
         },
         hostel: {
-          required: false,
+          required: faker.datatype.boolean({ probability: 0.1 }),
         },
         financialInfo: {
-          feeCategory: 'Standard',
-          outstandingBalance: 150,
-          paymentPlan: 'Monthly',
-          lastPaymentDate: new Date('2024-08-01'),
+          feeCategory: faker.helpers.arrayElement(['Standard', 'Premium']),
+          outstandingBalance: faker.number.int({ min: 0, max: 500 }),
+          paymentPlan: faker.helpers.arrayElement(['Monthly', 'Quarterly']),
+          lastPaymentDate: faker.date.recent({ days: 30 }),
         },
         documents: [
           {
             type: 'transcript',
-            fileName: 'bob_transcript.pdf',
-            fileUrl: '/documents/bob_transcript.pdf',
-            uploadedAt: new Date(),
-            verified: true,
+            fileName: `${faker.person.firstName().toLowerCase()}_transcript.pdf`,
+            fileUrl: `/documents/${faker.person.firstName().toLowerCase()}_transcript.pdf`,
+            uploadedAt: faker.date.recent(),
+            verified: faker.datatype.boolean({ probability: 0.95 }),
           },
         ],
         preferences: {
           language: 'en',
           notifications: {
-            email: true,
-            sms: true,
-            push: true,
-            parentCommunication: true,
+            email: faker.datatype.boolean({ probability: 0.9 }),
+            sms: faker.datatype.boolean({ probability: 0.5 }),
+            push: faker.datatype.boolean({ probability: 0.7 }),
+            parentCommunication: faker.datatype.boolean({ probability: 0.95 }),
           },
-          extracurricular: ['Football', 'Music Club'],
-          careerInterests: ['Engineering', 'Technology'],
+          extracurricular: faker.helpers.arrayElements(['Football', 'Music Club', 'Drama', 'Art'], { min: 1, max: 2 }),
+          careerInterests: faker.helpers.arrayElements(['Engineering', 'Technology', 'Medicine', 'Business'], { min: 1, max: 2 }),
         },
-        createdBy: 'system',
-        updatedBy: 'system',
+        createdBy: systemUserId,
+        updatedBy: systemUserId,
       },
       {
         id: randomUUID(),
-        firstName: 'Carol',
-        lastName: 'Williams',
-        middleName: 'Anne',
-        dateOfBirth: new Date('2009-01-10'),
+        firstName: faker.person.firstName('female'),
+        lastName: faker.person.lastName(),
+        middleName: faker.person.middleName('female'),
+        dateOfBirth: faker.date.birthdate({ min: 13, max: 16, mode: 'age' }),
         gender: 'female' as const,
-        bloodGroup: BloodGroup.B_NEGATIVE,
-        email: 'carol.williams@student.com',
-        phone: '+1-555-1007',
+        bloodGroup: faker.helpers.arrayElement(Object.values(BloodGroup)),
+        email: faker.internet.email(),
+        phone: faker.phone.number(),
         address: {
-          street: '789 Pine Road',
-          city: 'Springfield',
-          state: 'IL',
-          postalCode: '62703',
+          street: faker.location.streetAddress(),
+          city: faker.location.city(),
+          state: faker.location.state({ abbreviated: true }),
+          postalCode: faker.location.zipCode(),
           country: 'USA',
         },
-        admissionNumber: 'STU2024003',
+        admissionNumber: `STU${faker.date.recent({ days: 365 }).getFullYear()}003`,
         currentGrade: 'Grade 9',
         currentSection: 'A',
-        stage: 'secondary',
+        stage: TStudentStage.JSS,
         gradeCode: '9',
         streamSection: 'Commerce Stream A',
-        admissionDate: new Date('2021-08-15'),
-        enrollmentType: EnrollmentType.GIFTED,
-        isBoarding: false,
+        admissionDate: faker.date.past({ years: 3 }),
+        enrollmentType: faker.helpers.arrayElement([EnrollmentType.REGULAR, EnrollmentType.GIFTED]),
+        isBoarding: faker.datatype.boolean({ probability: 0.05 }),
         promotionHistory: [],
         transferHistory: [],
-        graduationYear: 2027,
+        graduationYear: faker.date.future({ years: 3 }).getFullYear(),
         schoolId: schoolId,
         status: StudentStatus.ACTIVE,
         parentInfo: {
-          fatherFirstName: 'David',
-          fatherLastName: 'Williams',
-          fatherPhone: '+1-555-1008',
-          fatherEmail: 'david.williams@email.com',
-          fatherOccupation: 'Teacher',
-          motherFirstName: 'Lisa',
-          motherLastName: 'Williams',
-          motherPhone: '+1-555-1009',
-          motherEmail: 'lisa.williams@email.com',
-          motherOccupation: 'Librarian',
+          fatherFirstName: faker.person.firstName('male'),
+          fatherLastName: faker.person.lastName(),
+          fatherPhone: faker.phone.number(),
+          fatherEmail: faker.internet.email(),
+          fatherOccupation: faker.person.jobTitle(),
+          motherFirstName: faker.person.firstName('female'),
+          motherLastName: faker.person.lastName(),
+          motherPhone: faker.phone.number(),
+          motherEmail: faker.internet.email(),
+          motherOccupation: faker.person.jobTitle(),
         },
         medicalInfo: {
-          allergies: ['Dust'],
-          medications: ['Antihistamine'],
-          conditions: ['Asthma'],
-          doctorInfo: {
-            firstName: 'Dr. Emily',
-            lastName: 'Davis',
-            phone: '+1-555-2001',
-            clinic: 'Springfield Medical Center',
-          },
+          allergies: faker.helpers.arrayElements(['Dust', 'Pollen', 'Pet Dander'], { min: 0, max: 2 }),
+          medications: faker.helpers.arrayElements(['Antihistamine', 'Inhaler'], { min: 0, max: 2 }),
+          conditions: faker.helpers.arrayElements(['Asthma', 'Allergies'], { min: 0, max: 1 }),
+          doctorInfo: faker.datatype.boolean({ probability: 0.3 }) ? {
+            firstName: `Dr. ${faker.person.firstName()}`,
+            lastName: faker.person.lastName(),
+            phone: faker.phone.number(),
+            clinic: faker.company.name() + ' Medical Center',
+          } : undefined,
         },
-        gpa: 4.0,
-        totalCredits: 28,
+        gpa: faker.number.float({ min: 3.5, max: 4.0, fractionDigits: 1 }),
+        totalCredits: faker.number.int({ min: 20, max: 35 }),
         academicStanding: {
-          honors: true,
+          honors: faker.datatype.boolean({ probability: 0.6 }),
           probation: false,
           academicWarning: false,
-          disciplinaryStatus: 'Excellent',
+          disciplinaryStatus: faker.helpers.arrayElement(['Excellent', 'Outstanding']),
         },
         transportation: {
-          required: false,
+          required: faker.datatype.boolean({ probability: 0.1 }),
         },
         hostel: {
-          required: false,
+          required: faker.datatype.boolean({ probability: 0.05 }),
         },
         financialInfo: {
-          feeCategory: 'Scholarship',
-          scholarship: {
-            type: 'Academic Excellence',
-            amount: 2000,
-            percentage: 50,
-            validUntil: new Date('2027-06-30'),
-          },
-          outstandingBalance: 0,
-          paymentPlan: 'Annual',
+          feeCategory: faker.helpers.arrayElement(['Standard', 'Scholarship', 'Premium']),
+          scholarship: faker.datatype.boolean({ probability: 0.2 }) ? {
+            type: faker.helpers.arrayElement(['Academic Excellence', 'Sports', 'Arts']),
+            amount: faker.number.int({ min: 1000, max: 5000 }),
+            percentage: faker.number.int({ min: 25, max: 100 }),
+            validUntil: faker.date.future({ years: 3 }),
+          } : undefined,
+          outstandingBalance: faker.number.int({ min: 0, max: 200 }),
+          paymentPlan: faker.helpers.arrayElement(['Monthly', 'Annual']),
         },
         documents: [
           {
             type: 'photo',
-            fileName: 'carol_photo.jpg',
-            fileUrl: '/documents/carol_photo.jpg',
-            uploadedAt: new Date(),
-            verified: true,
+            fileName: `${faker.person.firstName().toLowerCase()}_photo.jpg`,
+            fileUrl: `/documents/${faker.person.firstName().toLowerCase()}_photo.jpg`,
+            uploadedAt: faker.date.recent(),
+            verified: faker.datatype.boolean({ probability: 0.9 }),
           },
         ],
         preferences: {
           language: 'en',
           notifications: {
-            email: true,
-            sms: false,
-            push: true,
-            parentCommunication: true,
+            email: faker.datatype.boolean({ probability: 0.95 }),
+            sms: faker.datatype.boolean({ probability: 0.2 }),
+            push: faker.datatype.boolean({ probability: 0.8 }),
+            parentCommunication: faker.datatype.boolean({ probability: 0.98 }),
           },
-          extracurricular: ['Chess Club', 'Science Olympiad'],
-          careerInterests: ['Medicine', 'Research'],
+          extracurricular: faker.helpers.arrayElements(['Chess Club', 'Science Olympiad', 'Math Club', 'Debate'], { min: 1, max: 3 }),
+          careerInterests: faker.helpers.arrayElements(['Medicine', 'Research', 'Engineering', 'Law'], { min: 1, max: 2 }),
         },
-        createdBy: 'system',
-        updatedBy: 'system',
+        createdBy: systemUserId,
+        updatedBy: systemUserId,
       },
     ];
 
-    for (const student of students) {
-      await this.dataSource.query(
-        `INSERT INTO students (
-          id, first_name, last_name, middle_name, date_of_birth, gender, blood_group,
-          email, phone, address, admission_number, current_grade, current_section,
-          stage, grade_code, stream_section, admission_date, enrollment_type, is_boarding,
-          promotion_history, transfer_history, graduation_year, school_id, status,
-          parent_info, medical_info, gpa, total_credits, academic_standing,
-          transportation, hostel, financial_info, documents, preferences,
-          created_by, updated_by
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19,
-          $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36
-        )
-        ON CONFLICT (admission_number) DO NOTHING`,
-        [
-          student.id,
-          student.firstName,
-          student.lastName,
-          student.middleName,
-          student.dateOfBirth,
-          student.gender,
-          student.bloodGroup,
-          student.email,
-          student.phone,
-          JSON.stringify(student.address),
-          student.admissionNumber,
-          student.currentGrade,
-          student.currentSection,
-          student.stage,
-          student.gradeCode,
-          student.streamSection,
-          student.admissionDate,
-          student.enrollmentType,
-          student.isBoarding,
-          JSON.stringify(student.promotionHistory),
-          JSON.stringify(student.transferHistory),
-          student.graduationYear,
-          student.schoolId,
-          student.status,
-          JSON.stringify(student.parentInfo),
-          JSON.stringify(student.medicalInfo),
-          student.gpa,
-          student.totalCredits,
-          JSON.stringify(student.academicStanding),
-          JSON.stringify(student.transportation),
-          JSON.stringify(student.hostel),
-          JSON.stringify(student.financialInfo),
-          JSON.stringify(student.documents),
-          JSON.stringify(student.preferences),
-          student.createdBy,
-          student.updatedBy,
-        ],
-      );
+    const savedStudents = [];
+    for (const studentData of students) {
+      const student = this.studentRepository.create(studentData);
+      const savedStudent = await this.studentRepository.save(student);
+      savedStudents.push(savedStudent);
     }
 
-    return students;
+    return savedStudents;
   }
 }

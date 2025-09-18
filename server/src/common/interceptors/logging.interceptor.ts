@@ -12,13 +12,13 @@ export class LoggingInterceptor implements NestInterceptor {
     const { method, url } = request;
     const now = Date.now();
 
-    console.log(`[${new Date().toISOString()}] ${method} ${url} - Request started`);
+    // console.log(`[${new Date().toISOString()}] ${method} ${url} - Request started`);
 
     return next
       .handle()
       .pipe(
         tap(() => {
-          console.log(`[${new Date().toISOString()}] ${method} ${url} - Request completed in ${Date.now() - now}ms`);
+          // console.log(`[${new Date().toISOString()}] ${method} ${url} - Request completed in ${Date.now() - now}ms`);
         }),
       );
   }

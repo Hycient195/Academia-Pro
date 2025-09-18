@@ -13,11 +13,23 @@ export class SuperAdminSeeder implements OnModuleInit {
   ) {}
 
   async onModuleInit(): Promise<void> {
-    console.log('Running super admin seeder...');
+    // Skip seeding in test environment
+    if (process.env.NODE_ENV === 'test') {
+      // console.log('Skipping super admin seeder in test environment');
+      return;
+    }
+
+    // console.log('Running super admin seeder...');
     await this.seed();
   }
 
   async seed(): Promise<void> {
+    // Skip seeding in test environment
+    if (process.env.NODE_ENV === 'test') {
+      // console.log('Skipping super admin seeding in test environment');
+      return;
+    }
+
     try {
       // Check if super admin already exists
       const existingSuperAdmin = await this.usersRepository.findOne({

@@ -12,6 +12,12 @@ export class DepartmentSeeder {
   ) {}
 
   async seed(): Promise<void> {
+    // Skip seeding in test environment
+    if (process.env.NODE_ENV === 'test') {
+      // console.log('Skipping department seeding in test environment');
+      return;
+    }
+
     console.log('Seeding departments...');
 
     const departments = [

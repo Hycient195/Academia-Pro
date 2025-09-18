@@ -1,56 +1,53 @@
 // Test users for end-to-end testing
-// These credentials match the users seeded by test-users-seeder.ts
-// All users have password: 'Pass1234'
-//
-// Usage in tests:
-// - Use getAuthAgent(app, 'super-admin') for super admin authentication
-// - Use getAuthAgent(app, 'school-admin') for school admin authentication
-// - Use getAuthAgent(app, 'teacher') for teacher authentication
-// - Use getAuthAgent(app, 'student') for student authentication
-// - Use getAuthAgent(app, 'parent') for parent authentication
-//
-// Legacy aliases are provided for backward compatibility
+// These credentials match the users seeded by TestSeederService in tests
+// Default password for seeded users: 'Test1234$'
+// Usage examples: see getAuthAgent(app, role)
 
-export const testUsers = {
+export type TestUserRecord = {
+  email: string;
+  password: string;
+  role: 'super-admin' | 'delegated-super-admin' | 'school-admin' | 'staff' | 'teacher' | 'student' | 'parent';
+};
+
+export const testUsers: Record<string, TestUserRecord> = {
   'super-admin': {
     email: 'superadmin@example.com',
-    password: 'Pass1234',
-    role: 'super-admin'
+    password: 'Test1234$',
+    role: 'super-admin',
+  },
+  'delegated-super-admin': {
+    email: 'superadmin@example.com',
+    password: 'Test1234$',
+    role: 'super-admin',
   },
   'school-admin': {
     email: 'schooladmin@example.com',
-    password: 'Pass1234',
-    role: 'school-admin'
+    password: 'Test1234$',
+    role: 'school-admin',
   },
-  // 'teacher': {
-  //   email: 'teacher@example.com',
-  //   password: 'Pass1234',
-  //   role: 'teacher'
-  // },
-  'student': {
+  staff: {
+    email: 'teacher@example.com',
+    password: 'Test1234$',
+    role: 'teacher',
+  },
+  teacher: {
+    email: 'teacher@example.com',
+    password: 'Test1234$',
+    role: 'teacher',
+  },
+  student: {
     email: 'student@example.com',
-    password: 'Pass1234',
-    role: 'student'
+    password: 'Test1234$',
+    role: 'student',
   },
-  'parent': {
+  parent: {
     email: 'parent@example.com',
-    password: 'Pass1234',
-    role: 'parent'
+    password: 'Test1234$',
+    role: 'parent',
   },
   'school-admin-test': {
     email: 'schooladmin@test.com',
     password: 'testpassword',
-    role: 'school-admin'
-  },
-  // Legacy aliases for backward compatibility
-  'delegated-super-admin': {
-    email: 'superadmin@example.com',
-    password: 'Pass1234',
-    role: 'super-admin'
-  },
-  staff: {
-    email: 'teacher@example.com',
-    password: 'Pass1234',
-    role: 'teacher'
+    role: 'school-admin',
   },
 };

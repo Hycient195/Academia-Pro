@@ -146,11 +146,11 @@ export class StudentsService {
   }): Promise<StudentsListResponseDto> {
     const { page = 1, limit = 10, schoolId, stages, gradeCodes, streamSections, statuses, enrollmentType, search, firstName, lastName, middleName, gender, admissionNumber, dateOfBirthFrom, dateOfBirthTo, admissionDateFrom, admissionDateTo, isBoarding, email, phone } = options || {};
 
-    console.log('Backend Debug - Received filter options:', {
-      stages, gradeCodes, streamSections, statuses, search, schoolId, page, limit,
-      firstName, lastName, middleName, gender, admissionNumber, dateOfBirthFrom, dateOfBirthTo,
-      admissionDateFrom, admissionDateTo, isBoarding, email, phone
-    });
+    // console.log('Backend Debug - Received filter options:', {
+    //   stages, gradeCodes, streamSections, statuses, search, schoolId, page, limit,
+    //   firstName, lastName, middleName, gender, admissionNumber, dateOfBirthFrom, dateOfBirthTo,
+    //   admissionDateFrom, admissionDateTo, isBoarding, email, phone
+    // });
 
     // Build where conditions for filtering
     const whereConditions: any = {};

@@ -10,6 +10,12 @@ export class SeedCommand {
   ) {}
 
   async run(): Promise<void> {
+    // Skip seeding in test environment
+    if (process.env.NODE_ENV === 'test') {
+      // console.log('Skipping database seeding in test environment');
+      return;
+    }
+
     console.log('Starting database seeding...');
 
     try {

@@ -110,7 +110,7 @@ export function TransferWizard({ onComplete }: TransferWizardProps) {
       if (!tName) return
 
       if (tName === "sourceGradeFilter") {
-        setSourceGradeFilter(value ? String(value) : undefined)
+        setSourceGradeFilter(value === "all" ? undefined : (value ? String(value) : undefined))
         return
       }
 
@@ -770,11 +770,11 @@ export function TransferWizard({ onComplete }: TransferWizardProps) {
           <FormSelect
             labelText="Source Grade (optional)"
             name="sourceGradeFilter"
-            value={String(sourceGradeFilter || "")}
+            value={String(sourceGradeFilter || "all")}
             onChange={handleFormChange}
             placeholder="Filter students by current grade (optional)"
             options={[
-              { value: "", text: "All grades" },
+              { value: "all", text: "All grades" },
               ...gradeOptions
             ]}
           />

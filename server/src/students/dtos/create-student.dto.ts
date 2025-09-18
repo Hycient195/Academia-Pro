@@ -324,4 +324,23 @@ export class CreateStudentDto { // implements ICreateStudentRequest
     bedNumber?: string;
     fee?: number;
   };
+
+  @ApiPropertyOptional({
+    description: 'Student GPA',
+    example: 3.5,
+    minimum: 0,
+    maximum: 4.0,
+  })
+  @IsOptional()
+  @IsNumber({}, { message: 'GPA must be a number' })
+  gpa?: number;
+
+  @ApiPropertyOptional({
+    description: 'Total academic credits earned',
+    example: 180,
+    minimum: 0,
+  })
+  @IsOptional()
+  @IsNumber({}, { message: 'Total credits must be a number' })
+  totalCredits?: number;
 }

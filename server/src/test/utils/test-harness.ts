@@ -14,6 +14,7 @@ import { createTestApp } from '../test-app.factory';
 import { DatabaseTestModule } from '../database-test.module';
 import { TestSeederService } from './test-seeder.service';
 import { getAuthAgent } from './auth.helper';
+import { testUsers } from './test-users';
 
 export class TestHarness {
   private static app: INestApplication;
@@ -84,7 +85,7 @@ export class TestHarness {
     return this.dataSource;
   }
 
-  static async auth(role: 'super-admin' | 'delegated-super-admin' | 'staff' | 'student'): Promise<SuperAgentTest> {
+  static async auth(role: keyof typeof testUsers): Promise<SuperAgentTest> {
     return getAuthAgent(this.app, role);
   }
 

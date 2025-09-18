@@ -372,7 +372,8 @@ export class StudentsController {
   @ApiResponse({ status: 400, description: 'Student already graduated' })
   @ApiResponse({ status: 404, description: 'Student not found' })
   graduate(@Param('id') id: string, @Body() graduationData: any) {
-    return this.studentsService.graduateStudent(id, graduationData.graduationYear);
+    const graduationDate = graduationData.graduationYear ? new Date(graduationData.graduationYear, 0, 1) : undefined;
+    return this.studentsService.graduateStudent(id, graduationDate);
   }
 
   @Patch(':id/medical-info')

@@ -441,7 +441,7 @@ export class StudentsService {
     try {
       await this.studentAuditService.logStudentTransfer(
         id,
-        'system', // TODO: Get actual user ID
+        null, // System operation - no user ID
         'System', // TODO: Get actual user name
         'admin', // TODO: Get actual user role
         student.gradeCode,
@@ -653,7 +653,7 @@ export class StudentsService {
     try {
       await this.studentAuditService.logMedicalInfoAccess(
         id,
-        'system', // TODO: Get actual user ID
+        null, // System operation - no user ID
         'System', // TODO: Get actual user name
         'admin', // TODO: Get actual user role
         'update',
@@ -698,7 +698,7 @@ export class StudentsService {
     try {
       await this.studentAuditService.logDocumentActivity(
         id,
-        'system', // TODO: Get actual user ID
+        null, // System operation - no user ID
         'System', // TODO: Get actual user name
         'admin', // TODO: Get actual user role
         'upload',

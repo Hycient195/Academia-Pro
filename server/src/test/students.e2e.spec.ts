@@ -19,7 +19,7 @@ describe('Students E2E', () => {
   beforeAll(async () => {
     jest.setTimeout(120000);
     await TestHarness.bootstrap();
-    admin = await TestHarness.auth('super-admin');
+    admin = await TestHarness.auth('school-admin');
     teacher = await TestHarness.auth('staff');   // Teacher role
     student = await TestHarness.auth('student'); // Student role (no student access)
     ds = TestHarness.getDataSource();
@@ -577,6 +577,12 @@ describe('Students E2E', () => {
         },
       })
       .expect(201);
+
+    // Update the student with GPA and credits to meet graduation requirements
+    await adminApi.update(createRes.body.id, {
+      gpa: 3.5,
+      totalCredits: 180,
+    }).expect(200);
 
     // Graduate the student
     const grad = await adminApi.graduate(createRes.body.id, { graduationYear: 2025 }).expect(200);

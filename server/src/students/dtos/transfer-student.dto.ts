@@ -6,13 +6,13 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ITransferStudentRequest } from "@academia-pro/types/school-admin"
 
 export class TransferStudentDto implements ITransferStudentRequest {
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'ID of the student to transfer',
     example: 'student-123',
   })
+  @IsOptional()
   @IsString({ message: 'Student ID must be a string' })
-  @IsNotEmpty({ message: 'Student ID is required' })
-  studentId: string;
+  studentId?: string;
 
   @ApiPropertyOptional({
     description: 'New grade code for the student',

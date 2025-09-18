@@ -18,24 +18,13 @@ import { Injectable } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
+import { faker } from '@faker-js/faker';
 import { User } from '../../users/user.entity';
 import { School } from '../../schools/school.entity';
 import { Student } from '../../students/student.entity';
 import { Department } from '../../staff/entities/department.entity';
 import { EUserRole, EUserStatus } from '@academia-pro/types/users';
 import { TStudentStage } from '@academia-pro/types/student/student.types';
-
-// Lazy-load faker to work in CommonJS (Jest/ts-jest) without ESM issues
-// Using 'any' typing here avoids TypeScript's ESM type import restrictions under ts-jest.
-type FakerInstance = any;
-let __fakerInstance: FakerInstance | null = null;
-async function getFaker(): Promise<FakerInstance> {
-  if (!__fakerInstance) {
-    const mod = await import('@faker-js/faker');
-    __fakerInstance = mod.faker;
-  }
-  return __fakerInstance;
-}
 // Deterministic IDs for seeded users to keep JWTs valid across per-test truncations
 const TEST_IDS = {
   AUTH_SYSTEM: '550e8400-e29b-41d4-a716-446655440000',
@@ -183,7 +172,6 @@ export class TestSeederService {
       // If any error occurs, continue with the provided schoolId
     }
 
-    const faker = await getFaker();
     const students = [];
 
     for (let i = 0; i < count; i++) {
@@ -200,7 +188,7 @@ export class TestSeederService {
         dateOfBirth: faker.date.birthdate({ min: 8, max: 18, mode: 'age' }),
         gender: gender.toLowerCase(),
         email: faker.internet.email({ firstName, lastName, provider: 'testacademy.com' }),
-        phone: faker.phone.number(),
+        phone: `+1-${faker.string.numeric(10)}`,
         address: {
           street: faker.location.streetAddress(),
           city: faker.location.city(),
@@ -367,7 +355,6 @@ export class TestSeederService {
 
   // Private helper method to seed individual student
   private async seedStudent(schoolId: string, overrides: any = {}) {
-    const faker = await getFaker();
     const gender = faker.person.sex();
     const firstName = faker.person.firstName(gender as 'female' | 'male');
     const lastName = faker.person.lastName();
@@ -379,7 +366,7 @@ export class TestSeederService {
       dateOfBirth: faker.date.birthdate({ min: 8, max: 18, mode: 'age' }),
       gender: gender.toLowerCase(),
       email: faker.internet.email({ firstName, lastName, provider: 'testacademy.com' }),
-      phone: faker.phone.number(),
+      phone: `+1-${faker.string.numeric(10)}`,
       address: {
         street: faker.location.streetAddress(),
         city: faker.location.city(),
@@ -862,7 +849,6 @@ export class TestSeederService {
 
   async seedStudents(schoolId: string) {
     const systemUserId = randomUUID(); // Use a consistent UUID for system operations
-    const faker = await getFaker();
 
     const students = [
       {
@@ -874,7 +860,7 @@ export class TestSeederService {
         gender: 'female' as const,
         bloodGroup: faker.helpers.arrayElement(Object.values(BloodGroup)),
         email: faker.internet.email(),
-        phone: faker.phone.number(),
+        phone: `+1-${faker.string.numeric(10)}`,
         address: {
           street: faker.location.streetAddress(),
           city: faker.location.city(),
@@ -903,12 +889,12 @@ export class TestSeederService {
         parentInfo: {
           fatherFirstName: faker.person.firstName('male'),
           fatherLastName: faker.person.lastName(),
-          fatherPhone: faker.phone.number(),
+          fatherPhone: `+1-${faker.string.numeric(10)}`,
           fatherEmail: faker.internet.email(),
           fatherOccupation: faker.person.jobTitle(),
           motherFirstName: faker.person.firstName('female'),
           motherLastName: faker.person.lastName(),
-          motherPhone: faker.phone.number(),
+          motherPhone: `+1-${faker.string.numeric(10)}`,
           motherEmail: faker.internet.email(),
           motherOccupation: faker.person.jobTitle(),
         },
@@ -919,7 +905,7 @@ export class TestSeederService {
           emergencyContact: {
             firstName: faker.person.firstName(),
             lastName: faker.person.lastName(),
-            phone: faker.phone.number(),
+            phone: `+1-${faker.string.numeric(10)}`,
             email: faker.internet.email(),
             relation: faker.helpers.arrayElement(['Father', 'Mother', 'Guardian']),
             occupation: faker.person.jobTitle(),
@@ -974,7 +960,7 @@ export class TestSeederService {
         gender: 'male' as const,
         bloodGroup: faker.helpers.arrayElement(Object.values(BloodGroup)),
         email: faker.internet.email(),
-        phone: faker.phone.number(),
+        phone: `+1-${faker.string.numeric(10)}`,
         address: {
           street: faker.location.streetAddress(),
           city: faker.location.city(),
@@ -1011,12 +997,12 @@ export class TestSeederService {
         parentInfo: {
           fatherFirstName: faker.person.firstName('male'),
           fatherLastName: faker.person.lastName(),
-          fatherPhone: faker.phone.number(),
+          fatherPhone: `+1-${faker.string.numeric(10)}`,
           fatherEmail: faker.internet.email(),
           fatherOccupation: faker.person.jobTitle(),
           motherFirstName: faker.person.firstName('female'),
           motherLastName: faker.person.lastName(),
-          motherPhone: faker.phone.number(),
+          motherPhone: `+1-${faker.string.numeric(10)}`,
           motherEmail: faker.internet.email(),
           motherOccupation: faker.person.jobTitle(),
         },
@@ -1027,7 +1013,7 @@ export class TestSeederService {
           emergencyContact: {
             firstName: faker.person.firstName(),
             lastName: faker.person.lastName(),
-            phone: faker.phone.number(),
+            phone: `+1-${faker.string.numeric(10)}`,
             email: faker.internet.email(),
             relation: faker.helpers.arrayElement(['Father', 'Mother']),
             occupation: faker.person.jobTitle(),
@@ -1091,7 +1077,7 @@ export class TestSeederService {
         gender: 'female' as const,
         bloodGroup: faker.helpers.arrayElement(Object.values(BloodGroup)),
         email: faker.internet.email(),
-        phone: faker.phone.number(),
+        phone: `+1-${faker.string.numeric(10)}`,
         address: {
           street: faker.location.streetAddress(),
           city: faker.location.city(),
@@ -1116,12 +1102,12 @@ export class TestSeederService {
         parentInfo: {
           fatherFirstName: faker.person.firstName('male'),
           fatherLastName: faker.person.lastName(),
-          fatherPhone: faker.phone.number(),
+          fatherPhone: `+1-${faker.string.numeric(10)}`,
           fatherEmail: faker.internet.email(),
           fatherOccupation: faker.person.jobTitle(),
           motherFirstName: faker.person.firstName('female'),
           motherLastName: faker.person.lastName(),
-          motherPhone: faker.phone.number(),
+          motherPhone: `+1-${faker.string.numeric(10)}`,
           motherEmail: faker.internet.email(),
           motherOccupation: faker.person.jobTitle(),
         },
@@ -1132,7 +1118,7 @@ export class TestSeederService {
           doctorInfo: faker.datatype.boolean({ probability: 0.3 }) ? {
             firstName: `Dr. ${faker.person.firstName()}`,
             lastName: faker.person.lastName(),
-            phone: faker.phone.number(),
+            phone: `+1-${faker.string.numeric(10)}`,
             clinic: faker.company.name() + ' Medical Center',
           } : undefined,
         },

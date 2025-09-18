@@ -6,7 +6,7 @@
 export type TestUserRecord = {
   email: string;
   password: string;
-  role: 'super-admin' | 'delegated-super-admin' | 'school-admin' | 'staff' | 'teacher' | 'student' | 'parent';
+  role: 'super-admin' | 'delegated-super-admin' | 'school-admin' | 'delegated-school-admin' | 'staff' | 'teacher' | 'student' | 'parent';
 };
 
 export const testUsers: Record<string, TestUserRecord> = {
@@ -24,6 +24,11 @@ export const testUsers: Record<string, TestUserRecord> = {
     email: 'schooladmin@example.com',
     password: 'Test1234$',
     role: 'school-admin',
+  },
+  "delegated-school-admin": {
+    email: 'delegatedSchoolAdmin@example.com',
+    password: 'Test1234$',
+    role: 'delegated-school-admin',
   },
   staff: {
     email: 'teacher@example.com',

@@ -721,7 +721,8 @@ export class UsersService {
       'super-admin': 0,
       'school-admin': 0,
       'delegated-super-admin': 0,
-      'teacher': 0,
+      'delegated-school-admin': 0,
+      'staff': 0,
       'student': 0,
       'parent': 0,
     };

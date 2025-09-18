@@ -164,7 +164,7 @@ export interface SoftDeleteEntity extends BaseEntity {
 }
 
 // User and Authentication Types
-// export type EUserRole = 'super-admin' | 'school-admin' | 'teacher' | 'student' | 'parent';
+// export type EUserRole = 'super-admin' | 'school-admin' | 'staff' | 'student' | 'parent';
 // export type EUserStatus = 'active' | 'inactive' | 'suspended' | 'pending' | 'deleted';
 
 // Base User interface (moved from util.types.ts for consistency)
@@ -187,15 +187,15 @@ export interface User extends BaseEntity {
 }
 
 // Entity-specific User Types
-export interface Teacher extends User {
+export interface Staff extends User {
    roles: EUserRole[];
    employeeId: string;
    department?: string;
-   subjects: string[];
+   subjects?: string[];
    qualifications: Qualification[];
    experience: number; // years
-   specializations: string[];
-   classTeacherOf?: string[]; // Section IDs
+   specializations?: string[];
+   classTeacherOf?: string[]; // Section IDs (for teaching staff)
 }
 
 export interface Student extends User {
@@ -661,7 +661,7 @@ export type DeepPartial<T> = {
 };
 
 // Export commonly used type unions
-export type AnyEntity = User | School | Grade | Section | ISubject;
+export type AnyEntity = User | Staff | School | Grade | Section | ISubject;
 export type AnyStatus = Status | EUserStatus | SchoolStatus | ApprovalStatus;
 export type AnyRole = IUserPermissionRole;
 
@@ -941,7 +941,7 @@ export interface UpdateProfileRequest {
   preferences?: Partial<UserPreferences>;
 }
 
-export interface UpdateTeacherProfileRequest extends UpdateProfileRequest {
+export interface UpdateStaffProfileRequest extends UpdateProfileRequest {
   department?: string;
   qualifications?: Qualification[];
   specializations?: string[];
@@ -1112,7 +1112,7 @@ export const createUserSchema = z.object({
    email: z.string().email('Invalid email address'),
    firstName: z.string().min(1, 'First name is required').max(50),
    lastName: z.string().min(1, 'Last name is required').max(50),
-   roles: z.array(z.enum(['super-admin', 'delegated-super-admin', 'school-admin', 'teacher', 'student', 'parent'])).min(1, 'At least one role is required'),
+   roles: z.array(z.enum(['super-admin', 'delegated-super-admin', 'school-admin', 'delegated-school-admin', 'staff', 'student', 'parent'])).min(1, 'At least one role is required'),
    phone: z.string().optional(),
    schoolId: z.string().optional(),
    sendWelcomeEmail: z.boolean().default(true),

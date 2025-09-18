@@ -31,7 +31,6 @@ export declare enum TPosition {
     PRINCIPAL = "principal",
     VICE_PRINCIPAL = "vice_principal",
     HEADMASTER = "headmaster",
-    TEACHER = "teacher",
     LIBRARIAN = "librarian",
     ACCOUNTANT = "accountant",
     ADMINISTRATOR = "administrator",

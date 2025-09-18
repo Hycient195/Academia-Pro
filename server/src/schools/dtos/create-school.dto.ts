@@ -153,16 +153,6 @@ export class CreateSchoolDto implements ICreateSchoolRequest {
   totalStudents?: number;
 
   @ApiPropertyOptional({
-    description: 'Total number of teachers',
-    example: 80,
-    minimum: 0,
-  })
-  @IsOptional()
-  @IsInt({ message: 'Total teachers must be an integer' })
-  @Min(0, { message: 'Total teachers cannot be negative' })
-  totalTeachers?: number;
-
-  @ApiPropertyOptional({
     description: 'Total number of staff',
     example: 120,
     minimum: 0,

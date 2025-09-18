@@ -46,7 +46,6 @@ export interface ISuperAdminSchool {
     principalPhone?: string;
     principalEmail?: string;
     totalStudents?: number;
-    totalTeachers?: number;
     totalStaff?: number;
     establishedDate?: string;
     timezone?: string;
@@ -449,7 +448,7 @@ export interface ISuperAdminSchoolListResponse extends PaginatedResponse<ISuperA
         totalSchools: number;
         activeSchools: number;
         totalStudents: number;
-        totalTeachers: number;
+        totalStaff: number;
         byType: Record<string, number>;
         byStatus: Record<TSchoolStatus, number>;
     };
@@ -462,7 +461,6 @@ export interface ISuperAdminUsersListResponse extends PaginatedResponse<ISuperAd
     summary?: {
         activeUsers: number;
         totalStudents: number;
-        totalTeachers: number;
         totalStaff: number;
     };
 }

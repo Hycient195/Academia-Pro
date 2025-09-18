@@ -63,7 +63,7 @@ export class DepartmentController {
   }
 
   @Get()
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF)
   @ApiOperation({ summary: 'Get all departments with optional filtering' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -108,7 +108,7 @@ export class DepartmentController {
   }
 
   @Get('type/:type')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF)
   @ApiOperation({ summary: 'Get departments by type' })
   @ApiParam({
     name: 'type',
@@ -131,7 +131,7 @@ export class DepartmentController {
   }
 
   @Get(':id')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF)
   @ApiOperation({ summary: 'Get department by ID' })
   @ApiParam({
     name: 'id',

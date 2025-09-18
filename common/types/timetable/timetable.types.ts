@@ -230,7 +230,7 @@ export interface ITimetableEntryResponse extends Omit<ITimetableEntry, 'createdB
     type: string;
   };
   conflicts?: Array<{
-    type: 'room' | 'teacher' | 'student';
+    type: 'room' | 'staff' | 'student';
     message: string;
     severity: 'warning' | 'error';
   }>;
@@ -370,7 +370,7 @@ export interface ITimetableStatistics {
 
 // Validation and Conflict Detection
 export interface ITimetableConflict {
-  type: 'room' | 'teacher' | 'student' | 'time' | 'resource';
+  type: 'room' | 'staff' | 'student' | 'time' | 'resource';
   severity: 'warning' | 'error' | 'critical';
   message: string;
   entryId: string;

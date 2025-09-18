@@ -10,18 +10,26 @@ import { EDepartmentType } from '@academia-pro/types/staff';
 import { Staff, StaffStatus, StaffType, Gender, EmploymentType } from '../../staff/entities/staff.entity';
 
 describe('Departments E2E', () => {
-  let admin: SuperAgentTest;
-  let teacher: SuperAgentTest;
+  let superAdmin: SuperAgentTest;
+  let delegatedSuperAdmin: SuperAgentTest;
+  let schoolAdmin: SuperAgentTest;
+  let delegatedSchoolAdmin: SuperAgentTest;
+  let staff: SuperAgentTest;
   let student: SuperAgentTest;
+  let parent: SuperAgentTest;
   let ds: DataSource;
   let schoolId: string;
 
   beforeAll(async () => {
     jest.setTimeout(120000);
     await TestHarness.bootstrap();
-    admin = await TestHarness.auth('super-admin');
-    teacher = await TestHarness.auth('staff');   // Teacher role
-    student = await TestHarness.auth('student'); // Student role (no department access)
+    superAdmin = await TestHarness.auth('super-admin');
+    delegatedSuperAdmin = await TestHarness.auth('delegated-super-admin');
+    schoolAdmin = await TestHarness.auth('school-admin');
+    delegatedSchoolAdmin = await TestHarness.auth('delegated-school-admin');
+    staff = await TestHarness.auth('staff');
+    student = await TestHarness.auth('student');
+    parent = await TestHarness.auth('parent');
     ds = TestHarness.getDataSource();
 
     const rows = await ds.query('SELECT id FROM schools LIMIT 1');
@@ -167,8 +175,8 @@ describe('Departments E2E', () => {
     };
   }
 
-  it('teacher can list, filter, search, and paginate departments', async () => {
-    const a = api(teacher);
+  it('staff can list, filter, search, and paginate departments', async () => {
+    const a = api(staff);
 
     const resAll = await a.list().expect(200);
     expect(Array.isArray(resAll.body)).toBe(true);
@@ -199,7 +207,7 @@ describe('Departments E2E', () => {
   });
 
   it('route "GET /departments/type/:type" returns departments of the given type', async () => {
-    const a = api(teacher);
+    const a = api(staff);
 
     const resByType = await a.byType(EDepartmentType.TEACHING).expect(200);
     expect(resByType.body.length).toBeGreaterThan(0);
@@ -210,7 +218,7 @@ describe('Departments E2E', () => {
   });
 
   it('get by id returns department and 404 for non-existent', async () => {
-    const a = api(teacher);
+    const a = api(staff);
     const list = await a.list().expect(200);
     const anyDept = list.body[0];
 
@@ -230,12 +238,12 @@ describe('Departments E2E', () => {
     await anon.get('/api/v1/departments').expect(401);
   });
 
-  it('admin can create department; teacher forbidden; validations and conflict handled', async () => {
-    const adminApi = api(admin);
-    const teacherApi = api(teacher);
+  it('superAdmin can create department; staff forbidden; validations and conflict handled', async () => {
+    const superAdminApi = api(superAdmin);
+    const staffApi = api(staff);
 
     const uniqueName = `Comp Test Dept ${Date.now()}`;
-    const createRes = await adminApi
+    const createRes = await superAdminApi
       .create({ type: EDepartmentType.TEACHING, name: uniqueName, description: 'Test description' })
       .expect(201);
 
@@ -244,33 +252,33 @@ describe('Departments E2E', () => {
     expect(createRes.body.type).toBe(EDepartmentType.TEACHING);
 
     // Duplicate (same type+name) -> 409
-    await adminApi
+    await superAdminApi
       .create({ type: EDepartmentType.TEACHING, name: uniqueName })
       .expect(409);
 
-    // Teacher forbidden
-    await teacherApi
-      .create({ type: EDepartmentType.TEACHING, name: `Teacher Create ${Date.now()}` })
+    // Staff forbidden
+    await staffApi
+      .create({ type: EDepartmentType.TEACHING, name: `Staff Create ${Date.now()}` })
       .expect(403);
 
     // Validation: invalid type -> 400
-    await adminApi
+    await superAdminApi
       .create({ type: 'invalid-type' as any, name: 'Bad Type' })
       .expect(400);
 
     // Validation: name too long -> 400
     const longName = 'X'.repeat(101);
-    await adminApi
+    await superAdminApi
       .create({ type: EDepartmentType.TEACHING, name: longName })
       .expect(400);
   });
 
-  it('admin can update department; validation and conflicts are enforced', async () => {
-    const adminApi = api(admin);
-    const teacherApi = api(teacher);
+  it('superAdmin can update department; validation and conflicts are enforced', async () => {
+    const superAdminApi = api(superAdmin);
+    const staffApi = api(staff);
 
     // Find two teaching departments to test conflict on update
-    const allTeaching = await adminApi.list({ type: EDepartmentType.TEACHING }).expect(200);
+    const allTeaching = await superAdminApi.list({ type: EDepartmentType.TEACHING }).expect(200);
     expect(allTeaching.body.length).toBeGreaterThanOrEqual(2);
 
     const math = allTeaching.body.find((d: any) => /Math/i.test(d.name)) || allTeaching.body[0];
@@ -278,65 +286,65 @@ describe('Departments E2E', () => {
 
     // Successful partial update (description)
     const newDesc = `Updated at ${new Date().toISOString()}`;
-    const upd = await adminApi.update(math.id, { description: newDesc }).expect(200);
+    const upd = await superAdminApi.update(math.id, { description: newDesc }).expect(200);
     expect(upd.body.description).toBe(newDesc);
 
     // Duplicate conflict: attempt to rename math to "English Department"
-    await adminApi.update(math.id, { name: english.name }).expect(409);
+    await superAdminApi.update(math.id, { name: english.name }).expect(409);
 
     // Invalid type on update -> 400
-    await adminApi.update(math.id, { type: 'invalid-type' as any }).expect(400);
+    await superAdminApi.update(math.id, { type: 'invalid-type' as any }).expect(400);
 
-    // Teacher forbidden to update
-    await teacherApi.update(math.id, { description: 'Nope' }).expect(403);
+    // Staff forbidden to update
+    await staffApi.update(math.id, { description: 'Nope' }).expect(403);
 
     // Update non-existent -> 404
-    await adminApi.update(randomUUID(), { description: 'ghost' }).expect(404);
+    await superAdminApi.update(randomUUID(), { description: 'ghost' }).expect(404);
   });
 
   it('staff assignment edge cases: 404 for non-existent staff on assign/unassign', async () => {
-    const adminApi = api(admin);
+    const superAdminApi = api(superAdmin);
 
     // Pick a department
-    const list = await adminApi.list({ type: EDepartmentType.TEACHING }).expect(200);
+    const list = await superAdminApi.list({ type: EDepartmentType.TEACHING }).expect(200);
     const targetDept = list.body[0];
     expect(targetDept).toBeDefined();
 
     const missingStaffId = randomUUID();
 
     // Assigning a non-existent staff should return 404
-    await adminApi.assign(targetDept.id, missingStaffId).expect(404);
+    await superAdminApi.assign(targetDept.id, missingStaffId).expect(404);
 
     // Removing a non-existent staff should return 404
-    await adminApi.unassign(targetDept.id, missingStaffId).expect(404);
+    await superAdminApi.unassign(targetDept.id, missingStaffId).expect(404);
   });
 
   it('delete: blocked when department has staff; succeeds when empty; 404 for non-existent', async () => {
-    const adminApi = api(admin);
+    const superAdminApi = api(superAdmin);
 
     // Create a fresh department to avoid impacting baseline
-    const createRes = await adminApi
+    const createRes = await superAdminApi
       .create({ type: EDepartmentType.ADMINISTRATION, name: `Deletable Dept ${Date.now()}` })
       .expect(201);
     const deletableId = createRes.body.id;
 
     // Delete succeeds (empty department)
-    await adminApi.remove(deletableId).expect(204);
+    await superAdminApi.remove(deletableId).expect(204);
 
     // Delete again -> 404
-    await adminApi.remove(deletableId).expect(404);
+    await superAdminApi.remove(deletableId).expect(404);
 
     // Omitted: blocked delete scenario requires reliable staff assignment setup
     // which is environment-sensitive due to entity/schema mismatches during test bootstrap.
   });
 
-  it('stats overview: admin allowed, teacher forbidden; shape is correct', async () => {
-    const adminApi = api(admin);
-    const teacherApi = api(teacher);
+  it('stats overview: superAdmin allowed, staff forbidden; shape is correct', async () => {
+    const superAdminApi = api(superAdmin);
+    const staffApi = api(staff);
 
-    const list = await adminApi.list().expect(200);
+    const list = await superAdminApi.list().expect(200);
 
-    const stats = await adminApi.stats().expect(200);
+    const stats = await superAdminApi.stats().expect(200);
     expect(typeof stats.body).toBe('object');
     expect(typeof stats.body.totalDepartments).toBe('number');
     expect(stats.body.totalDepartments).toBe(list.body.length);
@@ -344,23 +352,23 @@ describe('Departments E2E', () => {
     expect(typeof stats.body.averageStaffPerDepartment).toBe('number');
     expect(Array.isArray(stats.body.departmentsWithMostStaff)).toBe(true);
 
-    // Teacher forbidden
-    await teacherApi.stats().expect(403);
+    // Staff forbidden
+    await staffApi.stats().expect(403);
   });
 
-  it('RBAC on write operations: teacher forbidden; unauthenticated 401 for create/update/delete/assign', async () => {
-    const teacherApi = api(teacher);
+  it('RBAC on write operations: staff forbidden; unauthenticated 401 for create/update/delete/assign', async () => {
+    const staffApi = api(staff);
 
-    await teacherApi.create({ type: EDepartmentType.MEDICAL, name: `Teacher Create ${Date.now()}` }).expect(403);
+    await staffApi.create({ type: EDepartmentType.MEDICAL, name: `Staff Create ${Date.now()}` }).expect(403);
 
-    const list = await api(admin).list().expect(200);
+    const list = await api(superAdmin).list().expect(200);
     const anyDeptId = list.body[0].id;
 
-    await teacherApi.update(anyDeptId, { description: 'Nope' }).expect(403);
-    await teacherApi.remove(anyDeptId).expect(403);
+    await staffApi.update(anyDeptId, { description: 'Nope' }).expect(403);
+    await staffApi.remove(anyDeptId).expect(403);
 
     const missingStaffId = randomUUID();
-    await teacherApi.assign(anyDeptId, missingStaffId).expect(403);
+    await staffApi.assign(anyDeptId, missingStaffId).expect(403);
 
     // Unauthenticated
     const anon = request(TestHarness.getApp().getHttpServer());

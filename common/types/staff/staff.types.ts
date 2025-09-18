@@ -1,7 +1,7 @@
 // Academia Pro - Staff & HR Management Types
 // Shared type definitions for staff and HR management module
 
-import { IAddress, IDocument, IEmergencyContact, TBloodGroup, Teacher } from '../shared';
+import { IAddress, IDocument, IEmergencyContact, TBloodGroup, Staff } from '../shared';
 
 // Re-export for convenience
 export { TBloodGroup };
@@ -41,7 +41,6 @@ export enum TPosition {
   PRINCIPAL = 'principal',
   VICE_PRINCIPAL = 'vice_principal',
   HEADMASTER = 'headmaster',
-  TEACHER = 'teacher',
   LIBRARIAN = 'librarian',
   ACCOUNTANT = 'accountant',
   ADMINISTRATOR = 'administrator',

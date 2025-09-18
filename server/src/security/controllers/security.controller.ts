@@ -482,9 +482,9 @@ export class SecurityController {
 
     return {
       hierarchy: {
-        'super-admin': ['admin', 'school-admin', 'teacher', 'student', 'parent'],
-        'admin': ['school-admin', 'teacher', 'student', 'parent'],
-        'school-admin': ['teacher', 'student', 'parent'],
+        'super-admin': ['admin', 'school-admin', 'staff', 'student', 'parent'],
+        'admin': ['school-admin', 'staff', 'student', 'parent'],
+        'school-admin': ['staff', 'student', 'parent'],
         'teacher': ['student'],
       },
       permissions: {

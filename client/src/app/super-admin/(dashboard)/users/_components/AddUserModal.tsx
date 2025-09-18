@@ -224,7 +224,7 @@ export default function AddUserModal({ mode, isOpen, onOpenChange, userData, onS
               { value: "super-admin", text: "Super Admin" },
               { value: "delegated-super-admin", text: "Delegated Admin" },
               { value: "school-admin", text: "School Admin" },
-              { value: "teacher", text: "Teacher" },
+              { value: "staff", text: "Staff" },
               { value: "student", text: "Student" },
               { value: "parent", text: "Parent" }
             ]}

@@ -11,6 +11,7 @@ import {
   IconChartBar,
   IconSettings,
   IconBuilding,
+  IconShield,
 } from "@tabler/icons-react"
 
 export const schoolAdminNavData: RoleConfig =  {
@@ -31,6 +32,7 @@ export const schoolAdminNavData: RoleConfig =  {
       { title: "Academic", url: "/school-admin/academic", icon: IconBook, shortForm: "Acad" },
       { title: "Financial", url: "/school-admin/financial", icon: IconBuildingBank, shortForm: "Fin" },
       { title: "Communication", url: "/school-admin/communication", icon: IconMail, shortForm: "Comm" },
+      { title: "Delegated Admins", url: "/school-admin/delegated-admins", icon: IconShield, shortForm: "DelAdm" },
     ],
     navSecondary: [
       { title: "Analytics", url: "/school-admin/analytics", icon: IconChartBar, shortForm: "Anal" },

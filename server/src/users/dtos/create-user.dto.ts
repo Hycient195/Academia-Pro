@@ -63,7 +63,7 @@ export class CreateUserDto implements ICreateUserRequest {
     description: 'User roles',
     example: ['student'],
     type: [String],
-    enum: ['super-admin', 'delegated-super-admin', 'school-admin', 'teacher', 'student', 'parent'],
+    enum: ['super-admin', 'delegated-super-admin', 'school-admin', 'delegated-school-admin', 'staff', 'student', 'parent'],
   })
   @IsOptional()
   roles?: EUserRole[];

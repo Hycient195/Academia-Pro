@@ -2,7 +2,7 @@
 // Academia Pro - Users Types
 // Shared type definitions for users module
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TUserTheme = exports.TUserGender = exports.EUserRole = exports.EUserStatus = void 0;
+exports.EUserTheme = exports.EUserGender = exports.EUserRole = exports.EUserStatus = void 0;
 // import { IUserPermissionRole, EUserStatus } from '../shared';
 // Enums
 var EUserStatus;
@@ -19,20 +19,21 @@ var EUserRole;
     EUserRole["SUPER_ADMIN"] = "super-admin";
     EUserRole["DELEGATED_SUPER_ADMIN"] = "delegated-super-admin";
     EUserRole["SCHOOL_ADMIN"] = "school-admin";
-    EUserRole["TEACHER"] = "teacher";
+    EUserRole["DELEGATED_SCHOOL_ADMIN"] = "delegated-school-admin";
+    EUserRole["STAFF"] = "staff";
     EUserRole["STUDENT"] = "student";
     EUserRole["PARENT"] = "parent";
 })(EUserRole || (exports.EUserRole = EUserRole = {}));
-var TUserGender;
-(function (TUserGender) {
-    TUserGender["MALE"] = "male";
-    TUserGender["FEMALE"] = "female";
-    TUserGender["OTHER"] = "other";
-})(TUserGender || (exports.TUserGender = TUserGender = {}));
-var TUserTheme;
-(function (TUserTheme) {
-    TUserTheme["LIGHT"] = "light";
-    TUserTheme["DARK"] = "dark";
-    TUserTheme["AUTO"] = "auto";
-})(TUserTheme || (exports.TUserTheme = TUserTheme = {}));
+var EUserGender;
+(function (EUserGender) {
+    EUserGender["MALE"] = "male";
+    EUserGender["FEMALE"] = "female";
+    EUserGender["OTHER"] = "other";
+})(EUserGender || (exports.EUserGender = EUserGender = {}));
+var EUserTheme;
+(function (EUserTheme) {
+    EUserTheme["LIGHT"] = "light";
+    EUserTheme["DARK"] = "dark";
+    EUserTheme["AUTO"] = "auto";
+})(EUserTheme || (exports.EUserTheme = EUserTheme = {}));
 // All types are exported above with their declarations

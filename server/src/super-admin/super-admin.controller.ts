@@ -6,17 +6,15 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBody } from 
 import { SchoolContextService } from '../schools/school-context.service';
 import { CrossSchoolReportingService } from './cross-school-reporting.service';
 import { School, SchoolStatus } from '../schools/school.entity';
-import { Roles } from '../common/decorators/roles.decorator';
-// import { IUserPermissionRole } from '../users/user.entity';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { Permissions } from '../iam/decorators/permissions.decorator';
+import { SuperAdminPermissionGuard } from '../iam/guards/super-admin-permission.guard';
 import { CreateSchoolDto } from '../schools/dtos/create-school.dto';
 import { UpdateSchoolDto } from '../schools/dtos/update-school.dto';
 import { EUserRole } from '@academia-pro/types/users';
 
 @ApiTags('Super Admin - Multi-School Management')
 @Controller('super-admin')
-@UseGuards(RolesGuard)
-@Roles(EUserRole.SUPER_ADMIN)
+@UseGuards(SuperAdminPermissionGuard)
 export class SuperAdminController {
   private readonly logger = new Logger(SuperAdminController.name);
 
@@ -28,7 +26,7 @@ export class SuperAdminController {
   // ==================== SCHOOL MANAGEMENT ====================
 
   @Get('schools')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.DELEGATED_SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
+  @Permissions('schools:read')
   @ApiOperation({
     summary: 'Get all schools',
     description: 'Returns a list of all schools in the system with pagination and filtering.',
@@ -188,6 +186,7 @@ export class SuperAdminController {
   }
 
   @Post('schools')
+  @Permissions('schools:create')
   @ApiOperation({
     summary: 'Create new school',
     description: 'Creates a new school in the multi-school system.',
@@ -298,6 +297,7 @@ export class SuperAdminController {
   }
 
   @Get('schools/:schoolId')
+  @Permissions('schools:read')
   @ApiOperation({
     summary: 'Get school details',
     description: 'Returns detailed information about a specific school including statistics.',
@@ -357,6 +357,7 @@ export class SuperAdminController {
   }
 
   @Patch('schools/:schoolId')
+  @Permissions('schools:update')
   @ApiOperation({
     summary: 'Update school',
     description: 'Updates school information and settings.',
@@ -437,6 +438,7 @@ export class SuperAdminController {
   }
 
   @Delete('schools/:schoolId')
+  @Permissions('schools:delete')
   @ApiOperation({
     summary: 'Delete school',
     description: 'Permanently deletes a school and all associated data.',
@@ -458,6 +460,7 @@ export class SuperAdminController {
   // ==================== CROSS-SCHOOL REPORTING ====================
 
   @Get('reports/overview')
+  @Permissions('analytics:read')
   @ApiOperation({
     summary: 'Get system overview',
     description: 'Returns a comprehensive overview of all schools in the system.',
@@ -497,6 +500,7 @@ export class SuperAdminController {
   }
 
   @Get('reports/subscription')
+  @Permissions('analytics:read')
   @ApiOperation({
     summary: 'Get subscription analytics',
     description: 'Returns subscription and billing analytics across all schools.',
@@ -532,6 +536,7 @@ export class SuperAdminController {
   // ==================== CROSS-SCHOOL COMPARISON ====================
 
   @Get('comparison')
+  @Permissions('analytics:read')
   @ApiOperation({
     summary: 'Get school comparison report',
     description: 'Returns a detailed comparison of schools based on performance metrics.',
@@ -566,6 +571,7 @@ export class SuperAdminController {
   // ==================== GEOGRAPHIC REPORTING ====================
 
   @Get('geographic')
+  @Permissions('analytics:read')
   @ApiOperation({
     summary: 'Get geographic distribution report',
     description: 'Returns geographic distribution and regional analytics of schools.',
@@ -596,8 +602,7 @@ export class SuperAdminController {
   // ==================== SYSTEM ANALYTICS ====================
 
   @Get('analytics')
-  @UseGuards(RolesGuard)
-  @Roles(EUserRole.SUPER_ADMIN)
+  @Permissions('analytics:read')
   @ApiOperation({
     summary: 'Get system analytics',
     description: 'Returns comprehensive analytics data for the multi-school system.',
@@ -658,8 +663,7 @@ export class SuperAdminController {
   }
 
   @Get('metrics')
-  @UseGuards(RolesGuard)
-  @Roles(EUserRole.SUPER_ADMIN)
+  @Permissions('system:read')
   @ApiOperation({
     summary: 'Get system metrics',
     description: 'Returns real-time system performance metrics.',
@@ -693,6 +697,7 @@ export class SuperAdminController {
   // ==================== SYSTEM HEALTH ====================
 
   @Get('health')
+  @Permissions('system:read')
   @ApiOperation({
     summary: 'Get system health',
     description: 'Returns the overall health status of the multi-school system.',

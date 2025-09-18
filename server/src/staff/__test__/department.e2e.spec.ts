@@ -13,7 +13,7 @@ import { EDepartmentType } from '@academia-pro/types/staff';
 
 describe('Departments E2E', () => {
   let admin: SuperAgentTest;
-  let teacher: SuperAgentTest;
+  let staff: SuperAgentTest;
   let student: SuperAgentTest;
   let ds: DataSource;
   let schoolId: string;
@@ -22,7 +22,7 @@ describe('Departments E2E', () => {
     jest.setTimeout(120000);
     await TestHarness.bootstrap();
     admin = await TestHarness.auth('super-admin');
-    teacher = await TestHarness.auth('staff');
+    staff = await TestHarness.auth('staff');
     student = await TestHarness.auth('student');
     ds = TestHarness.getDataSource();
   });
@@ -181,10 +181,10 @@ describe('Departments E2E', () => {
       }).expect(400);
     });
 
-    it('teacher cannot create department (403)', async () => {
-      const teacherApi = api(teacher);
+    it('staff cannot create department (403)', async () => {
+      const staffApi = api(staff);
 
-      await teacherApi.create({
+      await staffApi.create({
         type: EDepartmentType.TEACHING,
         name: 'Unauthorized Department',
       }).expect(403);
@@ -301,12 +301,12 @@ describe('Departments E2E', () => {
       expect(teachingDepts.body.every((d: any) => d.type === EDepartmentType.TEACHING)).toBe(true);
     });
 
-    it('teacher can read departments', async () => {
-      const teacherApi = api(teacher);
+    it('staff can read departments', async () => {
+      const staffApi = api(staff);
 
-      await teacherApi.list().expect(200);
-      await teacherApi.get(testDept1.body.id).expect(200);
-      await teacherApi.getByType(EDepartmentType.TEACHING).expect(200);
+      await staffApi.list().expect(200);
+      await staffApi.get(testDept1.body.id).expect(200);
+      await staffApi.getByType(EDepartmentType.TEACHING).expect(200);
     });
 
     it('student cannot read departments (403)', async () => {
@@ -395,10 +395,10 @@ describe('Departments E2E', () => {
       }).expect(404);
     });
 
-    it('teacher cannot update department (403)', async () => {
-      const teacherApi = api(teacher);
+    it('staff cannot update department (403)', async () => {
+      const staffApi = api(staff);
 
-      await teacherApi.update(testDept.body.id, {
+      await staffApi.update(testDept.body.id, {
         name: 'Unauthorized Update',
       }).expect(403);
     });
@@ -446,10 +446,10 @@ describe('Departments E2E', () => {
       await adminApi.delete(randomUUID()).expect(404);
     });
 
-    it('teacher cannot delete department (403)', async () => {
-      const teacherApi = api(teacher);
+    it('staff cannot delete department (403)', async () => {
+      const staffApi = api(staff);
 
-      await teacherApi.delete(testDept.body.id).expect(403);
+      await staffApi.delete(testDept.body.id).expect(403);
     });
   });
 
@@ -518,11 +518,11 @@ describe('Departments E2E', () => {
       await adminApi.removeStaff(testDept.body.id, randomUUID()).expect(404);
     });
 
-    it('teacher cannot assign/remove staff (403)', async () => {
-      const teacherApi = api(teacher);
+    it('staff cannot assign/remove staff (403)', async () => {
+      const staffApi = api(staff);
 
-      await teacherApi.assignStaff(testDept.body.id, staffMember.id).expect(403);
-      await teacherApi.removeStaff(testDept.body.id, staffMember.id).expect(403);
+      await staffApi.assignStaff(testDept.body.id, staffMember.id).expect(403);
+      await staffApi.removeStaff(testDept.body.id, staffMember.id).expect(403);
     });
   });
 
@@ -566,10 +566,10 @@ describe('Departments E2E', () => {
       expect(Array.isArray(statsRes.body.departmentsWithMostStaff)).toBe(true);
     });
 
-    it('teacher can view department statistics', async () => {
-      const teacherApi = api(teacher);
+    it('staff can view department statistics', async () => {
+      const staffApi = api(staff);
 
-      await teacherApi.getStats().expect(200);
+      await staffApi.getStats().expect(200);
     });
 
     it('student cannot view department statistics (403)', async () => {

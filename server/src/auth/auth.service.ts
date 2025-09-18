@@ -44,7 +44,7 @@ export class AuthService {
       select: ['id', 'email', 'passwordHash', 'firstName', 'lastName', 'roles', 'status', 'isEmailVerified'],
     });
 
-    if (!user || !user.roles.includes(EUserRole.SUPER_ADMIN)) {
+    if (!user || (!user.roles.includes(EUserRole.SUPER_ADMIN) && !user.roles.includes(EUserRole.DELEGATED_SUPER_ADMIN))) {
       throw new UnauthorizedException('Super admin account not found');
     }
 

@@ -87,7 +87,9 @@ export class SchoolsService {
     status?: SchoolStatus;
     search?: string;
   }): Promise<{ data: School[]; pagination: { page: number; limit: number; total: number; totalPages: number; hasNext: boolean; hasPrev: boolean } }> {
-    const { page = 1, limit = 10, type, status, search } = options || {};
+    const page = options?.page ?? 1;
+    const limit = options?.limit ?? 10;
+    const { type, status, search } = options || {};
 
     const queryBuilder = this.schoolsRepository.createQueryBuilder('school');
 
@@ -281,7 +283,6 @@ export class SchoolsService {
   @AuditRead('school')
   async getStatistics(id: string): Promise<{
     totalStudents: number;
-    totalTeachers: number;
     totalStaff: number;
     activeFeatures: string[];
   }> {
@@ -297,7 +298,6 @@ export class SchoolsService {
 
     return {
       totalStudents: school.currentStudents || 0,
-      totalTeachers: 0, // TODO: Implement calculation from staff entities
       totalStaff: school.currentStaff || 0,
       activeFeatures,
     };

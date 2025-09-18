@@ -172,7 +172,7 @@ interface SoftDeleteEntity extends BaseEntity {
 
 ### User Types
 ```typescript
-type IUserPermissionRole = 'super-admin' | 'school-admin' | 'teacher' | 'student' | 'parent';
+type IUserPermissionRole = 'super-admin' | 'school-admin' | 'staff' | 'student' | 'parent';
 
 interface User extends BaseEntity {
   email: string;

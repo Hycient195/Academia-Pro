@@ -342,7 +342,7 @@ describe('StudentsService - Unit Tests', () => {
 
   describe('findOne', () => {
     it('should return a student by ID', async () => {
-      studentRepository.findOne.mockResolvedValue(mockStudent as any);
+      studentRepository.findOne.mockResolvedValue({ ...mockStudent, gradeCode: 'SSS3' } as any);
 
       const result = await service.findOne('student-1');
 
@@ -394,118 +394,96 @@ describe('StudentsService - Unit Tests', () => {
   });
 
   describe('bulkImport', () => {
-    it('should queue bulk import job and return job info', async () => {
+    it('should process bulk import and return results', async () => {
       const bulkImportDto = {
         schoolId: 'school-1',
         data: [
           {
-            FirstName: 'John',
-            LastName: 'Doe',
-            DateOfBirth: '2005-01-01',
-            Gender: 'male',
-            GradeCode: 'SSS1',
-            StreamSection: 'A',
-            FatherName: 'John Doe Sr.',
-            MotherName: 'Jane Doe',
+            firstName: 'John',
+            lastName: 'Doe',
+            dateOfBirth: '2005-01-01',
+            gender: 'male',
+            gradeCode: 'SSS1',
+            streamSection: 'A',
+            fatherName: 'John Doe Sr.',
+            motherName: 'Jane Doe',
           },
         ],
         userId: 'user-1',
       };
 
-      const mockJob = { id: 'job-1' };
-      queueService.addJob.mockResolvedValue(mockJob as any);
+      studentRepository.save.mockResolvedValue(mockStudent as any);
 
       const result = await service.bulkImport(bulkImportDto);
 
-      expect(result.jobId).toBe('job-1');
-      expect(result.message).toContain('Bulk import job queued successfully');
-      expect(queueService.addJob).toHaveBeenCalledWith('bulk_import', {
-        operationId: expect.stringContaining('bulk-import-'),
-        userId: 'user-1',
-        schoolId: 'school-1',
-        data: { students: bulkImportDto.data },
-      });
+      expect(result.total).toBe(1);
+      expect(result.successful).toBe(1);
+      expect(result.failed).toBe(0);
+      expect(result.errors).toHaveLength(0);
+      expect(result.importedIds).toHaveLength(1);
     });
   });
 
   describe('executePromotion', () => {
-    it('should queue promotion job and return job info', async () => {
+    it('should process promotion and return results', async () => {
       const promotionDto = {
-        scope: 'grade',
-        gradeCode: 'JSS3',
+        studentIds: ['student-1'],
         targetGradeCode: 'SSS1',
-        academicYear: '2024',
         schoolId: 'school-1',
         userId: 'user-1',
       };
 
-      const mockJob = { id: 'job-2' };
-      queueService.addJob.mockResolvedValue(mockJob as any);
+      studentRepository.findOne.mockResolvedValue(mockStudent as any);
+      studentRepository.save.mockResolvedValue({ ...mockStudent, gradeCode: 'SSS1' } as any);
 
       const result = await service.executePromotion(promotionDto);
 
-      expect(result.jobId).toBe('job-2');
-      expect(result.message).toContain('Promotion job queued successfully');
-      expect(queueService.addJob).toHaveBeenCalledWith('batch_promotion', {
-        operationId: expect.stringContaining('batch-promotion-'),
-        userId: 'user-1',
-        schoolId: 'school-1',
-        data: promotionDto,
-      });
+      expect(result.promotedStudents).toBe(1);
+      expect(result.studentIds).toEqual(['student-1']);
+      expect(result.errors).toHaveLength(0);
     });
   });
 
   describe('batchGraduate', () => {
-    it('should queue graduation job and return job info', async () => {
+    it('should process graduation and return results', async () => {
       const graduationDto = {
         schoolId: 'school-1',
-        gradeCode: 'SSS3',
+        studentIds: ['student-5'],
         graduationYear: 2024,
         clearanceStatus: 'cleared' as 'cleared',
         userId: 'user-1',
       };
 
-      const mockJob = { id: 'job-3' };
-      queueService.addJob.mockResolvedValue(mockJob as any);
+      const eligibleStudent = { ...mockStudent, id: 'student-5', gradeCode: 'SSS3', totalCredits: 160 };
+      studentRepository.findOne.mockResolvedValue(eligibleStudent as any);
+      studentRepository.save.mockResolvedValue({ ...mockStudent, status: StudentStatus.GRADUATED } as any);
 
       const result = await service.batchGraduate(graduationDto);
 
-      expect(result.jobId).toBe('job-3');
-      expect(result.message).toContain('Graduation job queued successfully');
-      expect(queueService.addJob).toHaveBeenCalledWith('batch_graduation', {
-        operationId: expect.stringContaining('batch-graduation-'),
-        userId: 'user-1',
-        schoolId: 'school-1',
-        data: graduationDto,
-      });
+      expect(result.graduatedStudents).toBe(1);
+      expect(result.studentIds).toEqual(['student-5']);
+      expect(result.errors).toHaveLength(0);
     });
   });
 
   describe('batchTransfer', () => {
-    it('should queue transfer job and return job info', async () => {
+    it('should process transfer and return results', async () => {
       const transferDto = {
-        studentIds: ['student-1', 'student-2'],
-        newGradeCode: 'SSS2',
-        newStreamSection: 'B',
-        reason: 'Class balancing',
-        type: 'internal',
+        studentIds: ['student-1'],
+        targetSchoolId: 'school-2',
+        transferReason: 'Transfer to another school',
         schoolId: 'school-1',
         userId: 'user-1',
       };
 
-      const mockJob = { id: 'job-4' };
-      queueService.addJob.mockResolvedValue(mockJob as any);
+      studentRepository.findOne.mockResolvedValue(mockStudent as any);
+      studentRepository.save.mockResolvedValue({ ...mockStudent, status: StudentStatus.TRANSFERRED } as any);
 
       const result = await service.batchTransfer(transferDto);
 
-      expect(result.jobId).toBe('job-4');
-      expect(result.message).toContain('Transfer job queued successfully');
-      expect(queueService.addJob).toHaveBeenCalledWith('batch_transfer', {
-        operationId: expect.stringContaining('batch-transfer-'),
-        userId: 'user-1',
-        schoolId: 'school-1',
-        data: transferDto,
-      });
+      expect(result.transferred).toBe(1);
+      expect(result.studentIds).toEqual(['student-1']);
+      expect(result.errors).toHaveLength(0);
     });
   });
 

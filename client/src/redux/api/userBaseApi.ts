@@ -104,5 +104,6 @@ export const baseApi = createApi({
     'Metrics',
     'Logs',
     'SchoolOverview',
+    'DelegatedSchoolAdmins',
   ],
 });

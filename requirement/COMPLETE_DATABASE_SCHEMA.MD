@@ -89,7 +89,7 @@ CREATE TABLE users (
     date_of_birth DATE,
     gender VARCHAR(20) CHECK (gender IN ('male', 'female', 'other', 'prefer_not_to_say')),
     avatar_url VARCHAR(500),
-    role VARCHAR(50) NOT NULL CHECK (role IN ('super_admin', 'school_admin', 'principal', 'vice_principal', 'teacher', 'student', 'parent', 'support_staff', 'librarian', 'transport_coordinator', 'hostel_warden')),
+    role VARCHAR(50) NOT NULL CHECK (role IN ('super_admin', 'school_admin', 'principal', 'vice_principal', 'staff', 'student', 'parent', 'support_staff', 'librarian', 'transport_coordinator', 'hostel_warden')),
     employee_id VARCHAR(50) UNIQUE,
     student_id VARCHAR(50) UNIQUE,
     department VARCHAR(100),

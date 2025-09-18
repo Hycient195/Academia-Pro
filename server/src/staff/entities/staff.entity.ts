@@ -11,6 +11,8 @@ export enum StaffType {
   TECHNICAL = 'technical',
   MEDICAL = 'medical',
   SECURITY = 'security',
+  OPERATIONS = 'operations',
+  FINANCE = 'finance',
   MAINTENANCE = 'maintenance',
   LIBRARIAN = 'librarian',
   COUNSELOR = 'counselor',

@@ -19,11 +19,14 @@ import { UpdateStudentDto } from '../students/dtos/update-student.dto';
 import { CreateStaffDto } from '../staff/dtos/create-staff.dto';
 import { UpdateStaffDto } from '../staff/dtos/update-staff.dto';
 import { EUserRole } from '@academia-pro/types/users';
+import { DelegatedSchoolAdminService } from '../iam/services/delegated-school-admin.service';
+import { CreateDelegatedSchoolAdminDto } from '../iam/dtos/create-delegated-school-admin.dto';
+import { UpdateDelegatedSchoolAdminDto } from '../iam/dtos/update-delegated-school-admin.dto';
 
 // Audit imports
 import { Auditable, SampleAudit } from '../common/audit/auditable.decorator';
 import { AuditAction, AuditSeverity } from '../security/types/audit.types';
-import { AddDocumentDto } from 'src/students/dtos';
+import { AddDocumentDto } from '../students/dtos';
 
 @ApiTags('School Admin - School Management')
 @Controller('school-admin')
@@ -37,6 +40,7 @@ export class SchoolAdminController {
     private readonly studentsService: StudentsService,
     // private readonly staffService: StaffService,
     private readonly usersService: UsersService,
+    private readonly delegatedSchoolAdminService: DelegatedSchoolAdminService,
     // private readonly feeService: FeeService,
     // private readonly attendanceService: AttendanceService,
     // private readonly communicationService: CommunicationService,
@@ -260,7 +264,7 @@ export class SchoolAdminController {
   @ApiQuery({
     name: 'role',
     required: false,
-    enum: ['teacher', 'student', 'parent'],
+    enum: ['staff', 'student', 'parent'],
     description: 'Filter by user role',
   })
   @ApiQuery({
@@ -323,7 +327,7 @@ export class SchoolAdminController {
         lastName: { type: 'string', description: 'Last name' },
         role: {
           type: 'string',
-          enum: ['teacher', 'student', 'parent'],
+          enum: ['staff', 'student', 'parent'],
           description: 'User role'
         },
         phone: { type: 'string', description: 'Phone number' },
@@ -836,5 +840,188 @@ export class SchoolAdminController {
       alerts: [], // Any system alerts or warnings
       lastChecked: new Date(),
     };
+  }
+
+  // ==================== DELEGATED SCHOOL ADMIN MANAGEMENT ====================
+
+  @Get('delegated-admins')
+  @ApiOperation({
+    summary: 'Get delegated school admins',
+    description: 'Returns all delegated school admin accounts for the current school.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Delegated school admins retrieved successfully',
+  })
+  async getDelegatedSchoolAdmins(@Req() request: any): Promise<any> {
+    this.logger.log('Getting delegated school admins');
+
+    const schoolContext = request.schoolContext;
+    const schoolId = schoolContext.schoolId;
+
+    const delegatedAdmins = await this.delegatedSchoolAdminService.getDelegatedSchoolAdmins(schoolId);
+
+    return {
+      data: delegatedAdmins,
+      total: delegatedAdmins.length,
+    };
+  }
+
+  @Post('delegated-admins')
+  @Auditable({
+    action: AuditAction.USER_CREATED,
+    resource: 'delegated_school_admin',
+    customAction: 'delegated_school_admin_created',
+    severity: AuditSeverity.HIGH,
+    metadata: { accountType: 'delegated_school_admin' }
+  })
+  @ApiOperation({
+    summary: 'Create delegated school admin',
+    description: 'Creates a new delegated school admin account for the current school.',
+  })
+  @ApiBody({ type: CreateDelegatedSchoolAdminDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Delegated school admin created successfully',
+  })
+  async createDelegatedSchoolAdmin(
+    @Req() request: any,
+    @Body() createDto: CreateDelegatedSchoolAdminDto,
+  ): Promise<any> {
+    this.logger.log('Creating delegated school admin');
+
+    const schoolContext = request.schoolContext;
+    const schoolId = schoolContext.schoolId;
+    const createdBy = request.user?.id || 'system';
+
+    // Ensure the schoolId matches the current school context
+    if (createDto.schoolId !== schoolId) {
+      throw new BadRequestException('Cannot create delegated admin for different school');
+    }
+
+    return this.delegatedSchoolAdminService.createDelegatedSchoolAdmin(createDto, createdBy);
+  }
+
+  @Get('delegated-admins/:id')
+  @ApiOperation({
+    summary: 'Get delegated school admin by ID',
+    description: 'Returns a specific delegated school admin account.',
+  })
+  @ApiParam({ name: 'id', description: 'Delegated school admin ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Delegated school admin retrieved successfully',
+  })
+  async getDelegatedSchoolAdminById(
+    @Req() request: any,
+    @Param('id') id: string,
+  ): Promise<any> {
+    this.logger.log(`Getting delegated school admin by ID: ${id}`);
+
+    const schoolContext = request.schoolContext;
+    const schoolId = schoolContext.schoolId;
+
+    return this.delegatedSchoolAdminService.getDelegatedSchoolAdminById(id, schoolId);
+  }
+
+  @Put('delegated-admins/:id')
+  @Auditable({
+    action: AuditAction.USER_UPDATED,
+    resource: 'delegated_school_admin',
+    customAction: 'delegated_school_admin_updated',
+    severity: AuditSeverity.MEDIUM,
+    metadata: { accountType: 'delegated_school_admin' }
+  })
+  @ApiOperation({
+    summary: 'Update delegated school admin',
+    description: 'Updates a delegated school admin account.',
+  })
+  @ApiParam({ name: 'id', description: 'Delegated school admin ID' })
+  @ApiBody({ type: UpdateDelegatedSchoolAdminDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Delegated school admin updated successfully',
+  })
+  async updateDelegatedSchoolAdmin(
+    @Req() request: any,
+    @Param('id') id: string,
+    @Body() updateDto: UpdateDelegatedSchoolAdminDto,
+  ): Promise<any> {
+    this.logger.log(`Updating delegated school admin ID: ${id}`);
+
+    const schoolContext = request.schoolContext;
+    const schoolId = schoolContext.schoolId;
+    const updatedBy = request.user?.id || 'system';
+
+    return this.delegatedSchoolAdminService.updateDelegatedSchoolAdmin(id, schoolId, updateDto, updatedBy);
+  }
+
+  @Post('delegated-admins/:id/revoke')
+  @Auditable({
+    action: AuditAction.USER_BLOCKED,
+    resource: 'delegated_school_admin',
+    customAction: 'delegated_school_admin_revoked',
+    severity: AuditSeverity.HIGH,
+    metadata: { accountType: 'delegated_school_admin', action: 'revoke' }
+  })
+  @ApiOperation({
+    summary: 'Revoke delegated school admin',
+    description: 'Revokes a delegated school admin account.',
+  })
+  @ApiParam({ name: 'id', description: 'Delegated school admin ID' })
+  @ApiBody({
+    description: 'Revocation data',
+    schema: {
+      type: 'object',
+      properties: {
+        reason: { type: 'string', description: 'Reason for revocation' }
+      }
+    }
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Delegated school admin revoked successfully',
+  })
+  async revokeDelegatedSchoolAdmin(
+    @Req() request: any,
+    @Param('id') id: string,
+    @Body() body: { reason?: string },
+  ): Promise<any> {
+    this.logger.log(`Revoking delegated school admin ID: ${id}`);
+
+    const schoolContext = request.schoolContext;
+    const schoolId = schoolContext.schoolId;
+    const revokedBy = request.user?.id || 'system';
+
+    return this.delegatedSchoolAdminService.revokeDelegatedSchoolAdmin(id, schoolId, revokedBy);
+  }
+
+  @Delete('delegated-admins/:id')
+  @Auditable({
+    action: AuditAction.USER_DELETED,
+    resource: 'delegated_school_admin',
+    customAction: 'delegated_school_admin_deleted',
+    severity: AuditSeverity.CRITICAL,
+    metadata: { accountType: 'delegated_school_admin', requiresConfirmation: true }
+  })
+  @ApiOperation({
+    summary: 'Delete delegated school admin',
+    description: 'Deletes a delegated school admin account.',
+  })
+  @ApiParam({ name: 'id', description: 'Delegated school admin ID' })
+  @ApiResponse({
+    status: 204,
+    description: 'Delegated school admin deleted successfully',
+  })
+  async deleteDelegatedSchoolAdmin(
+    @Req() request: any,
+    @Param('id') id: string,
+  ): Promise<void> {
+    this.logger.log(`Deleting delegated school admin ID: ${id}`);
+
+    const schoolContext = request.schoolContext;
+    const schoolId = schoolContext.schoolId;
+
+    await this.delegatedSchoolAdminService.deleteDelegatedSchoolAdmin(id, schoolId);
   }
 }

@@ -9,16 +9,17 @@ export declare enum EUserRole {
     SUPER_ADMIN = "super-admin",
     DELEGATED_SUPER_ADMIN = "delegated-super-admin",
     SCHOOL_ADMIN = "school-admin",
-    TEACHER = "teacher",
+    DELEGATED_SCHOOL_ADMIN = "delegated-school-admin",
+    STAFF = "staff",
     STUDENT = "student",
     PARENT = "parent"
 }
-export declare enum TUserGender {
+export declare enum EUserGender {
     MALE = "male",
     FEMALE = "female",
     OTHER = "other"
 }
-export declare enum TUserTheme {
+export declare enum EUserTheme {
     LIGHT = "light",
     DARK = "dark",
     AUTO = "auto"
@@ -80,7 +81,7 @@ export interface IUserAcademicInfo {
     subjects?: string[];
 }
 export interface IUserPreferences {
-    theme: TUserTheme;
+    theme: EUserTheme;
     language: string;
     timezone: string;
     notifications: IUserNotificationSettings;
@@ -168,13 +169,13 @@ export interface IUpdateUserProfileRequest {
     middleName?: string;
     phone?: string;
     dateOfBirth?: string;
-    gender?: TUserGender;
+    gender?: EUserGender;
     address?: Partial<IUserAddress>;
     bio?: string;
     emergencyContact?: IUserEmergencyContact;
 }
 export interface IUpdateUserPreferencesRequest {
-    theme?: TUserTheme;
+    theme?: EUserTheme;
     language?: string;
     timezone?: string;
     notifications?: Partial<IUserNotificationSettings>;
@@ -227,7 +228,6 @@ export interface IUsersListResponse {
     summary?: {
         activeUsers: number;
         totalStudents: number;
-        totalTeachers: number;
         totalStaff: number;
     };
 }
@@ -464,7 +464,7 @@ export interface IUsersStatisticsResponse {
     activeUsers: number;
     usersByRole: Record<EUserRole, number>;
     usersByStatus: Record<EUserStatus, number>;
-    usersByGender: Record<TUserGender, number>;
+    usersByGender: Record<EUserGender, number>;
     registrationTrends: Array<{
         date: Date;
         registrations: number;

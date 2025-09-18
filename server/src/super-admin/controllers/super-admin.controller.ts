@@ -72,7 +72,7 @@ export class SuperAdminUsersController {
     name: 'roles',
     required: false,
     type: [String],
-    enum: ['super-admin', 'school-admin', 'teacher', 'student', 'parent'],
+    enum: ['super-admin', 'school-admin', 'staff', 'student', 'parent'],
     description: 'Filter by user roles (array)',
   })
   @ApiQuery({
@@ -181,7 +181,7 @@ export class SuperAdminUsersController {
         roles: {
           type: 'array',
           items: { type: 'string' },
-          enum: ['super-admin', 'delegated-super-admin', 'school-admin', 'teacher', 'student', 'parent'],
+          enum: ['super-admin', 'delegated-super-admin', 'school-admin', 'delegated-school-admin', 'staff', 'student', 'parent'],
           description: 'User roles (array)'
         },
         schoolId: { type: 'string', description: 'School ID (optional)' },
@@ -286,7 +286,7 @@ export class SuperAdminUsersController {
         roles: {
           type: 'array',
           items: { type: 'string' },
-          enum: ['super-admin', 'delegated-super-admin', 'school-admin', 'teacher', 'student', 'parent'],
+          enum: ['super-admin', 'delegated-super-admin', 'school-admin', 'delegated-school-admin', 'staff', 'student', 'parent'],
           description: 'User roles (array)'
         },
         schoolId: { type: 'string', description: 'School ID' },

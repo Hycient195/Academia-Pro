@@ -9,7 +9,7 @@ export async function getAuthAgent(app: INestApplication, role: keyof typeof tes
   const creds = testUsers[role];
 
   // All test apps use global prefix '/api/v1'
-  if (['super-admin', 'delegated-super-admin'].includes(role)) {
+  if (['super-admin', 'delegated-super-admin', 'delegated-super-admin-limited', 'delegated-super-admin-schools', 'delegated-super-admin-analytics'].includes(role)) {
     // Prefer AuthController super admin endpoint to leverage shared cookie logic
     await agent
       .post('/api/v1/super-admin/auth/login')

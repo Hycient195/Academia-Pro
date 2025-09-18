@@ -16,7 +16,6 @@ export interface ISchool {
     principalPhone?: string;
     principalEmail?: string;
     totalStudents?: number;
-    totalTeachers?: number;
     totalStaff?: number;
     establishedDate?: Date;
     accreditationStatus?: string;
@@ -68,7 +67,6 @@ export interface ISchoolCreateSchoolRequest {
     principalPhone?: string;
     principalEmail?: string;
     totalStudents?: number;
-    totalTeachers?: number;
     totalStaff?: number;
     establishedDate?: string;
     timezone?: string;
@@ -102,7 +100,6 @@ export interface ISchoolUpdateSchoolRequest {
     principalPhone?: string;
     principalEmail?: string;
     totalStudents?: number;
-    totalTeachers?: number;
     totalStaff?: number;
     establishedDate?: string;
     timezone?: string;
@@ -148,7 +145,7 @@ export interface ISchoolListResponse {
         totalSchools: number;
         activeSchools: number;
         totalStudents: number;
-        totalTeachers: number;
+        totalStaff: number;
         byType: Record<TSchoolType, number>;
         byStatus: Record<TSchoolStatus, number>;
     };
@@ -172,7 +169,6 @@ export interface ISchoolStatistics {
     totalSchools: number;
     activeSchools: number;
     totalStudents: number;
-    totalTeachers: number;
     totalStaff: number;
     averageStudentsPerSchool: number;
     averageTeachersPerSchool: number;

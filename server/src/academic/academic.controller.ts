@@ -4,8 +4,8 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, ParseUUIDPipe, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { AuditCreate, AuditUpdate, AuditDelete, AuditRead, SampleAudit, MonitorPerformance } from '../common/audit/auditable.decorator';
-import { AcademicService } from './academic.service.js';
-import { CreateSubjectDto, UpdateSubjectDto, CreateCurriculumDto, CreateClassDto, CreateLearningObjectiveDto } from './dtos/index.js';
+import { AcademicService } from './academic.service';
+import { CreateSubjectDto, UpdateSubjectDto, CreateCurriculumDto, CreateClassDto, CreateLearningObjectiveDto } from './dtos/index';
 import {
   CreateCurriculumStandardDto,
   UpdateCurriculumStandardDto,
@@ -22,7 +22,7 @@ import {
   StudentEnrollmentsListResponseDto,
   BulkEnrollmentDto,
   BulkEnrollmentResponseDto,
-} from './dtos/student-enrollment.dto.js';
+} from './dtos/student-enrollment.dto';
 import {
   CreateSubstituteRequestDto,
   UpdateSubstituteRequestDto,
@@ -31,7 +31,7 @@ import {
   SubstituteRequestFiltersDto,
   SubstituteRequestResponseDto,
   SubstituteRequestsListResponseDto,
-} from './dtos/substitute-teacher.dto.js';
+} from './dtos/substitute-teacher.dto';
 import {
   CreateTeacherWorkloadDto,
   UpdateTeacherWorkloadDto,
@@ -40,14 +40,14 @@ import {
   TeacherWorkloadsListResponseDto,
   WorkloadAnalyticsResponseDto,
   TeacherAssignmentOptimizationDto,
-} from './dtos/teacher-workload.dto.js';
-import { Subject } from './subject.entity.js';
-import { Curriculum } from './curriculum.entity.js';
-import { Class } from './class.entity.js';
-import { LearningObjective } from './learning-objective.entity.js';
+} from './dtos/teacher-workload.dto';
+import { Subject } from './subject.entity';
+import { Curriculum } from './curriculum.entity';
+import { Class } from './class.entity';
+import { LearningObjective } from './learning-objective.entity';
 import { ISubjectFilters, ICurriculumFilters, IClassFilters, IAcademicStatistics } from '@academia-pro/types/academic';
-import { Roles } from '../common/decorators/roles.decorator.js';
-import { EUserRole } from '@academia-pro/types/users/users.types.js';
+import { Roles } from '../common/decorators/roles.decorator';
+import { EUserRole } from '@academia-pro/types/users/users.types';
 
 @ApiTags('Academic Management')
 @ApiBearerAuth()
@@ -67,7 +67,7 @@ export class AcademicController {
   }
 
   @Get('subjects')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF)
   @ApiOperation({ summary: 'Get all subjects with pagination and filters' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -94,7 +94,7 @@ export class AcademicController {
   }
 
   @Get('subjects/search')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF)
   @ApiOperation({ summary: 'Search subjects by name or code' })
   @ApiQuery({ name: 'q', required: true, description: 'Search query' })
   @ApiQuery({ name: 'schoolId', required: true })
@@ -112,7 +112,7 @@ export class AcademicController {
   }
 
   @Get('subjects/:id')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF)
   @AuditRead('subject', 'id')
   @ApiOperation({ summary: 'Get subject by ID' })
   @ApiResponse({ status: 200, description: 'Subject retrieved successfully', type: Subject })
@@ -157,7 +157,7 @@ export class AcademicController {
   }
 
   @Get('curricula')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF)
   @ApiOperation({ summary: 'Get all curricula with pagination and filters' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -184,7 +184,7 @@ export class AcademicController {
   }
 
   @Get('curricula/:id')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF)
   @AuditRead('curriculum', 'id')
   @ApiOperation({ summary: 'Get curriculum by ID' })
   @ApiResponse({ status: 200, description: 'Curriculum retrieved successfully', type: Curriculum })
@@ -204,7 +204,7 @@ export class AcademicController {
   }
 
   @Get('classes')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF)
   @ApiOperation({ summary: 'Get all classes with pagination and filters' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -231,7 +231,7 @@ export class AcademicController {
   }
 
   @Get('classes/:id')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF)
   @ApiOperation({ summary: 'Get class by ID' })
   @ApiResponse({ status: 200, description: 'Class retrieved successfully', type: Class })
   @ApiResponse({ status: 404, description: 'Class not found' })
@@ -249,7 +249,7 @@ export class AcademicController {
   }
 
   @Get('learning-objectives')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF)
   @ApiOperation({ summary: 'Get all learning objectives with pagination and filters' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -322,7 +322,7 @@ export class AcademicController {
 
   // Utility Endpoints
   @Get('subjects/by-grade/:schoolId/:grade')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF)
   @ApiOperation({ summary: 'Get subjects by grade level' })
   @ApiResponse({ status: 200, description: 'Subjects retrieved successfully' })
   async getSubjectsByGrade(
@@ -339,7 +339,7 @@ export class AcademicController {
   }
 
   @Get('classes/by-grade/:schoolId/:grade')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF)
   @ApiOperation({ summary: 'Get classes by grade level' })
   @ApiResponse({ status: 200, description: 'Classes retrieved successfully' })
   async getClassesByGrade(
@@ -356,7 +356,7 @@ export class AcademicController {
   }
 
   @Get('curricula/by-year/:schoolId/:year')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF)
   @ApiOperation({ summary: 'Get curricula by academic year' })
   @ApiResponse({ status: 200, description: 'Curricula retrieved successfully' })
   async getCurriculaByYear(
@@ -382,7 +382,7 @@ export class AcademicController {
   }
 
   @Get('curriculum-standards')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF)
   @ApiOperation({ summary: 'Get all curriculum standards with filters' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -396,7 +396,7 @@ export class AcademicController {
   }
 
   @Get('curriculum-standards/:id')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF)
   @ApiOperation({ summary: 'Get curriculum standard by ID' })
   @ApiResponse({ status: 200, description: 'Curriculum standard retrieved successfully', type: CurriculumStandardResponseDto })
   async findCurriculumStandardById(@Param('id', ParseUUIDPipe) id: string) {
@@ -425,7 +425,7 @@ export class AcademicController {
   }
 
   @Get('student-enrollments')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF)
   @ApiOperation({ summary: 'Get student enrollments with filters' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -439,7 +439,7 @@ export class AcademicController {
   }
 
   @Get('student-enrollments/:studentId')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER, EUserRole.STUDENT)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF, EUserRole.STUDENT)
   @ApiOperation({ summary: 'Get student enrollment history' })
   @ApiResponse({ status: 200, description: 'Student enrollment history retrieved successfully' })
   async findStudentEnrollmentHistory(@Param('studentId', ParseUUIDPipe) studentId: string) {
@@ -483,7 +483,7 @@ export class AcademicController {
   // ==================== SUBSTITUTE TEACHER ENDPOINTS ====================
 
   @Post('substitute-requests')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF)
   @ApiOperation({ summary: 'Create substitute teacher request' })
   @ApiResponse({ status: 201, description: 'Substitute request created successfully', type: SubstituteRequestResponseDto })
   async createSubstituteRequest(@Body() requestDto: CreateSubstituteRequestDto) {
@@ -491,7 +491,7 @@ export class AcademicController {
   }
 
   @Get('substitute-requests')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF)
   @ApiOperation({ summary: 'Get substitute requests with filters' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -527,7 +527,7 @@ export class AcademicController {
   }
 
   @Post('substitute-requests/:id/feedback')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF)
   @ApiOperation({ summary: 'Submit substitute feedback' })
   @ApiResponse({ status: 200, description: 'Feedback submitted successfully' })
   async submitSubstituteFeedback(
@@ -548,7 +548,7 @@ export class AcademicController {
   }
 
   @Get('teacher-workloads')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF)
   @ApiOperation({ summary: 'Get teacher workloads with filters' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -562,7 +562,7 @@ export class AcademicController {
   }
 
   @Get('teacher-workloads/:teacherId/:academicYear')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF)
   @ApiOperation({ summary: 'Get teacher workload by teacher and year' })
   @ApiResponse({ status: 200, description: 'Teacher workload retrieved successfully', type: TeacherWorkloadResponseDto })
   async findTeacherWorkload(
@@ -644,7 +644,7 @@ export class AcademicController {
   // ==================== INTEGRATION ENDPOINTS ====================
 
   @Get('integration/student/:studentId/:academicYear')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER, EUserRole.STUDENT)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF, EUserRole.STUDENT)
   @ApiOperation({ summary: 'Get student academic data for integration' })
   @ApiResponse({ status: 200, description: 'Student academic data retrieved successfully' })
   async getStudentAcademicData(
@@ -666,7 +666,7 @@ export class AcademicController {
   }
 
   @Get('integration/teacher/:teacherId/:academicYear')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF)
   @ApiOperation({ summary: 'Get teacher academic data for integration' })
   @ApiResponse({ status: 200, description: 'Teacher academic data retrieved successfully' })
   async getTeacherAcademicData(

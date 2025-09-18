@@ -23,16 +23,17 @@ import { User } from '../../users/user.entity';
 import { School } from '../../schools/school.entity';
 import { Student } from '../../students/student.entity';
 import { Department } from '../../staff/entities/department.entity';
+import { DelegatedSchoolAdmin, DelegatedSchoolAdminStatus } from '../../iam/entities/delegated-school-admin.entity';
 import { EUserRole, EUserStatus } from '@academia-pro/types/users';
 import { TStudentStage } from '@academia-pro/types/student/student.types';
 // Deterministic IDs for seeded users to keep JWTs valid across per-test truncations
 const TEST_IDS = {
   AUTH_SYSTEM: '550e8400-e29b-41d4-a716-446655440000',
-  SUPERADMIN: '11111111-1111-1111-1111-111111111111',
-  SCHOOLADMIN: '22222222-2222-2222-2222-222222222222',
-  TEACHER: '33333333-3333-3333-3333-333333333333',
-  STUDENT: '44444444-4444-4444-4444-444444444444',
-  PARENT: '55555555-5555-5555-5555-555555555555',
+  SUPERADMIN: '11111111-1111-1111-8111-111111111111',
+  SCHOOLADMIN: '22222222-2222-2222-8222-222222222222',
+  TEACHER: '33333333-3333-3333-8333-333333333333',
+  STUDENT: '44444444-4444-4444-8444-444444444444',
+  PARENT: '55555555-5555-5555-8555-555555555555',
 };
 
 enum SchoolStatus {
@@ -103,12 +104,14 @@ export class TestSeederService {
   private schoolRepository: Repository<School>;
   private studentRepository: Repository<Student>;
   private departmentRepository: Repository<Department>;
+  private delegatedSchoolAdminRepository: Repository<DelegatedSchoolAdmin>;
 
   constructor(private dataSource: DataSource) {
     this.userRepository = this.dataSource.getRepository(User);
     this.schoolRepository = this.dataSource.getRepository(School);
     this.studentRepository = this.dataSource.getRepository(Student);
     this.departmentRepository = this.dataSource.getRepository(Department);
+    this.delegatedSchoolAdminRepository = this.dataSource.getRepository(DelegatedSchoolAdmin);
   }
 
   async clear() {
@@ -138,8 +141,9 @@ export class TestSeederService {
     const schools = await this.seedSchools();
     const departments = await this.seedDepartments(schools[0].id);
     const students = await this.seedStudents(schools[0].id);
+    const delegatedSchoolAdmins = await this.seedDelegatedSchoolAdmins(schools[0].id);
 
-    return { users, schools, departments, students };
+    return { users, schools, departments, students, delegatedSchoolAdmins };
   }
 
   // Legacy seeding method for backward compatibility
@@ -532,7 +536,7 @@ export class TestSeederService {
         passwordHash: hash,
         firstName: 'John',
         lastName: 'Teacher',
-        roles: [EUserRole.TEACHER],
+        roles: [EUserRole.STAFF],
         status: EUserStatus.ACTIVE,
         isEmailVerified: true,
         isFirstLogin: false,
@@ -597,6 +601,176 @@ export class TestSeederService {
         isEmailVerified: true,
         isFirstLogin: false,
         schoolId,
+        preferences: {
+          language: 'en',
+          timezone: 'UTC',
+          theme: 'light' as const,
+          notifications: {
+            email: true,
+            sms: false,
+            push: true,
+            marketing: false,
+            system: true,
+          },
+          privacy: {
+            profileVisibility: 'private' as const,
+            contactVisibility: 'private' as const,
+            dataSharing: false,
+          },
+        },
+      },
+      {
+        id: '66666666-6666-6666-6666-666666666666',
+        email: 'delegatedsuperadmin@example.com',
+        passwordHash: hash,
+        firstName: 'Delegated',
+        lastName: 'Super Admin',
+        roles: [EUserRole.DELEGATED_SUPER_ADMIN],
+        status: EUserStatus.ACTIVE,
+        isEmailVerified: true,
+        isFirstLogin: false,
+        preferences: {
+          language: 'en',
+          timezone: 'UTC',
+          theme: 'light' as const,
+          notifications: {
+            email: true,
+            sms: false,
+            push: true,
+            marketing: false,
+            system: true,
+          },
+          privacy: {
+            profileVisibility: 'private' as const,
+            contactVisibility: 'private' as const,
+            dataSharing: false,
+          },
+        },
+      },
+      {
+        id: '77777777-7777-7777-7777-777777777777',
+        email: 'delegatedschoolsdmin@example.com',
+        passwordHash: hash,
+        firstName: 'Delegated',
+        lastName: 'School Admin',
+        roles: [EUserRole.DELEGATED_SCHOOL_ADMIN],
+        status: EUserStatus.ACTIVE,
+        isEmailVerified: true,
+        isFirstLogin: false,
+        schoolId,
+        preferences: {
+          language: 'en',
+          timezone: 'UTC',
+          theme: 'light' as const,
+          notifications: {
+            email: true,
+            sms: false,
+            push: true,
+            marketing: false,
+            system: true,
+          },
+          privacy: {
+            profileVisibility: 'school-only' as const,
+            contactVisibility: 'school-only' as const,
+            dataSharing: true,
+          },
+        },
+      },
+      // Additional delegated super admin users for comprehensive testing
+      {
+        id: '66666666-6666-4666-8666-666666666667',
+        email: 'delegatedsuperadmin-limited@example.com',
+        passwordHash: hash,
+        firstName: 'Delegated',
+        lastName: 'Super Admin Limited',
+        roles: [EUserRole.DELEGATED_SUPER_ADMIN],
+        status: EUserStatus.ACTIVE,
+        isEmailVerified: true,
+        isFirstLogin: false,
+        preferences: {
+          language: 'en',
+          timezone: 'UTC',
+          theme: 'light' as const,
+          notifications: {
+            email: true,
+            sms: false,
+            push: true,
+            marketing: false,
+            system: true,
+          },
+          privacy: {
+            profileVisibility: 'private' as const,
+            contactVisibility: 'private' as const,
+            dataSharing: false,
+          },
+        },
+      },
+      {
+        id: '66666666-6666-4666-8666-666666666668',
+        email: 'delegatedsuperadmin-schools@example.com',
+        passwordHash: hash,
+        firstName: 'Delegated',
+        lastName: 'Super Admin Schools',
+        roles: [EUserRole.DELEGATED_SUPER_ADMIN],
+        status: EUserStatus.ACTIVE,
+        isEmailVerified: true,
+        isFirstLogin: false,
+        preferences: {
+          language: 'en',
+          timezone: 'UTC',
+          theme: 'light' as const,
+          notifications: {
+            email: true,
+            sms: false,
+            push: true,
+            marketing: false,
+            system: true,
+          },
+          privacy: {
+            profileVisibility: 'private' as const,
+            contactVisibility: 'private' as const,
+            dataSharing: false,
+          },
+        },
+      },
+      {
+        id: '66666666-6666-4666-8666-666666666669',
+        email: 'delegatedsuperadmin-analytics@example.com',
+        passwordHash: hash,
+        firstName: 'Delegated',
+        lastName: 'Super Admin Analytics',
+        roles: [EUserRole.DELEGATED_SUPER_ADMIN],
+        status: EUserStatus.ACTIVE,
+        isEmailVerified: true,
+        isFirstLogin: false,
+        preferences: {
+          language: 'en',
+          timezone: 'UTC',
+          theme: 'light' as const,
+          notifications: {
+            email: true,
+            sms: false,
+            push: true,
+            marketing: false,
+            system: true,
+          },
+          privacy: {
+            profileVisibility: 'private' as const,
+            contactVisibility: 'private' as const,
+            dataSharing: false,
+          },
+        },
+      },
+      {
+        id: '66666666-6666-4666-8666-666666666670',
+        email: 'wildcard@example.com',
+        passwordHash: hash,
+        firstName: 'Wildcard',
+        lastName: 'Test User',
+        roles: [EUserRole.DELEGATED_SUPER_ADMIN],
+        status: EUserStatus.ACTIVE,
+        isEmailVerified: true,
+        isFirstLogin: false,
         preferences: {
           language: 'en',
           timezone: 'UTC',
@@ -1180,5 +1354,31 @@ export class TestSeederService {
     }
 
     return savedStudents;
+  }
+
+  async seedDelegatedSchoolAdmins(schoolId: string) {
+    const delegatedSchoolAdmins = [
+      {
+        id: randomUUID(),
+        userId: '77777777-7777-7777-7777-777777777777', // delegated school admin user
+        schoolId,
+        email: 'delegatedschoolsdmin@example.com',
+        permissions: ['students:read', 'students:create', 'students:update'], // Limited permissions for testing
+        startDate: new Date(),
+        expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
+        createdBy: TEST_IDS.SCHOOLADMIN,
+        status: DelegatedSchoolAdminStatus.ACTIVE,
+        notes: 'Test delegated school admin with limited permissions',
+      },
+    ];
+
+    const savedDelegatedAdmins = [];
+    for (const adminData of delegatedSchoolAdmins) {
+      const admin = this.delegatedSchoolAdminRepository.create(adminData);
+      const savedAdmin = await this.delegatedSchoolAdminRepository.save(admin);
+      savedDelegatedAdmins.push(savedAdmin);
+    }
+
+    return savedDelegatedAdmins;
   }
 }

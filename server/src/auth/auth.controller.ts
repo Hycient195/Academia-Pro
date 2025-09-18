@@ -201,8 +201,8 @@ export class AuthController {
       loginDto.password,
     );
 
-    // Check if user is a super admin
-    if (!user.roles.includes(EUserRole.SUPER_ADMIN)) {
+    // Check if user is a super admin or delegated super admin
+    if (!user.roles.includes(EUserRole.SUPER_ADMIN) && !user.roles.includes(EUserRole.DELEGATED_SUPER_ADMIN)) {
       res.status(403).json({ message: 'Access denied - not a super admin' });
       return;
     }

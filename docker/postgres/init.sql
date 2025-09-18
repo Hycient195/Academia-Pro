@@ -14,7 +14,7 @@ CREATE EXTENSION IF NOT EXISTS "btree_gist";
 
 -- Create custom types
 DO $$ BEGIN
-    CREATE TYPE users_role_enum AS ENUM ('super-admin', 'school-admin', 'teacher', 'student', 'parent');
+    CREATE TYPE users_role_enum AS ENUM ('super-admin', 'school-admin', 'staff', 'student', 'parent');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;

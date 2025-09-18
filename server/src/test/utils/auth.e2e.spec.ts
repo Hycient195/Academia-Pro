@@ -4,15 +4,23 @@ import type { SuperAgentTest } from 'supertest';
 import { TestHarness } from './test-harness';
 
 describe('Auth E2E (seeded users, cookie sessions)', () => {
-  let superadmin: SuperAgentTest;
+  let superAdmin: SuperAgentTest;
+  let delegatedSuperAdmin: SuperAgentTest;
+  let schoolAdmin: SuperAgentTest;
+  let delegatedSchoolAdmin: SuperAgentTest;
   let staff: SuperAgentTest;
   let student: SuperAgentTest;
+  let parent: SuperAgentTest;
 
   beforeAll(async () => {
     await TestHarness.bootstrap();
-    superadmin = await TestHarness.auth('super-admin');
+    superAdmin = await TestHarness.auth('super-admin');
+    delegatedSuperAdmin = await TestHarness.auth('delegated-super-admin');
+    schoolAdmin = await TestHarness.auth('school-admin');
+    delegatedSchoolAdmin = await TestHarness.auth('delegated-school-admin');
     staff = await TestHarness.auth('staff');
     student = await TestHarness.auth('student');
+    parent = await TestHarness.auth('parent');
   });
 
   afterAll(async () => {
@@ -29,14 +37,19 @@ describe('Auth E2E (seeded users, cookie sessions)', () => {
 
   it('super admin can list schools (seeded)', async () => {
     // Uses seeded school "Premium High School"
-    const res = await superadmin.get('/api/v1/schools').expect(200);
+    const res = await superAdmin.get('/api/v1/schools').expect(200);
     expect(Array.isArray(res.body.data)).toBe(true);
     expect(res.body.data.map((s: any) => s.name)).toContain('Premium High School');
   });
 
-  it('staff and student sessions are established', () => {
-    // Smoke: ensure we acquired logged-in agents
+  it('all user sessions are established', () => {
+    // Smoke: ensure we acquired logged-in agents for all roles
+    expect(superAdmin).toBeDefined();
+    expect(delegatedSuperAdmin).toBeDefined();
+    expect(schoolAdmin).toBeDefined();
+    expect(delegatedSchoolAdmin).toBeDefined();
     expect(staff).toBeDefined();
     expect(student).toBeDefined();
+    expect(parent).toBeDefined();
   });
 });

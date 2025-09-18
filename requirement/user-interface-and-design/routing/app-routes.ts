@@ -401,7 +401,7 @@ export const appRoutes: RouteConfig[] = [
     layout: 'main',
     meta: {
       requiresAuth: true,
-      roles: ['super-admin', 'delegated-super-admin', 'school-admin', 'teacher', 'student', 'parent'],
+      roles: ['super-admin', 'delegated-super-admin', 'school-admin', 'delegated-school-admin', 'staff', 'student', 'parent'],
       icon: 'clock',
       menuOrder: 9,
       module: 'timetable-scheduling',

@@ -121,7 +121,6 @@ export const schoolsApi = superAdminBaseApi.injectEndpoints({
       averageStudentsPerSchool: number;
       averageTeachersPerSchool: number;
       totalStudents: number;
-      totalTeachers: number;
       totalStaff: number;
     }, void>({
       query: () => '/super-admin/schools/statistics',

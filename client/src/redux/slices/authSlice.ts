@@ -6,7 +6,7 @@ export interface User {
    firstName: string;
    lastName: string;
    name?: string; // Computed property for convenience
-   roles: ('super-admin' | 'delegated-super-admin' | 'school-admin' | 'teacher' | 'student' | 'parent')[];
+   roles: ('super-admin' | 'delegated-super-admin' | 'school-admin' | 'delegated-school-admin' | 'staff' | 'student' | 'parent')[];
    schoolId?: string;
    schoolName?: string;
    avatar?: string;

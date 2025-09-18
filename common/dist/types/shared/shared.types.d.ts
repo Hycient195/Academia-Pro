@@ -158,14 +158,14 @@ export interface User extends BaseEntity {
     preferences: UserPreferences;
     passwordHash?: string;
 }
-export interface Teacher extends User {
+export interface Staff extends User {
     roles: EUserRole[];
     employeeId: string;
     department?: string;
-    subjects: string[];
+    subjects?: string[];
     qualifications: Qualification[];
     experience: number;
-    specializations: string[];
+    specializations?: string[];
     classTeacherOf?: string[];
 }
 export interface Student extends User {
@@ -629,7 +629,7 @@ export type RequiredFields<T, K extends keyof T> = T & Required<Pick<T, K>>;
 export type DeepPartial<T> = {
     [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
 };
-export type AnyEntity = User | School | Grade | Section | ISubject;
+export type AnyEntity = User | Staff | School | Grade | Section | ISubject;
 export type AnyStatus = Status | EUserStatus | SchoolStatus | ApprovalStatus;
 export type AnyRole = IUserPermissionRole;
 export interface BaseEntity {
@@ -878,7 +878,7 @@ export interface UpdateProfileRequest {
     avatar?: any;
     preferences?: Partial<UserPreferences>;
 }
-export interface UpdateTeacherProfileRequest extends UpdateProfileRequest {
+export interface UpdateStaffProfileRequest extends UpdateProfileRequest {
     department?: string;
     qualifications?: Qualification[];
     specializations?: string[];
@@ -1029,7 +1029,7 @@ export declare const createUserSchema: z.ZodObject<{
     email: z.ZodString;
     firstName: z.ZodString;
     lastName: z.ZodString;
-    roles: z.ZodArray<z.ZodEnum<["super-admin", "delegated-super-admin", "school-admin", "teacher", "student", "parent"]>, "many">;
+    roles: z.ZodArray<z.ZodEnum<["super-admin", "delegated-super-admin", "school-admin", "delegated-school-admin", "staff", "student", "parent"]>, "many">;
     phone: z.ZodOptional<z.ZodString>;
     schoolId: z.ZodOptional<z.ZodString>;
     sendWelcomeEmail: z.ZodDefault<z.ZodBoolean>;
@@ -1037,7 +1037,7 @@ export declare const createUserSchema: z.ZodObject<{
     email: string;
     firstName: string;
     lastName: string;
-    roles: ("super-admin" | "delegated-super-admin" | "school-admin" | "teacher" | "student" | "parent")[];
+    roles: ("super-admin" | "delegated-super-admin" | "school-admin" | "delegated-school-admin" | "staff" | "student" | "parent")[];
     sendWelcomeEmail: boolean;
     phone?: string | undefined;
     schoolId?: string | undefined;
@@ -1045,7 +1045,7 @@ export declare const createUserSchema: z.ZodObject<{
     email: string;
     firstName: string;
     lastName: string;
-    roles: ("super-admin" | "delegated-super-admin" | "school-admin" | "teacher" | "student" | "parent")[];
+    roles: ("super-admin" | "delegated-super-admin" | "school-admin" | "delegated-school-admin" | "staff" | "student" | "parent")[];
     phone?: string | undefined;
     schoolId?: string | undefined;
     sendWelcomeEmail?: boolean | undefined;

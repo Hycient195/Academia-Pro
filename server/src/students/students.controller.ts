@@ -71,7 +71,7 @@ export class StudentsController {
   }
 
   @Get()
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.DELEGATED_SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.DELEGATED_SCHOOL_ADMIN, EUserRole.STAFF)
   @ApiBearerAuth()
   @AuditRead('students')
   @ApiOperation({ summary: 'Get all students with pagination and filtering' })
@@ -182,7 +182,7 @@ export class StudentsController {
   }
 
   @Get('search')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Search students' })
   @ApiQuery({ name: 'query', required: true, type: String })
@@ -206,7 +206,7 @@ export class StudentsController {
   }
 
   @Get('by-grade/:schoolId/:gradeCode')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get students by grade code' })
   @ApiResponse({
@@ -221,7 +221,7 @@ export class StudentsController {
   }
 
   @Get('by-section/:schoolId/:gradeCode/:streamSection')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get students by stream section' })
   @ApiResponse({
@@ -250,7 +250,7 @@ export class StudentsController {
   }
 
   @Get(':id')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER, EUserRole.STUDENT, EUserRole.PARENT)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF, EUserRole.STUDENT, EUserRole.PARENT)
   @ApiBearerAuth()
   @AuditRead('student', 'id')
   @ApiOperation({ summary: 'Get student by ID' })
@@ -264,7 +264,7 @@ export class StudentsController {
   }
 
   @Get('admission/:admissionNumber')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get student by admission number' })
   @ApiResponse({

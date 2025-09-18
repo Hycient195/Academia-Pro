@@ -12,7 +12,7 @@ export interface MessageThread {
   participants: Array<{
     id: string;
     name: string;
-    type: 'parent' | 'teacher' | 'admin' | 'system';
+    type: 'parent' | 'staff' | 'admin' | 'system';
     avatar?: string;
   }>;
   subject: string;
@@ -39,7 +39,7 @@ export interface MessageList {
     threadId: string;
     senderId: string;
     senderName: string;
-    senderType: 'parent' | 'teacher' | 'admin' | 'system';
+    senderType: 'parent' | 'staff' | 'admin' | 'system';
     recipientId: string;
     recipientName: string;
     subject: string;
@@ -822,7 +822,7 @@ export class ParentPortalCommunicationService {
   private extractParticipants(messages: CommunicationRecord[]): Array<{
     id: string;
     name: string;
-    type: 'parent' | 'teacher' | 'admin' | 'system';
+    type: 'parent' | 'staff' | 'admin' | 'system';
     avatar?: string;
   }> {
     const participants = new Map<string, any>();
@@ -859,10 +859,10 @@ export class ParentPortalCommunicationService {
     return 'active';
   }
 
-  private getSenderType(senderType?: string): 'parent' | 'teacher' | 'admin' | 'system' {
+  private getSenderType(senderType?: string): 'parent' | 'staff' | 'admin' | 'system' {
     switch (senderType) {
-      case 'teacher':
-        return 'teacher';
+      case 'staff':
+        return 'staff';
       case 'admin':
         return 'admin';
       case 'parent':

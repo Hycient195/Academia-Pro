@@ -459,8 +459,8 @@ export class UserManagementService {
     // Define valid role transitions
     const validTransitions: Record<string, string[]> = {
       'super-admin': ['super-admin', 'school-admin'],
-      'school-admin': ['school-admin', 'teacher', 'student', 'parent'],
-      'teacher': ['teacher', 'student', 'parent'],
+      'school-admin': ['school-admin', 'staff', 'student', 'parent'],
+      'teacher': ['staff', 'student', 'parent'],
       'student': ['student', 'parent'],
       'parent': ['parent'],
     };
@@ -470,7 +470,7 @@ export class UserManagementService {
   }
 
   private async getRoleBreakdown(): Promise<Record<string, number>> {
-    const roles: string[] = ['super-admin', 'delegated-super-admin', 'school-admin', 'teacher', 'student', 'parent'];
+    const roles: string[] = ['super-admin', 'delegated-super-admin', 'school-admin', 'delegated-school-admin', 'staff', 'student', 'parent'];
     const breakdown: Record<string, number> = {};
 
     for (const role of roles) {

@@ -96,7 +96,7 @@ export function PortalSidebar({ navData, user, onLogout, redirectTo, ...sidebarP
       case "super-admin": return "Super Admin";
       case "delegated-super-admin": return "Delegated Admin";
       case "school-admin": return "School Admin";
-      case "teacher": return "Teacher";
+      case "staff": return "Staff";
       case "student": return "Student";
       case "parent": return "Parent";
       default: return role;

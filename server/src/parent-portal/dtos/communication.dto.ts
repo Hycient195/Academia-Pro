@@ -369,7 +369,7 @@ export class MessageThreadResponseDto {
   participants: Array<{
     id: string;
     name: string;
-    type: 'parent' | 'teacher' | 'admin' | 'system';
+    type: 'parent' | 'staff' | 'admin' | 'system';
     avatar?: string;
   }>;
 
@@ -466,7 +466,7 @@ export class MessageResponseDto {
     description: 'Sender type',
     enum: ['parent', 'teacher', 'admin', 'system'],
   })
-  senderType: 'parent' | 'teacher' | 'admin' | 'system';
+  senderType: 'parent' | 'staff' | 'admin' | 'system';
 
   @ApiProperty({
     description: 'Recipient ID',

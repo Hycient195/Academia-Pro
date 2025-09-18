@@ -95,7 +95,7 @@ export default function SignInPage() {
           case "parent":
             redirectPath = "/parent/overview"
             break
-          case "teacher":
+          case "staff":
             redirectPath = "/staff/overview"
             break
           case "school-admin":
@@ -159,7 +159,7 @@ export default function SignInPage() {
         case "parent":
           redirectPath = "/parent/overview"
           break
-        case "teacher":
+        case "staff":
           redirectPath = "/staff/overview"
           break
         case "school-admin":

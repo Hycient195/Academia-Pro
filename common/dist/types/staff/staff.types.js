@@ -40,7 +40,6 @@ var TPosition;
     TPosition["PRINCIPAL"] = "principal";
     TPosition["VICE_PRINCIPAL"] = "vice_principal";
     TPosition["HEADMASTER"] = "headmaster";
-    TPosition["TEACHER"] = "teacher";
     TPosition["LIBRARIAN"] = "librarian";
     TPosition["ACCOUNTANT"] = "accountant";
     TPosition["ADMINISTRATOR"] = "administrator";

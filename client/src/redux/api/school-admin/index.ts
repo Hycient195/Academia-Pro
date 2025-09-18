@@ -6,6 +6,7 @@ import { academicApi } from './academicApis';
 import { financialApi } from './financialApis';
 import { communicationApi } from './communicationApis';
 import { attendanceApi } from './attendanceApis';
+import { delegatedAdminApi } from './delegatedAdminApis';
 
 const schoolAdminApis = {
     academic: academicApi,
@@ -15,6 +16,7 @@ const schoolAdminApis = {
     department: departmentApi,
     student: studentApi,
     attendance: attendanceApi,
+    delegatedAdmin: delegatedAdminApi,
     general: commonApis,
 }
 

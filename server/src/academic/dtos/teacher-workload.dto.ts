@@ -444,7 +444,7 @@ export class TeacherWorkloadsListResponseDto {
   @ApiPropertyOptional({
     description: 'Summary statistics',
     example: {
-      totalTeachers: 25,
+      totalStaff: 25,
       optimalWorkload: 15,
       overLoaded: 5,
       underLoaded: 3,
@@ -454,7 +454,7 @@ export class TeacherWorkloadsListResponseDto {
     },
   })
   summary?: {
-    totalTeachers: number;
+    totalStaff: number;
     optimalWorkload: number;
     overLoaded: number;
     underLoaded: number;
@@ -469,7 +469,7 @@ export class WorkloadAnalyticsResponseDto {
     description: 'Total number of teachers',
     example: 25,
   })
-  totalTeachers: number;
+  totalStaff: number;
 
   @ApiProperty({
     description: 'Teachers with optimal workload',

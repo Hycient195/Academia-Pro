@@ -28,6 +28,7 @@ import { AuditSharedModule } from '../common/audit/audit.shared.module';
 import { StudentsModule } from '../students/students.module';
 import { StaffModule } from '../staff/staff.module';
 import { UsersModule } from '../users/users.module';
+import { IamModule } from '../iam/iam.module';
 import { FeeModule } from '../fee/fee.module';
 import { AttendanceModule } from '../attendance/attendance.module';
 import { CommunicationModule } from '../communication/communication.module';
@@ -45,6 +46,7 @@ import { CommunicationModule } from '../communication/communication.module';
     forwardRef(() => StudentsModule),
     StaffModule,
     forwardRef(() => UsersModule),
+    IamModule,
     forwardRef(() => FeeModule),
     forwardRef(() => AttendanceModule),
     forwardRef(() => CommunicationModule),

@@ -33,7 +33,7 @@ export default function SchoolAdminLayout({
           </div>
         }
       >
-        <UserRoleGuard allowedRoles={['school-admin']}>
+        <UserRoleGuard allowedRoles={['school-admin', 'delegated-school-admin']}>
           <SchoolAdminPortalWrapper>
             {children}
           </SchoolAdminPortalWrapper>

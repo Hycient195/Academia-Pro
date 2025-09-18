@@ -145,11 +145,17 @@ export const roleThemeConfigs = {
   'super-admin': {
     primaryColor: '#7c4dff', // Deep purple for super admin
   },
+  'delegated-admin': {
+    primaryColor: '#ff6d00', // Orange for delegated admin
+  },
   'school-admin': {
     primaryColor: '#ff6d00', // Orange for school admin
   },
-  'teacher': {
-    primaryColor: '#2e7d32', // Green for teacher
+  'delgated-school-admin': {
+    primaryColor: '#ff6d00', // Orange for delegated school admin
+  },
+  'staff': {
+    primaryColor: '#2e7d32', // Green for staff
   },
   'student': {
     primaryColor: '#1976d2', // Blue for student

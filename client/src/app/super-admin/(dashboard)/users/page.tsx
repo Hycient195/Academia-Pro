@@ -71,7 +71,7 @@ export default function UsersPage() {
     const colors = {
       super_admin: "bg-red-100 text-red-800",
       "school-admin": "bg-blue-100 text-blue-800",
-      teacher: "bg-green-100 text-green-800",
+      staff: "bg-green-100 text-green-800",
       student: "bg-purple-100 text-purple-800",
       parent: "bg-orange-100 text-orange-800"
     } as const
@@ -245,7 +245,7 @@ export default function UsersPage() {
               options={[
                 { value: "all", text: "All Roles" },
                 { value: "school-admin", text: "School Admin" },
-                { value: "teacher", text: "Teacher" },
+                { value: "staff", text: "Staff" },
                 { value: "student", text: "Student" },
                 { value: "parent", text: "Parent" }
               ]}

@@ -27,7 +27,7 @@ export class User {
 
   @Column({
     type: 'enum',
-    enum: ['super-admin', 'delegated-super-admin', 'school-admin', 'teacher', 'student', 'parent'],
+    enum: ['super-admin', 'delegated-super-admin', 'school-admin', 'delegated-school-admin', 'staff', 'student', 'parent'],
     default: 'student'
   })
   role: IUserPermissionRole;
@@ -172,8 +172,8 @@ export class User {
   // @OneToMany(() => Student, student => student.user)
   // students: Student[];
 
-  // @OneToMany(() => Teacher, teacher => teacher.user)
-  // teachers: Teacher[];
+  // @OneToMany(() => Staff, staff => staff.user)
+  // staff: Staff[];
 
   // @OneToMany(() => Parent, parent => parent.user)
   // parents: Parent[];

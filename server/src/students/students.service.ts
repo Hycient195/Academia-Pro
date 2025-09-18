@@ -525,81 +525,264 @@ export class StudentsService {
     return StudentResponseDto.fromEntity(savedStudent);
   }
 
-  async executePromotion(promotionDto: any): Promise<{ jobId: string; message: string }> {
-    const { schoolId, userId } = promotionDto;
+  async executePromotion(promotionDto: any): Promise<{
+    promotedStudents: number;
+    studentIds: string[];
+    errors: Array<{ studentId: string; message: string; row?: number }>;
+  }> {
+    const { schoolId, studentIds, targetGradeCode, userId } = promotionDto;
 
-    // Add job to queue for processing
-    const job = await this.queueService.addJob(JobType.BATCH_PROMOTION, {
-      operationId: `batch-promotion-${Date.now()}`,
-      userId,
-      schoolId,
-      data: promotionDto,
-    });
-
-    return {
-      jobId: job.id.toString(),
-      message: 'Promotion job queued successfully. You will be notified when processing is complete.',
+    const results = {
+      promotedStudents: 0,
+      studentIds: [] as string[],
+      errors: [] as Array<{ studentId: string; message: string; row?: number }>,
     };
+
+    for (const studentId of studentIds) {
+      try {
+        const student = await this.findStudentEntity(studentId);
+
+        // Validate promotion eligibility
+        if (student.status !== StudentStatus.ACTIVE) {
+          results.errors.push({
+            studentId,
+            message: 'Only active students can be promoted',
+          });
+          continue;
+        }
+
+        // Update student grade
+        student.gradeCode = targetGradeCode as any;
+        student.stage = this.getStageFromGradeCode(targetGradeCode) as any;
+
+        // Add to promotion history
+        student.promotionHistory.push({
+          fromGrade: student.gradeCode as any,
+          toGrade: targetGradeCode as any,
+          academicYear: new Date().getFullYear().toString(),
+          performedBy: userId || 'system',
+          timestamp: new Date(),
+          reason: promotionDto.reason || 'Batch promotion',
+        });
+
+        await this.studentsRepository.save(student);
+
+        results.promotedStudents++;
+        results.studentIds.push(studentId);
+
+        // Audit logging
+        try {
+          await this.studentAuditService.logStudentUpdated(
+            studentId,
+            userId || null,
+            'System',
+            'admin',
+            { gradeCode: student.gradeCode },
+            { gradeCode: targetGradeCode },
+            ['gradeCode'],
+            'Batch promotion',
+          );
+        } catch (auditError) {
+          console.error('Failed to log student promotion audit:', auditError);
+        }
+      } catch (error) {
+        results.errors.push({
+          studentId,
+          message: error.message || 'Unknown error occurred',
+        });
+      }
+    }
+
+    return results;
   }
 
   /**
-   * Bulk import students from CSV data - now uses job queue
+   * Bulk import students from CSV data
    */
-  async bulkImport(bulkImportDto: any): Promise<{ jobId: string; message: string }> {
+  async bulkImport(bulkImportDto: any): Promise<{
+    total: number;
+    successful: number;
+    failed: number;
+    errors: Array<{ row: number; message: string; data?: any }>;
+    importedIds: string[];
+  }> {
     const { schoolId, data, userId } = bulkImportDto;
 
-    // Add job to queue for processing
-    const job = await this.queueService.addJob(JobType.BULK_IMPORT, {
-      operationId: `bulk-import-${Date.now()}`,
-      userId,
-      schoolId,
-      data: { students: data },
-    });
-
-    return {
-      jobId: job.id.toString(),
-      message: 'Bulk import job queued successfully. You will be notified when processing is complete.',
+    const results = {
+      total: data.length,
+      successful: 0,
+      failed: 0,
+      errors: [] as Array<{ row: number; message: string; data?: any }>,
+      importedIds: [] as string[],
     };
+
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      try {
+        const studentData = {
+          ...row,
+          schoolId,
+          userId,
+          stage: this.getStageFromGradeCode(row.gradeCode),
+          admissionDate: new Date(),
+          status: StudentStatus.ACTIVE,
+          enrollmentType: 'regular' as const,
+          isBoarding: false,
+          parentInfo: {
+            fatherFirstName: row.fatherName?.split(' ')[0] || 'Unknown',
+            fatherLastName: row.fatherName?.split(' ').slice(1).join(' ') || 'Father',
+            motherFirstName: row.motherName?.split(' ')[0] || 'Unknown',
+            motherLastName: row.motherName?.split(' ').slice(1).join(' ') || 'Mother',
+          },
+        };
+
+        const student = await this.create(studentData);
+        results.successful++;
+        results.importedIds.push(student.id);
+      } catch (error) {
+        results.failed++;
+        results.errors.push({
+          row: i + 1,
+          message: error.message || 'Unknown error',
+          data: row,
+        });
+      }
+    }
+
+    return results;
   }
 
   /**
-   * Batch graduation of students - now uses job queue
+   * Batch graduation of students
    */
-  async batchGraduate(graduationDto: IGraduationRequestDto & { userId?: string }): Promise<{ jobId: string; message: string }> {
-    const { schoolId, userId } = graduationDto;
+  async batchGraduate(graduationDto: IGraduationRequestDto & { userId?: string }): Promise<{
+    graduatedStudents: number;
+    studentIds: string[];
+    errors: Array<{ studentId: string; message: string; row?: number }>;
+  }> {
+    const { schoolId, studentIds, graduationYear, userId } = graduationDto;
 
-    // Add job to queue for processing
-    const job = await this.queueService.addJob(JobType.BATCH_GRADUATION, {
-      operationId: `batch-graduation-${Date.now()}`,
-      userId,
-      schoolId,
-      data: graduationDto,
-    });
-
-    return {
-      jobId: job.id.toString(),
-      message: 'Graduation job queued successfully. You will be notified when processing is complete.',
+    const results = {
+      graduatedStudents: 0,
+      studentIds: [] as string[],
+      errors: [] as Array<{ studentId: string; message: string; row?: number }>,
     };
+
+    for (const studentId of studentIds) {
+      try {
+        const student = await this.findStudentEntity(studentId);
+
+        // Validate graduation eligibility
+        const eligibilityCheck = this.validateGraduationEligibility(student);
+        if (!eligibilityCheck.eligible) {
+          results.errors.push({
+            studentId,
+            message: eligibilityCheck.reason || 'Student does not meet graduation requirements',
+          });
+          continue;
+        }
+
+        // Check additional clearance
+        if (!this.checkAdditionalClearance(student)) {
+          results.errors.push({
+            studentId,
+            message: 'Student does not have required clearances (library, hostel, medical)',
+          });
+          continue;
+        }
+
+        // Graduate the student
+        student.status = StudentStatus.GRADUATED;
+        student.graduationYear = graduationYear || new Date().getFullYear();
+
+        await this.studentsRepository.save(student);
+
+        results.graduatedStudents++;
+        results.studentIds.push(studentId);
+
+        // Audit logging
+        try {
+          await this.studentAuditService.logStudentGraduated(
+            studentId,
+            userId || null,
+            'System',
+            'admin',
+            new Date(),
+          );
+        } catch (auditError) {
+          console.error('Failed to log student graduation audit:', auditError);
+        }
+      } catch (error) {
+        results.errors.push({
+          studentId,
+          message: error.message || 'Unknown error occurred',
+        });
+      }
+    }
+
+    return results;
   }
 
   /**
-   * Batch transfer of students - now uses job queue
+   * Batch transfer of students
    */
-  async batchTransfer(transferDto: any): Promise<{ jobId: string; message: string }> {
-    const { schoolId, userId } = transferDto;
+  async batchTransfer(transferDto: any): Promise<{
+    transferred: number;
+    studentIds: string[];
+    errors: Array<{ studentId: string; message: string; row?: number }>;
+  }> {
+    const { studentIds, targetSchoolId, transferReason, userId } = transferDto;
 
-    // Add job to queue for processing
-    const job = await this.queueService.addJob(JobType.BATCH_TRANSFER, {
-      operationId: `batch-transfer-${Date.now()}`,
-      userId,
-      schoolId,
-      data: transferDto,
-    });
-
-    return {
-      jobId: job.id.toString(),
-      message: 'Transfer job queued successfully. You will be notified when processing is complete.',
+    const results = {
+      transferred: 0,
+      studentIds: [] as string[],
+      errors: [] as Array<{ studentId: string; message: string; row?: number }>,
     };
+
+    for (const studentId of studentIds) {
+      try {
+        const student = await this.findStudentEntity(studentId);
+
+        // Add to transferHistory
+        student.transferHistory.push({
+          toSchool: targetSchoolId,
+          reason: transferReason || 'Batch transfer',
+          timestamp: new Date(),
+          type: 'external' as const,
+        });
+
+        student.status = StudentStatus.TRANSFERRED;
+        student.schoolId = targetSchoolId;
+
+        await this.studentsRepository.save(student);
+
+        results.transferred++;
+        results.studentIds.push(studentId);
+
+        // Audit logging
+        try {
+          await this.studentAuditService.logStudentTransfer(
+            studentId,
+            userId || null,
+            'System',
+            'admin',
+            student.schoolId,
+            null,
+            targetSchoolId,
+            null,
+          );
+        } catch (auditError) {
+          console.error('Failed to log student transfer audit:', auditError);
+        }
+      } catch (error) {
+        results.errors.push({
+          studentId,
+          message: error.message || 'Unknown error occurred',
+        });
+      }
+    }
+
+    return results;
   }
 
   /**

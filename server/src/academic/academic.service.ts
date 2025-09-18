@@ -985,7 +985,7 @@ export class AcademicService {
   }
 
   async getWorkloadAnalytics(schoolId: string, academicYear: string): Promise<{
-    totalTeachers: number;
+    totalStaff: number;
     optimalWorkload: number;
     overLoaded: number;
     underLoaded: number;
@@ -996,7 +996,7 @@ export class AcademicService {
       where: { schoolId, academicYear },
     });
 
-    const totalTeachers = workloads.length;
+    const totalStaff = workloads.length;
     const optimalWorkload = workloads.filter(w => w.workloadStatus === WorkloadStatus.OPTIMAL).length;
     const overLoaded = workloads.filter(w => w.isOverloaded).length;
     const underLoaded = workloads.filter(w => w.isUnderloaded).length;
@@ -1006,7 +1006,7 @@ export class AcademicService {
       : 0;
 
     return {
-      totalTeachers,
+      totalStaff,
       optimalWorkload,
       overLoaded,
       underLoaded,
@@ -1023,7 +1023,7 @@ export class AcademicService {
       totalCurricula,
       totalClasses,
       totalStudents,
-      totalTeachers,
+      totalStaff,
       curriculumStandards,
       studentEnrollments,
       substituteRequests,
@@ -1050,7 +1050,7 @@ export class AcademicService {
         totalCurricula,
         totalClasses,
         totalStudents,
-        totalTeachers,
+        totalStaff,
         totalCurriculumStandards: curriculumStandards,
         totalEnrollments: studentEnrollments,
         totalSubstituteRequests: substituteRequests,
@@ -1350,7 +1350,7 @@ export class AcademicService {
 
     // Analyze current workload distribution
     const workloadAnalysis = {
-      totalTeachers: workloads.length,
+      totalStaff: workloads.length,
       optimalWorkload: workloads.filter(w => w.isOptimal).length,
       overLoaded: workloads.filter(w => w.isOverloaded).length,
       underLoaded: workloads.filter(w => w.isUnderloaded).length,

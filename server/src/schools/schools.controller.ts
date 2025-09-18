@@ -89,7 +89,7 @@ export class SchoolsController {
   }
 
   @Get('active')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER, EUserRole.STUDENT, EUserRole.PARENT)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF, EUserRole.STUDENT, EUserRole.PARENT)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all active schools' })
   @ApiResponse({
@@ -166,7 +166,7 @@ export class SchoolsController {
   }
 
   @Get('code/:code')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.TEACHER, EUserRole.STUDENT, EUserRole.PARENT)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN, EUserRole.STAFF, EUserRole.STUDENT, EUserRole.PARENT)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get school by code' })
   @ApiResponse({

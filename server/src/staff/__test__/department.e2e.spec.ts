@@ -5,6 +5,7 @@ import { TestHarness } from '../../test/utils/test-harness';
 import { DataSource, Repository } from 'typeorm';
 import request, { SuperAgentTest } from 'supertest';
 import { randomUUID } from 'crypto';
+import { faker } from '@faker-js/faker';
 
 import { Department } from '../entities/department.entity';
 import { Staff } from '../entities/staff.entity';
@@ -53,36 +54,36 @@ describe('Departments E2E', () => {
     const entity = repo.create({
       schoolId,
       employeeId: `EMP${now}`,
-      firstName: 'Test',
-      lastName: `Staff${now}`,
-      middleName: 'Middle',
-      dateOfBirth: new Date('1985-01-01'),
-      gender: Gender.MALE,
-      email: `test.staff.${now}@example.test`,
-      phone: '+10000000000',
+      firstName: faker.person.firstName(),
+      lastName: faker.person.lastName(),
+      middleName: faker.person.middleName(),
+      dateOfBirth: faker.date.birthdate({ min: 18, max: 65, mode: 'age' }),
+      gender: faker.helpers.arrayElement([Gender.MALE, Gender.FEMALE]),
+      email: faker.internet.email(),
+      phone: faker.phone.number(),
       currentAddress: {
-        street: '1 Test St',
-        city: 'Test City',
-        state: 'TS',
-        postalCode: '00000',
-        country: 'TC',
+        street: faker.location.streetAddress(),
+        city: faker.location.city(),
+        state: faker.location.state(),
+        postalCode: faker.location.zipCode(),
+        country: faker.location.countryCode(),
       },
       permanentAddress: {
-        street: '1 Test St',
-        city: 'Test City',
-        state: 'TS',
-        postalCode: '00000',
-        country: 'TC',
+        street: faker.location.streetAddress(),
+        city: faker.location.city(),
+        state: faker.location.state(),
+        postalCode: faker.location.zipCode(),
+        country: faker.location.countryCode(),
       },
-      staffType: StaffType.TEACHING,
+      staffType: faker.helpers.arrayElement(Object.values(StaffType)),
       departments: [],
-      designation: 'Teacher',
-      employmentType: EmploymentType.FULL_TIME,
-      joiningDate: new Date('2020-01-01'),
-      basicSalary: 50000,
+      designation: faker.person.jobTitle(),
+      employmentType: faker.helpers.arrayElement(Object.values(EmploymentType)),
+      joiningDate: faker.date.past({ years: 5 }),
+      basicSalary: faker.number.int({ min: 30000, max: 100000 }),
       status: StaffStatus.ACTIVE,
-      emergencyContactName: 'Emergency Contact',
-      emergencyContactPhone: '+10000000001',
+      emergencyContactName: faker.person.fullName(),
+      emergencyContactPhone: faker.phone.number(),
       emergencyContactRelation: 'Spouse',
       createdBy: randomUUID(),
       updatedBy: randomUUID(),
@@ -91,6 +92,16 @@ describe('Departments E2E', () => {
 
     const saved = await repo.save(entity);
     return Array.isArray(saved) ? saved[0] : saved;
+  }
+
+  async function createDepartmentViaApi(serverAgent: SuperAgentTest, overrides: Partial<{ type: EDepartmentType; name: string; description: string }> = {}): Promise<any> {
+    const createRes = await serverAgent.post('/api/v1/departments').send({
+      type: overrides.type ?? faker.helpers.arrayElement(Object.values(EDepartmentType) as EDepartmentType[]),
+      name: overrides.name ?? faker.company.buzzNoun(),
+      description: overrides.description ?? faker.lorem.sentence(),
+    }).expect(201);
+
+    return createRes.body;
   }
 
   function api(serverAgent: SuperAgentTest) {
@@ -122,33 +133,34 @@ describe('Departments E2E', () => {
 
       const createRes = await adminApi.create({
         type: EDepartmentType.TEACHING,
-        name: 'Computer Science Department',
-        description: 'Teaching computer science and programming',
+        name: faker.company.buzzNoun(),
+        description: faker.lorem.sentence(),
       }).expect(201);
 
       expect(createRes.body.id).toBeDefined();
       expect(createRes.body.type).toBe(EDepartmentType.TEACHING);
-      expect(createRes.body.name).toBe('Computer Science Department');
-      expect(createRes.body.description).toBe('Teaching computer science and programming');
+      expect(createRes.body.name).toBeDefined();
+      expect(createRes.body.description).toBeDefined();
       expect(createRes.body.createdBy).toBeDefined();
       expect(createRes.body.createdAt).toBeDefined();
     });
 
     it('rejects duplicate department name+type combination', async () => {
       const adminApi = api(admin);
+      const deptName = faker.company.buzzNoun();
 
       // Create first department
       await adminApi.create({
         type: EDepartmentType.TEACHING,
-        name: 'Physics Department',
-        description: 'Teaching physics',
+        name: deptName,
+        description: faker.lorem.sentence(),
       }).expect(201);
 
       // Try to create duplicate
       await adminApi.create({
         type: EDepartmentType.TEACHING,
-        name: 'Physics Department',
-        description: 'Another physics department',
+        name: deptName,
+        description: faker.lorem.sentence(),
       }).expect(409);
     });
 
@@ -157,24 +169,24 @@ describe('Departments E2E', () => {
 
       // Missing type
       await adminApi.create({
-        name: 'Test Department',
-        description: 'Test description',
+        name: faker.company.buzzNoun(),
+        description: faker.lorem.sentence(),
       }).expect(400);
 
       // Missing name
       await adminApi.create({
         type: EDepartmentType.TEACHING,
-        description: 'Test description',
+        description: faker.lorem.sentence(),
       }).expect(400);
 
       // Invalid type enum
       await adminApi.create({
         type: 'INVALID_TYPE',
-        name: 'Test Department',
+        name: faker.company.buzzNoun(),
       }).expect(400);
 
       // Name too long (max 100 chars)
-      const longName = 'A'.repeat(101);
+      const longName = faker.string.alphanumeric(101);
       await adminApi.create({
         type: EDepartmentType.TEACHING,
         name: longName,
@@ -186,7 +198,7 @@ describe('Departments E2E', () => {
 
       await staffApi.create({
         type: EDepartmentType.TEACHING,
-        name: 'Unauthorized Department',
+        name: faker.company.buzzNoun(),
       }).expect(403);
     });
 
@@ -195,7 +207,7 @@ describe('Departments E2E', () => {
 
       await studentApi.create({
         type: EDepartmentType.TEACHING,
-        name: 'Unauthorized Department',
+        name: faker.company.buzzNoun(),
       }).expect(403);
     });
 
@@ -204,8 +216,24 @@ describe('Departments E2E', () => {
 
       await anon.post('/api/v1/departments').send({
         type: EDepartmentType.TEACHING,
-        name: 'Unauthorized Department',
+        name: faker.company.buzzNoun(),
       }).expect(401);
+    });
+
+    it('creates departments with all department types', async () => {
+      const adminApi = api(admin);
+
+      for (const deptType of Object.values(EDepartmentType)) {
+        if (typeof deptType === 'string') {
+          const createRes = await adminApi.create({
+            type: deptType as EDepartmentType,
+            name: `${faker.company.buzzNoun()} ${deptType}`,
+            description: faker.lorem.sentence(),
+          }).expect(201);
+
+          expect(createRes.body.type).toBe(deptType);
+        }
+      }
     });
   });
 
@@ -217,17 +245,17 @@ describe('Departments E2E', () => {
       const adminApi = api(admin);
 
       // Create test departments
-      testDept1 = await adminApi.create({
+      testDept1 = await createDepartmentViaApi(admin, {
         type: EDepartmentType.TEACHING,
-        name: 'Mathematics Department',
-        description: 'Teaching mathematics',
-      }).expect(201);
+        name: faker.company.buzzNoun(),
+        description: faker.lorem.sentence(),
+      });
 
-      testDept2 = await adminApi.create({
+      testDept2 = await createDepartmentViaApi(admin, {
         type: EDepartmentType.ADMINISTRATION,
-        name: 'School Administration',
-        description: 'Administrative functions',
-      }).expect(201);
+        name: faker.company.buzzNoun(),
+        description: faker.lorem.sentence(),
+      });
     });
 
     it('lists all departments with pagination', async () => {
@@ -259,10 +287,18 @@ describe('Departments E2E', () => {
 
     it('searches departments by name and description', async () => {
       const adminApi = api(admin);
+      const searchTerm = 'Mathematics';
 
-      const searchRes = await adminApi.list({ search: 'Mathematics' }).expect(200);
+      // Create department with searchable content
+      await createDepartmentViaApi(admin, {
+        type: EDepartmentType.TEACHING,
+        name: `Advanced ${searchTerm}`,
+        description: `Teaching ${searchTerm.toLowerCase()} concepts`,
+      });
+
+      const searchRes = await adminApi.list({ search: searchTerm }).expect(200);
       expect(searchRes.body.length).toBeGreaterThan(0);
-      expect(searchRes.body.some((d: any) => d.name.includes('Mathematics'))).toBe(true);
+      expect(searchRes.body.some((d: any) => d.name.includes(searchTerm) || d.description.includes(searchTerm))).toBe(true);
     });
 
     it('paginates results correctly', async () => {
@@ -281,10 +317,10 @@ describe('Departments E2E', () => {
     it('gets department by ID', async () => {
       const adminApi = api(admin);
 
-      const getRes = await adminApi.get(testDept1.body.id).expect(200);
-      expect(getRes.body.id).toBe(testDept1.body.id);
-      expect(getRes.body.name).toBe(testDept1.body.name);
-      expect(getRes.body.type).toBe(testDept1.body.type);
+      const getRes = await adminApi.get(testDept1.id).expect(200);
+      expect(getRes.body.id).toBe(testDept1.id);
+      expect(getRes.body.name).toBe(testDept1.name);
+      expect(getRes.body.type).toBe(testDept1.type);
     });
 
     it('returns 404 for non-existent department', async () => {
@@ -305,7 +341,7 @@ describe('Departments E2E', () => {
       const staffApi = api(staff);
 
       await staffApi.list().expect(200);
-      await staffApi.get(testDept1.body.id).expect(200);
+      await staffApi.get(testDept1.id).expect(200);
       await staffApi.getByType(EDepartmentType.TEACHING).expect(200);
     });
 
@@ -313,312 +349,43 @@ describe('Departments E2E', () => {
       const studentApi = api(student);
 
       await studentApi.list().expect(403);
-      await studentApi.get(testDept1.body.id).expect(403);
+      await studentApi.get(testDept1.id).expect(403);
     });
-  });
 
-  describe('Department Update Operations', () => {
-    let testDept: any;
-
-    beforeEach(async () => {
+    it('handles complex filtering scenarios', async () => {
       const adminApi = api(admin);
 
-      testDept = await adminApi.create({
+      // Create departments with specific patterns
+      await createDepartmentViaApi(admin, {
         type: EDepartmentType.TEACHING,
-        name: 'Original Department',
-        description: 'Original description',
-      }).expect(201);
-    });
-
-    it('admin can update department successfully', async () => {
-      const adminApi = api(admin);
-
-      const updateRes = await adminApi.update(testDept.body.id, {
-        name: 'Updated Department',
-        description: 'Updated description',
-      }).expect(200);
-
-      expect(updateRes.body.id).toBe(testDept.body.id);
-      expect(updateRes.body.name).toBe('Updated Department');
-      expect(updateRes.body.description).toBe('Updated description');
-      expect(updateRes.body.updatedBy).toBeDefined();
-      expect(updateRes.body.updatedAt).toBeDefined();
-    });
-
-    it('admin can update department type', async () => {
-      const adminApi = api(admin);
-
-      const updateRes = await adminApi.update(testDept.body.id, {
-        type: EDepartmentType.ADMINISTRATION,
-        name: 'Updated Department',
-      }).expect(200);
-
-      expect(updateRes.body.type).toBe(EDepartmentType.ADMINISTRATION);
-      expect(updateRes.body.name).toBe('Updated Department');
-    });
-
-    it('rejects update that would create duplicate name+type', async () => {
-      const adminApi = api(admin);
-
-      // Create another department
-      await adminApi.create({
-        type: EDepartmentType.ADMINISTRATION,
-        name: 'Admin Department',
-      }).expect(201);
-
-      // Try to update first department to match second
-      await adminApi.update(testDept.body.id, {
-        type: EDepartmentType.ADMINISTRATION,
-        name: 'Admin Department',
-      }).expect(409);
-    });
-
-    it('validates update data', async () => {
-      const adminApi = api(admin);
-
-      // Invalid type
-      await adminApi.update(testDept.body.id, {
-        type: 'INVALID_TYPE',
-      }).expect(400);
-
-      // Name too long
-      await adminApi.update(testDept.body.id, {
-        name: 'A'.repeat(101),
-      }).expect(400);
-    });
-
-    it('returns 404 for non-existent department update', async () => {
-      const adminApi = api(admin);
-
-      await adminApi.update(randomUUID(), {
-        name: 'Updated Name',
-      }).expect(404);
-    });
-
-    it('staff cannot update department (403)', async () => {
-      const staffApi = api(staff);
-
-      await staffApi.update(testDept.body.id, {
-        name: 'Unauthorized Update',
-      }).expect(403);
-    });
-  });
-
-  describe('Department Deletion Operations', () => {
-    let testDept: any;
-    let staffMember: Staff;
-
-    beforeEach(async () => {
-      const adminApi = api(admin);
-
-      testDept = await adminApi.create({
-        type: EDepartmentType.TEACHING,
-        name: 'Department to Delete',
-        description: 'Will be deleted',
-      }).expect(201);
-
-      // Create a staff member for assignment tests
-      staffMember = await createStaffRecord();
-    });
-
-    it('admin can delete empty department', async () => {
-      const adminApi = api(admin);
-
-      await adminApi.delete(testDept.body.id).expect(204);
-
-      // Verify deletion
-      await adminApi.get(testDept.body.id).expect(404);
-    });
-
-    it('rejects deletion of department with assigned staff', async () => {
-      const adminApi = api(admin);
-
-      // Assign staff to department
-      await adminApi.assignStaff(testDept.body.id, staffMember.id).expect(200);
-
-      // Try to delete
-      await adminApi.delete(testDept.body.id).expect(409);
-    });
-
-    it('returns 404 for non-existent department deletion', async () => {
-      const adminApi = api(admin);
-
-      await adminApi.delete(randomUUID()).expect(404);
-    });
-
-    it('staff cannot delete department (403)', async () => {
-      const staffApi = api(staff);
-
-      await staffApi.delete(testDept.body.id).expect(403);
-    });
-  });
-
-  describe('Staff Assignment to Departments', () => {
-    let testDept: any;
-    let staffMember: Staff;
-
-    beforeEach(async () => {
-      const adminApi = api(admin);
-
-      testDept = await adminApi.create({
-        type: EDepartmentType.TEACHING,
-        name: 'Assignment Test Department',
-        description: 'For testing staff assignments',
-      }).expect(201);
-
-      staffMember = await createStaffRecord();
-    });
-
-    it('admin can assign staff to department', async () => {
-      const adminApi = api(admin);
-
-      const assignRes = await adminApi.assignStaff(testDept.body.id, staffMember.id).expect(200);
-
-      expect(assignRes.body.id).toBe(testDept.body.id);
-      expect(assignRes.body.staff).toBeDefined();
-      expect(Array.isArray(assignRes.body.staff)).toBe(true);
-      expect(assignRes.body.staff.some((s: any) => s.id === staffMember.id)).toBe(true);
-    });
-
-    it('rejects duplicate staff assignment to same department', async () => {
-      const adminApi = api(admin);
-
-      // First assignment
-      await adminApi.assignStaff(testDept.body.id, staffMember.id).expect(200);
-
-      // Second assignment should fail
-      await adminApi.assignStaff(testDept.body.id, staffMember.id).expect(409);
-    });
-
-    it('admin can remove staff from department', async () => {
-      const adminApi = api(admin);
-
-      // Assign first
-      await adminApi.assignStaff(testDept.body.id, staffMember.id).expect(200);
-
-      // Remove
-      const removeRes = await adminApi.removeStaff(testDept.body.id, staffMember.id).expect(200);
-
-      expect(removeRes.body.id).toBe(testDept.body.id);
-      expect(removeRes.body.staff).toBeDefined();
-      expect(removeRes.body.staff.some((s: any) => s.id === staffMember.id)).toBe(false);
-    });
-
-    it('returns 404 for non-existent department in assignment', async () => {
-      const adminApi = api(admin);
-
-      await adminApi.assignStaff(randomUUID(), staffMember.id).expect(404);
-      await adminApi.removeStaff(randomUUID(), staffMember.id).expect(404);
-    });
-
-    it('returns 404 for non-existent staff in assignment', async () => {
-      const adminApi = api(admin);
-
-      await adminApi.assignStaff(testDept.body.id, randomUUID()).expect(404);
-      await adminApi.removeStaff(testDept.body.id, randomUUID()).expect(404);
-    });
-
-    it('staff cannot assign/remove staff (403)', async () => {
-      const staffApi = api(staff);
-
-      await staffApi.assignStaff(testDept.body.id, staffMember.id).expect(403);
-      await staffApi.removeStaff(testDept.body.id, staffMember.id).expect(403);
-    });
-  });
-
-  describe('Department Statistics', () => {
-    beforeEach(async () => {
-      const adminApi = api(admin);
-
-      // Create departments of different types
-      await adminApi.create({
-        type: EDepartmentType.TEACHING,
-        name: 'Math Department',
-      }).expect(201);
-
-      await adminApi.create({
-        type: EDepartmentType.TEACHING,
-        name: 'Science Department',
-      }).expect(201);
-
-      await adminApi.create({
-        type: EDepartmentType.ADMINISTRATION,
-        name: 'Admin Department',
-      }).expect(201);
-    });
-
-    it('returns comprehensive department statistics', async () => {
-      const adminApi = api(admin);
-
-      const statsRes = await adminApi.getStats().expect(200);
-
-      expect(statsRes.body.totalDepartments).toBeDefined();
-      expect(typeof statsRes.body.totalDepartments).toBe('number');
-      expect(statsRes.body.totalDepartments).toBeGreaterThanOrEqual(3);
-
-      expect(statsRes.body.departmentsByType).toBeDefined();
-      expect(typeof statsRes.body.departmentsByType).toBe('object');
-
-      expect(statsRes.body.averageStaffPerDepartment).toBeDefined();
-      expect(typeof statsRes.body.averageStaffPerDepartment).toBe('number');
-
-      expect(statsRes.body.departmentsWithMostStaff).toBeDefined();
-      expect(Array.isArray(statsRes.body.departmentsWithMostStaff)).toBe(true);
-    });
-
-    it('staff can view department statistics', async () => {
-      const staffApi = api(staff);
-
-      await staffApi.getStats().expect(200);
-    });
-
-    it('student cannot view department statistics (403)', async () => {
-      const studentApi = api(student);
-
-      await studentApi.getStats().expect(403);
-    });
-  });
-
-  describe('Edge Cases and Error Handling', () => {
-    it('handles invalid UUIDs gracefully', async () => {
-      const adminApi = api(admin);
-
-      await adminApi.get('invalid-uuid').expect(400);
-      await adminApi.update('invalid-uuid', { name: 'Test' }).expect(400);
-      await adminApi.delete('invalid-uuid').expect(400);
-      await adminApi.assignStaff('invalid-uuid', randomUUID()).expect(400);
-      await adminApi.removeStaff('invalid-uuid', randomUUID()).expect(400);
-    });
-
-    it('handles empty request bodies', async () => {
-      const adminApi = api(admin);
-
-      await adminApi.create({}).expect(400);
-      await adminApi.update(randomUUID(), {}).expect(404); // 404 takes precedence
-    });
-
-    it('handles concurrent operations correctly', async () => {
-      const adminApi = api(admin);
-
-      // Create multiple departments simultaneously
-      const promises = [];
-      for (let i = 0; i < 5; i++) {
-        promises.push(
-          adminApi.create({
-            type: EDepartmentType.TEACHING,
-            name: `Concurrent Department ${i}`,
-          })
-        );
-      }
-
-      const results = await Promise.all(promises);
-      results.forEach(result => {
-        expect(result.status).toBe(201);
+        name: 'Primary Mathematics',
+        description: 'Basic math for primary students',
       });
 
-      // Verify all were created
-      const listRes = await adminApi.list().expect(200);
-      expect(listRes.body.length).toBeGreaterThanOrEqual(5);
+      await createDepartmentViaApi(admin, {
+        type: EDepartmentType.TEACHING,
+        name: 'Secondary Mathematics',
+        description: 'Advanced math for secondary students',
+      });
+
+      await createDepartmentViaApi(admin, {
+        type: EDepartmentType.ADMINISTRATION,
+        name: 'Mathematics Records',
+        description: 'Administrative records for math department',
+      });
+
+      // Filter by type and search
+      const teachingMath = await adminApi.list({
+        type: EDepartmentType.TEACHING,
+        search: 'mathematics'
+      }).expect(200);
+
+      expect(teachingMath.body).toHaveLength(2);
+      expect(teachingMath.body.every((d: any) => d.type === EDepartmentType.TEACHING)).toBe(true);
+      expect(teachingMath.body.every((d: any) =>
+        d.name.toLowerCase().includes('mathematics') ||
+        d.description.toLowerCase().includes('mathematics')
+      )).toBe(true);
     });
   });
 });

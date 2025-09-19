@@ -142,8 +142,8 @@ export default function StaffPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 md:gap-6">
-      <div className="flex flex-col gap-4 md:gap-6">
+    <div className="flex flex-1 flex-col gap-4 md:gap-4">
+      <div className="flex flex-col gap-4 md:gap-4">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -213,7 +213,7 @@ export default function StaffPage() {
           </Card>
         </div>
 
-        <Tabs defaultValue="directory" className="space-y-4">
+        <Tabs defaultValue="directory" className="space-y-2">
           <TabsList>
             <TabsTrigger value="directory">Staff Directory</TabsTrigger>
             <TabsTrigger value="departments">Departments</TabsTrigger>
@@ -274,7 +274,7 @@ export default function StaffPage() {
                 </div>
 
                 {/* Staff Table */}
-                <div className="mt-6">
+                <div className="mt-4">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -350,7 +350,7 @@ export default function StaffPage() {
 
                 {/* Pagination */}
                 {filteredStaff.length > 0 && (
-                  <div className="mt-6">
+                  <div className="mt-4">
                     <Pagination
                       currentPage={currentPage}
                       totalPages={totalPages}
@@ -369,7 +369,7 @@ export default function StaffPage() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {departments.map((dept) => (
                 <Card key={dept.name} className="cursor-pointer hover:shadow-md transition-shadow">
-                  <CardContent className="p-6">
+                  <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-4">
                       <div className={`w-3 h-3 rounded-full ${dept.color}`} />
                       <Badge variant="secondary">{dept.count} members</Badge>
@@ -390,7 +390,7 @@ export default function StaffPage() {
                 <CardTitle>Staff Attendance Overview</CardTitle>
                 <CardDescription>Monthly attendance statistics for all staff members</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-4">
                 {staffMembers.slice(0, 5).map((staff) => (
                   <div key={staff.id} className="space-y-2">
                     <div className="flex items-center justify-between">

@@ -73,15 +73,19 @@ export class SchoolsController {
     description: 'Schools retrieved successfully',
   })
   findAll(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
     @Query('type') type?: string,
     @Query('status') status?: string,
     @Query('search') search?: string,
   ) {
+    // Parse numeric parameters
+    const parsedPage = page ? parseInt(page, 10) : undefined;
+    const parsedLimit = limit ? parseInt(limit, 10) : undefined;
+
     return this.schoolsService.findAll({
-      page,
-      limit,
+      page: parsedPage,
+      limit: parsedLimit,
       type: type as any,
       status: status as any,
       search,
@@ -114,15 +118,20 @@ export class SchoolsController {
   })
   getSchoolsForTransfer(
     @Req() request: any,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
     @Query('search') search?: string,
     @Query('excludeCurrentSchool') excludeCurrentSchool?: boolean
   ) {
     const user = request.user;
+
+    // Parse numeric parameters
+    const parsedPage = page ? parseInt(page, 10) : undefined;
+    const parsedLimit = limit ? parseInt(limit, 10) : undefined;
+
     return this.schoolsService.getSchoolsForTransfer({
-      page,
-      limit,
+      page: parsedPage,
+      limit: parsedLimit,
       search,
       excludeCurrentSchool: excludeCurrentSchool || true,
       currentUserSchoolId: user?.schoolId

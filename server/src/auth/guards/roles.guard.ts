@@ -34,13 +34,34 @@ export class RolesGuard implements CanActivate {
 
     // Check if user has required role (handle both single role and role array)
     const userRoles = Array.isArray(user.roles) ? user.roles : [user.roles];
+
+    console.log('RolesGuard Debug:', {
+      userId: user.id,
+      userRoles,
+      requiredRoles,
+      path: request.url,
+      method: request.method
+    });
+
+    // Delegated roles are not auto-escalated.
+    // They must be explicitly listed in @Roles() metadata for access on a route.
+    // This prevents delegated-school-admin from performing school-admin writes unless allowed.
+
     const hasRequiredRole = requiredRoles.some((role) => userRoles.includes(role));
 
+    console.log('Final Role Check:', {
+      hasRequiredRole,
+      userRoles,
+      requiredRoles
+    });
+
     if (!hasRequiredRole) {
+      console.log('Denying access - no required role found');
       throw new ForbiddenException(
         `Access denied. Required roles: ${requiredRoles.join(', ')}`
       );
     }
+    console.log('Allowing access - user has required role');
     return true;
   }
 }

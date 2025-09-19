@@ -13,10 +13,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FormText, FormSelect, FormTextArea } from '@/components/ui/form/form-components';
 import { useUpdateDepartmentMutation } from '@/redux/api/school-admin/departmentApis';
 import { IDepartment } from '@academia-pro/types/school-admin';
 import { toast } from 'sonner';
@@ -25,22 +22,22 @@ import ErrorToast from '@/components/utilities/ErrorToast';
 import ErrorBlock from '@/components/utilities/ErrorBlock';
 
 const departmentTypes = [
-  { value: 'administration', label: 'Administration' },
-  { value: 'teaching', label: 'Teaching' },
-  { value: 'medical', label: 'Medical' },
-  { value: 'counseling', label: 'Counseling' },
-  { value: 'boarding', label: 'Boarding' },
-  { value: 'transportation', label: 'Transportation' },
-  { value: 'catering', label: 'Catering' },
-  { value: 'facilities', label: 'Facilities' },
-  { value: 'security', label: 'Security' },
-  { value: 'finance', label: 'Finance' },
-  { value: 'hr', label: 'HR' },
-  { value: 'it', label: 'IT' },
-  { value: 'library', label: 'Library' },
-  { value: 'sports', label: 'Sports' },
-  { value: 'arts', label: 'Arts' },
-  { value: 'examinations', label: 'Examinations' },
+  { value: 'administration', text: 'Administration' },
+  { value: 'teaching', text: 'Teaching' },
+  { value: 'medical', text: 'Medical' },
+  { value: 'counseling', text: 'Counseling' },
+  { value: 'boarding', text: 'Boarding' },
+  { value: 'transportation', text: 'Transportation' },
+  { value: 'catering', text: 'Catering' },
+  { value: 'facilities', text: 'Facilities' },
+  { value: 'security', text: 'Security' },
+  { value: 'finance', text: 'Finance' },
+  { value: 'hr', text: 'HR' },
+  { value: 'it', text: 'IT' },
+  { value: 'library', text: 'Library' },
+  { value: 'sports', text: 'Sports' },
+  { value: 'arts', text: 'Arts' },
+  { value: 'examinations', text: 'Examinations' },
 ];
 
 const updateDepartmentSchema = z.object({
@@ -121,53 +118,38 @@ export function EditDepartmentModal({ open, onClose, department }: EditDepartmen
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="type">Department Type *</Label>
-            <Select
-              value={selectedType}
-              onValueChange={(value) => setValue('type', value as UpdateDepartmentForm['type'])}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select department type" />
-              </SelectTrigger>
-              <SelectContent>
-                {departmentTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.type && (
-              <p className="text-sm text-red-600">{errors.type.message}</p>
-            )}
-          </div>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 flex flex-col">
+          <FormText
+            labelText="Department Name *"
+            name="name"
+            value={watch('name') || ''}
+            onChange={(e) => setValue('name', String(e.target.value))}
+            placeholder="e.g., Mathematics Department"
+            required
+            errorText={errors.name?.message}
+          />
 
-          <div className="space-y-2">
-            <Label htmlFor="name">Department Name *</Label>
-            <Input
-              id="name"
-              placeholder="e.g., Mathematics Department"
-              {...register('name')}
-            />
-            {errors.name && (
-              <p className="text-sm text-red-600">{errors.name.message}</p>
-            )}
-          </div>
+          <FormSelect
+            labelText="Department Type *"
+            name="type"
+            value={selectedType || ''}
+            onChange={(e) => setValue('type', String(e.target.value) as UpdateDepartmentForm['type'])}
+            placeholder="Select department type"
+            options={departmentTypes}
+            required
+            errorText={errors.type?.message}
+          />
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              placeholder="Brief description of the department's purpose and responsibilities..."
-              rows={3}
-              {...register('description')}
-            />
-            {errors.description && (
-              <p className="text-sm text-red-600">{errors.description.message}</p>
-            )}
-          </div>
+          <FormTextArea
+            labelText="Description"
+            name="description"
+            value={watch('description') || ''}
+            onChange={(e) => setValue('description', String(e.target.value) || undefined)}
+            placeholder="Brief description of the department's purpose and responsibilities..."
+            rows={3}
+            errorText={errors.description?.message}
+          />
+
           <ErrorBlock error={error} />
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose}>

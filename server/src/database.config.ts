@@ -102,13 +102,19 @@ export const getDatabaseConfig = async (configService: ConfigService): Promise<T
       'dist/inventory/**/*.entity{.ts,.js}',
       'dist/communication/**/*.entity{.ts,.js}',
       'dist/iam/**/*.entity{.ts,.js}',
+      'dist/staff/**/*.entity{.ts,.js}',
+      'dist/parent/**/*.entity{.ts,.js}',
+      'dist/timetable/**/*.entity{.ts,.js}',
+      'dist/online-learning/**/*.entity{.ts,.js}',
+      'dist/reports/**/*.entity{.ts,.js}',
+      'dist/student-portal/**/*.entity{.ts,.js}',
       // 'dist/parent-portal/**/*.entity{.ts,.js}', // Temporarily excluded due to circular dependency
       'dist/common/**/*.entity{.ts,.js}',
       'dist/auth/**/*.entity{.ts,.js}',
       'dist/security/**/*.entity{.ts,.js}',
     ],
     migrations: ['dist/migrations/*{.ts,.js}'],
-    synchronize: false,
+    synchronize: configService.get('NODE_ENV') === 'development', // Enable synchronize in development
     logging: configService.get('NODE_ENV') === 'development',
     ssl: configService.get('NODE_ENV') === 'production',
     extra: {

@@ -15,20 +15,34 @@ describe('Delegated Super Admin E2E Tests', () => {
   let delegatedSuperAdminSchoolsOnly: SuperAgentTest; // Has only school permissions
   let delegatedSuperAdminAnalyticsOnly: SuperAgentTest; // Has only analytics permissions
   let dataSource: DataSource;
+  let testSchoolId: string;
 
   beforeAll(async () => {
     await TestHarness.bootstrap();
     dataSource = TestHarness.getDataSource();
 
+    // Create delegated accounts with specific permissions for testing
+    await createDelegatedAccountsWithPermissions();
+
+    // Debug: Check if delegated accounts exist
+    const delegatedAccounts = await dataSource.query('SELECT * FROM delegated_accounts');
+    console.log('Delegated accounts in DB:', delegatedAccounts);
+
     // Get authenticated agents for different user types
     superAdmin = await TestHarness.auth('super-admin');
+    console.log('Authenticating delegated-super-admin...');
     delegatedSuperAdminFull = await TestHarness.auth('delegated-super-admin');
+    console.log('Authenticating delegated-super-admin-limited...');
     delegatedSuperAdminLimited = await TestHarness.auth('delegated-super-admin-limited');
+    console.log('Authenticating delegated-super-admin-schools...');
     delegatedSuperAdminSchoolsOnly = await TestHarness.auth('delegated-super-admin-schools');
+    console.log('Authenticating delegated-super-admin-analytics...');
     delegatedSuperAdminAnalyticsOnly = await TestHarness.auth('delegated-super-admin-analytics');
 
-    // Create additional delegated accounts with different permission sets
-    await createDelegatedAccountsWithPermissions();
+    // Get the first school ID for testing
+    const schoolResult = await dataSource.query('SELECT id FROM schools WHERE code = $1 LIMIT 1', ['SCH001']);
+    testSchoolId = schoolResult.length > 0 ? schoolResult[0].id : null;
+    console.log('Test school ID:', testSchoolId);
   });
 
   afterAll(async () => {
@@ -68,7 +82,7 @@ describe('Delegated Super Admin E2E Tests', () => {
         notes: 'Limited permissions delegated super admin for testing'
       },
       {
-        id: 'cccccccc-dddd-4eee-8fff-gggggggggggg',
+        id: 'cccccccc-dddd-4eee-8fff-aaaaaaaaaaaa',
         userId: '66666666-6666-4666-8666-666666666668', // Create another user for schools only
         email: 'delegatedsuperadmin-schools@example.com',
         permissions: ['schools:read', 'schools:create', 'schools:update', 'schools:delete'],
@@ -77,7 +91,7 @@ describe('Delegated Super Admin E2E Tests', () => {
         notes: 'Schools only permissions delegated super admin for testing'
       },
       {
-        id: 'dddddddd-eeee-4fff-8aaa-hhhhhhhhhhhh',
+        id: 'dddddddd-eeee-4fff-8aaa-bbbbbbbbbbbb',
         userId: '66666666-6666-4666-8666-666666666669', // Create another user for analytics only
         email: 'delegatedsuperadmin-analytics@example.com',
         permissions: ['analytics:read'],
@@ -97,7 +111,7 @@ describe('Delegated Super Admin E2E Tests', () => {
           account.id,
           account.userId,
           account.email,
-          JSON.stringify(account.permissions),
+          JSON.stringify(account.permissions), // Convert array to JSON string
           account.status,
           account.createdBy,
           account.notes
@@ -110,7 +124,7 @@ describe('Delegated Super Admin E2E Tests', () => {
     it('super admin should have access to all endpoints', async () => {
       // Test school management endpoints
       await superAdmin.get('/api/v1/super-admin/schools').expect(200);
-      await superAdmin.get('/api/v1/super-admin/schools/SCH001').expect(200);
+      await superAdmin.get(`/api/v1/super-admin/schools/${testSchoolId}`).expect(200);
 
       // Test analytics endpoints
       await superAdmin.get('/api/v1/super-admin/analytics').expect(200);
@@ -162,7 +176,7 @@ describe('Delegated Super Admin E2E Tests', () => {
     it('should have access to all endpoints like super admin', async () => {
       // Test school management endpoints
       await delegatedSuperAdminFull.get('/api/v1/super-admin/schools').expect(200);
-      await delegatedSuperAdminFull.get('/api/v1/super-admin/schools/SCH001').expect(200);
+      await delegatedSuperAdminFull.get(`/api/v1/super-admin/schools/${testSchoolId}`).expect(200);
 
       // Test analytics endpoints
       await delegatedSuperAdminFull.get('/api/v1/super-admin/analytics').expect(200);
@@ -272,7 +286,7 @@ describe('Delegated Super Admin E2E Tests', () => {
     it('should have full access to school management endpoints', async () => {
       // Should have access to all school operations
       await delegatedSuperAdminSchoolsOnly.get('/api/v1/super-admin/schools').expect(200);
-      await delegatedSuperAdminSchoolsOnly.get('/api/v1/super-admin/schools/SCH001').expect(200);
+      await delegatedSuperAdminSchoolsOnly.get(`/api/v1/super-admin/schools/${testSchoolId}`).expect(200);
 
       // Should be able to create, update, and delete schools
       const schoolData = {
@@ -331,7 +345,7 @@ describe('Delegated Super Admin E2E Tests', () => {
     it('should be denied access to school management endpoints', async () => {
       // Should NOT have access to school endpoints
       await delegatedSuperAdminAnalyticsOnly.get('/api/v1/super-admin/schools').expect(403);
-      await delegatedSuperAdminAnalyticsOnly.get('/api/v1/super-admin/schools/SCH001').expect(403);
+      await delegatedSuperAdminAnalyticsOnly.get(`/api/v1/super-admin/schools/${testSchoolId}`).expect(403);
 
       // Should NOT be able to create schools
       const schoolData = {
@@ -361,15 +375,15 @@ describe('Delegated Super Admin E2E Tests', () => {
 
   describe('Permission Granularity Tests', () => {
     it('should handle wildcard permissions correctly', async () => {
-      // Create a delegated account with wildcard permissions
+      // Create a delegated account with wildcard permissions using a unique ID and email
       await dataSource.query(
         `INSERT INTO delegated_accounts (id, "userId", email, permissions, status, "createdBy", notes)
          VALUES ($1, $2, $3, $4, $5, $6, $7)
-         ON CONFLICT (email) DO UPDATE SET permissions = $4`,
+         ON CONFLICT (email) DO NOTHING`,
         [
-          'wildcard-test-4aaa-8bbb-cccc-dddddddddddd',
-          '66666666-6666-4666-8666-666666666670',
-          'wildcard@example.com',
+          'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeef',
+          '77777777-8888-9999-0000-111111111111',
+          'wildcard-test@example.com',
           JSON.stringify(['schools:*', 'analytics:*']), // Wildcard permissions
           DelegatedAccountStatus.ACTIVE,
           '550e8400-e29b-41d4-a716-446655440000',
@@ -383,10 +397,13 @@ describe('Delegated Super Admin E2E Tests', () => {
     });
 
     it('should deny access when account is inactive', async () => {
-      // Update a delegated account to inactive status
+      // Update a delegated account to have a start date in the future (making it effectively inactive)
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 30); // 30 days in the future
+
       await dataSource.query(
-        `UPDATE delegated_accounts SET status = $1 WHERE email = $2`,
-        [DelegatedAccountStatus.INACTIVE, 'delegatedsuperadmin-limited@example.com']
+        `UPDATE delegated_accounts SET "startDate" = $1 WHERE email = $2`,
+        [futureDate, 'delegatedsuperadmin-limited@example.com']
       );
 
       // The user should now be denied access even to permitted endpoints
@@ -394,10 +411,13 @@ describe('Delegated Super Admin E2E Tests', () => {
     });
 
     it('should deny access when account is expired', async () => {
-      // Update a delegated account to expired status
+      // Update a delegated account to have an expiry date in the past (making it effectively expired)
+      const pastDate = new Date();
+      pastDate.setDate(pastDate.getDate() - 30); // 30 days in the past
+
       await dataSource.query(
-        `UPDATE delegated_accounts SET status = $1 WHERE email = $2`,
-        [DelegatedAccountStatus.EXPIRED, 'delegatedsuperadmin-schools@example.com']
+        `UPDATE delegated_accounts SET "expiryDate" = $1 WHERE email = $2`,
+        [pastDate, 'delegatedsuperadmin-schools@example.com']
       );
 
       // The user should now be denied access even to permitted endpoints

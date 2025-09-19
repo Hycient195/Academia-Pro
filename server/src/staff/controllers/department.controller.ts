@@ -39,7 +39,7 @@ export class DepartmentController {
   constructor(private readonly departmentService: DepartmentService) {}
 
   @Post()
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.DELEGATED_SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Create a new department' })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -96,14 +96,24 @@ export class DepartmentController {
   async getAllDepartments(
     @Query('type') type?: EDepartmentType,
     @Query('search') search?: string,
+    @Query('page') page?: number,
     @Query('limit') limit?: number,
-    @Query('offset') offset?: number,
-  ): Promise<Department[]> {
-    return this.departmentService.getAllDepartments({
+  ): Promise<{
+    data: Department[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+      hasNext: boolean;
+      hasPrev: boolean;
+    };
+  }> {
+    return this.departmentService.getAllDepartmentsPaginated({
       type,
       search,
-      limit: limit ? parseInt(limit.toString()) : undefined,
-      offset: offset ? parseInt(offset.toString()) : undefined,
+      page: page ? parseInt(page.toString()) : 1,
+      limit: limit ? parseInt(limit.toString()) : 10,
     });
   }
 
@@ -151,7 +161,7 @@ export class DepartmentController {
   }
 
   @Put(':id')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.DELEGATED_SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Update department' })
   @ApiParam({
     name: 'id',
@@ -180,7 +190,7 @@ export class DepartmentController {
   }
 
   @Delete(':id')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.DELEGATED_SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete department' })
   @ApiParam({
@@ -204,7 +214,7 @@ export class DepartmentController {
   }
 
   @Post(':id/staff/:staffId')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.DELEGATED_SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Assign staff member to department' })
   @ApiParam({
     name: 'id',
@@ -237,7 +247,7 @@ export class DepartmentController {
   }
 
   @Delete(':id/staff/:staffId')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.DELEGATED_SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Remove staff member from department' })
   @ApiParam({
     name: 'id',
@@ -266,7 +276,7 @@ export class DepartmentController {
   }
 
   @Get('stats/overview')
-  @Roles(EUserRole.SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
+  @Roles(EUserRole.SUPER_ADMIN, EUserRole.DELEGATED_SUPER_ADMIN, EUserRole.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'Get department statistics overview' })
   @ApiResponse({
     status: HttpStatus.OK,

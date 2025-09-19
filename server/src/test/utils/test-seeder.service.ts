@@ -142,8 +142,9 @@ export class TestSeederService {
     const departments = await this.seedDepartments(schools[0].id);
     const students = await this.seedStudents(schools[0].id);
     const delegatedSchoolAdmins = await this.seedDelegatedSchoolAdmins(schools[0].id);
+    const delegatedSuperAdmins = await this.seedDelegatedSuperAdmins();
 
-    return { users, schools, departments, students, delegatedSchoolAdmins };
+    return { users, schools, departments, students, delegatedSchoolAdmins, delegatedSuperAdmins };
   }
 
   // Legacy seeding method for backward compatibility
@@ -804,7 +805,7 @@ export class TestSeederService {
   async seedSchools() {
     const schools = [
       {
-        id: randomUUID(),
+        id: 'aaaaaaaa-bbbb-4ccc-8ddd-aaaaaaaaaaaa', // Fixed ID for testing
         code: 'SCH001',
         name: 'Premium High School',
         description: 'A premier educational institution offering comprehensive secondary education',
@@ -1377,6 +1378,71 @@ export class TestSeederService {
       const admin = this.delegatedSchoolAdminRepository.create(adminData);
       const savedAdmin = await this.delegatedSchoolAdminRepository.save(admin);
       savedDelegatedAdmins.push(savedAdmin);
+    }
+
+    return savedDelegatedAdmins;
+  }
+
+  async seedDelegatedSuperAdmins() {
+    const delegatedSuperAdmins = [
+      {
+        id: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
+        userId: '66666666-6666-6666-6666-666666666666', // delegated super admin user
+        email: 'delegatedsuperadmin@example.com',
+        permissions: JSON.stringify([
+          'schools:read', 'schools:create', 'schools:update', 'schools:delete',
+          'analytics:read', 'system:read'
+        ]), // Full permissions
+        status: 'active',
+        createdBy: TEST_IDS.SUPERADMIN,
+        notes: 'Full permissions delegated super admin for testing'
+      },
+      {
+        id: 'bbbbbbbb-cccc-4ddd-8eee-ffffffffffff',
+        userId: '66666666-6666-4666-8666-666666666667', // Create a new user for limited permissions
+        email: 'delegatedsuperadmin-limited@example.com',
+        permissions: JSON.stringify(['schools:read', 'schools:create']), // Limited permissions
+        status: 'active',
+        createdBy: TEST_IDS.SUPERADMIN,
+        notes: 'Limited permissions delegated super admin for testing'
+      },
+      {
+        id: 'cccccccc-dddd-4eee-8fff-aaaaaaaaaaaa',
+        userId: '66666666-6666-4666-8666-666666666668', // Create another user for schools only
+        email: 'delegatedsuperadmin-schools@example.com',
+        permissions: JSON.stringify(['schools:read', 'schools:create', 'schools:update', 'schools:delete']),
+        status: 'active',
+        createdBy: TEST_IDS.SUPERADMIN,
+        notes: 'Schools only permissions delegated super admin for testing'
+      },
+      {
+        id: 'dddddddd-eeee-4fff-8aaa-bbbbbbbbbbbb',
+        userId: '66666666-6666-4666-8666-666666666669', // Create another user for analytics only
+        email: 'delegatedsuperadmin-analytics@example.com',
+        permissions: JSON.stringify(['analytics:read']),
+        status: 'active',
+        createdBy: TEST_IDS.SUPERADMIN,
+        notes: 'Analytics only permissions delegated super admin for testing'
+      }
+    ];
+
+    const savedDelegatedAdmins = [];
+    for (const adminData of delegatedSuperAdmins) {
+      await this.dataSource.query(
+        `INSERT INTO delegated_accounts (id, "userId", email, permissions, status, "createdBy", notes)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         ON CONFLICT (email) DO NOTHING`,
+        [
+          adminData.id,
+          adminData.userId,
+          adminData.email,
+          adminData.permissions,
+          adminData.status,
+          adminData.createdBy,
+          adminData.notes
+        ]
+      );
+      savedDelegatedAdmins.push(adminData);
     }
 
     return savedDelegatedAdmins;

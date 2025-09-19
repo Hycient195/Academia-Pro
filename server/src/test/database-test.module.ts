@@ -1,6 +1,7 @@
 import { Module, Global } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import * as pg from 'pg';
 
 @Global()
 @Module({})
@@ -46,6 +47,7 @@ export class DatabaseTestModule {
           dropSchema: true,  // Clean database between tests
           logging: false,    // Disable logging for tests
           cache: false,      // Disable cache for tests
+          driver: pg,        // Explicitly set the PostgreSQL driver
           extra: {
             connectionTimeoutMillis: 5000,
             query_timeout: 5000,

@@ -294,26 +294,60 @@ export class IamService {
   }
 
   async checkDelegatedAccountAccess(email: string, requiredPermission: string): Promise<boolean> {
+    console.log(`[IamService] Checking delegated account access for email: ${email}, required permission: ${requiredPermission}`);
+
     const account = await this.delegatedAccountRepository.findOne({
       where: { email }
     });
 
     if (!account) {
+      console.log(`[IamService] Delegated account not found for email: ${email}`);
       return false;
     }
+
+    console.log(`[IamService] Found delegated account:`, {
+      id: account.id,
+      email: account.email,
+      status: account.status,
+      permissions: account.permissions,
+      permissionsType: typeof account.permissions
+    });
 
     // Get the effective status and update if necessary
     const effectiveStatus = await this.getEffectiveStatus(account);
 
+    console.log(`[IamService] Effective status: ${effectiveStatus}`);
+
     // Only allow access if account is active
     if (effectiveStatus !== DelegatedAccountStatus.ACTIVE) {
+      console.log(`[IamService] Account not active, status: ${effectiveStatus}`);
       return false;
     }
 
+    // Ensure permissions is an array (handle case where it might be stored as JSON string)
+    let permissions: string[] = account.permissions;
+    if (typeof permissions === 'string') {
+      try {
+        permissions = JSON.parse(permissions);
+        console.log(`[IamService] Parsed permissions from JSON string:`, permissions);
+      } catch (error) {
+        console.error('[IamService] Failed to parse permissions JSON:', error);
+        return false;
+      }
+    } else {
+      console.log(`[IamService] Permissions already an array:`, permissions);
+    }
+
+    console.log(`[IamService] Checking permission ${requiredPermission} against:`, permissions);
+
     // Check if account has the required permission
-    return account.permissions.includes(requiredPermission) ||
-           account.permissions.includes('*') ||
-           account.permissions.some(p => this.matchesPermission(p, requiredPermission));
+    const hasPermission = permissions.includes(requiredPermission) ||
+           permissions.includes('*') ||
+           permissions.some(p => this.matchesPermission(p, requiredPermission));
+
+    console.log(`[IamService] Permission check result: ${hasPermission}`);
+
+    return hasPermission;
   }
 
   private matchesPermission(granted: string, required: string): boolean {

@@ -490,7 +490,7 @@ describe('Students E2E', () => {
     const staffApi = api(staff);
 
     // Find two students to test conflict on update
-    const all = await schoolAdminApi.list({ limit: 2 }).expect(200);
+    const all = await schoolAdminApi.list({ limit: 2, schoolId }).expect(200);
     expect(all.body.data.length).toBeGreaterThanOrEqual(2);
 
     const student1 = all.body.data[0];

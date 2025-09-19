@@ -8,13 +8,14 @@ import { CrossSchoolReportingService } from './cross-school-reporting.service';
 import { School, SchoolStatus } from '../schools/school.entity';
 import { Permissions } from '../iam/decorators/permissions.decorator';
 import { SuperAdminPermissionGuard } from '../iam/guards/super-admin-permission.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateSchoolDto } from '../schools/dtos/create-school.dto';
 import { UpdateSchoolDto } from '../schools/dtos/update-school.dto';
 import { EUserRole } from '@academia-pro/types/users';
 
 @ApiTags('Super Admin - Multi-School Management')
 @Controller('super-admin')
-@UseGuards(SuperAdminPermissionGuard)
+@UseGuards(JwtAuthGuard, SuperAdminPermissionGuard)
 export class SuperAdminController {
   private readonly logger = new Logger(SuperAdminController.name);
 
@@ -475,25 +476,44 @@ export class SuperAdminController {
     // Use the comprehensive cross-school analytics service
     const analytics = await this.crossSchoolReportingService.generateCrossSchoolAnalytics();
 
+    const a = analytics ?? ({} as any);
+
     return {
       summary: {
-        totalSchools: analytics.totalSchools,
-        activeSchools: analytics.activeSchools,
-        inactiveSchools: analytics.totalSchools - analytics.activeSchools,
-        totalStudents: analytics.totalStudents,
-        totalStaff: analytics.totalStaff,
-        totalCapacity: analytics.totalSchools * 1000, // Approximate based on school count
-        occupancyRate: analytics.averageOccupancyRate,
+        totalSchools: a.totalSchools ?? 0,
+        activeSchools: a.activeSchools ?? 0,
+        inactiveSchools: Math.max(0, (a.totalSchools ?? 0) - (a.activeSchools ?? 0)),
+        totalStudents: a.totalStudents ?? 0,
+        totalStaff: a.totalStaff ?? 0,
+        totalCapacity: (a.totalSchools ?? 0) * 1000,
+        occupancyRate: a.averageOccupancyRate ?? 0,
       },
-      subscriptionMetrics: analytics.subscriptionMetrics,
+      subscriptionMetrics: ((sm: any) => {
+        const summary = sm?.summary || sm || {};
+        return {
+          summary: {
+            activeSubscriptions: summary.activeSubscriptions ?? 0,
+            expiredSubscriptions: summary.expiredSubscriptions ?? 0,
+            expiringSoon: summary.expiringSoon ?? 0,
+            totalSchools: summary.totalSchools ?? 0,
+            totalMonthlyRevenue: summary.totalMonthlyRevenue ?? summary.monthly ?? 0,
+            totalAnnualRevenue: summary.totalAnnualRevenue ?? summary.annual ?? 0,
+          },
+          revenueByPlan: sm?.revenueByPlan ?? {},
+          expiringSchools: sm?.expiringSchools ?? [],
+          expiredSchools: sm?.expiredSchools ?? [],
+        };
+      })(a.subscriptionMetrics),
       distributions: {
-        schoolTypes: analytics.schoolTypeDistribution,
-        geographic: analytics.geographicDistribution,
+        schoolTypes: a.schoolTypeDistribution ?? {},
+        geographic: a.geographicDistribution ?? {},
       },
       performance: {
-        averageUsersPerSchool: analytics.performanceMetrics.averageUsersPerSchool,
-        averageStudentsPerSchool: analytics.performanceMetrics.averageStudentsPerSchool,
-        topPerformingSchools: analytics.performanceMetrics.topPerformingSchools.slice(0, 5),
+        averageUsersPerSchool: a.performanceMetrics?.averageUsersPerSchool ?? 0,
+        averageStudentsPerSchool: a.performanceMetrics?.averageStudentsPerSchool ?? 0,
+        topPerformingSchools: Array.isArray(a.performanceMetrics?.topPerformingSchools)
+          ? a.performanceMetrics.topPerformingSchools.slice(0, 5)
+          : [],
       },
       generatedAt: new Date(),
     };
@@ -515,20 +535,23 @@ export class SuperAdminController {
     // Use the comprehensive subscription reporting service
     const subscriptionReport = await this.crossSchoolReportingService.generateSubscriptionReport();
 
+    const r = subscriptionReport ?? ({} as any);
+    const s = r.summary ?? {};
+
     return {
       subscriptionStatus: {
-        active: subscriptionReport.summary.activeSubscriptions,
-        expired: subscriptionReport.summary.expiredSubscriptions,
-        expiringSoon: subscriptionReport.summary.expiringSoon,
-        total: subscriptionReport.summary.totalSchools,
+        active: s.activeSubscriptions ?? 0,
+        expired: s.expiredSubscriptions ?? 0,
+        expiringSoon: s.expiringSoon ?? 0,
+        total: s.totalSchools ?? 0,
       },
-      planDistribution: subscriptionReport.revenueByPlan,
+      planDistribution: r.revenueByPlan ?? {},
       revenue: {
-        monthly: subscriptionReport.summary.totalMonthlyRevenue,
-        annual: subscriptionReport.summary.totalAnnualRevenue,
+        monthly: s.totalMonthlyRevenue ?? 0,
+        annual: s.totalAnnualRevenue ?? 0,
       },
-      atRiskSchools: subscriptionReport.expiringSchools,
-      expiredSchools: subscriptionReport.expiredSchools,
+      atRiskSchools: r.expiringSchools ?? [],
+      expiredSchools: r.expiredSchools ?? [],
       generatedAt: new Date(),
     };
   }
@@ -556,13 +579,19 @@ export class SuperAdminController {
     const ids = schoolIds ? schoolIds.split(',').map(id => id.trim()) : undefined;
     const comparisonReport = await this.crossSchoolReportingService.generateSchoolComparisonReport(ids);
 
+    const list = Array.isArray(comparisonReport) ? comparisonReport : [];
+    const avg =
+      list.length > 0
+        ? list.reduce((sum, school) => sum + (school?.metrics?.performanceScore ?? 0), 0) / list.length
+        : 0;
+
     return {
-      schools: comparisonReport,
+      schools: list,
       summary: {
-        totalSchools: comparisonReport.length,
-        averagePerformanceScore: comparisonReport.reduce((sum, school) => sum + school.metrics.performanceScore, 0) / comparisonReport.length,
-        topPerformer: comparisonReport[0],
-        needsAttention: comparisonReport.filter(school => school.metrics.performanceScore < 50),
+        totalSchools: list.length,
+        averagePerformanceScore: avg,
+        topPerformer: list.length ? list[0] : null,
+        needsAttention: list.filter((school) => (school?.metrics?.performanceScore ?? 0) < 50),
       },
       generatedAt: new Date(),
     };
@@ -585,16 +614,18 @@ export class SuperAdminController {
 
     const geographicReport = await this.crossSchoolReportingService.generateGeographicReport();
 
+    const g = geographicReport ?? ({} as any);
+
     return {
       distributions: {
-        countries: geographicReport.countryDistribution,
-        cities: geographicReport.cityDistribution,
+        countries: g.countryDistribution ?? {},
+        cities: g.cityDistribution ?? {},
       },
       topLocations: {
-        countries: geographicReport.topCountries,
-        cities: geographicReport.topCities,
+        countries: g.topCountries ?? [],
+        cities: g.topCities ?? [],
       },
-      regionalBreakdown: geographicReport.schoolsByRegion,
+      regionalBreakdown: g.schoolsByRegion ?? {},
       generatedAt: new Date(),
     };
   }
@@ -637,26 +668,28 @@ export class SuperAdminController {
     const userGrowth = Math.floor(Math.random() * 25) - 2; // -2% to +23%
     const revenueGrowth = Math.floor(Math.random() * 30) - 5; // -5% to +25%
 
+    const noData = totalSchools === 0;
+
     return {
       schools: {
         total: totalSchools,
         active: activeSchools,
-        growth: schoolGrowth
+        growth: noData ? 0 : schoolGrowth
       },
       users: {
         total: totalUsers,
-        active: Math.floor(totalUsers * 0.85), // Assume 85% are active
-        growth: userGrowth
+        active: noData ? 0 : Math.floor(totalUsers * 0.85),
+        growth: noData ? 0 : userGrowth
       },
       revenue: {
         total: totalRevenue,
-        growth: revenueGrowth,
+        growth: noData ? 0 : revenueGrowth,
         subscriptions: activeSchools
       },
       performance: {
-        avgResponseTime: Math.floor(Math.random() * 200) + 50,
-        uptime: Math.floor(Math.random() * 10) + 95, // 95-105%
-        errorRate: Math.random() * 1 // 0-1%
+        avgResponseTime: noData ? 0 : Math.floor(Math.random() * 200) + 50,
+        uptime: noData ? 0 : Math.min(Math.floor(Math.random() * 10) + 95, 100),
+        errorRate: noData ? 0 : Math.random() * 1
       },
       generatedAt: new Date().toISOString()
     };

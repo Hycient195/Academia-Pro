@@ -104,8 +104,9 @@ export class Student {
   @Column({
     type: 'enum',
     enum: TStudentStage,
+    nullable: true,
   })
-  stage: TStudentStage;
+  stage?: TStudentStage;
 
   @Column({ type: 'varchar', length: 10 })
   gradeCode: string;

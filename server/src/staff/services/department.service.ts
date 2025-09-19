@@ -82,7 +82,7 @@ export class DepartmentService {
       .createQueryBuilder('department')
       .leftJoinAndSelect('department.staff', 'staff')
       .orderBy('department.name', 'ASC');
-
+      
     if (options?.type) {
       queryBuilder.andWhere('department.type = :type', { type: options.type });
     }
@@ -103,6 +103,84 @@ export class DepartmentService {
     }
 
     return queryBuilder.getMany();
+  }
+
+  /**
+   * Get all departments with pagination
+   */
+  async getAllDepartmentsPaginated(options?: {
+    type?: EDepartmentType;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    data: Department[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+      hasNext: boolean;
+      hasPrev: boolean;
+    };
+  }> {
+    const page = options?.page || 1;
+    const limit = options?.limit || 10;
+    const offset = (page - 1) * limit;
+
+    const queryBuilder = this.departmentRepository
+      .createQueryBuilder('department')
+      .leftJoinAndSelect('department.staff', 'staff')
+      .orderBy('department.name', 'ASC');
+
+    if (options?.type) {
+      queryBuilder.andWhere('department.type = :type', { type: options.type });
+    }
+
+    if (options?.search) {
+      queryBuilder.andWhere(
+        '(department.name ILIKE :search OR department.description ILIKE :search)',
+        { search: `%${options.search}%` },
+      );
+    }
+
+    // Get total count for pagination
+    const totalQueryBuilder = this.departmentRepository
+      .createQueryBuilder('department');
+
+    if (options?.type) {
+      totalQueryBuilder.andWhere('department.type = :type', { type: options.type });
+    }
+
+    if (options?.search) {
+      totalQueryBuilder.andWhere(
+        '(department.name ILIKE :search OR department.description ILIKE :search)',
+        { search: `%${options.search}%` },
+      );
+    }
+
+    const total = await totalQueryBuilder.getCount();
+
+    // Apply pagination
+    queryBuilder.limit(limit).offset(offset);
+
+    const data = await queryBuilder.getMany();
+
+    const totalPages = Math.ceil(total / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext,
+        hasPrev,
+      },
+    };
   }
 
   /**
@@ -261,18 +339,33 @@ export class DepartmentService {
     }>;
   }> {
     const departments = await this.getAllDepartments();
-
     const totalDepartments = departments.length;
 
-    // Group by type
-    const departmentsByType = departments.reduce((acc, dept) => {
-      acc[dept.type] = (acc[dept.type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    // Initialize all department types with zero to ensure consistent shape
+    // Filter to only string enum values to avoid numeric enum keys in case of future refactors
+    const allTypes = (Object.values(EDepartmentType) as unknown[]).filter(
+      (v) => typeof v === 'string'
+    ) as string[];
+
+    const departmentsByType: Record<string, number> = allTypes.reduce(
+      (acc, t) => {
+        acc[t] = 0;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+
+    // Increment counts for existing departments
+    for (const dept of departments) {
+      const key = String(dept.type);
+      departmentsByType[key] = (departmentsByType[key] ?? 0) + 1;
+    }
 
     // Calculate average staff per department
     const totalStaff = departments.reduce((sum, dept) => sum + (dept.staff?.length || 0), 0);
-    const averageStaffPerDepartment = totalDepartments > 0 ? totalStaff / totalDepartments : 0;
+    const averageStaffPerDepartmentRaw = totalDepartments > 0 ? totalStaff / totalDepartments : 0;
+    const averageStaffPerDepartment = totalDepartments === 0 ? 0 : Math.round(averageStaffPerDepartmentRaw * 100) / 100;
 
     // Get departments with most staff
     const departmentsWithMostStaff = departments
@@ -284,10 +377,17 @@ export class DepartmentService {
       .sort((a, b) => b.staffCount - a.staffCount)
       .slice(0, 10);
 
+    console.log({
+      totalDepartments,
+      departmentsByType,
+      averageStaffPerDepartment,
+      departmentsWithMostStaff,
+    })
+
     return {
       totalDepartments,
       departmentsByType,
-      averageStaffPerDepartment: Math.round(averageStaffPerDepartment * 100) / 100,
+      averageStaffPerDepartment,
       departmentsWithMostStaff,
     };
   }

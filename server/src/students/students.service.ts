@@ -88,9 +88,7 @@ export class StudentsService {
        status: StudentStatus.ACTIVE,
      };
 
-     console.log('Student to save:', JSON.stringify(studentToSave, null, 2));
      const savedStudent = await this.studentsRepository.save(studentToSave as any);
-     console.log('Saved student:', JSON.stringify(savedStudent, null, 2));
 
     // Audit logging for student creation
     try {

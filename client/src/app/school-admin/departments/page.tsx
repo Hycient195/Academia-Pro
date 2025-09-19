@@ -3,11 +3,10 @@
 import { useState, useEffect } from 'react';
 import { Plus, Search, Filter, MoreHorizontal, Users, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FormText, FormSelect } from '@/components/ui/form/form-components';
 import { useGetDepartmentsQuery, useGetDepartmentStatisticsQuery } from '@/redux/api/school-admin/departmentApis';
 import { IDepartment } from '@academia-pro/types/school-admin';
 import { CreateDepartmentModal } from './_components/CreateDepartmentModal';
@@ -63,7 +62,7 @@ export default function DepartmentsPage() {
 
   const { data: statsData, refetch: refetchStats } = useGetDepartmentStatisticsQuery();
 
-  console.log(statsData)
+  console.log(departmentsData)
 
   // Force refetch statistics on component mount to bypass cache
   useEffect(() => {
@@ -113,7 +112,7 @@ export default function DepartmentsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -143,46 +142,52 @@ export default function DepartmentsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-4 mb-6">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search departments..."
+          <div className="flex items-center gap-4 mb-4">
+            <div className="flex-1 max-w-sm">
+              <FormText
+                labelText=""
+                name="search"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                onChange={(e) => setSearchTerm(String(e.target.value))}
+                placeholder="Search departments..."
+                icon={<Search className="h-4 w-4" />}
+                iconPosition="left"
               />
             </div>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-48">
-                <Filter className="mr-2 h-4 w-4" />
-                <SelectValue placeholder="Filter by type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="administration">Administration</SelectItem>
-                <SelectItem value="teaching">Teaching</SelectItem>
-                <SelectItem value="medical">Medical</SelectItem>
-                <SelectItem value="counseling">Counseling</SelectItem>
-                <SelectItem value="boarding">Boarding</SelectItem>
-                <SelectItem value="transportation">Transportation</SelectItem>
-                <SelectItem value="catering">Catering</SelectItem>
-                <SelectItem value="facilities">Facilities</SelectItem>
-                <SelectItem value="security">Security</SelectItem>
-                <SelectItem value="finance">Finance</SelectItem>
-                <SelectItem value="hr">HR</SelectItem>
-                <SelectItem value="it">IT</SelectItem>
-                <SelectItem value="library">Library</SelectItem>
-                <SelectItem value="sports">Sports</SelectItem>
-                <SelectItem value="arts">Arts</SelectItem>
-                <SelectItem value="examinations">Examinations</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="w-48">
+              <FormSelect
+                labelText=""
+                name="typeFilter"
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(String(e.target.value))}
+                placeholder="Filter by type"
+                options={[
+                  { value: 'all', text: 'All Types' },
+                  { value: 'administration', text: 'Administration' },
+                  { value: 'teaching', text: 'Teaching' },
+                  { value: 'medical', text: 'Medical' },
+                  { value: 'counseling', text: 'Counseling' },
+                  { value: 'boarding', text: 'Boarding' },
+                  { value: 'transportation', text: 'Transportation' },
+                  { value: 'catering', text: 'Catering' },
+                  { value: 'facilities', text: 'Facilities' },
+                  { value: 'security', text: 'Security' },
+                  { value: 'finance', text: 'Finance' },
+                  { value: 'hr', text: 'HR' },
+                  { value: 'it', text: 'IT' },
+                  { value: 'library', text: 'Library' },
+                  { value: 'sports', text: 'Sports' },
+                  { value: 'arts', text: 'Arts' },
+                  { value: 'examinations', text: 'Examinations' },
+                ]}
+                icon={<Filter className="h-4 w-4" />}
+              />
+            </div>
           </div>
 
           {/* Departments Table */}
           <div className="space-y-4">
-            {departments.length === 0 ? (
+            {departments?.length === 0 ? (
               <div className="text-center py-8">
                 <Building2 className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-medium mb-2">No departments found</h3>
@@ -200,7 +205,7 @@ export default function DepartmentsPage() {
                 )}
               </div>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-4 mb-2 md:grid-cols-2 lg:grid-cols-3">
                 {departments.map((department) => (
                   <Card key={department.id} className="hover:shadow-md transition-shadow">
                     <CardHeader className="pb-3">

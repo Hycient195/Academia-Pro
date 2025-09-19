@@ -268,7 +268,7 @@ export class Book {
   @Column({ name: 'acquisition_cost', type: 'decimal', precision: 10, scale: 2, nullable: true })
   acquisitionCost?: number;
 
-  @Column({ name: 'acquisition_currency', type: 'varchar', length: 3, default: 'USD' })
+  @Column({ name: 'acquisition_currency', type: 'varchar', length: 3, default: 'NGN' })
   acquisitionCurrency: string;
 
   @Column({ name: 'supplier_name', type: 'varchar', length: 300, nullable: true })

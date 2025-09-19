@@ -102,7 +102,7 @@ describe('Departments E2E', () => {
       status: StaffStatus.ACTIVE,
 
       basicSalary: baseSalary,
-      salaryCurrency: 'USD',
+      salaryCurrency: 'NGN',
       houseAllowance,
       transportAllowance,
       medicalAllowance,

@@ -1,15 +1,22 @@
 // server/src/staff/__test__/staff-directory.e2e.spec.ts
 // Comprehensive E2E tests for Staff Directory functionality
+//
+// Test Strategy:
+// - createMinimalStaffRecord(): For basic CRUD tests (faster, easier debugging)
+// - createStaffRecord(): For integration/complex scenarios (full payload)
+// - Comprehensive coverage of GET, POST, PUT, DELETE operations
+// - Negative authorization tests for all CRUD operations
+// - Edge cases and error handling
 
-import { TestHarness } from '../../test/utils/test-harness';
+import { TestHarness } from '../utils/test-harness';
 import { DataSource, Repository } from 'typeorm';
 import request, { SuperAgentTest } from 'supertest';
 import { randomUUID } from 'crypto';
 import { faker } from '@faker-js/faker';
 
-import { Staff } from '../entities/staff.entity';
-import { StaffType, StaffStatus, EmploymentType, Gender, MaritalStatus, BloodGroup, QualificationLevel } from '../entities/staff.entity';
-import { Department } from '../entities/department.entity';
+import { Staff } from '../../staff/entities/staff.entity';
+import { StaffType, StaffStatus, EmploymentType, Gender, MaritalStatus, BloodGroup, QualificationLevel } from '../../staff/entities/staff.entity';
+import { Department } from '../../staff/entities/department.entity';
 import { EDepartmentType } from '@academia-pro/types/staff';
 
 describe('Staff Directory E2E', () => {
@@ -58,32 +65,44 @@ describe('Staff Directory E2E', () => {
       lastName: overrides.lastName ?? faker.person.lastName(),
       dateOfBirth: overrides.dateOfBirth ?? faker.date.birthdate({ min: 18, max: 65, mode: 'age' }),
       gender: overrides.gender ?? faker.helpers.arrayElement([Gender.MALE, Gender.FEMALE]),
-      email: overrides.email ?? faker.internet.email(),
-      phone: overrides.phone ?? faker.phone.number(),
-      currentAddress: overrides.currentAddress ?? {
-        street: faker.location.streetAddress(),
-        city: faker.location.city(),
-        state: faker.location.state(),
-        postalCode: faker.location.zipCode(),
-        country: faker.location.countryCode(),
+      contactInfo: {
+        email: overrides.email ?? faker.internet.email(),
+        phone: overrides.phone ?? faker.phone.number(),
+        emergencyContact: {
+          name: overrides.emergencyContactName ?? faker.person.fullName(),
+          phone: overrides.emergencyContactPhone ?? faker.phone.number(),
+          relation: overrides.emergencyContactRelation ?? 'Spouse',
+        },
       },
-      permanentAddress: overrides.permanentAddress ?? {
-        street: faker.location.streetAddress(),
-        city: faker.location.city(),
-        state: faker.location.state(),
-        postalCode: faker.location.zipCode(),
-        country: faker.location.countryCode(),
+      addressInfo: {
+        current: overrides.currentAddress ?? {
+          street: faker.location.streetAddress(),
+          city: faker.location.city(),
+          state: faker.location.state(),
+          postalCode: faker.location.zipCode(),
+          country: faker.location.countryCode(),
+        },
+        permanent: overrides.permanentAddress ?? {
+          street: faker.location.streetAddress(),
+          city: faker.location.city(),
+          state: faker.location.state(),
+          postalCode: faker.location.zipCode(),
+          country: faker.location.countryCode(),
+        },
       },
       staffType: overrides.staffType ?? faker.helpers.arrayElement(Object.values(StaffType)),
       departments: overrides.departments ?? [],
       designation: overrides.designation ?? faker.person.jobTitle(),
       employmentType: overrides.employmentType ?? EmploymentType.FULL_TIME,
       joiningDate: overrides.joiningDate ?? faker.date.past({ years: 5 }),
-      basicSalary: overrides.basicSalary ?? faker.number.int({ min: 30000, max: 100000 }),
+      compensation: {
+        basicSalary: overrides.compensation?.basicSalary ?? faker.number.int({ min: 30000, max: 100000 }),
+        salaryCurrency: 'NGN',
+        grossSalary: 0,
+        netSalary: 0,
+        paymentMethod: 'bank_transfer',
+      },
       status: overrides.status ?? StaffStatus.ACTIVE,
-      emergencyContactName: overrides.emergencyContactName ?? faker.person.fullName(),
-      emergencyContactPhone: overrides.emergencyContactPhone ?? faker.phone.number(),
-      emergencyContactRelation: overrides.emergencyContactRelation ?? 'Spouse',
       createdBy: overrides.createdBy ?? randomUUID(),
       updatedBy: overrides.updatedBy ?? randomUUID(),
     };
@@ -113,54 +132,65 @@ describe('Staff Directory E2E', () => {
       middleName: faker.person.middleName(),
       dateOfBirth: faker.date.birthdate({ min: 18, max: 65, mode: 'age' }),
       gender: faker.helpers.arrayElement([Gender.MALE, Gender.FEMALE]),
-      email: faker.internet.email(),
-      phone: faker.phone.number(),
-      currentAddress: {
-        street: faker.location.streetAddress(),
-        city: faker.location.city(),
-        state: faker.location.state(),
-        postalCode: faker.location.zipCode(),
-        country: faker.location.countryCode(),
+      contactInfo: {
+        email: faker.internet.email(),
+        phone: faker.phone.number(),
+        alternatePhone: faker.phone.number(),
+        emergencyContact: {
+          name: faker.person.fullName(),
+          phone: faker.phone.number(),
+          relation: 'Spouse',
+        },
       },
-      permanentAddress: {
-        street: faker.location.streetAddress(),
-        city: faker.location.city(),
-        state: faker.location.state(),
-        postalCode: faker.location.zipCode(),
-        country: faker.location.countryCode(),
+      addressInfo: {
+        current: {
+          street: faker.location.streetAddress(),
+          city: faker.location.city(),
+          state: faker.location.state(),
+          postalCode: faker.location.zipCode(),
+          country: faker.location.countryCode(),
+        },
+        permanent: {
+          street: faker.location.streetAddress(),
+          city: faker.location.city(),
+          state: faker.location.state(),
+          postalCode: faker.location.zipCode(),
+          country: faker.location.countryCode(),
+        },
       },
       staffType: faker.helpers.arrayElement(Object.values(StaffType)),
       departments: [],
       designation: faker.person.jobTitle(),
       employmentType: faker.helpers.arrayElement(Object.values(EmploymentType)),
       joiningDate: faker.date.past({ years: 5 }),
-      basicSalary: faker.number.int({ min: 30000, max: 100000 }),
+      compensation: {
+        basicSalary: faker.number.int({ min: 30000, max: 100000 }),
+        salaryCurrency: 'NGN',
+        houseAllowance: faker.number.int({ min: 0, max: 10000 }),
+        transportAllowance: faker.number.int({ min: 0, max: 5000 }),
+        medicalAllowance: faker.number.int({ min: 0, max: 3000 }),
+        otherAllowances: faker.number.int({ min: 0, max: 2000 }),
+        grossSalary: faker.number.int({ min: 40000, max: 120000 }),
+        taxDeductible: faker.number.int({ min: 0, max: 5000 }),
+        providentFund: faker.number.int({ min: 0, max: 2000 }),
+        otherDeductions: faker.number.int({ min: 0, max: 1000 }),
+        netSalary: faker.number.int({ min: 35000, max: 110000 }),
+        paymentMethod: faker.helpers.arrayElement(['bank_transfer', 'check', 'cash']),
+        bankDetails: {
+          bankName: faker.company.name(),
+          accountNumber: faker.finance.accountNumber(),
+          branch: faker.location.city(),
+          ifscCode: faker.finance.routingNumber(),
+        },
+      },
       status: StaffStatus.ACTIVE,
-      emergencyContactName: faker.person.fullName(),
-      emergencyContactPhone: faker.phone.number(),
-      emergencyContactRelation: 'Spouse',
       createdBy: randomUUID(),
       updatedBy: randomUUID(),
       maritalStatus: faker.helpers.arrayElement(Object.values(MaritalStatus)),
       bloodGroup: faker.helpers.arrayElement(Object.values(BloodGroup)),
-      alternatePhone: faker.phone.number(),
       reportingTo: randomUUID(),
       probationEndDate: faker.date.future(),
       contractEndDate: faker.date.future({ years: 2 }),
-      houseAllowance: faker.number.int({ min: 0, max: 10000 }),
-      transportAllowance: faker.number.int({ min: 0, max: 5000 }),
-      medicalAllowance: faker.number.int({ min: 0, max: 3000 }),
-      otherAllowances: faker.number.int({ min: 0, max: 2000 }),
-      grossSalary: faker.number.int({ min: 40000, max: 120000 }),
-      taxDeductible: faker.number.int({ min: 0, max: 5000 }),
-      providentFund: faker.number.int({ min: 0, max: 2000 }),
-      otherDeductions: faker.number.int({ min: 0, max: 1000 }),
-      netSalary: faker.number.int({ min: 35000, max: 110000 }),
-      paymentMethod: faker.helpers.arrayElement(['bank_transfer', 'check', 'cash']),
-      bankName: faker.company.name(),
-      bankAccountNumber: faker.finance.accountNumber(),
-      bankBranch: faker.location.city(),
-      ifscCode: faker.finance.routingNumber(),
       qualifications: [{
         level: faker.helpers.arrayElement(Object.values(QualificationLevel)),
         field: faker.person.jobArea(),
@@ -422,7 +452,13 @@ describe('Staff Directory E2E', () => {
         email: 'john.doe@example.com',
         phone: '+1234567890',
         designation: 'Senior Teacher',
-        basicSalary: 75000,
+        compensation: {
+          basicSalary: 75000,
+          salaryCurrency: 'NGN',
+          grossSalary: 75000,
+          netSalary: 75000,
+          paymentMethod: 'bank_transfer',
+        },
         performanceRating: 4,
         annualLeaveBalance: 25,
         sickLeaveBalance: 10,
@@ -441,7 +477,7 @@ describe('Staff Directory E2E', () => {
       expect(staff.email).toBe('john.doe@example.com');
       expect(staff.phone).toBe('+1234567890');
       expect(staff.designation).toBe('Senior Teacher');
-      expect(staff.basicSalary).toBe(75000);
+      expect(staff.compensation?.basicSalary).toBe(75000);
       expect(staff.performanceRating).toBe(4);
       expect(staff.annualLeaveBalance).toBe(25);
       expect(staff.sickLeaveBalance).toBe(10);
@@ -480,6 +516,21 @@ describe('Staff Directory E2E', () => {
       const adminApi = api(admin);
 
       await adminApi.get('invalid-uuid').expect(400);
+    });
+
+    it('admin can create staff with minimal data', async () => {
+      const adminApi = api(admin);
+
+      const minimalStaff = await createMinimalStaffRecord({
+        firstName: 'Minimal',
+        lastName: 'Test',
+        designation: 'Test Staff',
+      });
+
+      expect(minimalStaff.id).toBeDefined();
+      expect(minimalStaff.firstName).toBe('Minimal');
+      expect(minimalStaff.lastName).toBe('Test');
+      expect(minimalStaff.designation).toBe('Test Staff');
     });
   });
 
@@ -594,17 +645,22 @@ describe('Staff Directory E2E', () => {
       testStaff = await createStaffRecord({
         firstName: 'Payroll',
         lastName: 'Test',
-        basicSalary: 50000,
-        houseAllowance: 5000,
-        transportAllowance: 3000,
-        medicalAllowance: 2000,
-        grossSalary: 60000,
-        taxDeductible: 3000,
-        providentFund: 1000,
-        netSalary: 46000,
-        paymentMethod: 'bank_transfer',
-        bankName: 'Test Bank',
-        bankAccountNumber: '1234567890',
+        compensation: {
+          basicSalary: 50000,
+          salaryCurrency: 'NGN',
+          houseAllowance: 5000,
+          transportAllowance: 3000,
+          medicalAllowance: 2000,
+          grossSalary: 60000,
+          taxDeductible: 3000,
+          providentFund: 1000,
+          netSalary: 46000,
+          paymentMethod: 'bank_transfer',
+          bankDetails: {
+            bankName: 'Test Bank',
+            accountNumber: '1234567890',
+          },
+        },
       });
     });
 
@@ -613,17 +669,17 @@ describe('Staff Directory E2E', () => {
 
       const payrollRes = await adminApi.getPayroll(testStaff.id).expect(200);
 
-      expect(payrollRes.body.basicSalary).toBe(50000);
-      expect(payrollRes.body.houseAllowance).toBe(5000);
-      expect(payrollRes.body.transportAllowance).toBe(3000);
-      expect(payrollRes.body.medicalAllowance).toBe(2000);
-      expect(payrollRes.body.grossSalary).toBe(60000);
-      expect(payrollRes.body.taxDeductible).toBe(3000);
-      expect(payrollRes.body.providentFund).toBe(1000);
-      expect(payrollRes.body.netSalary).toBe(46000);
-      expect(payrollRes.body.paymentMethod).toBe('bank_transfer');
-      expect(payrollRes.body.bankName).toBe('Test Bank');
-      expect(payrollRes.body.bankAccountNumber).toBe('1234567890');
+      expect(payrollRes.body.compensation?.basicSalary).toBe(50000);
+      expect(payrollRes.body.compensation?.houseAllowance).toBe(5000);
+      expect(payrollRes.body.compensation?.transportAllowance).toBe(3000);
+      expect(payrollRes.body.compensation?.medicalAllowance).toBe(2000);
+      expect(payrollRes.body.compensation?.grossSalary).toBe(60000);
+      expect(payrollRes.body.compensation?.taxDeductible).toBe(3000);
+      expect(payrollRes.body.compensation?.providentFund).toBe(1000);
+      expect(payrollRes.body.compensation?.netSalary).toBe(46000);
+      expect(payrollRes.body.compensation?.paymentMethod).toBe('bank_transfer');
+      expect(payrollRes.body.compensation?.bankDetails?.bankName).toBe('Test Bank');
+      expect(payrollRes.body.compensation?.bankDetails?.accountNumber).toBe('1234567890');
     });
 
     it('updates payroll information', async () => {
@@ -636,10 +692,10 @@ describe('Staff Directory E2E', () => {
         netSalary: 51000,
       }).expect(200);
 
-      expect(updateRes.body.basicSalary).toBe(55000);
-      expect(updateRes.body.houseAllowance).toBe(6000);
-      expect(updateRes.body.grossSalary).toBe(65000);
-      expect(updateRes.body.netSalary).toBe(51000);
+      expect(updateRes.body.compensation?.basicSalary).toBe(55000);
+      expect(updateRes.body.compensation?.houseAllowance).toBe(6000);
+      expect(updateRes.body.compensation?.grossSalary).toBe(65000);
+      expect(updateRes.body.compensation?.netSalary).toBe(51000);
     });
 
     it('validates payroll update data', async () => {
@@ -667,7 +723,13 @@ describe('Staff Directory E2E', () => {
         await createStaffRecord({
           staffType: staffTypes[i % staffTypes.length] as StaffType,
           status: statuses[i % statuses.length] as StaffStatus,
-          basicSalary: faker.number.int({ min: 30000, max: 100000 }),
+          compensation: {
+            basicSalary: faker.number.int({ min: 30000, max: 100000 }),
+            salaryCurrency: 'NGN',
+            grossSalary: 0,
+            netSalary: 0,
+            paymentMethod: 'bank_transfer',
+          },
           performanceRating: faker.number.int({ min: 1, max: 5 }),
         });
       }
@@ -747,7 +809,13 @@ describe('Staff Directory E2E', () => {
         email: 'alice.johnson@example.com',
         designation: 'Mathematics Teacher',
         staffType: StaffType.TEACHING,
-        basicSalary: 60000,
+        compensation: {
+          basicSalary: 60000,
+          salaryCurrency: 'NGN',
+          grossSalary: 60000,
+          netSalary: 60000,
+          paymentMethod: 'bank_transfer',
+        },
         performanceRating: 5,
       });
 
@@ -757,7 +825,13 @@ describe('Staff Directory E2E', () => {
         email: 'bob.smith@example.com',
         designation: 'Administrator',
         staffType: StaffType.ADMINISTRATIVE,
-        basicSalary: 70000,
+        compensation: {
+          basicSalary: 70000,
+          salaryCurrency: 'NGN',
+          grossSalary: 70000,
+          netSalary: 70000,
+          paymentMethod: 'bank_transfer',
+        },
         performanceRating: 4,
       });
 
@@ -767,7 +841,13 @@ describe('Staff Directory E2E', () => {
         email: 'carol.williams@example.com',
         designation: 'Science Teacher',
         staffType: StaffType.TEACHING,
-        basicSalary: 55000,
+        compensation: {
+          basicSalary: 55000,
+          salaryCurrency: 'NGN',
+          grossSalary: 55000,
+          netSalary: 55000,
+          paymentMethod: 'bank_transfer',
+        },
         performanceRating: 3,
       });
     });
@@ -784,7 +864,7 @@ describe('Staff Directory E2E', () => {
 
       expect(filterRes.body.length).toBe(2); // Alice and Carol
       expect(filterRes.body.every((s: any) => s.staffType === StaffType.TEACHING)).toBe(true);
-      expect(filterRes.body.every((s: any) => s.basicSalary >= 55000 && s.basicSalary <= 65000)).toBe(true);
+      expect(filterRes.body.every((s: any) => s.compensation?.basicSalary >= 55000 && s.compensation?.basicSalary <= 65000)).toBe(true);
     });
 
     it('searches across multiple fields', async () => {
@@ -854,7 +934,13 @@ describe('Staff Directory E2E', () => {
             designation: 'Test Staff',
             staffType: StaffType.TEACHING,
             employmentType: EmploymentType.FULL_TIME,
-            basicSalary: 50000,
+            compensation: {
+              basicSalary: 50000,
+              salaryCurrency: 'NGN',
+              grossSalary: 50000,
+              netSalary: 50000,
+              paymentMethod: 'bank_transfer',
+            },
             status: StaffStatus.ACTIVE,
           })
         );
@@ -880,7 +966,13 @@ describe('Staff Directory E2E', () => {
         firstName: 'Update',
         lastName: 'Test',
         designation: 'Junior Teacher',
-        basicSalary: 40000,
+        compensation: {
+          basicSalary: 40000,
+          salaryCurrency: 'NGN',
+          grossSalary: 40000,
+          netSalary: 40000,
+          paymentMethod: 'bank_transfer',
+        },
       });
     });
 
@@ -914,7 +1006,7 @@ describe('Staff Directory E2E', () => {
       const updateRes = await adminApi.update(testStaff.id, updateData).expect(200);
 
       expect(updateRes.body.employmentType).toBe(EmploymentType.PART_TIME);
-      expect(updateRes.body.basicSalary).toBe(50000);
+      expect(updateRes.body.compensation?.basicSalary).toBe(50000);
       expect(updateRes.body.designation).toBe('Part-time Instructor');
     });
 
@@ -1068,30 +1160,44 @@ describe('Staff Directory E2E', () => {
           lastName: 'Create',
           dateOfBirth: faker.date.birthdate({ min: 18, max: 65, mode: 'age' }),
           gender: Gender.MALE,
-          email: 'unauthorized@example.com',
-          phone: faker.phone.number(),
-          currentAddress: {
-            street: faker.location.streetAddress(),
-            city: faker.location.city(),
-            state: faker.location.state(),
-            postalCode: faker.location.zipCode(),
-            country: faker.location.countryCode(),
+          contactInfo: {
+            email: 'unauthorized@example.com',
+            phone: faker.phone.number(),
+            emergencyContact: {
+              name: faker.person.fullName(),
+              phone: faker.phone.number(),
+              relation: 'Spouse',
+            },
           },
-          permanentAddress: {
-            street: faker.location.streetAddress(),
-            city: faker.location.city(),
-            state: faker.location.state(),
-            postalCode: faker.location.zipCode(),
-            country: faker.location.countryCode(),
+          addressInfo: {
+            current: {
+              street: faker.location.streetAddress(),
+              city: faker.location.city(),
+              state: faker.location.state(),
+              postalCode: faker.location.zipCode(),
+              country: faker.location.countryCode(),
+            },
+            permanent: {
+              street: faker.location.streetAddress(),
+              city: faker.location.city(),
+              state: faker.location.state(),
+              postalCode: faker.location.zipCode(),
+              country: faker.location.countryCode(),
+            },
           },
           staffType: StaffType.TEACHING,
           designation: 'Teacher',
           employmentType: EmploymentType.FULL_TIME,
           joiningDate: faker.date.past({ years: 5 }),
-          basicSalary: 40000,
-          emergencyContactName: faker.person.fullName(),
-          emergencyContactPhone: faker.phone.number(),
-          emergencyContactRelation: 'Spouse',
+          compensation: {
+            basicSalary: 40000,
+            salaryCurrency: 'NGN',
+            grossSalary: 40000,
+            netSalary: 40000,
+            paymentMethod: 'bank_transfer',
+          },
+          createdBy: randomUUID(),
+          updatedBy: randomUUID(),
         };
 
         await staffApi.create(createData).expect(403);
@@ -1106,30 +1212,44 @@ describe('Staff Directory E2E', () => {
           lastName: 'Create',
           dateOfBirth: faker.date.birthdate({ min: 18, max: 65, mode: 'age' }),
           gender: Gender.FEMALE,
-          email: 'student.create@example.com',
-          phone: faker.phone.number(),
-          currentAddress: {
-            street: faker.location.streetAddress(),
-            city: faker.location.city(),
-            state: faker.location.state(),
-            postalCode: faker.location.zipCode(),
-            country: faker.location.countryCode(),
+          contactInfo: {
+            email: 'student.create@example.com',
+            phone: faker.phone.number(),
+            emergencyContact: {
+              name: faker.person.fullName(),
+              phone: faker.phone.number(),
+              relation: 'Parent',
+            },
           },
-          permanentAddress: {
-            street: faker.location.streetAddress(),
-            city: faker.location.city(),
-            state: faker.location.state(),
-            postalCode: faker.location.zipCode(),
-            country: faker.location.countryCode(),
+          addressInfo: {
+            current: {
+              street: faker.location.streetAddress(),
+              city: faker.location.city(),
+              state: faker.location.state(),
+              postalCode: faker.location.zipCode(),
+              country: faker.location.countryCode(),
+            },
+            permanent: {
+              street: faker.location.streetAddress(),
+              city: faker.location.city(),
+              state: faker.location.state(),
+              postalCode: faker.location.zipCode(),
+              country: faker.location.countryCode(),
+            },
           },
           staffType: StaffType.ADMINISTRATIVE,
           designation: 'Admin',
           employmentType: EmploymentType.FULL_TIME,
           joiningDate: faker.date.past({ years: 5 }),
-          basicSalary: 35000,
-          emergencyContactName: faker.person.fullName(),
-          emergencyContactPhone: faker.phone.number(),
-          emergencyContactRelation: 'Parent',
+          compensation: {
+            basicSalary: 35000,
+            salaryCurrency: 'NGN',
+            grossSalary: 35000,
+            netSalary: 35000,
+            paymentMethod: 'bank_transfer',
+          },
+          createdBy: randomUUID(),
+          updatedBy: randomUUID(),
         };
 
         await studentApi.create(createData).expect(403);
@@ -1144,30 +1264,44 @@ describe('Staff Directory E2E', () => {
           lastName: 'User',
           dateOfBirth: faker.date.birthdate({ min: 18, max: 65, mode: 'age' }),
           gender: Gender.MALE,
-          email: 'anon@example.com',
-          phone: faker.phone.number(),
-          currentAddress: {
-            street: faker.location.streetAddress(),
-            city: faker.location.city(),
-            state: faker.location.state(),
-            postalCode: faker.location.zipCode(),
-            country: faker.location.countryCode(),
+          contactInfo: {
+            email: 'anon@example.com',
+            phone: faker.phone.number(),
+            emergencyContact: {
+              name: faker.person.fullName(),
+              phone: faker.phone.number(),
+              relation: 'Spouse',
+            },
           },
-          permanentAddress: {
-            street: faker.location.streetAddress(),
-            city: faker.location.city(),
-            state: faker.location.state(),
-            postalCode: faker.location.zipCode(),
-            country: faker.location.countryCode(),
+          addressInfo: {
+            current: {
+              street: faker.location.streetAddress(),
+              city: faker.location.city(),
+              state: faker.location.state(),
+              postalCode: faker.location.zipCode(),
+              country: faker.location.countryCode(),
+            },
+            permanent: {
+              street: faker.location.streetAddress(),
+              city: faker.location.city(),
+              state: faker.location.state(),
+              postalCode: faker.location.zipCode(),
+              country: faker.location.countryCode(),
+            },
           },
           staffType: StaffType.TEACHING,
           designation: 'Teacher',
           employmentType: EmploymentType.FULL_TIME,
           joiningDate: faker.date.past({ years: 5 }),
-          basicSalary: 40000,
-          emergencyContactName: faker.person.fullName(),
-          emergencyContactPhone: faker.phone.number(),
-          emergencyContactRelation: 'Spouse',
+          compensation: {
+            basicSalary: 40000,
+            salaryCurrency: 'NGN',
+            grossSalary: 40000,
+            netSalary: 40000,
+            paymentMethod: 'bank_transfer',
+          },
+          createdBy: randomUUID(),
+          updatedBy: randomUUID(),
         };
 
         await anon.post('/api/v1/staff').send(createData).expect(401);
@@ -1271,30 +1405,44 @@ describe('Staff Directory E2E', () => {
         lastName: 'Email',
         dateOfBirth: faker.date.birthdate({ min: 18, max: 65, mode: 'age' }),
         gender: Gender.MALE,
-        email: 'invalid-email',
-        phone: faker.phone.number(),
-        currentAddress: {
-          street: faker.location.streetAddress(),
-          city: faker.location.city(),
-          state: faker.location.state(),
-          postalCode: faker.location.zipCode(),
-          country: faker.location.countryCode(),
+        contactInfo: {
+          email: 'invalid-email',
+          phone: faker.phone.number(),
+          emergencyContact: {
+            name: faker.person.fullName(),
+            phone: faker.phone.number(),
+            relation: 'Spouse',
+          },
         },
-        permanentAddress: {
-          street: faker.location.streetAddress(),
-          city: faker.location.city(),
-          state: faker.location.state(),
-          postalCode: faker.location.zipCode(),
-          country: faker.location.countryCode(),
+        addressInfo: {
+          current: {
+            street: faker.location.streetAddress(),
+            city: faker.location.city(),
+            state: faker.location.state(),
+            postalCode: faker.location.zipCode(),
+            country: faker.location.countryCode(),
+          },
+          permanent: {
+            street: faker.location.streetAddress(),
+            city: faker.location.city(),
+            state: faker.location.state(),
+            postalCode: faker.location.zipCode(),
+            country: faker.location.countryCode(),
+          },
         },
         staffType: StaffType.TEACHING,
         designation: 'Teacher',
         employmentType: EmploymentType.FULL_TIME,
         joiningDate: faker.date.past({ years: 5 }),
-        basicSalary: 40000,
-        emergencyContactName: faker.person.fullName(),
-        emergencyContactPhone: faker.phone.number(),
-        emergencyContactRelation: 'Spouse',
+        compensation: {
+          basicSalary: 40000,
+          salaryCurrency: 'NGN',
+          grossSalary: 40000,
+          netSalary: 40000,
+          paymentMethod: 'bank_transfer',
+        },
+        createdBy: randomUUID(),
+        updatedBy: randomUUID(),
       };
 
       await adminApi.create(invalidCreateData).expect(400);
@@ -1310,10 +1458,10 @@ describe('Staff Directory E2E', () => {
       const testStaff = await createMinimalStaffRecord();
 
       // Negative salary
-      await adminApi.update(testStaff.id, { basicSalary: -1000 }).expect(400);
+      await adminApi.update(testStaff.id, { compensation: { basicSalary: -1000, salaryCurrency: 'NGN', grossSalary: -1000, netSalary: -1000, paymentMethod: 'bank_transfer' } }).expect(400);
 
       // Extremely high salary
-      await adminApi.update(testStaff.id, { basicSalary: 10000000 }).expect(400);
+      await adminApi.update(testStaff.id, { compensation: { basicSalary: 10000000, salaryCurrency: 'NGN', grossSalary: 10000000, netSalary: 10000000, paymentMethod: 'bank_transfer' } }).expect(400);
     });
 
     it('handles concurrent staff operations', async () => {
@@ -1329,30 +1477,44 @@ describe('Staff Directory E2E', () => {
             lastName: 'Test',
             dateOfBirth: faker.date.birthdate({ min: 18, max: 65, mode: 'age' }),
             gender: Gender.MALE,
-            email: `concurrent${i}@example.com`,
-            phone: faker.phone.number(),
-            currentAddress: {
-              street: faker.location.streetAddress(),
-              city: faker.location.city(),
-              state: faker.location.state(),
-              postalCode: faker.location.zipCode(),
-              country: faker.location.countryCode(),
+            contactInfo: {
+              email: `concurrent${i}@example.com`,
+              phone: faker.phone.number(),
+              emergencyContact: {
+                name: faker.person.fullName(),
+                phone: faker.phone.number(),
+                relation: 'Spouse',
+              },
             },
-            permanentAddress: {
-              street: faker.location.streetAddress(),
-              city: faker.location.city(),
-              state: faker.location.state(),
-              postalCode: faker.location.zipCode(),
-              country: faker.location.countryCode(),
+            addressInfo: {
+              current: {
+                street: faker.location.streetAddress(),
+                city: faker.location.city(),
+                state: faker.location.state(),
+                postalCode: faker.location.zipCode(),
+                country: faker.location.countryCode(),
+              },
+              permanent: {
+                street: faker.location.streetAddress(),
+                city: faker.location.city(),
+                state: faker.location.state(),
+                postalCode: faker.location.zipCode(),
+                country: faker.location.countryCode(),
+              },
             },
             staffType: StaffType.TEACHING,
             designation: 'Teacher',
             employmentType: EmploymentType.FULL_TIME,
             joiningDate: faker.date.past({ years: 5 }),
-            basicSalary: 40000,
-            emergencyContactName: faker.person.fullName(),
-            emergencyContactPhone: faker.phone.number(),
-            emergencyContactRelation: 'Spouse',
+            compensation: {
+              basicSalary: 40000,
+              salaryCurrency: 'NGN',
+              grossSalary: 40000,
+              netSalary: 40000,
+              paymentMethod: 'bank_transfer',
+            },
+            createdBy: randomUUID(),
+            updatedBy: randomUUID(),
           })
         );
       }

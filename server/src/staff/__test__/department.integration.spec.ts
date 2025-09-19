@@ -105,13 +105,52 @@ describe('DepartmentService - True Integration Tests', () => {
     return service.createDepartment(dto, creator);
   }
 
-  async function makeStaff(overrides: Partial<Staff> = {}): Promise<Staff> {
+  async function makeStaff(overrides: Partial<Staff> & {
+    basicSalary?: number;
+    grossSalary?: number;
+    netSalary?: number;
+    salaryCurrency?: string;
+    houseAllowance?: number;
+    transportAllowance?: number;
+    medicalAllowance?: number;
+    otherAllowances?: number;
+    taxDeductible?: number;
+    providentFund?: number;
+    otherDeductions?: number;
+    paymentMethod?: string;
+    bankName?: string;
+    bankAccountNumber?: string;
+    bankBranch?: string;
+    ifscCode?: string;
+  } = {}): Promise<Staff> {
     const seq = Math.floor(Math.random() * 1_000_000);
     const salary = overrides.basicSalary ?? faker.number.int({ min: 30000, max: 100000 });
     const gross = overrides.grossSalary ?? salary;
     const net = overrides.netSalary ?? gross;
 
     const employeeId = overrides.employeeId ?? `EMP${seq.toString().padStart(6, '0')}`;
+
+    // Build compensation object
+    const compensation = {
+      basicSalary: salary,
+      salaryCurrency: overrides.salaryCurrency ?? 'en',
+      houseAllowance: overrides.houseAllowance ?? faker.number.int({ min: 0, max: 10000 }),
+      transportAllowance: overrides.transportAllowance ?? faker.number.int({ min: 0, max: 5000 }),
+      medicalAllowance: overrides.medicalAllowance ?? faker.number.int({ min: 0, max: 3000 }),
+      otherAllowances: overrides.otherAllowances ?? faker.number.int({ min: 0, max: 2000 }),
+      grossSalary: gross,
+      taxDeductible: overrides.taxDeductible ?? faker.number.int({ min: 0, max: 5000 }),
+      providentFund: overrides.providentFund ?? faker.number.int({ min: 0, max: 2000 }),
+      otherDeductions: overrides.otherDeductions ?? faker.number.int({ min: 0, max: 1000 }),
+      netSalary: net,
+      paymentMethod: overrides.paymentMethod ?? faker.helpers.arrayElement(['bank_transfer', 'check', 'cash']),
+      bankDetails: {
+        bankName: overrides.bankName ?? faker.company.name(),
+        accountNumber: overrides.bankAccountNumber ?? faker.finance.accountNumber(),
+        branch: overrides.bankBranch ?? faker.location.city(),
+        ifscCode: overrides.ifscCode ?? faker.finance.routingNumber(),
+      },
+    };
 
     const staff = await staffRepository.save({
       schoolId: overrides.schoolId ?? randomUUID(),
@@ -123,20 +162,26 @@ describe('DepartmentService - True Integration Tests', () => {
       dateOfBirth: overrides.dateOfBirth ?? faker.date.birthdate({ min: 18, max: 65, mode: 'age' }),
       maritalStatus: overrides.maritalStatus ?? faker.helpers.arrayElement(Object.values(MaritalStatus)),
       bloodGroup: overrides.bloodGroup ?? faker.helpers.arrayElement(Object.values(BloodGroup)),
-      email: overrides.email ?? faker.internet.email(),
-      phone: overrides.phone ?? faker.phone.number(),
-      alternatePhone: overrides.alternatePhone,
-      emergencyContactName: overrides.emergencyContactName ?? faker.person.fullName(),
-      emergencyContactPhone: overrides.emergencyContactPhone ?? faker.phone.number(),
-      emergencyContactRelation: overrides.emergencyContactRelation ?? 'Spouse',
-      currentAddress: overrides.currentAddress ?? {
-        street: faker.location.streetAddress(),
-        city: faker.location.city(),
-        state: faker.location.state(),
-        postalCode: faker.location.zipCode(),
-        country: faker.location.countryCode(),
+      contactInfo: {
+        email: overrides.email ?? faker.internet.email(),
+        phone: overrides.phone ?? faker.phone.number(),
+        alternatePhone: overrides.alternatePhone,
+        emergencyContact: {
+          name: overrides.emergencyContactName ?? faker.person.fullName(),
+          phone: overrides.emergencyContactPhone ?? faker.phone.number(),
+          relation: overrides.emergencyContactRelation ?? 'Spouse',
+        },
       },
-      permanentAddress: overrides.permanentAddress,
+      addressInfo: {
+        current: overrides.currentAddress ?? {
+          street: faker.location.streetAddress(),
+          city: faker.location.city(),
+          state: faker.location.state(),
+          postalCode: faker.location.zipCode(),
+          country: faker.location.countryCode(),
+        },
+        permanent: overrides.permanentAddress,
+      },
       staffType: overrides.staffType ?? faker.helpers.arrayElement(Object.values(StaffType)),
       departments: overrides.departments,
       designation: overrides.designation ?? faker.person.jobTitle(),
@@ -146,22 +191,7 @@ describe('DepartmentService - True Integration Tests', () => {
       probationEndDate: overrides.probationEndDate,
       contractEndDate: overrides.contractEndDate,
       status: overrides.status,
-      basicSalary: salary,
-      salaryCurrency: overrides.salaryCurrency ?? 'USD',
-      houseAllowance: overrides.houseAllowance ?? faker.number.int({ min: 0, max: 10000 }),
-      transportAllowance: overrides.transportAllowance ?? faker.number.int({ min: 0, max: 5000 }),
-      medicalAllowance: overrides.medicalAllowance ?? faker.number.int({ min: 0, max: 3000 }),
-      otherAllowances: overrides.otherAllowances ?? faker.number.int({ min: 0, max: 2000 }),
-      grossSalary: gross,
-      taxDeductible: overrides.taxDeductible ?? faker.number.int({ min: 0, max: 5000 }),
-      providentFund: overrides.providentFund ?? faker.number.int({ min: 0, max: 2000 }),
-      otherDeductions: overrides.otherDeductions ?? faker.number.int({ min: 0, max: 1000 }),
-      netSalary: net,
-      paymentMethod: overrides.paymentMethod ?? faker.helpers.arrayElement(['bank_transfer', 'check', 'cash']),
-      bankName: overrides.bankName ?? faker.company.name(),
-      bankAccountNumber: overrides.bankAccountNumber ?? faker.finance.accountNumber(),
-      bankBranch: overrides.bankBranch ?? faker.location.city(),
-      ifscCode: overrides.ifscCode ?? faker.finance.routingNumber(),
+      compensation,
       qualifications: overrides.qualifications ?? [faker.person.jobArea()],
       certifications: overrides.certifications ?? [faker.lorem.words(2)],
       previousExperience: overrides.previousExperience ?? [faker.lorem.sentence()],
@@ -289,7 +319,7 @@ describe('DepartmentService - True Integration Tests', () => {
         type: EDepartmentType.MEDICAL,
         name: faker.company.buzzNoun(),
       }, creatorId);
-      expect(dept3.description).toBeUndefined();
+      expect(dept3.description).toBeNull();
     });
   });
 

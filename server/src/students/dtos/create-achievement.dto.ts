@@ -279,7 +279,7 @@ export class CreateAchievementDto {
 
   @ApiPropertyOptional({
     description: 'Prize currency code',
-    example: 'USD',
+    example: 'NGN',
     maxLength: 3,
   })
   @IsOptional()
@@ -644,7 +644,7 @@ export class UpdateAchievementDto {
 
   @ApiPropertyOptional({
     description: 'Prize currency code',
-    example: 'USD',
+    example: 'NGN',
     maxLength: 3,
   })
   @IsOptional()

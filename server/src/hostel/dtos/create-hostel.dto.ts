@@ -249,7 +249,7 @@ export class HostelPricingDto implements IHostelPricing {
 
   @ApiProperty({
     description: 'Currency code',
-    example: 'USD',
+    example: 'NGN',
     maxLength: 3,
   })
   @IsNotEmpty({ message: 'Currency is required' })

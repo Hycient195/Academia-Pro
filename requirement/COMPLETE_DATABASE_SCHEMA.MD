@@ -54,7 +54,7 @@ CREATE TABLE schools (
     settings JSONB DEFAULT '{}', -- School-specific settings
     status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'suspended')),
     timezone VARCHAR(50) DEFAULT 'UTC',
-    currency VARCHAR(3) DEFAULT 'USD',
+    currency VARCHAR(3) DEFAULT 'NGN',
     language VARCHAR(10) DEFAULT 'en',
     logo_url VARCHAR(500),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

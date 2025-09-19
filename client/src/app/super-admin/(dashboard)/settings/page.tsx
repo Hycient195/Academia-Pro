@@ -55,7 +55,7 @@ export default function SettingsPage() {
     stripeSecretKey: "",
     paypalClientId: "",
     paypalSecret: "",
-    currency: "USD",
+    currency: "NGN",
 
     // API Settings
     apiRateLimit: 1000,
@@ -467,7 +467,7 @@ export default function SettingsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="USD">USD ($)</SelectItem>
+                    <SelectItem value="NGN">NGN ($)</SelectItem>
                     <SelectItem value="EUR">EUR (€)</SelectItem>
                     <SelectItem value="GBP">GBP (£)</SelectItem>
                     <SelectItem value="CAD">CAD (C$)</SelectItem>

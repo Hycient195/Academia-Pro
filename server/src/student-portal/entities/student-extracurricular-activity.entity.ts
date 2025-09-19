@@ -106,7 +106,7 @@ export class StudentExtracurricularActivity {
   @Column({ name: 'fee_amount', type: 'decimal', precision: 10, scale: 2, nullable: true })
   feeAmount: number;
 
-  @Column({ name: 'fee_currency', type: 'varchar', length: 3, default: 'USD' })
+  @Column({ name: 'fee_currency', type: 'varchar', length: 3, default: 'NGN' })
   feeCurrency: string;
 
   @Column({ name: 'is_paid', type: 'boolean', default: false })

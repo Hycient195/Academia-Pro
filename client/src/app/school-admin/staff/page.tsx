@@ -216,7 +216,7 @@ export default function StaffPage() {
         <Tabs defaultValue="directory" className="space-y-2">
           <TabsList>
             <TabsTrigger value="directory">Staff Directory</TabsTrigger>
-            <TabsTrigger value="departments">Departments</TabsTrigger>
+            <TabsTrigger value="departments">Departmments</TabsTrigger>
             <TabsTrigger value="attendance">Attendance</TabsTrigger>
             <TabsTrigger value="payroll">Payroll</TabsTrigger>
           </TabsList>

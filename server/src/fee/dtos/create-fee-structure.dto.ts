@@ -62,7 +62,7 @@ export class CreateFeeStructureDto implements ICreateFeeStructureRequest {
 
   @ApiPropertyOptional({
     description: 'Currency code',
-    example: 'USD',
+    example: 'NGN',
     maxLength: 3,
   })
   @IsOptional()
@@ -349,7 +349,7 @@ export class UpdateFeeStructureDto {
 
   @ApiPropertyOptional({
     description: 'Currency code',
-    example: 'USD',
+    example: 'NGN',
     maxLength: 3,
   })
   @IsOptional()

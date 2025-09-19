@@ -68,7 +68,7 @@ export class CreatePaymentDto implements ICreatePaymentRequest {
 
   @ApiPropertyOptional({
     description: 'Currency code',
-    example: 'USD',
+    example: 'NGN',
     maxLength: 3,
   })
   @IsOptional()

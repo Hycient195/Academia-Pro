@@ -74,7 +74,7 @@ export class FeeStructure {
   @Column({ name: 'base_amount', type: 'decimal', precision: 10, scale: 2 })
   baseAmount: number;
 
-  @Column({ name: 'currency', type: 'varchar', length: 3, default: 'USD' })
+  @Column({ name: 'currency', type: 'varchar', length: 3, default: 'NGN' })
   currency: string;
 
   @Column({ name: 'tax_percentage', type: 'decimal', precision: 5, scale: 2, default: 0 })

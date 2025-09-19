@@ -98,7 +98,7 @@ export class StudentAchievement {
   @Column({ name: 'prize_amount', type: 'decimal', precision: 10, scale: 2, nullable: true })
   prizeAmount: number;
 
-  @Column({ name: 'prize_currency', type: 'varchar', length: 3, default: 'USD' })
+  @Column({ name: 'prize_currency', type: 'varchar', length: 3, default: 'NGN' })
   prizeCurrency: string;
 
   @Column({ name: 'prize_description', type: 'text', nullable: true })

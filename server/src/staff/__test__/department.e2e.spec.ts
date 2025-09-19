@@ -51,6 +51,8 @@ describe('Departments E2E', () => {
     const repo: Repository<Staff> = ds.getRepository(Staff);
     const now = Date.now();
 
+    const basicSalary = faker.number.int({ min: 30000, max: 100000 });
+
     const entity = repo.create({
       schoolId,
       employeeId: `EMP${now}`,
@@ -59,32 +61,44 @@ describe('Departments E2E', () => {
       middleName: faker.person.middleName(),
       dateOfBirth: faker.date.birthdate({ min: 18, max: 65, mode: 'age' }),
       gender: faker.helpers.arrayElement([Gender.MALE, Gender.FEMALE]),
-      email: faker.internet.email(),
-      phone: faker.phone.number(),
-      currentAddress: {
-        street: faker.location.streetAddress(),
-        city: faker.location.city(),
-        state: faker.location.state(),
-        postalCode: faker.location.zipCode(),
-        country: faker.location.countryCode(),
+      contactInfo: {
+        email: faker.internet.email(),
+        phone: faker.phone.number(),
+        emergencyContact: {
+          name: faker.person.fullName(),
+          phone: faker.phone.number(),
+          relation: 'Spouse',
+        },
       },
-      permanentAddress: {
-        street: faker.location.streetAddress(),
-        city: faker.location.city(),
-        state: faker.location.state(),
-        postalCode: faker.location.zipCode(),
-        country: faker.location.countryCode(),
+      addressInfo: {
+        current: {
+          street: faker.location.streetAddress(),
+          city: faker.location.city(),
+          state: faker.location.state(),
+          postalCode: faker.location.zipCode(),
+          country: faker.location.countryCode(),
+        },
+        permanent: {
+          street: faker.location.streetAddress(),
+          city: faker.location.city(),
+          state: faker.location.state(),
+          postalCode: faker.location.zipCode(),
+          country: faker.location.countryCode(),
+        },
       },
       staffType: faker.helpers.arrayElement(Object.values(StaffType)),
       departments: [],
       designation: faker.person.jobTitle(),
       employmentType: faker.helpers.arrayElement(Object.values(EmploymentType)),
       joiningDate: faker.date.past({ years: 5 }),
-      basicSalary: faker.number.int({ min: 30000, max: 100000 }),
+      compensation: {
+        basicSalary,
+        salaryCurrency: 'NGN',
+        grossSalary: basicSalary,
+        netSalary: basicSalary,
+        paymentMethod: 'bank_transfer',
+      },
       status: StaffStatus.ACTIVE,
-      emergencyContactName: faker.person.fullName(),
-      emergencyContactPhone: faker.phone.number(),
-      emergencyContactRelation: 'Spouse',
       createdBy: randomUUID(),
       updatedBy: randomUUID(),
       ...overrides,

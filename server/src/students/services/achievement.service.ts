@@ -53,7 +53,7 @@ export class StudentAchievementService {
       positionRank: createDto.positionRank,
       participantsCount: createDto.participantsCount,
       prizeAmount: createDto.prizeAmount,
-      prizeCurrency: createDto.prizeCurrency || 'USD',
+      prizeCurrency: createDto.prizeCurrency || 'NGN',
       prizeDescription: createDto.prizeDescription,
       certificateIssued: createDto.certificateIssued || false,
       certificateNumber: createDto.certificateNumber,

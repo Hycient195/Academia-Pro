@@ -39,6 +39,7 @@ import { CommonModule } from './common/common.module';
 import { RedisModule } from './redis/redis.module';
 import { SeedersModule } from './database/seeders/seeders.module';
 import { QueueModule } from './queue/queue.module';
+import { S3Module } from './common/services/storage/s3.module';
 
 // Guards, interceptors, and filters
 import { ThrottlerGuard } from './common/guards/throttler.guard';
@@ -118,6 +119,7 @@ import { AppService } from './app.service';
     forwardRef(() => TransportationModule),
     forwardRef(() => InventoryModule),
     forwardRef(() => SecurityModule),
+    S3Module,
 
     // TODO: Add remaining modules as they are implemented
     // FeeModule,

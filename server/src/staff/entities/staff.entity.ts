@@ -79,8 +79,6 @@ export enum QualificationLevel {
 @Unique(['schoolId', 'employeeId'])
 @Index(['schoolId', 'staffType'])
 @Index(['schoolId', 'status'])
-@Index(['email'])
-@Index(['phone'])
 export class Staff {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -127,46 +125,40 @@ export class Staff {
   })
   bloodGroup?: BloodGroup;
 
-  // Contact Information
-  @Column({ type: 'varchar', length: 255, unique: true })
-  email: string;
-
-  @Column({ name: 'phone', type: 'varchar', length: 20 })
-  phone: string;
-
-  @Column({ name: 'alternate_phone', type: 'varchar', length: 20, nullable: true })
-  alternatePhone?: string;
-
-  @Column({ name: 'emergency_contact_name', type: 'varchar', length: 100 })
-  emergencyContactName: string;
-
-  @Column({ name: 'emergency_contact_phone', type: 'varchar', length: 20 })
-  emergencyContactPhone: string;
-
-  @Column({ name: 'emergency_contact_relation', type: 'varchar', length: 50 })
-  emergencyContactRelation: string;
-
-  // Address Information
-  @Column({ name: 'current_address', type: 'jsonb' })
-  currentAddress: {
-    street: string;
-    city: string;
-    state: string;
-    postalCode: string;
-    country: string;
-    coordinates?: {
-      latitude: number;
-      longitude: number;
+  // Contact Information (consolidated into JSONB to reduce column count)
+  @Column({ name: 'contact_info', type: 'jsonb' })
+  contactInfo: {
+    email: string;
+    phone: string;
+    alternatePhone?: string;
+    emergencyContact: {
+      name: string;
+      phone: string;
+      relation: string;
     };
   };
 
-  @Column({ name: 'permanent_address', type: 'jsonb', nullable: true })
-  permanentAddress?: {
-    street: string;
-    city: string;
-    state: string;
-    postalCode: string;
-    country: string;
+  // Address Information (consolidated into JSONB to reduce column count)
+  @Column({ name: 'address_info', type: 'jsonb' })
+  addressInfo: {
+    current: {
+      street: string;
+      city: string;
+      state: string;
+      postalCode: string;
+      country: string;
+      coordinates?: {
+        latitude: number;
+        longitude: number;
+      };
+    };
+    permanent?: {
+      street: string;
+      city: string;
+      state: string;
+      postalCode: string;
+      country: string;
+    };
   };
 
   // Employment Information
@@ -218,54 +210,28 @@ export class Staff {
   })
   status: StaffStatus;
 
-  // Compensation Information
-  @Column({ name: 'basic_salary', type: 'decimal', precision: 12, scale: 2 })
-  basicSalary: number;
-
-  @Column({ name: 'salary_currency', type: 'varchar', length: 3, default: 'USD' })
-  salaryCurrency: string;
-
-  @Column({ name: 'house_allowance', type: 'decimal', precision: 10, scale: 2, default: 0 })
-  houseAllowance: number;
-
-  @Column({ name: 'transport_allowance', type: 'decimal', precision: 10, scale: 2, default: 0 })
-  transportAllowance: number;
-
-  @Column({ name: 'medical_allowance', type: 'decimal', precision: 10, scale: 2, default: 0 })
-  medicalAllowance: number;
-
-  @Column({ name: 'other_allowances', type: 'decimal', precision: 10, scale: 2, default: 0 })
-  otherAllowances: number;
-
-  @Column({ name: 'gross_salary', type: 'decimal', precision: 12, scale: 2 })
-  grossSalary: number;
-
-  @Column({ name: 'tax_deductible', type: 'decimal', precision: 10, scale: 2, default: 0 })
-  taxDeductible: number;
-
-  @Column({ name: 'provident_fund', type: 'decimal', precision: 10, scale: 2, default: 0 })
-  providentFund: number;
-
-  @Column({ name: 'other_deductions', type: 'decimal', precision: 10, scale: 2, default: 0 })
-  otherDeductions: number;
-
-  @Column({ name: 'net_salary', type: 'decimal', precision: 12, scale: 2 })
-  netSalary: number;
-
-  @Column({ name: 'payment_method', type: 'varchar', length: 50, default: 'bank_transfer' })
-  paymentMethod: string;
-
-  @Column({ name: 'bank_name', type: 'varchar', length: 100, nullable: true })
-  bankName?: string;
-
-  @Column({ name: 'bank_account_number', type: 'varchar', length: 50, nullable: true })
-  bankAccountNumber?: string;
-
-  @Column({ name: 'bank_branch', type: 'varchar', length: 100, nullable: true })
-  bankBranch?: string;
-
-  @Column({ name: 'ifsc_code', type: 'varchar', length: 20, nullable: true })
-  ifscCode?: string;
+  // Compensation Information (consolidated into JSONB to reduce column count)
+  @Column({ name: 'compensation', type: 'jsonb', nullable: true })
+  compensation?: {
+    basicSalary: number;
+    salaryCurrency: string;
+    houseAllowance?: number;
+    transportAllowance?: number;
+    medicalAllowance?: number;
+    otherAllowances?: number;
+    grossSalary: number;
+    taxDeductible?: number;
+    providentFund?: number;
+    otherDeductions?: number;
+    netSalary: number;
+    paymentMethod: string;
+    bankDetails?: {
+      bankName?: string;
+      accountNumber?: string;
+      branch?: string;
+      ifscCode?: string;
+    };
+  };
 
   // Educational Qualifications
   @Column({ name: 'qualifications', type: 'jsonb', default: [] })
@@ -431,6 +397,72 @@ export class Staff {
     return `${this.firstName} ${this.lastName}`;
   }
 
+  // Backward compatibility getters for contact info
+  get email(): string {
+    return this.contactInfo.email;
+  }
+
+  set email(value: string) {
+    this.contactInfo.email = value;
+  }
+
+  get phone(): string {
+    return this.contactInfo.phone;
+  }
+
+  set phone(value: string) {
+    this.contactInfo.phone = value;
+  }
+
+  get alternatePhone(): string | undefined {
+    return this.contactInfo.alternatePhone;
+  }
+
+  set alternatePhone(value: string | undefined) {
+    this.contactInfo.alternatePhone = value;
+  }
+
+  get emergencyContactName(): string {
+    return this.contactInfo.emergencyContact.name;
+  }
+
+  set emergencyContactName(value: string) {
+    this.contactInfo.emergencyContact.name = value;
+  }
+
+  get emergencyContactPhone(): string {
+    return this.contactInfo.emergencyContact.phone;
+  }
+
+  set emergencyContactPhone(value: string) {
+    this.contactInfo.emergencyContact.phone = value;
+  }
+
+  get emergencyContactRelation(): string {
+    return this.contactInfo.emergencyContact.relation;
+  }
+
+  set emergencyContactRelation(value: string) {
+    this.contactInfo.emergencyContact.relation = value;
+  }
+
+  // Backward compatibility getters for address info
+  get currentAddress(): any {
+    return this.addressInfo.current;
+  }
+
+  set currentAddress(value: any) {
+    this.addressInfo.current = value;
+  }
+
+  get permanentAddress(): any {
+    return this.addressInfo.permanent;
+  }
+
+  set permanentAddress(value: any) {
+    this.addressInfo.permanent = value;
+  }
+
   get age(): number {
     const today = new Date();
     const birthDate = new Date(this.dateOfBirth);
@@ -501,20 +533,36 @@ export class Staff {
     providentFund?: number;
     otherDeductions?: number;
   }): void {
-    if (components.basicSalary !== undefined) this.basicSalary = components.basicSalary;
-    if (components.houseAllowance !== undefined) this.houseAllowance = components.houseAllowance;
-    if (components.transportAllowance !== undefined) this.transportAllowance = components.transportAllowance;
-    if (components.medicalAllowance !== undefined) this.medicalAllowance = components.medicalAllowance;
-    if (components.otherAllowances !== undefined) this.otherAllowances = components.otherAllowances;
+    if (!this.compensation) {
+      this.compensation = {
+        basicSalary: 0,
+        salaryCurrency: 'NGN',
+        grossSalary: 0,
+        netSalary: 0,
+        paymentMethod: 'bank_transfer'
+      };
+    }
 
-    this.grossSalary = this.basicSalary + this.houseAllowance + this.transportAllowance +
-                      this.medicalAllowance + this.otherAllowances;
+    if (components.basicSalary !== undefined) this.compensation.basicSalary = components.basicSalary;
+    if (components.houseAllowance !== undefined) this.compensation.houseAllowance = components.houseAllowance;
+    if (components.transportAllowance !== undefined) this.compensation.transportAllowance = components.transportAllowance;
+    if (components.medicalAllowance !== undefined) this.compensation.medicalAllowance = components.medicalAllowance;
+    if (components.otherAllowances !== undefined) this.compensation.otherAllowances = components.otherAllowances;
 
-    if (components.taxDeductible !== undefined) this.taxDeductible = components.taxDeductible;
-    if (components.providentFund !== undefined) this.providentFund = components.providentFund;
-    if (components.otherDeductions !== undefined) this.otherDeductions = components.otherDeductions;
+    this.compensation.grossSalary = this.compensation.basicSalary +
+      (this.compensation.houseAllowance || 0) +
+      (this.compensation.transportAllowance || 0) +
+      (this.compensation.medicalAllowance || 0) +
+      (this.compensation.otherAllowances || 0);
 
-    this.netSalary = this.grossSalary - this.taxDeductible - this.providentFund - this.otherDeductions;
+    if (components.taxDeductible !== undefined) this.compensation.taxDeductible = components.taxDeductible;
+    if (components.providentFund !== undefined) this.compensation.providentFund = components.providentFund;
+    if (components.otherDeductions !== undefined) this.compensation.otherDeductions = components.otherDeductions;
+
+    this.compensation.netSalary = this.compensation.grossSalary -
+      (this.compensation.taxDeductible || 0) -
+      (this.compensation.providentFund || 0) -
+      (this.compensation.otherDeductions || 0);
   }
 
   deductLeave(leaveType: 'annual' | 'sick' | 'maternity' | 'paternity' | 'casual', days: number): boolean {

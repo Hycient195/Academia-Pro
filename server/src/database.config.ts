@@ -10,7 +10,7 @@ const ensureDatabaseExists = async (configService: ConfigService): Promise<void>
   const dbHost = configService.get<string>('DB_HOST', 'localhost');
   const dbPort = configService.get<number>('DB_PORT', 5432);
   const dbUsername = configService.get<string>('DB_ADMIN_USERNAME', 'postgres');
-  const dbPassword = configService.get<string>('DB_ADMIN_PASSWORD', 'admin');
+  const dbPassword = configService.get<string>('DB_PASSWORD', 'admin');
 
   // Connect to postgres database (not the application database)
   const client = new pg.Client({

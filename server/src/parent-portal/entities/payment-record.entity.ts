@@ -70,7 +70,7 @@ export class PaymentRecord {
   @Column({ name: 'amount', type: 'decimal', precision: 10, scale: 2 })
   amount: number;
 
-  @Column({ name: 'currency', type: 'varchar', length: 3, default: 'USD' })
+  @Column({ name: 'currency', type: 'varchar', length: 3, default: 'NGN' })
   currency: string;
 
   @Column({ name: 'description', type: 'varchar', length: 500 })

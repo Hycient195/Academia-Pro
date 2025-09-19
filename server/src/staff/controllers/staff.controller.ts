@@ -655,14 +655,14 @@ export class StaffController {
 
     const report = {
       totalStaff: staff.length,
-      totalGrossSalary: staff.reduce((sum, s) => sum + s.grossSalary, 0),
-      totalNetSalary: staff.reduce((sum, s) => sum + s.netSalary, 0),
-      averageGrossSalary: staff.length > 0 ? staff.reduce((sum, s) => sum + s.grossSalary, 0) / staff.length : 0,
-      averageNetSalary: staff.length > 0 ? staff.reduce((sum, s) => sum + s.netSalary, 0) / staff.length : 0,
+      totalGrossSalary: staff.reduce((sum, s) => sum + (s.compensation?.grossSalary || 0), 0),
+      totalNetSalary: staff.reduce((sum, s) => sum + (s.compensation?.netSalary || 0), 0),
+      averageGrossSalary: staff.length > 0 ? staff.reduce((sum, s) => sum + (s.compensation?.grossSalary || 0), 0) / staff.length : 0,
+      averageNetSalary: staff.length > 0 ? staff.reduce((sum, s) => sum + (s.compensation?.netSalary || 0), 0) / staff.length : 0,
       salaryByDepartment: staff.reduce((acc, s) => {
         // Handle departments array - use first department or 'Unassigned'
         const deptName = s.departments?.[0]?.name || 'Unassigned';
-        acc[deptName] = (acc[deptName] || 0) + s.netSalary;
+        acc[deptName] = (acc[deptName] || 0) + (s.compensation?.netSalary || 0);
         return acc;
       }, {} as Record<string, number>),
       staffDetails: staff.map(s => ({
@@ -670,8 +670,8 @@ export class StaffController {
         name: s.fullName,
         department: s.departments?.[0]?.name || 'Unassigned',
         designation: s.designation,
-        grossSalary: s.grossSalary,
-        netSalary: s.netSalary,
+        grossSalary: s.compensation?.grossSalary || 0,
+        netSalary: s.compensation?.netSalary || 0,
         joiningDate: s.joiningDate,
       })),
       generatedAt: new Date().toISOString(),

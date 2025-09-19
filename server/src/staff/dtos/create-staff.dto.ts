@@ -587,7 +587,7 @@ export class CreateStaffDto implements ICreateStaffRequest {
 
   @ApiPropertyOptional({
     description: 'Salary currency',
-    example: 'USD',
+    example: 'NGN',
     maxLength: 3,
   })
   @IsOptional()

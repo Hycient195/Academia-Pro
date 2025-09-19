@@ -82,7 +82,7 @@ export class LibraryService {
       acquisitionMethod: (dto.acquisitionMethod as unknown as AcquisitionMethod) || AcquisitionMethod.PURCHASE,
       acquisitionDate: new Date(dto.acquisitionDate),
       acquisitionCost: dto.acquisitionCost,
-      acquisitionCurrency: dto.acquisitionCurrency || 'USD',
+      acquisitionCurrency: dto.acquisitionCurrency || 'NGN',
       supplierName: dto.supplierName,
       supplierInvoiceNumber: dto.supplierInvoiceNumber,
       donorName: dto.donorName,

@@ -61,6 +61,13 @@ services:
       DB_USERNAME: academia_user
       DB_PASSWORD: academia_password
       DB_NAME: academia_pro
+      # S3/LocalStack Configuration
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      S3_ENDPOINT: http://localstack:4566
+      S3_BUCKET_NAME: academia-pro-dev
+      USE_LOCALSTACK: true
     ports:
       - "3001:3001"
     volumes:
@@ -71,6 +78,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      localstack:
         condition: service_healthy
     networks:
       - academia-network
@@ -152,11 +161,38 @@ services:
     networks:
       - academia-network
 
+  # LocalStack (AWS Services Mock for Development)
+  localstack:
+    image: localstack/localstack:3.0
+    container_name: academia-pro-localstack
+    restart: unless-stopped
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: s3
+      DEBUG: 1
+      DATA_DIR: /tmp/localstack/data
+      DOCKER_HOST: unix:///var/run/docker.sock
+      HOST_TMP_FOLDER: /tmp/localstack_host
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - localstack_data:/tmp/localstack_data
+      - localstack_s3:/opt/code/localstack
+    networks:
+      - academia-network
+    healthcheck:
+      test: ["CMD", "awslocal", "s3", "ls"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 volumes:
   postgres_data:
   redis_data:
   pgadmin_data:
   nginx_logs:
+  localstack_data:
+  localstack_s3:
 
 networks:
   academia-network:

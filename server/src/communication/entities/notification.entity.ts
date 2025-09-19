@@ -159,7 +159,7 @@ export class Notification {
   @Column({ name: 'cost', type: 'decimal', precision: 10, scale: 4, default: 0 })
   cost: number;
 
-  @Column({ name: 'currency', type: 'varchar', length: 3, default: 'USD' })
+  @Column({ name: 'currency', type: 'varchar', length: 3, default: 'NGN' })
   currency: string;
 
   // Failure Handling

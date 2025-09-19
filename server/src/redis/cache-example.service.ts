@@ -45,7 +45,7 @@ export class CacheExampleService {
     return {
       name: 'Example School',
       timezone: 'UTC',
-      currency: 'USD',
+      currency: 'NGN',
       academicYear: '2024-2025',
     };
   }

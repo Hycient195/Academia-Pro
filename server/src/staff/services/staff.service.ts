@@ -85,7 +85,7 @@ export class StaffService {
       probationEndDate: dto.probationEndDate ? new Date(dto.probationEndDate) : undefined,
       contractEndDate: dto.contractEndDate ? new Date(dto.contractEndDate) : undefined,
       basicSalary: dto.basicSalary,
-      salaryCurrency: dto.salaryCurrency || 'USD',
+      salaryCurrency: dto.salaryCurrency || 'NGN',
       houseAllowance,
       transportAllowance,
       medicalAllowance,
@@ -271,14 +271,14 @@ export class StaffService {
         dto.otherAllowances !== undefined || dto.taxDeductible !== undefined ||
         dto.providentFund !== undefined || dto.otherDeductions !== undefined) {
 
-      const basicSalary = dto.basicSalary !== undefined ? dto.basicSalary : staff.basicSalary;
-      const houseAllowance = dto.houseAllowance !== undefined ? dto.houseAllowance : staff.houseAllowance;
-      const transportAllowance = dto.transportAllowance !== undefined ? dto.transportAllowance : staff.transportAllowance;
-      const medicalAllowance = dto.medicalAllowance !== undefined ? dto.medicalAllowance : staff.medicalAllowance;
-      const otherAllowances = dto.otherAllowances !== undefined ? dto.otherAllowances : staff.otherAllowances;
-      const taxDeductible = dto.taxDeductible !== undefined ? dto.taxDeductible : staff.taxDeductible;
-      const providentFund = dto.providentFund !== undefined ? dto.providentFund : staff.providentFund;
-      const otherDeductions = dto.otherDeductions !== undefined ? dto.otherDeductions : staff.otherDeductions;
+      const basicSalary = dto.basicSalary !== undefined ? dto.basicSalary : staff.compensation?.basicSalary || 0;
+      const houseAllowance = dto.houseAllowance !== undefined ? dto.houseAllowance : staff.compensation?.houseAllowance || 0;
+      const transportAllowance = dto.transportAllowance !== undefined ? dto.transportAllowance : staff.compensation?.transportAllowance || 0;
+      const medicalAllowance = dto.medicalAllowance !== undefined ? dto.medicalAllowance : staff.compensation?.medicalAllowance || 0;
+      const otherAllowances = dto.otherAllowances !== undefined ? dto.otherAllowances : staff.compensation?.otherAllowances || 0;
+      const taxDeductible = dto.taxDeductible !== undefined ? dto.taxDeductible : staff.compensation?.taxDeductible || 0;
+      const providentFund = dto.providentFund !== undefined ? dto.providentFund : staff.compensation?.providentFund || 0;
+      const otherDeductions = dto.otherDeductions !== undefined ? dto.otherDeductions : staff.compensation?.otherDeductions || 0;
 
       staff.updateSalary({
         basicSalary,
@@ -491,7 +491,7 @@ export class StaffService {
     // Calculate averages
     const activeStaffList = allStaff.filter(s => s.status === StaffStatus.ACTIVE);
     const averageSalary = activeStaffList.length > 0
-      ? activeStaffList.reduce((sum, staff) => sum + staff.netSalary, 0) / activeStaffList.length
+      ? activeStaffList.reduce((sum, staff) => sum + (staff.compensation?.netSalary || 0), 0) / activeStaffList.length
       : 0;
 
     const averageExperience = activeStaffList.length > 0

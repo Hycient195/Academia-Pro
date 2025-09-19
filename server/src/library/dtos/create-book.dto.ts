@@ -548,7 +548,7 @@ export class CreateBookDto implements ICreateBookRequest {
 
   @ApiPropertyOptional({
     description: 'Acquisition currency',
-    example: 'USD',
+    example: 'NGN',
     maxLength: 3,
   })
   @IsOptional()

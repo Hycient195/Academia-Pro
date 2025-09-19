@@ -89,7 +89,7 @@ export class FeePayment {
   @Column({ name: 'amount_paid', type: 'decimal', precision: 10, scale: 2 })
   amountPaid: number;
 
-  @Column({ name: 'currency', type: 'varchar', length: 3, default: 'USD' })
+  @Column({ name: 'currency', type: 'varchar', length: 3, default: 'NGN' })
   currency: string;
 
   @Column({ name: 'tax_amount', type: 'decimal', precision: 10, scale: 2, default: 0 })

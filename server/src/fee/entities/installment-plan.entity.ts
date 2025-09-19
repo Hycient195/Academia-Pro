@@ -75,7 +75,7 @@ export class InstallmentPlan {
   @Column({ name: 'processing_fee', type: 'decimal', precision: 10, scale: 2, default: 0 })
   processingFee: number;
 
-  @Column({ name: 'currency', type: 'varchar', length: 3, default: 'USD' })
+  @Column({ name: 'currency', type: 'varchar', length: 3, default: 'NGN' })
   currency: string;
 
   // Schedule Information

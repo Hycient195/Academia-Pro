@@ -87,7 +87,7 @@ export class AuditInterceptor implements NestInterceptor {
 
     // Ensure correlationId doesn't exceed VARCHAR(100) limit
     const correlationId = auditData.correlationId ? auditData.correlationId.substring(0, 100) : this.generateCorrelationId();
-    const schoolId = user?.schoolId || request.headers['x-school-id'];
+    const schoolId = request.schoolId || user?.schoolId || request.headers['x-school-id'];
     const sessionId = this.sanitizeSessionId(user?.sessionId || request.headers['x-session-id']);
 
     // Get auditable options from decorator

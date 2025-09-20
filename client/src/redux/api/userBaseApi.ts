@@ -2,6 +2,9 @@ import { createApi, fetchBaseQuery, FetchArgs } from '@reduxjs/toolkit/query/rea
 import { GLOBAL_API_URL } from '../globalURLs';
 import type { RootState } from '../store';
 import type { BaseQueryApi } from '@reduxjs/toolkit/query';
+// Note: Prefer importing from the common types package when available.
+// Temporarily fallback to inline constant to avoid module resolution issues in dev.
+const HEADER_X_SCHOOL_ID = 'x-school-id';
 
 // Helper function to get cookie value
 const getCookieValue = (name: string): string | null => {
@@ -32,6 +35,12 @@ const customBaseQuery = fetchBaseQuery({
 
     if (authToken) {
       headers.set('Authorization', `Bearer ${authToken}`);
+    }
+
+    // Inject active school header if present
+    const activeSchoolId = state?.school?.activeSchoolId || null;
+    if (activeSchoolId) {
+      headers.set(HEADER_X_SCHOOL_ID, activeSchoolId);
     }
 
     return headers;

@@ -132,9 +132,12 @@ export class Staff {
     phone: string;
     alternatePhone?: string;
     emergencyContact: {
-      name: string;
+      firstName: string;
+      lastName: string;
       phone: string;
       relation: string;
+      email?: string;
+      occupation?: string;
     };
   };
 
@@ -158,6 +161,10 @@ export class Staff {
       state: string;
       postalCode: string;
       country: string;
+      coordinates?: {
+        latitude: number;
+        longitude: number;
+      };
     };
   };
 
@@ -423,11 +430,21 @@ export class Staff {
   }
 
   get emergencyContactName(): string {
-    return this.contactInfo.emergencyContact.name;
+    const ec = this.contactInfo.emergencyContact || ({} as any);
+    const first = ec.firstName || '';
+    const last = ec.lastName || '';
+    return `${first} ${last}`.trim();
   }
 
   set emergencyContactName(value: string) {
-    this.contactInfo.emergencyContact.name = value;
+    const name = (value || '').trim();
+    const [first, ...rest] = name.split(' ').filter(Boolean);
+    const last = rest.join(' ');
+    if (!this.contactInfo.emergencyContact) {
+      this.contactInfo.emergencyContact = { firstName: '', lastName: '', phone: '', relation: '' } as any;
+    }
+    this.contactInfo.emergencyContact.firstName = first || name;
+    this.contactInfo.emergencyContact.lastName = last || '';
   }
 
   get emergencyContactPhone(): string {

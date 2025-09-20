@@ -3,6 +3,7 @@ import { setupListeners } from '@reduxjs/toolkit/query';
 
 import authReducer from './slices/authSlice';
 import uiReducer from './slices/uiSlice';
+import schoolReducer from './slices/schoolSlice';
 import { baseApi } from './api/userBaseApi';
 import { superAdminBaseApi } from './api/super-admin/superAdminBaseApi';
 
@@ -14,6 +15,7 @@ export const store = configureStore({
     [ superAdminBaseApi.reducerPath ]: superAdminBaseApi.reducer,
     auth: authReducer,
     ui: uiReducer,
+    school: schoolReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

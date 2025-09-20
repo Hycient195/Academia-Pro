@@ -55,60 +55,60 @@ services:
       start_period: 20s
 
   # Backend Application
-  backend:
-    build:
-      context: .
-      dockerfile: server/Dockerfile.backend
-    container_name: academia_pro_backend
-    environment:
-      NODE_ENV: development
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USERNAME: academia_user
-      DB_ADMIN_USERNAME: academia_user
-      DB_PASSWORD: academia_password
-      DB_NAME: academia_pro
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      PORT: 3001
-      FRONTEND_URL: http://localhost:3000
-      JWT_SECRET: supersecretkey123456789
-      JWT_EXPIRES_IN: 24h
-      JWT_REFRESH_SECRET: refreshsecretkey123456789
-      JWT_REFRESH_EXPIRES_IN: 7d
-      USE_LOCALSTACK: "true"
-      S3_ENDPOINT: http://localstack:4566
-      AWS_REGION: us-east-1
-      AWS_ACCESS_KEY_ID: test
-      AWS_SECRET_ACCESS_KEY: test
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_started
-      localstack:
-        condition: service_healthy
-    ports:
-      - "3001:3001"
-    restart: unless-stopped
+  # backend:
+  #   build:
+  #     context: .
+  #     dockerfile: server/Dockerfile.backend
+  #   container_name: academia_pro_backend
+  #   environment:
+  #     NODE_ENV: development
+  #     DB_HOST: postgres
+  #     DB_PORT: 5432
+  #     DB_USERNAME: academia_user
+  #     DB_ADMIN_USERNAME: academia_user
+  #     DB_PASSWORD: academia_password
+  #     DB_NAME: academia_pro
+  #     REDIS_HOST: redis
+  #     REDIS_PORT: 6379
+  #     PORT: 3001
+  #     FRONTEND_URL: http://localhost:3000
+  #     JWT_SECRET: supersecretkey123456789
+  #     JWT_EXPIRES_IN: 24h
+  #     JWT_REFRESH_SECRET: refreshsecretkey123456789
+  #     JWT_REFRESH_EXPIRES_IN: 7d
+  #     USE_LOCALSTACK: "true"
+  #     S3_ENDPOINT: http://localstack:4566
+  #     AWS_REGION: us-east-1
+  #     AWS_ACCESS_KEY_ID: test
+  #     AWS_SECRET_ACCESS_KEY: test
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_started
+  #     localstack:
+  #       condition: service_healthy
+  #   ports:
+  #     - "3001:3001"
+  #   restart: unless-stopped
 
   # Frontend Application
-  frontend:
-    build:
-      context: .
-      dockerfile: client/Dockerfile.frontend
-    container_name: academia_pro_frontend
-    environment:
-      NODE_ENV: production
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:3001
-      PORT: 3000
-      HOSTNAME: 0.0.0.0
-    depends_on:
-      backend:
-        condition: service_started
-    ports:
-      - "3000:3000"
-    restart: unless-stopped
+  # frontend:
+  #   build:
+  #     context: .
+  #     dockerfile: client/Dockerfile.frontend
+  #   container_name: academia_pro_frontend
+  #   environment:
+  #     NODE_ENV: production
+  #     NEXT_PUBLIC_API_BASE_URL: http://localhost:3001
+  #     PORT: 3000
+  #     HOSTNAME: 0.0.0.0
+  #   depends_on:
+  #     backend:
+  #       condition: service_started
+  #   ports:
+  #     - "3000:3000"
+  #   restart: unless-stopped
 
   # pgAdmin for database management
   pgadmin:
@@ -146,129 +146,3 @@ volumes:
   redis_data:
   localstack_data:
   pgadmin_data:
-
-
-# version: '3.8'
-
-# services:
-#   # Database
-#   postgres:
-#     image: postgres:15
-#     container_name: academia_pro_postgres
-#     environment:
-#       POSTGRES_DB: academia_pro
-#       POSTGRES_USER: academia_user
-#       POSTGRES_PASSWORD: academia_password
-#     ports:
-#       - "5433:5432"
-#     volumes:
-#       - postgres_data:/var/lib/postgresql/data
-#       - ./server/init.sql:/docker-entrypoint-initdb.d/init.sql
-#     restart: unless-stopped
-#     healthcheck:
-#       test: ["CMD-SHELL", "pg_isready -U academia_user -d academia_pro"]
-#       interval: 10s
-#       timeout: 5s
-#       retries: 5
-
-#   # Cache
-#   redis:
-#     image: redis:7-alpine
-#     container_name: academia_pro_redis
-#     ports:
-#       - "6379:6379"
-#     volumes:
-#       - redis_data:/data
-#     restart: unless-stopped
-#     command: redis-server --appendonly yes
-
-#   # LocalStack for AWS services simulation
-#   localstack:
-#     image: localstack/localstack:3.1
-#     container_name: academia_pro_localstack
-#     ports:
-#       - "4566:4566"
-#     environment:
-#       SERVICES: s3
-#       DEBUG: 1
-#       DATA_DIR: /tmp/localstack/data
-#       PERSISTENCE: 1
-#       HOST_TMP_FOLDER: /tmp/localstack
-#       # Removed DOCKER_HOST for macOS compatibility
-#     volumes:
-#       - localstack_data:/tmp/localstack
-#       # Removed Docker socket volume for macOS compatibility
-#     restart: unless-stopped
-#     healthcheck:
-#       test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
-#       interval: 30s
-#       timeout: 10s
-#       retries: 5
-#       start_period: 10s
-
-#   # Backend Application
-#   backend:
-#     build:
-#       context: ./server
-#       dockerfile: Dockerfile.backend
-#     container_name: academia_pro_backend
-#     network_mode: host
-#     environment:
-#       NODE_ENV: development
-#       DB_HOST: localhost
-#       DB_PORT: 5433
-#       DB_USERNAME: academia_user
-#       DB_PASSWORD: academia_password
-#       DB_NAME: academia_pro
-#       REDIS_HOST: localhost
-#       REDIS_PORT: 6379
-#       PORT: 3001
-#       FRONTEND_URL: http://localhost:3000
-#       JWT_SECRET: supersecretkey123456789
-#       JWT_EXPIRES_IN: 24h
-#       JWT_REFRESH_SECRET: refreshsecretkey123456789
-#       JWT_REFRESH_EXPIRES_IN: 7d
-#     depends_on:
-#       postgres:
-#         condition: service_healthy
-#       redis:
-#         condition: service_started
-#     restart: unless-stopped
-#     volumes:
-#       - ./server:/app
-#       - /app/node_modules
-#     command: sh -c "sleep 15 && pnpm run build && cd /app && pnpm install && pnpm run build && pnpm run start:prod"
-
-#   # pgAdmin for database management
-#   pgadmin:
-#     image: dpage/pgadmin4:latest
-#     container_name: academia_pro_pgadmin
-#     environment:
-#       PGADMIN_DEFAULT_EMAIL: admin@academiapro.com
-#       PGADMIN_DEFAULT_PASSWORD: admin123
-#       PGADMIN_CONFIG_SERVER_MODE: 'False'
-#     ports:
-#       - "5050:80"
-#     depends_on:
-#       - postgres
-#     restart: unless-stopped
-#     volumes:
-#       - pgadmin_data:/var/lib/pgadmin
-
-#   # Redis Commander for Redis management
-#   redis-commander:
-#     image: rediscommander/redis-commander:latest
-#     container_name: academia_pro_redis_commander
-#     environment:
-#       REDIS_HOSTS: local:redis:6379
-#     ports:
-#       - "8081:8081"
-#     depends_on:
-#       - redis
-#     restart: unless-stopped
-
-# volumes:
-#   postgres_data:
-#   redis_data:
-#   localstack_data:
-#   pgadmin_data:

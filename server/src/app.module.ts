@@ -101,6 +101,7 @@ import { AppService } from './app.service';
     forwardRef(() => SeedersModule),
     forwardRef(() => AuthModule),
     forwardRef(() => UsersModule),
+    forwardRef(() => SchoolsModule),
     StaffModule,
     forwardRef(() => SuperAdminModule),
     forwardRef(() => StudentsModule),
@@ -139,6 +140,10 @@ import { AppService } from './app.service';
       : [{
           provide: APP_GUARD,
           useClass: ThrottlerGuard,
+        },
+        {
+          provide: APP_GUARD,
+          useClass: (require('./common/guards/school-context.guard').SchoolContextGuard),
         }]
     ),
 

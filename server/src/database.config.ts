@@ -8,7 +8,7 @@ import * as pg from 'pg';
 const ensureDatabaseExists = async (configService: ConfigService): Promise<void> => {
   const dbName = configService.get<string>('DB_NAME', 'academia_pro');
   const dbHost = configService.get<string>('DB_HOST', 'localhost');
-  const dbPort = configService.get<number>('DB_PORT', 5432);
+  const dbPort = configService.get<number>('DB_PORT', 5433);
   const dbUsername = configService.get<string>('DB_ADMIN_USERNAME', 'postgres');
   const dbPassword = configService.get<string>('DB_PASSWORD', 'admin');
 

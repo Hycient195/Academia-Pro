@@ -11,6 +11,7 @@ import { Department } from '../entities/department.entity';
 import { Staff } from '../entities/staff.entity';
 import { StaffType, StaffStatus, EmploymentType, Gender } from '../entities/staff.entity';
 import { EDepartmentType } from '@academia-pro/types/staff';
+import { withSchoolHeader } from '../../test/utils/api-with-school';
 
 describe('Departments E2E', () => {
   let admin: SuperAgentTest;
@@ -40,6 +41,11 @@ describe('Departments E2E', () => {
     schoolId = rows?.[0]?.id;
     expect(schoolId).toBeDefined();
     console.log('Using schoolId:', schoolId);
+
+    // Wrap authenticated agents to automatically send x-school-id on every request
+    admin = withSchoolHeader(admin, schoolId);
+    staff = withSchoolHeader(staff, schoolId);
+    student = withSchoolHeader(student, schoolId);
   });
 
   afterEach(async () => {
@@ -65,7 +71,8 @@ describe('Departments E2E', () => {
         email: faker.internet.email(),
         phone: faker.phone.number(),
         emergencyContact: {
-          name: faker.person.fullName(),
+          firstName: faker.person.firstName(),
+          lastName: faker.person.lastName(),
           phone: faker.phone.number(),
           relation: 'Spouse',
         },

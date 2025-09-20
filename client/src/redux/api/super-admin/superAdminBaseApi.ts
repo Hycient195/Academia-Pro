@@ -3,6 +3,9 @@ import { GLOBAL_API_URL } from '../../globalURLs';
 import type { RootState } from '../../store';
 import type { BaseQueryApi } from '@reduxjs/toolkit/query';
 
+// Shared header key (align with server and common)
+const HEADER_X_SCHOOL_ID = 'x-school-id';
+
 // Helper function to get super admin CSRF token from cookies
 const getSuperAdminCSRFTokenFromCookies = (): string | null => {
   if (typeof document === 'undefined') return null;
@@ -16,6 +19,16 @@ const getSuperAdminCSRFTokenFromCookies = (): string | null => {
   return null;
 };
 
+// Helper to read active school from localStorage (fallback when store isn't ready)
+const getActiveSchoolIdFromStorage = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem('activeSchoolId');
+  } catch {
+    return null;
+  }
+};
+
 // Custom base query with CSRF support for super admin
 const customSuperAdminBaseQuery = fetchBaseQuery({
   baseUrl: GLOBAL_API_URL,
@@ -26,6 +39,12 @@ const customSuperAdminBaseQuery = fetchBaseQuery({
     const token = state?.auth?.token;
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);
+    }
+
+    // Inject x-school-id if available (supports cross-school operations where applicable)
+    const activeSchoolId = state?.school?.activeSchoolId || getActiveSchoolIdFromStorage();
+    if (activeSchoolId) {
+      headers.set(HEADER_X_SCHOOL_ID, activeSchoolId);
     }
     return headers;
   },

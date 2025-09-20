@@ -8,6 +8,7 @@ import { randomUUID } from 'crypto';
 
 import { EDepartmentType } from '@academia-pro/types/staff';
 import { Staff, StaffStatus, StaffType, Gender, EmploymentType } from '../../staff/entities/staff.entity';
+import { withSchoolHeader } from '../utils/api-with-school';
 
 describe('Departments E2E', () => {
   let superAdmin: SuperAgentTest;
@@ -35,6 +36,15 @@ describe('Departments E2E', () => {
     const rows = await ds.query('SELECT id FROM schools LIMIT 1');
     schoolId = rows?.[0]?.id;
     expect(schoolId).toBeDefined();
+
+    // Attach x-school-id header to all authenticated agents
+    superAdmin = withSchoolHeader(superAdmin, schoolId);
+    delegatedSuperAdmin = withSchoolHeader(delegatedSuperAdmin, schoolId);
+    schoolAdmin = withSchoolHeader(schoolAdmin, schoolId);
+    delegatedSchoolAdmin = withSchoolHeader(delegatedSchoolAdmin, schoolId);
+    staff = withSchoolHeader(staff, schoolId);
+    student = withSchoolHeader(student, schoolId);
+    parent = withSchoolHeader(parent, schoolId);
   });
 
   afterAll(async () => {
@@ -69,28 +79,41 @@ describe('Departments E2E', () => {
       employeeId: `EMP${new Date().getFullYear()}${(now % 100000).toString().padStart(5, '0')}`,
       firstName: 'Test',
       lastName: `Teacher${now}`,
+      middleName: undefined,
       gender: Gender.MALE,
       dateOfBirth: new Date('1990-01-01'),
-      email: `teacher.${now}@example.test`,
-      phone: '+10000000000',
-      alternatePhone: '+10000000001',
-      emergencyContactName: 'John EC',
-      emergencyContactPhone: '+10000000002',
-      emergencyContactRelation: 'Brother',
-      currentAddress: {
-        street: '1 Test St',
-        city: 'Test City',
-        state: 'TS',
-        postalCode: '00000',
-        country: 'TC',
+
+      // New JSONB contact structure
+      contactInfo: {
+        email: `teacher.${now}@example.test`,
+        phone: '+10000000000',
+        alternatePhone: '+10000000001',
+        emergencyContact: {
+          firstName: 'John',
+          lastName: 'EC',
+          phone: '+10000000002',
+          relation: 'Brother',
+        },
       },
-      permanentAddress: {
-        street: '2 Home St',
-        city: 'Home City',
-        state: 'HS',
-        postalCode: '11111',
-        country: 'HC',
+
+      // New JSONB address structure
+      addressInfo: {
+        current: {
+          street: '1 Test St',
+          city: 'Test City',
+          state: 'TS',
+          postalCode: '00000',
+          country: 'TC',
+        },
+        permanent: {
+          street: '2 Home St',
+          city: 'Home City',
+          state: 'HS',
+          postalCode: '11111',
+          country: 'HC',
+        },
       },
+
       staffType: StaffType.TEACHING,
       departments: [],
       designation: 'Teacher',
@@ -101,18 +124,21 @@ describe('Departments E2E', () => {
       contractEndDate: null as any,
       status: StaffStatus.ACTIVE,
 
-      basicSalary: baseSalary,
-      salaryCurrency: 'NGN',
-      houseAllowance,
-      transportAllowance,
-      medicalAllowance,
-      otherAllowances,
-      grossSalary,
-      taxDeductible,
-      providentFund,
-      otherDeductions,
-      netSalary,
-      paymentMethod: 'bank_transfer',
+      // Compensation JSONB
+      compensation: {
+        basicSalary: baseSalary,
+        salaryCurrency: 'NGN',
+        houseAllowance,
+        transportAllowance,
+        medicalAllowance,
+        otherAllowances,
+        grossSalary,
+        taxDeductible,
+        providentFund,
+        otherDeductions,
+        netSalary,
+        paymentMethod: 'bank_transfer',
+      },
 
       qualifications: [],
       certifications: [],
@@ -156,7 +182,8 @@ describe('Departments E2E', () => {
       ...overrides,
     });
 
-    return repo.save(entity);
+    // TypeORM returns a single Staff entity here
+    return repo.save(entity) as unknown as Staff;
   }
 
   function api(serverAgent: SuperAgentTest) {

@@ -2,4 +2,5 @@
 // Export all shared types
 
 export * from './shared.types';
+export * from './http.constants';
 

@@ -152,8 +152,7 @@ export class AuditMiddleware implements NestMiddleware {
       '/auth/refresh',
       '/auth/reset-password-request',
       '/auth/reset-password',
-      '/auth/verify-email',
-      '/auth/csrf-token'
+      '/auth/verify-email'
     ];
 
     // Check if the URL matches any authentication endpoint

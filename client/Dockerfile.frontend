@@ -4,6 +4,11 @@ FROM node:18-alpine AS base
 # Install pnpm and dependencies
 RUN apk add --no-cache libc6-compat curl
 RUN npm install -g pnpm
+# Harden pnpm against transient network hiccups in CI/buildkit
+RUN pnpm config set fetch-retries 5 \
+  && pnpm config set network-timeout 600000 \
+  && pnpm config set verify-store-integrity false \
+  && pnpm config set registry https://registry.npmjs.org/
 
 # Set working directory
 WORKDIR /app
@@ -12,23 +17,31 @@ WORKDIR /app
 COPY client/package*.json ./
 COPY client/pnpm-lock.yaml ./
 
+# Copy common types package BEFORE install to satisfy link:../common
+# Place it at /common so that "link:../common" from /app resolves correctly
+COPY common/ /common/
+
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
-# Copy source code
-COPY client/ .
+# Copy source code (only required files; avoid node_modules overwrite)
+COPY client/next.config.ts ./next.config.ts
+COPY client/tsconfig.json ./tsconfig.json
+COPY client/postcss.config.mjs ./postcss.config.mjs
+COPY client/eslint.config.mjs ./eslint.config.mjs
+COPY client/components.json ./components.json
+COPY client/public ./public
+COPY client/src ./src
 
-# Copy common types package
-COPY common/ ./common/
-
-# Build application
+# Build application (ensure shared types are compiled first)
+RUN cd /common && pnpm install --no-frozen-lockfile && pnpm run build
 RUN pnpm run build
 
 # Production stage
 FROM node:18-alpine AS production
 
-# Install production dependencies
-RUN apk add --no-cache curl
+# Install production dependencies and pnpm runtime
+RUN apk add --no-cache curl && npm install -g pnpm
 
 # Create app user
 RUN addgroup -g 1001 -S nodejs
@@ -42,7 +55,8 @@ COPY --from=base --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=base --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=base --chown=nextjs:nodejs /app/package.json ./package.json
 COPY --from=base --chown=nextjs:nodejs /app/public ./public
-COPY --from=base --chown=nextjs:nodejs /app/common ./common
+# Preserve linked common package target for runtime (symlink resolution)
+COPY --from=base --chown=nextjs:nodejs /common /common
 
 # Switch to non-root user
 USER nextjs
@@ -52,7 +66,7 @@ EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3000/api/health || exit 1
+  CMD curl -f http://localhost:3000 || exit 1
 
 # Start application
 CMD ["pnpm", "start"]

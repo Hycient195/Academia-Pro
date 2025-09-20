@@ -284,116 +284,9 @@ export class AuthService {
    return result;
  }
 
-  /**
-   * Login user and set authentication cookies
-   */
-  async loginWithCookies(
-    user: any,
-    res: Response
-  ): Promise<{ user: any; tokens: IAuthTokens; requiresPasswordReset?: boolean }> {
-    const tokensWithFlag = await this.login(user);
 
-    // Set authentication cookies (pass user for role-based cookie naming)
-    this.setAuthCookies(res, tokensWithFlag.accessToken, tokensWithFlag.refreshToken, user);
 
-    // Remove sensitive information from response
-    const { passwordHash, ...userResponse } = user;
 
-    // Ensure response also contains tokens for clients expecting them in body
-    const tokens: IAuthTokens = {
-      accessToken: tokensWithFlag.accessToken,
-      refreshToken: tokensWithFlag.refreshToken,
-      expiresIn: tokensWithFlag.expiresIn,
-      tokenType: tokensWithFlag.tokenType,
-      issuedAt: tokensWithFlag.issuedAt,
-    };
-
-    const result: { user: any; tokens: IAuthTokens; requiresPasswordReset?: boolean } = {
-      user: userResponse,
-      tokens,
-    };
-
-    // Include password reset requirement if needed
-    if ((tokensWithFlag as any).requiresPasswordReset) {
-      result.requiresPasswordReset = true;
-    }
-
-    return result;
-  }
-
-  /**
-   * Set authentication cookies on response
-   */
-  setAuthCookies(res: Response, accessToken: string, refreshToken: string, user?: any) {
-    const isProduction = process.env.NODE_ENV === 'production';
-    const sameSite = isProduction ? 'strict' as const : 'lax' as const;
-
-    const baseCookieOptions = {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite,
-      path: '/',
-    } as const;
-
-    // Determine cookie names based on user role
-    const isSuperAdmin = user?.roles?.includes(EUserRole.SUPER_ADMIN);
-    const accessTokenKey = isSuperAdmin ? 'superAdminAccessToken' : 'accessToken';
-    const refreshTokenKey = isSuperAdmin ? 'superAdminRefreshToken' : 'refreshToken';
-    const csrfTokenKey = isSuperAdmin ? 'superAdminCsrfToken' : 'csrfToken';
-
-    try {
-      res.cookie(accessTokenKey, accessToken, {
-        ...baseCookieOptions,
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      });
-
-      res.cookie(refreshTokenKey, refreshToken, {
-        ...baseCookieOptions,
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      });
-
-      // Generate and set CSRF token
-      const csrfToken = this.generateCSRFToken();
-      res.cookie(csrfTokenKey, csrfToken, {
-        ...baseCookieOptions,
-        httpOnly: false, // Allow client-side access for CSRF token
-        sameSite,
-        maxAge: 60 * 60 * 1000, // 1 hour
-      });
-    } catch (err: any) {
-      console.error('[AuthService] setAuthCookies error', { message: err?.message });
-      throw err;
-    }
-  }
-
-  /**
-   * Clear authentication cookies
-   */
-  clearAuthCookies(res: Response, user?: any) {
-    const isProduction = process.env.NODE_ENV === 'production';
-    const cookieOptions = {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? 'strict' as const : 'lax' as const,
-    };
-
-    // Determine cookie names based on user role
-    const isSuperAdmin = user?.roles?.includes(EUserRole.SUPER_ADMIN);
-    const accessTokenKey = isSuperAdmin ? 'superAdminAccessToken' : 'accessToken';
-    const refreshTokenKey = isSuperAdmin ? 'superAdminRefreshToken' : 'refreshToken';
-    const csrfTokenKey = isSuperAdmin ? 'superAdminCsrfToken' : 'csrfToken';
-
-    res.clearCookie(accessTokenKey, cookieOptions);
-    res.clearCookie(refreshTokenKey, cookieOptions);
-    res.clearCookie(csrfTokenKey, { ...cookieOptions, httpOnly: false, sameSite: isProduction ? 'strict' as const : 'lax' as const });
-  }
-
-  /**
-   * Generate CSRF token
-   */
-  private generateCSRFToken(): string {
-    return require('crypto').randomBytes(32).toString('hex');
-  }
 
   /**
     * Register new user
@@ -709,7 +602,118 @@ export class AuthService {
    }
  }
 
-  // Custom audit methods for auth-specific events
+ /**
+  * Login user and set authentication cookies
+  */
+ async loginWithCookies(
+   user: any,
+   res: Response
+ ): Promise<{ user: any; tokens: IAuthTokens; requiresPasswordReset?: boolean }> {
+   const tokensWithFlag = await this.login(user);
+
+   // Set authentication cookies (pass user for role-based cookie naming)
+   this.setAuthCookies(res, tokensWithFlag.accessToken, tokensWithFlag.refreshToken, user);
+
+   // Remove sensitive information from response
+   const { passwordHash, ...userResponse } = user;
+
+   // Ensure response also contains tokens for clients expecting them in body
+   const tokens: IAuthTokens = {
+     accessToken: tokensWithFlag.accessToken,
+     refreshToken: tokensWithFlag.refreshToken,
+     expiresIn: tokensWithFlag.expiresIn,
+     tokenType: tokensWithFlag.tokenType,
+     issuedAt: tokensWithFlag.issuedAt,
+   };
+
+   const result: { user: any; tokens: IAuthTokens; requiresPasswordReset?: boolean } = {
+     user: userResponse,
+     tokens,
+   };
+
+   // Include password reset requirement if needed
+   if ((tokensWithFlag as any).requiresPasswordReset) {
+     result.requiresPasswordReset = true;
+   }
+
+   return result;
+ }
+
+ /**
+  * Set authentication cookies on response
+  */
+ setAuthCookies(res: Response, accessToken: string, refreshToken: string, user?: any) {
+   const isProduction = process.env.NODE_ENV === 'production';
+   const sameSite = isProduction ? 'strict' as const : 'lax' as const;
+
+   const baseCookieOptions = {
+     httpOnly: true,
+     secure: isProduction,
+     sameSite,
+     path: '/',
+   } as const;
+
+   // Determine cookie names based on user role
+   const isSuperAdmin = user?.roles?.includes(EUserRole.SUPER_ADMIN);
+   const accessTokenKey = isSuperAdmin ? 'superAdminAccessToken' : 'accessToken';
+   const refreshTokenKey = isSuperAdmin ? 'superAdminRefreshToken' : 'refreshToken';
+   const csrfTokenKey = isSuperAdmin ? 'superAdminCsrfToken' : 'csrfToken';
+
+   try {
+     res.cookie(accessTokenKey, accessToken, {
+       ...baseCookieOptions,
+       maxAge: 24 * 60 * 60 * 1000, // 24 hours
+     });
+
+     res.cookie(refreshTokenKey, refreshToken, {
+       ...baseCookieOptions,
+       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+     });
+
+     // Generate and set CSRF token
+     const csrfToken = this.generateCSRFToken();
+     res.cookie(csrfTokenKey, csrfToken, {
+       ...baseCookieOptions,
+       httpOnly: false, // Allow client-side access for CSRF token
+       sameSite,
+       maxAge: 60 * 60 * 1000, // 1 hour
+     });
+   } catch (err: any) {
+     console.error('[AuthService] setAuthCookies error', { message: err?.message });
+     throw err;
+   }
+ }
+
+ /**
+  * Clear authentication cookies
+  */
+ clearAuthCookies(res: Response, user?: any) {
+   const isProduction = process.env.NODE_ENV === 'production';
+   const cookieOptions = {
+     httpOnly: true,
+     secure: isProduction,
+     sameSite: isProduction ? 'strict' as const : 'lax' as const,
+   };
+
+   // Determine cookie names based on user role
+   const isSuperAdmin = user?.roles?.includes(EUserRole.SUPER_ADMIN);
+   const accessTokenKey = isSuperAdmin ? 'superAdminAccessToken' : 'accessToken';
+   const refreshTokenKey = isSuperAdmin ? 'superAdminRefreshToken' : 'refreshToken';
+   const csrfTokenKey = isSuperAdmin ? 'superAdminCsrfToken' : 'csrfToken';
+
+   res.clearCookie(accessTokenKey, cookieOptions);
+   res.clearCookie(refreshTokenKey, cookieOptions);
+   res.clearCookie(csrfTokenKey, { ...cookieOptions, httpOnly: false, sameSite: isProduction ? 'strict' as const : 'lax' as const });
+ }
+
+ /**
+  * Generate CSRF token
+  */
+ private generateCSRFToken(): string {
+   return require('crypto').randomBytes(32).toString('hex');
+ }
+
+ // Custom audit methods for auth-specific events
   private async logAccountLockout(userId: string, attempts: number): Promise<void> {
     await this.auditService.logActivity({
       userId,

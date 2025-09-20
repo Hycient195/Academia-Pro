@@ -157,6 +157,61 @@ export class StaffService {
   }
 
   /**
+   * Get all staff members (for admin users)
+   */
+  async getAllStaff(options?: {
+    staffType?: StaffType;
+    department?: string;
+    status?: StaffStatus;
+    search?: string;
+    limit?: number;
+    offset?: number;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+  }): Promise<Staff[]> {
+    const queryBuilder = this.staffRepository
+      .createQueryBuilder('staff')
+      .leftJoinAndSelect('staff.departments', 'departments')
+      .orderBy(`staff.${options?.sortBy || 'firstName'}`, options?.sortOrder || 'ASC')
+      .addOrderBy('staff.lastName', 'ASC');
+
+    if (options?.staffType) {
+      queryBuilder.andWhere('staff.staffType = :staffType', {
+        staffType: options.staffType,
+      });
+    }
+
+    if (options?.department) {
+      queryBuilder.andWhere('departments.name = :department', {
+        department: options.department,
+      });
+    }
+
+    if (options?.status) {
+      queryBuilder.andWhere('staff.status = :status', {
+        status: options.status,
+      });
+    }
+
+    if (options?.search) {
+      queryBuilder.andWhere(
+        '(staff.firstName ILIKE :search OR staff.lastName ILIKE :search OR staff.email ILIKE :search OR staff.employeeId ILIKE :search)',
+        { search: `%${options.search}%` },
+      );
+    }
+
+    if (options?.limit) {
+      queryBuilder.limit(options.limit);
+    }
+
+    if (options?.offset) {
+      queryBuilder.offset(options.offset);
+    }
+
+    return queryBuilder.getMany();
+  }
+
+  /**
    * Get staff members by school
    */
   async getStaffBySchool(
@@ -200,6 +255,87 @@ export class StaffService {
         { search: `%${options.search}%` },
       );
     }
+
+    if (options?.limit) {
+      queryBuilder.limit(options.limit);
+    }
+
+    if (options?.offset) {
+      queryBuilder.offset(options.offset);
+    }
+
+    return queryBuilder.getMany();
+  }
+
+  /**
+   * Search staff members
+   */
+  async searchStaff(query: string, options?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<Staff[]> {
+    const queryBuilder = this.staffRepository
+      .createQueryBuilder('staff')
+      .where(
+        '(staff.firstName ILIKE :query OR staff.lastName ILIKE :query OR staff.email ILIKE :query OR staff.employeeId ILIKE :query)',
+        { query: `%${query}%` },
+      )
+      .orderBy('staff.firstName', 'ASC')
+      .addOrderBy('staff.lastName', 'ASC');
+
+    if (options?.limit) {
+      queryBuilder.limit(options.limit);
+    }
+
+    if (options?.offset) {
+      queryBuilder.offset(options.offset);
+    }
+
+    return queryBuilder.getMany();
+  }
+
+  /**
+   * Filter staff members
+   */
+  async filterStaff(filters: Record<string, any>, options?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<Staff[]> {
+    const queryBuilder = this.staffRepository
+      .createQueryBuilder('staff')
+      .leftJoinAndSelect('staff.departments', 'departments')
+      .orderBy('staff.firstName', 'ASC')
+      .addOrderBy('staff.lastName', 'ASC');
+
+    // Apply filters
+    Object.keys(filters).forEach(key => {
+      const value = filters[key];
+      if (value !== undefined && value !== null && value !== '') {
+        switch (key) {
+          case 'staffType':
+            queryBuilder.andWhere('staff.staffType = :staffType', { staffType: value });
+            break;
+          case 'status':
+            queryBuilder.andWhere('staff.status = :status', { status: value });
+            break;
+          case 'departmentId':
+            queryBuilder.andWhere('departments.id = :departmentId', { departmentId: value });
+            break;
+          case 'minSalary':
+            queryBuilder.andWhere('staff.netSalary >= :minSalary', { minSalary: value });
+            break;
+          case 'maxSalary':
+            queryBuilder.andWhere('staff.netSalary <= :maxSalary', { maxSalary: value });
+            break;
+          case 'joiningDateFrom':
+            queryBuilder.andWhere('staff.joiningDate >= :joiningDateFrom', { joiningDateFrom: new Date(value) });
+            break;
+          case 'joiningDateTo':
+            queryBuilder.andWhere('staff.joiningDate <= :joiningDateTo', { joiningDateTo: new Date(value) });
+            break;
+        }
+      }
+    });
 
     if (options?.limit) {
       queryBuilder.limit(options.limit);
@@ -438,6 +574,292 @@ export class StaffService {
     );
 
     return updatedStaff;
+  }
+
+  /**
+   * Get staff attendance information
+   */
+  async getStaffAttendance(staffId: string): Promise<{
+    staffId: string;
+    workingHoursPerWeek: number;
+    workingDaysPerWeek: number;
+    shiftStartTime: string;
+    shiftEndTime: string;
+    attendanceRate: number;
+  }> {
+    const staff = await this.getStaffById(staffId);
+
+    return {
+      staffId: staff.id,
+      workingHoursPerWeek: staff.workingHoursPerWeek || 40,
+      workingDaysPerWeek: staff.workingDaysPerWeek || 5,
+      shiftStartTime: staff.shiftStartTime || '09:00',
+      shiftEndTime: staff.shiftEndTime || '17:00',
+      attendanceRate: 95, // This would come from actual attendance tracking
+    };
+  }
+
+  /**
+   * Update staff attendance information
+   */
+  async updateStaffAttendance(
+    staffId: string,
+    attendanceData: {
+      workingHoursPerWeek?: number;
+      workingDaysPerWeek?: number;
+      shiftStartTime?: string;
+      shiftEndTime?: string;
+    },
+    updatedBy: string,
+  ): Promise<{
+    staffId: string;
+    workingHoursPerWeek: number;
+    workingDaysPerWeek: number;
+    shiftStartTime: string;
+    shiftEndTime: string;
+  }> {
+    const staff = await this.getStaffById(staffId);
+
+    // Validate working hours
+    if (attendanceData.workingHoursPerWeek && (attendanceData.workingHoursPerWeek < 1 || attendanceData.workingHoursPerWeek > 80)) {
+      throw new BadRequestException('Working hours per week must be between 1 and 80');
+    }
+
+    // Validate working days
+    if (attendanceData.workingDaysPerWeek && (attendanceData.workingDaysPerWeek < 1 || attendanceData.workingDaysPerWeek > 7)) {
+      throw new BadRequestException('Working days per week must be between 1 and 7');
+    }
+
+    // Update attendance fields
+    if (attendanceData.workingHoursPerWeek !== undefined) {
+      staff.workingHoursPerWeek = attendanceData.workingHoursPerWeek;
+    }
+    if (attendanceData.workingDaysPerWeek !== undefined) {
+      staff.workingDaysPerWeek = attendanceData.workingDaysPerWeek;
+    }
+    if (attendanceData.shiftStartTime !== undefined) {
+      staff.shiftStartTime = attendanceData.shiftStartTime;
+    }
+    if (attendanceData.shiftEndTime !== undefined) {
+      staff.shiftEndTime = attendanceData.shiftEndTime;
+    }
+
+    staff.updatedBy = updatedBy;
+    const updatedStaff = await this.staffRepository.save(staff);
+
+    return {
+      staffId: updatedStaff.id,
+      workingHoursPerWeek: updatedStaff.workingHoursPerWeek || 40,
+      workingDaysPerWeek: updatedStaff.workingDaysPerWeek || 5,
+      shiftStartTime: updatedStaff.shiftStartTime || '09:00',
+      shiftEndTime: updatedStaff.shiftEndTime || '17:00',
+    };
+  }
+
+  /**
+   * Get staff payroll information
+   */
+  async getStaffPayroll(staffId: string): Promise<{
+    staffId: string;
+    compensation: {
+      basicSalary: number;
+      houseAllowance: number;
+      transportAllowance: number;
+      medicalAllowance: number;
+      otherAllowances: number;
+      grossSalary: number;
+      taxDeductible: number;
+      providentFund: number;
+      otherDeductions: number;
+      netSalary: number;
+      paymentMethod: string;
+      bankDetails?: {
+        bankName: string;
+        accountNumber: string;
+        branch: string;
+        ifscCode: string;
+      };
+    };
+  }> {
+    const staff = await this.getStaffById(staffId);
+
+    return {
+      staffId: staff.id,
+      compensation: {
+        basicSalary: staff.compensation?.basicSalary || 0,
+        houseAllowance: staff.compensation?.houseAllowance || 0,
+        transportAllowance: staff.compensation?.transportAllowance || 0,
+        medicalAllowance: staff.compensation?.medicalAllowance || 0,
+        otherAllowances: staff.compensation?.otherAllowances || 0,
+        grossSalary: staff.compensation?.grossSalary || 0,
+        taxDeductible: staff.compensation?.taxDeductible || 0,
+        providentFund: staff.compensation?.providentFund || 0,
+        otherDeductions: staff.compensation?.otherDeductions || 0,
+        netSalary: staff.compensation?.netSalary || 0,
+        paymentMethod: staff.compensation?.paymentMethod || 'bank_transfer',
+        bankDetails: staff.compensation?.bankDetails ? {
+          bankName: staff.compensation.bankDetails.bankName,
+          accountNumber: staff.compensation.bankDetails.accountNumber,
+          branch: staff.compensation.bankDetails.branch,
+          ifscCode: staff.compensation.bankDetails.ifscCode,
+        } : undefined,
+      },
+    };
+  }
+
+  /**
+   * Update staff payroll information
+   */
+  async updateStaffPayroll(
+    staffId: string,
+    payrollData: {
+      basicSalary?: number;
+      houseAllowance?: number;
+      transportAllowance?: number;
+      medicalAllowance?: number;
+      otherAllowances?: number;
+      taxDeductible?: number;
+      providentFund?: number;
+      otherDeductions?: number;
+      paymentMethod?: string;
+      bankDetails?: {
+        bankName: string;
+        accountNumber: string;
+        branch: string;
+        ifscCode: string;
+      };
+    },
+    updatedBy: string,
+  ): Promise<{
+    staffId: string;
+    compensation: {
+      basicSalary: number;
+      grossSalary: number;
+      netSalary: number;
+      paymentMethod: string;
+    };
+  }> {
+    const staff = await this.getStaffById(staffId);
+
+    // Validate salary values
+    if (payrollData.basicSalary !== undefined && payrollData.basicSalary < 0) {
+      throw new BadRequestException('Basic salary cannot be negative');
+    }
+
+    // Update compensation
+    if (!staff.compensation) {
+      staff.compensation = {
+        basicSalary: 0,
+        salaryCurrency: 'NGN',
+        grossSalary: 0,
+        netSalary: 0,
+        paymentMethod: 'bank_transfer',
+      };
+    }
+
+    // Update individual fields
+    if (payrollData.basicSalary !== undefined) {
+      staff.compensation.basicSalary = payrollData.basicSalary;
+    }
+    if (payrollData.houseAllowance !== undefined) {
+      staff.compensation.houseAllowance = payrollData.houseAllowance;
+    }
+    if (payrollData.transportAllowance !== undefined) {
+      staff.compensation.transportAllowance = payrollData.transportAllowance;
+    }
+    if (payrollData.medicalAllowance !== undefined) {
+      staff.compensation.medicalAllowance = payrollData.medicalAllowance;
+    }
+    if (payrollData.otherAllowances !== undefined) {
+      staff.compensation.otherAllowances = payrollData.otherAllowances;
+    }
+    if (payrollData.taxDeductible !== undefined) {
+      staff.compensation.taxDeductible = payrollData.taxDeductible;
+    }
+    if (payrollData.providentFund !== undefined) {
+      staff.compensation.providentFund = payrollData.providentFund;
+    }
+    if (payrollData.otherDeductions !== undefined) {
+      staff.compensation.otherDeductions = payrollData.otherDeductions;
+    }
+    if (payrollData.paymentMethod !== undefined) {
+      staff.compensation.paymentMethod = payrollData.paymentMethod;
+    }
+    if (payrollData.bankDetails !== undefined) {
+      staff.compensation.bankDetails = payrollData.bankDetails;
+    }
+
+    // Recalculate gross and net salary
+    const houseAllowance = staff.compensation.houseAllowance || 0;
+    const transportAllowance = staff.compensation.transportAllowance || 0;
+    const medicalAllowance = staff.compensation.medicalAllowance || 0;
+    const otherAllowances = staff.compensation.otherAllowances || 0;
+    const taxDeductible = staff.compensation.taxDeductible || 0;
+    const providentFund = staff.compensation.providentFund || 0;
+    const otherDeductions = staff.compensation.otherDeductions || 0;
+
+    staff.compensation.grossSalary = staff.compensation.basicSalary + houseAllowance + transportAllowance + medicalAllowance + otherAllowances;
+    staff.compensation.netSalary = staff.compensation.grossSalary - taxDeductible - providentFund - otherDeductions;
+
+    staff.updatedBy = updatedBy;
+    const updatedStaff = await this.staffRepository.save(staff);
+
+    return {
+      staffId: updatedStaff.id,
+      compensation: {
+        basicSalary: updatedStaff.compensation.basicSalary,
+        grossSalary: updatedStaff.compensation.grossSalary,
+        netSalary: updatedStaff.compensation.netSalary,
+        paymentMethod: updatedStaff.compensation.paymentMethod,
+      },
+    };
+  }
+
+  /**
+   * Get staff statistics overview
+   */
+  async getStaffStatsOverview(): Promise<{
+    totalStaff: number;
+    staffByType: Record<string, number>;
+    staffByStatus: Record<string, number>;
+    averageSalary: number;
+    averagePerformanceRating: number;
+  }> {
+    const allStaff = await this.staffRepository.find();
+
+    const totalStaff = allStaff.length;
+
+    // Group by staff type
+    const staffByType = allStaff.reduce((acc, staff) => {
+      acc[staff.staffType] = (acc[staff.staffType] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Group by status
+    const staffByStatus = allStaff.reduce((acc, staff) => {
+      acc[staff.status] = (acc[staff.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Calculate average salary
+    const activeStaff = allStaff.filter(s => s.status === StaffStatus.ACTIVE);
+    const averageSalary = activeStaff.length > 0
+      ? activeStaff.reduce((sum, staff) => sum + (staff.compensation?.netSalary || 0), 0) / activeStaff.length
+      : 0;
+
+    // Calculate average performance rating
+    const staffWithRating = activeStaff.filter(s => s.performanceRating);
+    const averagePerformanceRating = staffWithRating.length > 0
+      ? staffWithRating.reduce((sum, staff) => sum + staff.performanceRating, 0) / staffWithRating.length
+      : 0;
+
+    return {
+      totalStaff,
+      staffByType,
+      staffByStatus,
+      averageSalary: Math.round(averageSalary * 100) / 100,
+      averagePerformanceRating: Math.round(averagePerformanceRating * 10) / 10,
+    };
   }
 
   /**

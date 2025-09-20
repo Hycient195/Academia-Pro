@@ -38,7 +38,6 @@ import {
 } from './dtos';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { CsrfGuard } from '../auth/guards/csrf.guard';
 import { Roles } from '../common/decorators';
 import { Auditable, AuditCreate, AuditUpdate, AuditRead, AuditDelete } from '../common/audit/auditable.decorator';
 import { AuditAction, AuditSeverity } from '../security/types/audit.types';
@@ -65,7 +64,6 @@ export class StudentsController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
   @ApiResponse({ status: 409, description: 'Student already exists' })
-  @UseGuards(CsrfGuard)
   create(@Body() createStudentDto: CreateStudentDto) {
     return this.studentsService.create(createStudentDto);
   }

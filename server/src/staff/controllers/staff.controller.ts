@@ -330,6 +330,196 @@ export class StaffController {
     return this.staffService.addLeaveBalance(staffId, leaveType, days, addedBy);
   }
 
+  @Get()
+  @ApiOperation({
+    summary: 'Get all staff members',
+    description: 'Retrieve all staff members with optional filtering, searching, and pagination',
+  })
+  @ApiQuery({
+    name: 'staffType',
+    required: false,
+    description: 'Filter by staff type',
+    enum: StaffType,
+    example: StaffType.TEACHING,
+  })
+  @ApiQuery({
+    name: 'department',
+    required: false,
+    description: 'Filter by department',
+    example: 'Mathematics',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'Filter by status',
+    enum: StaffStatus,
+    example: StaffStatus.ACTIVE,
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search by name, email, or employee ID',
+    example: 'John',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of records to return',
+    example: 50,
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    description: 'Number of records to skip',
+    example: 0,
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    description: 'Sort by field',
+    example: 'firstName',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    description: 'Sort order',
+    enum: ['ASC', 'DESC'],
+    example: 'ASC',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Staff members retrieved successfully',
+  })
+  async getAllStaff(@Query() query: any) {
+    const options = {
+      staffType: query.staffType,
+      department: query.department,
+      status: query.status,
+      search: query.search,
+      limit: query.limit ? parseInt(query.limit) : undefined,
+      offset: query.offset ? parseInt(query.offset) : undefined,
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder,
+    };
+
+    return this.staffService.getAllStaff(options);
+  }
+
+  @Get('search')
+  @ApiOperation({
+    summary: 'Search staff members',
+    description: 'Search staff members by name, email, or employee ID',
+  })
+  @ApiQuery({
+    name: 'q',
+    description: 'Search query',
+    example: 'John',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of records to return',
+    example: 20,
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    description: 'Number of records to skip',
+    example: 0,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Search results retrieved successfully',
+  })
+  async searchStaff(
+    @Query('q') query: string,
+    @Query() queryParams: any,
+  ) {
+    const options = {
+      limit: queryParams.limit ? parseInt(queryParams.limit) : undefined,
+      offset: queryParams.offset ? parseInt(queryParams.offset) : undefined,
+    };
+
+    return this.staffService.searchStaff(query, options);
+  }
+
+  @Get('filter')
+  @ApiOperation({
+    summary: 'Filter staff members',
+    description: 'Filter staff members by various criteria',
+  })
+  @ApiQuery({
+    name: 'staffType',
+    required: false,
+    description: 'Filter by staff type',
+    enum: StaffType,
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'Filter by status',
+    enum: StaffStatus,
+  })
+  @ApiQuery({
+    name: 'departmentId',
+    required: false,
+    description: 'Filter by department ID',
+  })
+  @ApiQuery({
+    name: 'minSalary',
+    required: false,
+    description: 'Minimum salary filter',
+  })
+  @ApiQuery({
+    name: 'maxSalary',
+    required: false,
+    description: 'Maximum salary filter',
+  })
+  @ApiQuery({
+    name: 'joiningDateFrom',
+    required: false,
+    description: 'Joining date from',
+  })
+  @ApiQuery({
+    name: 'joiningDateTo',
+    required: false,
+    description: 'Joining date to',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of records to return',
+    example: 20,
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    description: 'Number of records to skip',
+    example: 0,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Filtered results retrieved successfully',
+  })
+  async filterStaff(@Query() query: any) {
+    const filters = {
+      staffType: query.staffType,
+      status: query.status,
+      departmentId: query.departmentId,
+      minSalary: query.minSalary ? parseFloat(query.minSalary) : undefined,
+      maxSalary: query.maxSalary ? parseFloat(query.maxSalary) : undefined,
+      joiningDateFrom: query.joiningDateFrom,
+      joiningDateTo: query.joiningDateTo,
+    };
+
+    const options = {
+      limit: query.limit ? parseInt(query.limit) : undefined,
+      offset: query.offset ? parseInt(query.offset) : undefined,
+    };
+
+    return this.staffService.filterStaff(filters, options);
+  }
+
   @Get('school/:schoolId')
   @ApiOperation({
     summary: 'Get staff by school',
@@ -846,5 +1036,121 @@ export class StaffController {
     };
 
     return this.staffService.getStaffByDepartmentId(departmentId, options);
+  }
+
+  @Get(':id/attendance')
+  @ApiOperation({
+    summary: 'Get staff attendance information',
+    description: 'Retrieve attendance information for a specific staff member',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Staff member ID',
+    example: 'staff-uuid-123',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Attendance information retrieved successfully',
+  })
+  async getStaffAttendance(@Param('id', ParseUUIDPipe) staffId: string) {
+    return this.staffService.getStaffAttendance(staffId);
+  }
+
+  @Put(':id/attendance')
+  @ApiOperation({
+    summary: 'Update staff attendance information',
+    description: 'Update attendance settings for a specific staff member',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Staff member ID',
+    example: 'staff-uuid-123',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Attendance information updated successfully',
+  })
+  async updateStaffAttendance(
+    @Param('id', ParseUUIDPipe) staffId: string,
+    @Body() body: {
+      workingHoursPerWeek?: number;
+      workingDaysPerWeek?: number;
+      shiftStartTime?: string;
+      shiftEndTime?: string;
+    },
+    @Request() req: any,
+  ) {
+    const updatedBy = req.user?.id || 'system';
+    return this.staffService.updateStaffAttendance(staffId, body, updatedBy);
+  }
+
+  @Get(':id/payroll')
+  @ApiOperation({
+    summary: 'Get staff payroll information',
+    description: 'Retrieve payroll information for a specific staff member',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Staff member ID',
+    example: 'staff-uuid-123',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Payroll information retrieved successfully',
+  })
+  async getStaffPayroll(@Param('id', ParseUUIDPipe) staffId: string) {
+    return this.staffService.getStaffPayroll(staffId);
+  }
+
+  @Put(':id/payroll')
+  @ApiOperation({
+    summary: 'Update staff payroll information',
+    description: 'Update payroll settings for a specific staff member',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Staff member ID',
+    example: 'staff-uuid-123',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Payroll information updated successfully',
+  })
+  async updateStaffPayroll(
+    @Param('id', ParseUUIDPipe) staffId: string,
+    @Body() body: {
+      basicSalary?: number;
+      houseAllowance?: number;
+      transportAllowance?: number;
+      medicalAllowance?: number;
+      otherAllowances?: number;
+      taxDeductible?: number;
+      providentFund?: number;
+      otherDeductions?: number;
+      paymentMethod?: string;
+      bankDetails?: {
+        bankName: string;
+        accountNumber: string;
+        branch: string;
+        ifscCode: string;
+      };
+    },
+    @Request() req: any,
+  ) {
+    const updatedBy = req.user?.id || 'system';
+    return this.staffService.updateStaffPayroll(staffId, body, updatedBy);
+  }
+
+  @Get('stats/overview')
+  @ApiOperation({
+    summary: 'Get staff statistics overview',
+    description: 'Retrieve comprehensive statistics for all staff',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Staff statistics overview retrieved successfully',
+  })
+  async getStaffStatsOverview() {
+    return this.staffService.getStaffStatsOverview();
   }
 }

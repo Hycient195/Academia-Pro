@@ -9,7 +9,6 @@ import { FakeRedisService } from './utils/redis.stub';
 import { DatabaseTestModule } from './database-test.module';
 import { AuditAggregationService } from '../super-admin/audit/audit-aggregation.service';
 import { AuditGateway } from '../common/audit/audit.gateway';
-import { CsrfGuard } from '../auth/guards/csrf.guard';
 
 export type TCreateTestAppOptions = {
   globalPrefix?: string;
@@ -52,10 +51,6 @@ export async function createTestApp(opts: TCreateTestAppOptions = {}): Promise<{
     broadcastMetricsUpdate: async () => {},
   });
 
-  // Disable CSRF guard for tests
-  builder = builder.overrideGuard(CsrfGuard).useValue({
-    canActivate: () => true,
-  });
 
   const moduleRef = await builder.compile();
 

@@ -1,0 +1,30 @@
+# Docker build context exclusions
+
+# VCS
+.git
+.gitignore
+
+# OS junk
+**/.DS_Store
+
+# Env files (runtime only; app images should not copy these)
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Dependencies (will be installed in image)
+**/node_modules
+**/.pnpm-store
+
+# Build outputs
+**/dist
+client/.next
+client/out
+**/coverage
+
+# Logs
+**/*.log
+
+# Tests and docs (exclude heavy assets)
+e2e/
+requirement/

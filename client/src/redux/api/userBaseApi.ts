@@ -3,67 +3,47 @@ import { GLOBAL_API_URL } from '../globalURLs';
 import type { RootState } from '../store';
 import type { BaseQueryApi } from '@reduxjs/toolkit/query';
 
-// Helper function to get CSRF token from cookies
-const getCSRFTokenFromCookies = (): string | null => {
+// Helper function to get cookie value
+const getCookieValue = (name: string): string | null => {
   if (typeof document === 'undefined') return null;
-  const cookies = document.cookie.split(';');
-  for (const cookie of cookies) {
-    const [name, value] = cookie.trim().split('=');
-    if (name === 'csrfToken') {
-      return decodeURIComponent(value);
-    }
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) {
+    return parts.pop()?.split(';').shift() || null;
   }
   return null;
 };
 
-// Custom base query with CSRF support
+// Custom base query with cookie + header authentication
 const customBaseQuery = fetchBaseQuery({
   baseUrl: GLOBAL_API_URL,
   prepareHeaders: (headers, { getState }) => {
     headers.set('Content-Type', 'application/json');
-    // Attach Authorization header when token is present to avoid relying solely on cookies
+
+    // Get token from Redux state (populated from cookies)
     const state = getState() as RootState;
     const token = state?.auth?.token;
-    if (token) {
-      headers.set('Authorization', `Bearer ${token}`);
+
+    // Also try to get token directly from cookies as fallback
+    const cookieToken = getCookieValue('accessToken') || getCookieValue('superAdminAccessToken');
+
+    // Use token from Redux state or directly from cookies
+    const authToken = token || cookieToken;
+
+    if (authToken) {
+      headers.set('Authorization', `Bearer ${authToken}`);
     }
+
     return headers;
   },
-  credentials: 'include',
+  credentials: 'include', // Send cookies with requests
 });
 
-// Wrapper to add CSRF token for non-GET requests
-const baseQueryWithCSRF = async (args: string | FetchArgs, api: BaseQueryApi, extraOptions: object) => {
-  // Determine if this is a mutation (non-GET request)
-  let isMutation = false;
-  let method = 'GET';
-
-  if (typeof args === 'object') {
-    method = args.method || 'GET';
-    // Check if method indicates a mutation
-    isMutation = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method.toUpperCase());
-  }
-
-  // For mutations, add CSRF token
-  if (isMutation) {
-    const csrfToken = getCSRFTokenFromCookies();
-
-    if (csrfToken) {
-      if (typeof args === 'object') {
-        args = { ...args, headers: { ...args.headers, 'X-CSRF-Token': csrfToken } };
-      }
-    } else {
-      console.log('Frontend CSRF Debug - No CSRF token found, not adding to headers');
-    }
-  }
-
-  return customBaseQuery(args, api, extraOptions);
-};
 
 // Base API configuration for Academia Pro
 export const baseApi = createApi({
   reducerPath: 'baseApi',
-  baseQuery: baseQueryWithCSRF,
+  baseQuery: customBaseQuery,
   endpoints: () => ({}),
   tagTypes: [
     'Schools',

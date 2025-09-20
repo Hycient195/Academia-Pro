@@ -23,33 +23,15 @@ export interface JwtPayload {
 }
 
 /**
- * Custom JWT extractor from cookies or Authorization header
- * Intelligently selects the appropriate token based on request context
+ * JWT extractor that only reads from Authorization header
+ * No cookie fallback - frontend must send tokens in headers
  */
-const cookieExtractor = (req: Request): string | null => {
-  let token = null;
-
-  // First try to get token from Authorization header
+const headerExtractor = (req: Request): string | null => {
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
-    token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    return authHeader.substring(7); // Remove 'Bearer ' prefix
   }
-
-  // If no token in header, try cookies
-  if (!token && req.cookies) {
-    const url = req.url || '';
-    const isSuperAdminRoute = url.includes('/super-admin/');
-
-    if (isSuperAdminRoute) {
-      // For super admin routes, prioritize super admin token
-      token = req.cookies['superAdminAccessToken'] || req.cookies['accessToken'];
-    } else {
-      // For regular routes, prioritize regular token
-      token = req.cookies['accessToken'] || req.cookies['superAdminAccessToken'];
-    }
-  }
-
-  return token;
+  return null;
 };
 
 @Injectable()
@@ -60,7 +42,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private usersRepository: Repository<User>,
   ) {
     super({
-      jwtFromRequest: cookieExtractor,
+      jwtFromRequest: headerExtractor,
       ignoreExpiration: false,
       secretOrKey: configService.get<string>('JWT_SECRET', 'default-secret'),
     });

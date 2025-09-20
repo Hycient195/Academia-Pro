@@ -1,15 +1,22 @@
 {
-  "name": "@academia-pro",
+  "name": "@academia-pro/types",
   "version": "1.0.0",
   "description": "Shared TypeScript types and interfaces for Academia Pro",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
-    ".": "./dist/index.js",
-    "./types/*": "./dist/types/*"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./types/*": {
+      "types": "./dist/types/*.d.ts",
+      "default": "./dist/types/*.js"
+    }
   },
   "scripts": {
     "build": "tsc",
+    "prepare": "tsc",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
     "test": "jest",

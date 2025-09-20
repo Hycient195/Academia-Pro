@@ -11,10 +11,11 @@ import {
   IconUsers,
   IconPlus,
 } from "@tabler/icons-react"
+import type { IDelegatedAccount } from "@academia-pro/types/super-admin"
 
 export default function DelegatedAdminsPage() {
-  const { data, isFetching } = useGetDelegatedSchoolAdminsQuery()
-  const delegatedAdmins = data?.data ?? []
+  const { data, isFetching } = useGetDelegatedSchoolAdminsQuery({})
+  const delegatedAdmins = (data?.data ?? []) as IDelegatedAccount[]
 
   const getStatusBadge = (status: string) => {
     const s = (status || '').toLowerCase()
@@ -82,7 +83,7 @@ export default function DelegatedAdminsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {delegatedAdmins.map((admin: any) => (
+                {delegatedAdmins.map((admin: IDelegatedAccount) => (
                   <TableRow key={admin.id}>
                     <TableCell>{admin.email}</TableCell>
                     <TableCell>{getStatusBadge(admin.status)}</TableCell>

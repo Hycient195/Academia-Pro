@@ -189,7 +189,15 @@ export class AuthController {
       type: 'object',
       properties: {
         user: { type: 'object' },
-        csrfToken: { type: 'string' },
+        tokens: {
+          type: 'object',
+          properties: {
+            accessToken: { type: 'string' },
+            refreshToken: { type: 'string' },
+            expiresIn: { type: 'number' },
+            tokenType: { type: 'string' },
+          },
+        },
       },
     },
   })
@@ -208,13 +216,12 @@ export class AuthController {
     }
 
     const result = await this.authService.loginWithCookies(user, res);
-
     res.json(result);
   }
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Refresh access token using refresh token from cookies' })
+  @ApiOperation({ summary: 'Refresh access token using refresh token from request body' })
   @ApiResponse({
     status: 200,
     description: 'Token refreshed successfully',
@@ -229,29 +236,14 @@ export class AuthController {
     },
   })
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
-  async refreshToken(@Request() req: any, @Response() res: any): Promise<void> {
+  async refreshToken(@Body() refreshTokenDto: RefreshTokenDto, @Response() res: any): Promise<void> {
     try {
-      // Per-request CORS headers for credentialed responses
-      const origin = req.headers?.origin;
-      if (origin) {
-        res.setHeader('Access-Control-Allow-Origin', origin);
-      }
-      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      const tokens = await this.authService.refreshToken(refreshTokenDto);
 
-      // Try to get refresh token from regular user cookies
-      const refreshToken = req.cookies?.refreshToken;
-
-      if (!refreshToken) {
-        res.status(401).json({ message: 'Refresh token not found in cookies' });
-        return;
-      }
-
-      const tokens = await this.authService.refreshToken({ refreshToken });
-
-      // Get user info to determine cookie names
-      const user = await this.authService.getUserFromRefreshToken(refreshToken);
-
+      // Set cookies for frontend to read from
+      const user = await this.authService.getUserFromRefreshToken(refreshTokenDto.refreshToken);
       this.authService.setAuthCookies(res, tokens.accessToken, tokens.refreshToken, user);
+
       res.json(tokens);
     } catch (err: any) {
       const status = err?.status || 500;
@@ -266,7 +258,7 @@ export class AuthController {
 
   @Post('super-admin/refresh')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Refresh super admin access token using refresh token from cookies' })
+  @ApiOperation({ summary: 'Refresh super admin access token using refresh token from request body' })
   @ApiResponse({
     status: 200,
     description: 'Token refreshed successfully',
@@ -281,29 +273,14 @@ export class AuthController {
     },
   })
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
-  async superAdminRefreshToken(@Request() req: any, @Response() res: any): Promise<void> {
+  async superAdminRefreshToken(@Body() refreshTokenDto: RefreshTokenDto, @Response() res: any): Promise<void> {
     try {
-      // Per-request CORS headers for credentialed responses
-      const origin = req.headers?.origin;
-      if (origin) {
-        res.setHeader('Access-Control-Allow-Origin', origin);
-      }
-      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      const tokens = await this.authService.refreshToken(refreshTokenDto);
 
-      // Try to get refresh token from super admin cookies
-      const refreshToken = req.cookies?.superAdminRefreshToken;
-
-      if (!refreshToken) {
-        res.status(401).json({ message: 'Super admin refresh token not found in cookies' });
-        return;
-      }
-
-      const tokens = await this.authService.refreshToken({ refreshToken });
-
-      // Get user info to determine cookie names
-      const user = await this.authService.getUserFromRefreshToken(refreshToken);
-
+      // Set cookies for frontend to read from
+      const user = await this.authService.getUserFromRefreshToken(refreshTokenDto.refreshToken);
       this.authService.setAuthCookies(res, tokens.accessToken, tokens.refreshToken, user);
+
       res.json(tokens);
     } catch (err: any) {
       const status = err?.status || 500;
@@ -316,27 +293,6 @@ export class AuthController {
     }
   }
 
-  @Get('csrf-token')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get CSRF token' })
-  @ApiResponse({ status: 200, description: 'CSRF token retrieved successfully' })
-  getCSRFToken(@Request() req: any): { csrfToken: string } {
-    // CSRF token is already set in cookie by login
-    // Try regular user cookie names
-    const csrfToken = req.cookies?.csrfToken;
-    return { csrfToken };
-  }
-
-  @Get('super-admin/csrf-token')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get super admin CSRF token' })
-  @ApiResponse({ status: 200, description: 'CSRF token retrieved successfully' })
-  getSuperAdminCSRFToken(@Request() req: any): { csrfToken: string } {
-    // CSRF token is already set in cookie by login
-    // Try super admin cookie names
-    const csrfToken = req.cookies?.superAdminCsrfToken;
-    return { csrfToken };
-  }
 
   @Post('logout')
   @UseGuards(JwtAuthGuard)

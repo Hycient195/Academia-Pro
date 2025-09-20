@@ -2,7 +2,6 @@ import { baseApi } from '../userBaseApi';
 import { PaginatedResponse } from '@academia-pro/types/shared';
 import {
   IDepartment,
-  IStaff,
   ICreateDepartmentRequest,
   IUpdateDepartmentRequest,
   IDepartmentFilters,

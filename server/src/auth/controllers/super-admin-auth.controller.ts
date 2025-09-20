@@ -13,8 +13,15 @@ export class SuperAdminAuthController {
       // Validate that this is a super admin login attempt
       const user = await this.authService.validateSuperAdmin(loginDto.email, loginDto.password);
 
-      // Use cookie-based authentication
-      const result = await this.authService.loginWithCookies(user, res);
+      const tokens = await this.authService.login(user);
+
+      // Remove sensitive information from response
+      const { passwordHash, ...userResponse } = user;
+
+      const result = {
+        user: userResponse,
+        tokens,
+      };
 
       res.json(result);
     } catch (error) {

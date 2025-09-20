@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import { useSelector } from "react-redux"
+import { RootState } from "@/redux/store"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { Pagination, usePagination } from "@/components/ui/pagination"
+import { toast } from "sonner"
 import {
   IconUserShield,
   IconPlus,
@@ -25,77 +28,30 @@ import {
   IconCalendar,
   IconUsers,
   IconTrendingUp,
+  IconLoader,
 } from "@tabler/icons-react"
-
-// Sample staff data
-const staffMembers = [
-  {
-    id: 1,
-    name: "Dr. Sarah Mitchell",
-    email: "sarah.mitchell@school.com",
-    role: "Principal",
-    department: "Administration",
-    phone: "+1 (555) 123-4567",
-    status: "Active",
-    avatar: "/avatars/principal.jpg",
-    joinDate: "2018-08-15",
-    salary: 85000,
-    attendance: 98,
-  },
-  {
-    id: 2,
-    name: "Mr. John Davis",
-    email: "john.davis@school.com",
-    role: "Mathematics Teacher",
-    department: "Mathematics",
-    phone: "+1 (555) 234-5678",
-    status: "Active",
-    avatar: "/avatars/teacher1.jpg",
-    joinDate: "2020-08-15",
-    salary: 55000,
-    attendance: 95,
-  },
-  {
-    id: 3,
-    name: "Ms. Emily Chen",
-    email: "emily.chen@school.com",
-    role: "Science Teacher",
-    department: "Science",
-    phone: "+1 (555) 345-6789",
-    status: "Active",
-    avatar: "/avatars/teacher2.jpg",
-    joinDate: "2019-08-15",
-    salary: 52000,
-    attendance: 97,
-  },
-  {
-    id: 4,
-    name: "Mr. Robert Wilson",
-    email: "robert.wilson@school.com",
-    role: "Administrator",
-    department: "Administration",
-    phone: "+1 (555) 456-7890",
-    status: "Active",
-    avatar: "/avatars/admin.jpg",
-    joinDate: "2021-01-15",
-    salary: 45000,
-    attendance: 92,
-  },
-]
-
-const departments = [
-  { name: "Administration", count: 3, color: "bg-blue-500" },
-  { name: "Mathematics", count: 4, color: "bg-green-500" },
-  { name: "Science", count: 5, color: "bg-purple-500" },
-  { name: "English", count: 3, color: "bg-orange-500" },
-  { name: "History", count: 2, color: "bg-red-500" },
-  { name: "Physical Education", count: 2, color: "bg-yellow-500" },
-]
+import {
+  useGetStaffDashboardQuery,
+  useGetAllStaffQuery,
+  useSearchStaffQuery,
+  useCreateStaffMutation,
+  useUpdateStaffMutation,
+  useDeleteStaffMutation,
+  useTerminateStaffMutation,
+  useSuspendStaffMutation,
+  useReactivateStaffMutation,
+} from "@/redux/api/school-admin/staffApis"
+import { IStaffResponse, TEmploymentStatus, TDepartment } from "@academia-pro/types/staff"
+import { StaffModal } from "@/app/school-admin/staff/_components/CreateStaffModal"
 
 export default function StaffPage() {
+  const { user } = useSelector((state: RootState) => state.auth)
+  const schoolId = user?.schoolId || ""
+
   const [searchTerm, setSearchTerm] = useState("")
   const [departmentFilter, setDepartmentFilter] = useState("all")
   const [roleFilter, setRoleFilter] = useState("all")
+  const [isStaffModalOpen, setIsStaffModalOpen] = useState(false)
 
   // Pagination
   const {
@@ -105,39 +61,71 @@ export default function StaffPage() {
     handlePageSizeChange,
   } = usePagination(10)
 
-  const filteredStaff = staffMembers.filter(staff => {
-    const matchesSearch = staff.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          staff.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          staff.role.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesDepartment = departmentFilter === "all" || staff.department === departmentFilter
-    const matchesRole = roleFilter === "all" || staff.role === roleFilter
-
-    return matchesSearch && matchesDepartment && matchesRole
+  // API calls
+  const { data: dashboardData, isLoading: dashboardLoading } = useGetStaffDashboardQuery(schoolId, {
+    skip: !schoolId,
   })
 
-  // Pagination logic
-  const totalItems = filteredStaff.length
-  const totalPages = Math.ceil(totalItems / pageSize)
-  const startIndex = (currentPage - 1) * pageSize
-  const endIndex = startIndex + pageSize
-  const paginatedStaff = filteredStaff.slice(startIndex, endIndex)
+  const { data: staffData, isLoading: staffLoading } = useGetAllStaffQuery({
+    schoolId,
+    search: searchTerm || undefined,
+    department: departmentFilter !== "all" ? departmentFilter as TDepartment : undefined,
+    limit: pageSize,
+    offset: (currentPage - 1) * pageSize,
+  }, {
+    skip: !schoolId,
+  })
 
-  const getRoleBadge = (role: string) => {
-    const colors = {
-      "Principal": "bg-purple-100 text-purple-800",
-      "Teacher": "bg-blue-100 text-blue-800",
-      "Administrator": "bg-green-100 text-green-800",
+  const staffMembers = staffData || []
+  const statistics = dashboardData?.summary
+
+  // The filtering is now done on the API side, so we use the returned data directly
+  const totalItems = staffMembers.length
+  const totalPages = Math.ceil(totalItems / pageSize)
+  const paginatedStaff = staffMembers
+
+  const getRoleBadge = (position: string) => {
+    const colors: Record<string, string> = {
+      "principal": "bg-purple-100 text-purple-800",
+      "vice_principal": "bg-purple-100 text-purple-800",
+      "headmaster": "bg-purple-100 text-purple-800",
+      "librarian": "bg-blue-100 text-blue-800",
+      "accountant": "bg-green-100 text-green-800",
+      "administrator": "bg-green-100 text-green-800",
+      "clerk": "bg-gray-100 text-gray-800",
+      "driver": "bg-orange-100 text-orange-800",
+      "security_guard": "bg-red-100 text-red-800",
+      "nurse": "bg-pink-100 text-pink-800",
+      "technician": "bg-indigo-100 text-indigo-800",
+      "janitor": "bg-yellow-100 text-yellow-800",
+      "cook": "bg-orange-100 text-orange-800",
+      "secretary": "bg-cyan-100 text-cyan-800",
     }
     return (
-      <Badge className={colors[role as keyof typeof colors] || "bg-gray-100 text-gray-800"}>
-        {role}
+      <Badge className={colors[position.toLowerCase()] || "bg-gray-100 text-gray-800"}>
+        {position.replace('_', ' ').toUpperCase()}
       </Badge>
     )
   }
 
-  const getAttendanceColor = (attendance: number) => {
-    if (attendance >= 95) return "text-green-600"
-    if (attendance >= 85) return "text-yellow-600"
+  const getStatusBadge = (status: TEmploymentStatus) => {
+    const colors: Record<TEmploymentStatus, string> = {
+      "active": "bg-green-100 text-green-800",
+      "inactive": "bg-yellow-100 text-yellow-800",
+      "terminated": "bg-red-100 text-red-800",
+      "on_leave": "bg-blue-100 text-blue-800",
+      "suspended": "bg-orange-100 text-orange-800",
+    }
+    return (
+      <Badge className={colors[status] || "bg-gray-100 text-gray-800"}>
+        {status.replace('_', ' ').toUpperCase()}
+      </Badge>
+    )
+  }
+
+  const getAttendanceColor = (rate: number) => {
+    if (rate >= 95) return "text-green-600"
+    if (rate >= 85) return "text-yellow-600"
     return "text-red-600"
   }
 
@@ -152,7 +140,7 @@ export default function StaffPage() {
               Manage staff information, roles, departments, and HR records
             </p>
           </div>
-          <Button>
+          <Button onClick={() => setIsStaffModalOpen(true)}>
             <IconPlus className="mr-2 h-4 w-4" />
             Add Staff Member
           </Button>
@@ -166,9 +154,35 @@ export default function StaffPage() {
               <IconUserShield className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">89</div>
+              <div className="text-2xl font-bold">{statistics?.totalStaff || 0}</div>
               <p className="text-xs text-muted-foreground">
                 Active employees
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Staff</CardTitle>
+              <IconUsers className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{statistics?.activeStaff || 0}</div>
+              <p className="text-xs text-muted-foreground">
+                Currently active
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Avg Salary</CardTitle>
+              <IconTrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">${statistics?.averageSalary?.toLocaleString() || '0'}</div>
+              <p className="text-xs text-muted-foreground">
+                Monthly average
               </p>
             </CardContent>
           </Card>
@@ -179,35 +193,9 @@ export default function StaffPage() {
               <IconBriefcase className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">6</div>
+              <div className="text-2xl font-bold">{Object.keys(statistics?.byDepartment || {}).length}</div>
               <p className="text-xs text-muted-foreground">
                 Active departments
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Avg Attendance</CardTitle>
-              <IconTrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">94.2%</div>
-              <p className="text-xs text-muted-foreground">
-                This month
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">New Hires</CardTitle>
-              <IconUsers className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">3</div>
-              <p className="text-xs text-muted-foreground">
-                This quarter
               </p>
             </CardContent>
           </Card>
@@ -293,30 +281,25 @@ export default function StaffPage() {
                           <TableCell>
                             <div className="flex items-center gap-3">
                               <Avatar className="h-8 w-8">
-                                <AvatarImage src={staff.avatar} />
                                 <AvatarFallback>
-                                  {staff.name.split(' ').map(n => n[0]).join('')}
+                                  {staff.fullName.split(' ').map((n: string) => n[0]).join('')}
                                 </AvatarFallback>
                               </Avatar>
                               <div>
-                                <p className="font-medium">{staff.name}</p>
+                                <p className="font-medium">{staff.fullName}</p>
                                 <p className="text-sm text-muted-foreground">{staff.email}</p>
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell>{getRoleBadge(staff.role)}</TableCell>
+                          <TableCell>{getRoleBadge(staff.position)}</TableCell>
                           <TableCell>
                             <Badge variant="outline">{staff.department}</Badge>
                           </TableCell>
-                          <TableCell>
-                            <span className={`font-medium ${getAttendanceColor(staff.attendance)}`}>
-                              {staff.attendance}%
-                            </span>
-                          </TableCell>
+                          <TableCell>{getStatusBadge(staff.employmentStatus)}</TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <IconCalendar className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm">{new Date(staff.joinDate).toLocaleDateString()}</span>
+                              <span className="text-sm">{new Date(staff.hireDate).toLocaleDateString()}</span>
                             </div>
                           </TableCell>
                           <TableCell>
@@ -349,7 +332,7 @@ export default function StaffPage() {
                 </div>
 
                 {/* Pagination */}
-                {filteredStaff.length > 0 && (
+                {staffMembers.length > 0 && (
                   <div className="mt-4">
                     <Pagination
                       currentPage={currentPage}
@@ -367,14 +350,14 @@ export default function StaffPage() {
 
           <TabsContent value="departments" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {departments.map((dept) => (
-                <Card key={dept.name} className="cursor-pointer hover:shadow-md transition-shadow">
+              {statistics?.byDepartment && Object.entries(statistics.byDepartment).map(([deptName, count]) => (
+                <Card key={deptName} className="cursor-pointer hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-4">
-                      <div className={`w-3 h-3 rounded-full ${dept.color}`} />
-                      <Badge variant="secondary">{dept.count} members</Badge>
+                      <div className="w-3 h-3 rounded-full bg-blue-500" />
+                      <Badge variant="secondary">{count} members</Badge>
                     </div>
-                    <h3 className="font-semibold text-lg mb-2">{dept.name}</h3>
+                    <h3 className="font-semibold text-lg mb-2">{deptName}</h3>
                     <p className="text-sm text-muted-foreground">
                       Department overview and management
                     </p>
@@ -396,18 +379,17 @@ export default function StaffPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-6 w-6">
-                          <AvatarImage src={staff.avatar} />
                           <AvatarFallback className="text-xs">
-                            {staff.name.split(' ').map(n => n[0]).join('')}
+                            {staff.fullName.split(' ').map((n: string) => n[0]).join('')}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="font-medium text-sm">{staff.name}</span>
+                        <span className="font-medium text-sm">{staff.fullName}</span>
                       </div>
-                      <span className={`text-sm font-medium ${getAttendanceColor(staff.attendance)}`}>
-                        {staff.attendance}%
+                      <span className="text-sm font-medium text-gray-600">
+                        {staff.employmentStatus === 'active' ? 'Present' : 'N/A'}
                       </span>
                     </div>
-                    <Progress value={staff.attendance} className="h-2" />
+                    <Progress value={staff.employmentStatus === 'active' ? 95 : 0} className="h-2" />
                   </div>
                 ))}
               </CardContent>
@@ -426,18 +408,17 @@ export default function StaffPage() {
                     <div key={staff.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src={staff.avatar} />
                           <AvatarFallback>
-                            {staff.name.split(' ').map(n => n[0]).join('')}
+                            {staff.fullName.split(' ').map((n: string) => n[0]).join('')}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-medium">{staff.name}</p>
-                          <p className="text-sm text-muted-foreground">{staff.role}</p>
+                          <p className="font-medium">{staff.fullName}</p>
+                          <p className="text-sm text-muted-foreground">{staff.position}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold">${staff.salary.toLocaleString()}</p>
+                        <p className="font-semibold">${staff.currentSalary?.toLocaleString() || '0'}</p>
                         <p className="text-sm text-muted-foreground">Monthly</p>
                       </div>
                     </div>
@@ -448,6 +429,17 @@ export default function StaffPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Staff Modal */}
+      <StaffModal
+        isOpen={isStaffModalOpen}
+        onClose={() => setIsStaffModalOpen(false)}
+        onSuccess={() => {
+          // Refresh the staff data
+          // The RTK Query will automatically refetch due to invalidation
+        }}
+        schoolId={schoolId}
+      />
     </div>
   )
 }

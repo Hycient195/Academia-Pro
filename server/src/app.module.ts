@@ -8,10 +8,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
 
 // Middleware
-import { CookieAuthMiddleware } from './auth/middleware/cookie-auth.middleware';
-import { CSRFMiddleware } from './auth/middleware/csrf.middleware';
 import { SecurityMiddleware } from './auth/middleware/security.middleware';
-import cookieParser = require('cookie-parser');
 
 // Core modules
 import { AuthModule } from './auth/auth.module';
@@ -98,8 +95,8 @@ import { AppService } from './app.service';
 
     // Feature modules
     forwardRef(() => CommonModule),
-    AuditSharedModule,
     forwardRef(() => QueueModule),
+    // AuditSharedModule, // Temporarily disabled due to missing audit gateway
     // forwardRef(() => RedisModule),
     forwardRef(() => SeedersModule),
     forwardRef(() => AuthModule),
@@ -170,12 +167,7 @@ import { AppService } from './app.service';
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
-    // Apply cookie parser first to populate req.cookies for downstream middleware/guards
-    consumer
-      .apply(cookieParser())
-      .forRoutes({ path: '*', method: RequestMethod.ALL });
-
-    // Apply audit middleware globally (after cookie parser)
+    // Apply audit middleware globally
     consumer
       .apply(AuditMiddleware)
       .forRoutes({ path: '*', method: RequestMethod.ALL });
@@ -185,20 +177,8 @@ export class AppModule {
       .apply(SecurityMiddleware)
       .forRoutes({ path: '*', method: RequestMethod.ALL });
 
-    // Apply authentication middleware to protected routes
-    consumer
-      .apply(CookieAuthMiddleware)
-      .exclude(
-        { path: 'api/v1/auth/login', method: RequestMethod.POST },
-        { path: 'api/v1/auth/register', method: RequestMethod.POST },
-        { path: 'api/v1/auth/refresh', method: RequestMethod.POST },
-        { path: 'api/v1/auth/reset-password-request', method: RequestMethod.POST },
-        { path: 'api/v1/auth/reset-password', method: RequestMethod.POST },
-        { path: 'api/v1/auth/verify-email', method: RequestMethod.POST },
-        { path: 'api/v1/auth/csrf-token', method: RequestMethod.GET },
-        { path: 'api/v1/super-admin/auth/login', method: RequestMethod.POST },
-      )
-      .forRoutes({ path: '*', method: RequestMethod.ALL });
+    // Authentication is handled by JWT guards on protected routes
+    // No global cookie-based authentication middleware
 
     // CSRF validation is handled by CsrfGuard on protected routes
     // Removed CSRF middleware as it conflicts with cookie-based CSRF validation

@@ -16,10 +16,13 @@ COPY server/pnpm-lock.yaml ./
 COPY common/ ../common/
 
 # Install all dependencies (including dev dependencies for building)
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # Copy source code
 COPY server/ .
+
+# Build shared common package for types/exports (required for @academia-pro)
+RUN cd ../common && pnpm install --no-frozen-lockfile && pnpm run build
 
 # Build application
 RUN pnpm run build
@@ -27,39 +30,30 @@ RUN pnpm run build
 # Production stage
 FROM node:18-alpine AS production
 
-# Install pnpm and production dependencies
-RUN apk add --no-cache postgresql-client curl
-RUN npm install -g pnpm
+# Install runtime tools and pnpm
+RUN apk add --no-cache curl && npm install -g pnpm
 
 # Create app user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nestjs -u 1001
+RUN addgroup -g 1001 -S nodejs && adduser -S nestjs -u 1001
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy only what's needed to run
 COPY server/package*.json ./
-COPY server/pnpm-lock.yaml ./
 
-# Copy common package (needed for dependency resolution)
-COPY common/ ../common/
-
-# Install production dependencies only
-RUN pnpm install --frozen-lockfile --prod
-
-# Copy built application
+# Copy production node_modules and built dist from builder stage
+COPY --from=base --chown=nestjs:nodejs /app/node_modules ./node_modules
 COPY --from=base --chown=nestjs:nodejs /app/dist ./dist
-
-# Switch to non-root user
-USER nestjs
+# Include shared common package build so compiled server code can resolve ../../../common/dist/*
+COPY --from=base --chown=nestjs:nodejs /common /common
 
 # Expose port
 EXPOSE 3001
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3000/health || exit 1
+  CMD curl -f http://localhost:3001/api/v1/health || exit 1
 
 # Start application
 CMD ["pnpm", "run", "start:prod"]

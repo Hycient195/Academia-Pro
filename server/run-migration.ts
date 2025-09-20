@@ -2,14 +2,15 @@ import { DataSource } from 'typeorm';
 import { AddGradeCodeColumn1757891157000 } from './src/migrations/1757891157000-AddGradeCodeColumn';
 import { AddMissingStudentColumns1757891158000 } from './src/migrations/1757891158000-AddMissingStudentColumns';
 import { AddGraduationYearColumn1757891159000 } from './src/migrations/1757891159000-AddGraduationYearColumn';
+import { CreateStaffTable1758309830629 } from './src/migrations/1758309830629-CreateStaffTable';
 
 async function runMigration() {
   const dataSource = new DataSource({
     type: 'postgres',
     host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5432'),
-    username: process.env.DB_ADMIN_USERNAME || 'postgres',
-    password: process.env.DB_ADMIN_PASSWORD || 'admin',
+    port: parseInt(process.env.DB_PORT || '5433'),
+    username: process.env.DB_ADMIN_USERNAME || 'academia_user',
+    password: process.env.DB_ADMIN_PASSWORD || 'academia_password',
     database: process.env.DB_NAME || 'academia_pro',
     entities: [],
     migrations: [],
@@ -38,6 +39,12 @@ async function runMigration() {
     const migration3 = new AddGraduationYearColumn1757891159000();
     await migration3.up(dataSource.createQueryRunner());
     console.log('AddGraduationYearColumn migration completed successfully');
+
+    // Run fourth migration
+    console.log('Running CreateStaffTable migration...');
+    const migration4 = new CreateStaffTable1758309830629();
+    await migration4.up(dataSource.createQueryRunner());
+    console.log('CreateStaffTable migration completed successfully');
 
     await dataSource.destroy();
     console.log('Database connection closed');

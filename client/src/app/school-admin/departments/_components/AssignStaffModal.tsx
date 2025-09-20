@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/redux/store';
 import {
   Dialog,
   DialogContent,
@@ -17,7 +19,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAssignStaffToDepartmentMutation, useRemoveStaffFromDepartmentMutation } from '@/redux/api/school-admin/departmentApis';
 import { IDepartment } from '@academia-pro/types/school-admin';
-import { useGetStaffQuery } from '@/redux/api/school-admin/staffApis';
+import { useGetAllStaffQuery } from '@/redux/api/school-admin/staffApis';
 import { toast } from 'sonner';
 import { Loader2, Search, UserPlus, UserMinus, Users } from 'lucide-react';
 
@@ -28,15 +30,20 @@ interface AssignStaffModalProps {
 }
 
 export function AssignStaffModal({ open, onClose, department }: AssignStaffModalProps) {
+  const { user } = useSelector((state: RootState) => state.auth);
+  const schoolId = user?.schoolId || "";
   const [searchTerm, setSearchTerm] = useState('');
   const [assignStaff, { isLoading: isAssigning }] = useAssignStaffToDepartmentMutation();
   const [removeStaff, { isLoading: isRemoving }] = useRemoveStaffFromDepartmentMutation();
 
-  const { data: staffData, isLoading } = useGetStaffQuery({
+  const { data: staffData, isLoading } = useGetAllStaffQuery({
+    schoolId,
     search: searchTerm || undefined,
+  }, {
+    skip: !schoolId,
   });
 
-  const staff = staffData?.data || [];
+  const staff = staffData || [];
   const assignedStaffIds = new Set(department.staff?.map(s => s.id) || []);
 
   const availableStaff = staff.filter(s => !assignedStaffIds.has(s.id));

@@ -57,6 +57,12 @@ const getCSRFTokenFromCookies = (): string | null => {
   return null;
 };
 
+export const getAccessTokenFromCookies = () => {
+  const cookies = document.cookie.split('; ');
+  const tokenCookie = cookies.find(row => row.startsWith('accessToken='));
+  return tokenCookie ? tokenCookie.split('=')[1] : null;
+};
+
 export const UserAuthProvider: React.FC<UserAuthProviderProps> = ({ children }) => {
   const [authState, setAuthState] = useState<UserAuthState>({
     user: null,

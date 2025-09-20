@@ -9,10 +9,8 @@ export interface AuthenticatedRequest extends Request {
   cookies: {
     accessToken?: string;
     refreshToken?: string;
-    csrfToken?: string;
     superAdminAccessToken?: string;
     superAdminRefreshToken?: string;
-    superAdminCsrfToken?: string;
   };
 }
 
